@@ -1,1 +1,174 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  --bg:       #0d0d0d;
+  --surface:  #161616;
+  --surface2: #1e1e1e;
+  --border:   #2a2a2a;
+  --text:     #e8e8e8;
+  --muted:    #666;
+  --blue:     #3b82f6;
+  --green:    #4ade80;
+  --amber:    #f59e0b;
+  --red:      #f87171;
+  --cyan:     #22d3ee;
+  --purple:   #a78bfa;
+}
+
+body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 14px; }
+
+/* ── 헤더 ─────────────────────────────────── */
+.header { display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; border-bottom: 0.5px solid var(--border); background: var(--surface); }
+.logo { font-size: 17px; font-weight: 600; color: var(--blue); }
+.logo-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.status-dot.ready  { background: var(--blue); }
+.status-dot.running{ background: var(--green); animation: pulse 1s ease-in-out infinite; }
+.status-dot.done   { background: var(--purple); }
+.status-label { font-size: 12px; color: var(--muted); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── 레이아웃 ─────────────────────────────── */
+.layout { display: grid; grid-template-columns: 1fr 280px; gap: 0; height: calc(100vh - 53px); }
+.main-col { display: flex; flex-direction: column; border-right: 0.5px solid var(--border); overflow: hidden; }
+.side-col { display: flex; flex-direction: column; gap: 10px; padding: 14px; overflow-y: auto; background: var(--surface); }
+
+/* ── 드롭존 ───────────────────────────────── */
+.dropzone { flex: 1; display: flex; align-items: center; justify-content: center; border: 1.5px dashed var(--border); margin: 20px; border-radius: 12px; cursor: pointer; transition: border-color .2s; }
+.dropzone:hover { border-color: var(--blue); }
+.dropzone.drag-over { border-color: var(--blue); background: rgba(59,130,246,.06); }
+.drop-inner { text-align: center; padding: 40px; pointer-events: none; }
+.drop-icon { font-size: 40px; color: var(--border); margin-bottom: 12px; }
+.drop-title { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+.drop-sub { font-size: 12px; color: var(--muted); }
+
+/* ── 플레이어 ─────────────────────────────── */
+.player-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.video-container { position: relative; flex: 1; background: #000; overflow: hidden; }
+#video { width: 100%; height: 100%; object-fit: contain; display: block; }
+#overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* ── 실시간 오버레이 패널 ──────────────────── */
+.live-overlay { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.75);
+  border: 0.5px solid rgba(255,255,255,.12); border-radius: 8px; padding: 8px 12px;
+  min-width: 148px; display: flex; flex-direction: column; gap: 5px; }
+.ov-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.ov-label { font-size: 11px; color: #888; }
+.ov-val { font-size: 13px; font-weight: 500; color: #fff; }
+.ov-val.good { color: var(--green); }
+.ov-val.warn { color: var(--amber); }
+.ov-val.bad  { color: var(--red);   }
+
+/* ── KICK 뱃지 ────────────────────────────── */
+.kick-badge { position: absolute; top: 12px; right: 12px; background: rgba(6,182,212,.2);
+  border: 1px solid var(--cyan); border-radius: 6px; padding: 5px 14px;
+  color: var(--cyan); font-size: 13px; font-weight: 700; letter-spacing: 1px;
+  opacity: 0; transition: opacity .1s; pointer-events: none; }
+.kick-badge.show { opacity: 1; }
+
+/* ── 영법 뱃지 ────────────────────────────── */
+.stroke-badge { position: absolute; bottom: 12px; left: 12px;
+  background: rgba(99,102,241,.25); border: 0.5px solid #818cf8;
+  border-radius: 6px; padding: 4px 12px; color: #c7d2fe; font-size: 12px; }
+
+/* ── 진행바 ───────────────────────────────── */
+.progress-bar { height: 4px; background: var(--border); cursor: pointer; flex-shrink: 0; }
+.progress-fill { height: 100%; background: var(--blue); width: 0%; transition: width .15s linear; }
+
+/* ── 컨트롤바 ─────────────────────────────── */
+.controls { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--surface); border-top: 0.5px solid var(--border); flex-shrink: 0; }
+.ctrl-btn { background: none; border: none; color: var(--text); cursor: pointer;
+  font-size: 18px; width: 32px; height: 32px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; }
+.ctrl-btn:hover { background: var(--surface2); }
+.time-display { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ctrl-spacer { flex: 1; }
+.analyze-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px;
+  padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.analyze-btn:hover { background: #2563eb; }
+.analyze-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+.analyze-btn.running { background: #059669; }
+.reset-btn { background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; width: 32px; height: 32px; cursor: pointer; font-size: 16px; }
+.reset-btn:hover { color: var(--text); border-color: var(--text); }
+
+/* ── 사이드 패널 카드들 ────────────────────── */
+.score-card { background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; text-align: center; }
+.score-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.score-val { font-size: 36px; font-weight: 600; color: var(--blue); }
+.score-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.score-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; }
+.score-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; width: 0%; transition: width .5s; }
+
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.metric-card { background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; }
+.metric-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.metric-val { font-size: 20px; font-weight: 500; }
+.metric-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; }
+.metric-bar { height: 100%; border-radius: 2px; width: 0%; transition: width .4s; }
+.sym-bar  { background: var(--green); }
+.kick-bar { background: var(--amber); }
+.freq-bar { background: var(--cyan); }
+.head-bar { background: var(--purple); }
+
+.progress-card { background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; }
+.progress-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.analysis-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; }
+.analysis-bar-fill { height: 100%; background: var(--green); border-radius: 2px; width: 0%; transition: width .2s; }
+.progress-pct { font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
+
+.feedback-card { background: rgba(245,158,11,.08); border: 0.5px solid rgba(245,158,11,.3);
+  border-radius: 8px; padding: 12px 14px; }
+.feedback-title { font-size: 12px; font-weight: 500; color: var(--amber); margin-bottom: 8px; }
+.feedback-body { font-size: 12px; color: #bbb; line-height: 1.7; white-space: pre-line; }
+
+.drill-card { background: rgba(167,139,250,.08); border: 0.5px solid rgba(167,139,250,.3);
+  border-radius: 8px; padding: 12px 14px; }
+.drill-title { font-size: 12px; font-weight: 500; color: var(--purple); margin-bottom: 8px; }
+.drill-list { padding-left: 16px; display: flex; flex-direction: column; gap: 6px; }
+.drill-list li { font-size: 12px; color: #bbb; line-height: 1.5; }
+
+/* ── 메타 선택 패널 ───────────────────────────── */
+.meta-panel { padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+.meta-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.meta-row { display: flex; flex-direction: column; gap: 16px; }
+.meta-group { display: flex; flex-direction: column; gap: 8px; }
+.meta-label { font-size: 12px; color: var(--muted); }
+.required { color: var(--red); }
+.meta-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.meta-btn {
+  background: var(--surface2); border: 0.5px solid var(--border);
+  color: var(--muted); border-radius: 8px; padding: 8px 16px;
+  font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.meta-btn:hover { border-color: var(--blue); color: var(--text); }
+.meta-btn.selected {
+  background: rgba(59,130,246,.15); border-color: var(--blue);
+  color: var(--blue); font-weight: 500;
+}
+.meta-next-wrap { display: flex; justify-content: flex-end; margin-top: 4px; }
+.meta-next-btn {
+  background: var(--surface2); border: 0.5px solid var(--border);
+  color: var(--muted); border-radius: 8px; padding: 10px 20px;
+  font-size: 13px; cursor: not-allowed; transition: all .2s;
+}
+.meta-next-btn:not(:disabled) {
+  background: var(--blue); border-color: var(--blue);
+  color: #fff; cursor: pointer;
+}
+.meta-next-btn:not(:disabled):hover { background: #2563eb; }
+
+/* ── 사이드 메타 정보 ─────────────────────────── */
+.meta-info-card {
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.meta-info-item { font-size: 11px; color: var(--muted); }
+.meta-info-item span { color: var(--text); font-weight: 500; margin-left: 4px; }

@@ -1,1 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 수영 영법 분석</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
 
+<div class="app">
+
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">수영 영법 분석 플랫폼</span>
+    </div>
+    <div class="header-right">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-label" id="status-label">대기 중</span>
+      <button onclick="logout()" style="background:none;border:0.5px solid #333;color:#666;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;margin-left:12px;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- 왼쪽: 영상 + 컨트롤 -->
+    <div class="main-col">
+
+      <!-- 업로드 전 메타 선택 패널 -->
+      <div class="meta-panel" id="meta-panel">
+        <div class="meta-title">📋 영상 정보를 먼저 선택해주세요</div>
+
+        <div class="meta-row">
+          <div class="meta-group">
+            <div class="meta-label">🏊 영법 선택 <span class="required">*</span></div>
+            <div class="meta-options" id="stroke-options">
+              <button class="meta-btn" data-value="freestyle" onclick="selectMeta('stroke', this)">자유형</button>
+              <button class="meta-btn" data-value="backstroke" onclick="selectMeta('stroke', this)">배영</button>
+              <button class="meta-btn" data-value="breaststroke" onclick="selectMeta('stroke', this)">평영</button>
+              <button class="meta-btn" data-value="butterfly" onclick="selectMeta('stroke', this)">접영</button>
+              <button class="meta-btn" data-value="unknown" onclick="selectMeta('stroke', this)">모름</button>
+            </div>
+          </div>
+
+          <div class="meta-group">
+            <div class="meta-label">📍 촬영 환경 <span class="required">*</span></div>
+            <div class="meta-options" id="context-options">
+              <button class="meta-btn" data-value="free_swim" onclick="selectMeta('context', this)">자유수영</button>
+              <button class="meta-btn" data-value="lesson" onclick="selectMeta('context', this)">강습 후</button>
+              <button class="meta-btn" data-value="competition" onclick="selectMeta('context', this)">대회</button>
+              <button class="meta-btn" data-value="training" onclick="selectMeta('context', this)">훈련</button>
+              <button class="meta-btn" data-value="drill" onclick="selectMeta('context', this)">드릴 연습</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-next-wrap">
+          <button class="meta-next-btn" id="meta-next-btn" onclick="proceedToUpload()" disabled>
+            다음 — 영상 선택 →
+          </button>
+        </div>
+      </div>
+
+      <!-- 업로드 드롭존 -->
+      <div class="dropzone" id="dropzone" style="display:none">
+        <input type="file" id="file-input" accept="video/*" hidden>
+        <div class="drop-inner" onclick="document.getElementById('file-input').click()">
+          <div class="drop-icon">&#9654;</div>
+          <p class="drop-title">영상 파일을 드래그하거나 클릭해서 선택</p>
+          <p class="drop-sub">MP4, MOV, AVI 지원 · C:\swim\video\ 안의 파일 권장</p>
+        </div>
+      </div>
+
+      <!-- 플레이어 영역 (파일 선택 후 표시) -->
+      <div class="player-wrap" id="player-wrap" style="display:none">
+        <div class="video-container">
+          <video id="video" playsinline></video>
+          <canvas id="overlay-canvas"></canvas>
+
+          <!-- 실시간 수치 오버레이 -->
+          <div class="live-overlay" id="live-overlay">
+            <div class="ov-row">
+              <span class="ov-label">L 팔꿈치</span>
+              <span class="ov-val" id="ov-le">--</span>
+            </div>
+            <div class="ov-row">
+              <span class="ov-label">R 팔꿈치</span>
+              <span class="ov-val" id="ov-re">--</span>
+            </div>
+            <div class="ov-row">
+              <span class="ov-label">머리 각도</span>
+              <span class="ov-val" id="ov-head">--</span>
+            </div>
+            <div class="ov-row">
+              <span class="ov-label">경과</span>
+              <span class="ov-val" id="ov-time">0:00</span>
+            </div>
+          </div>
+
+          <!-- KICK 뱃지 -->
+          <div class="kick-badge" id="kick-badge">KICK!</div>
+
+          <!-- 영법 뱃지 (선택한 영법 + 분석 결과) -->
+          <div class="stroke-badge" id="stroke-badge"></div>
+        </div>
+
+        <!-- 프로그레스바 -->
+        <div class="progress-bar" id="progress-bar" onclick="seekVideo(event)">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <!-- 컨트롤 바 -->
+        <div class="controls">
+          <button class="ctrl-btn" id="play-btn" onclick="togglePlay()" title="재생/일시정지">
+            &#9654;
+          </button>
+          <span class="time-display" id="time-display">0:00 / 0:00</span>
+          <div class="ctrl-spacer"></div>
+          <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">
+            &#9654; 분석 시작
+          </button>
+          <button class="reset-btn" onclick="resetAll()" title="초기화">&#8635;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 지표 패널 -->
+    <div class="side-col">
+
+      <!-- 종합 점수 -->
+      <div class="score-card" id="score-card">
+        <div class="score-label">종합 점수</div>
+        <div class="score-val" id="score-val">--</div>
+        <div class="score-sub">/ 100점</div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="score-bar"></div>
+        </div>
+      </div>
+
+      <!-- 세부 지표 -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">좌우 대칭</div>
+          <div class="metric-val" id="m-sym">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar sym-bar" id="b-sym"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">발차기 횟수</div>
+          <div class="metric-val" id="m-kick">0</div>
+          <div class="metric-bar-wrap"><div class="metric-bar kick-bar" id="b-kick"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">발차기 빈도</div>
+          <div class="metric-val" id="m-freq">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar freq-bar" id="b-freq"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">머리 자세</div>
+          <div class="metric-val" id="m-head">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar head-bar" id="b-head"></div></div>
+        </div>
+      </div>
+
+      <!-- 분석 진행 -->
+      <div class="progress-card" id="progress-card">
+        <div class="progress-label">분석 진행률</div>
+        <div class="analysis-bar-wrap">
+          <div class="analysis-bar-fill" id="analysis-bar"></div>
+        </div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+      </div>
+
+      <!-- 피드백 -->
+      <div class="feedback-card" id="feedback-card" style="display:none">
+        <div class="feedback-title">&#9888; 피드백</div>
+        <div class="feedback-body" id="feedback-body"></div>
+      </div>
+
+      <!-- 추천 드릴 -->
+      <div class="drill-card" id="drill-card" style="display:none">
+        <div class="drill-title">&#9998; 추천 드릴</div>
+        <ul class="drill-list" id="drill-list"></ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/static/viewer.js"></script>
+</body>
+</html>
