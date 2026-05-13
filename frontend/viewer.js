@@ -29,6 +29,7 @@ const state = {
   // 메타 정보
   selectedStroke: null,
   selectedContext: null,
+  selectedPurpose: null,
 };
 
 // 영법/촬영환경 한글 매핑
@@ -36,6 +37,14 @@ const STROKE_KO = {
   freestyle: '자유형', backstroke: '배영',
   breaststroke: '평영', butterfly: '접영', unknown: '미선택'
 };
+const PURPOSE_KO = {
+  record:      '🏅 기록 단축',
+  health:      '💪 건강하게 오래',
+  technique:   '🎯 영법 교정',
+  competition: '🏆 대회 준비',
+  hobby:       '😊 취미/건강유지',
+};
+
 const CONTEXT_KO = {
   free_swim: '자유수영', lesson: '강습 후',
   competition: '대회', training: '훈련', drill: '드릴 연습'
@@ -50,17 +59,18 @@ function selectMeta(type, btn) {
 
   if (type === 'stroke')  state.selectedStroke  = btn.dataset.value;
   if (type === 'context') state.selectedContext = btn.dataset.value;
+  if (type === 'purpose') state.selectedPurpose = btn.dataset.value;
 
-  // 둘 다 선택됐으면 다음 버튼 활성화
+  // 세 가지 다 선택됐으면 다음 버튼 활성화
   const nextBtn = document.getElementById('meta-next-btn');
-  if (state.selectedStroke && state.selectedContext) {
+  if (state.selectedStroke && state.selectedContext && state.selectedPurpose) {
     nextBtn.disabled = false;
   }
 }
 
 // 메타 선택 완료 → 업로드 단계로
 function proceedToUpload() {
-  if (!state.selectedStroke || !state.selectedContext) return;
+  if (!state.selectedStroke || !state.selectedContext || !state.selectedPurpose) return;
   document.getElementById('meta-panel').style.display = 'none';
   document.getElementById('dropzone').style.display   = 'flex';
 
@@ -70,6 +80,7 @@ function proceedToUpload() {
     card.innerHTML = `
       <div class="meta-info-item">영법 <span>${STROKE_KO[state.selectedStroke]}</span></div>
       <div class="meta-info-item">환경 <span>${CONTEXT_KO[state.selectedContext]}</span></div>
+      <div class="meta-info-item">목적 <span>${PURPOSE_KO[state.selectedPurpose]}</span></div>
     `;
     card.style.display = 'flex';
   }
@@ -185,11 +196,11 @@ function startAnalysis() {
   setStatus("running", "분석 중...");
 
   // 선택한 영법을 API에 전달 (강제 지정)
-  const url = `${API_BASE}/stream/analyze?local_path=${encodeURIComponent(state.localPath)}&forced_stroke=${state.selectedStroke}&context=${state.selectedContext}`;
+  const url = `${API_BASE}/stream/analyze?local_path=${encodeURIComponent(state.localPath)}&forced_stroke=${state.selectedStroke}&context=${state.selectedContext}&purpose=${state.selectedPurpose}`;
 
   // 영법 뱃지 바로 표시
   const sb = document.getElementById('stroke-badge');
-  sb.textContent = `${STROKE_KO[state.selectedStroke]} · ${CONTEXT_KO[state.selectedContext]}`;
+  sb.textContent = `${STROKE_KO[state.selectedStroke]} · ${PURPOSE_KO[state.selectedPurpose]}`;
   sb.style.display = 'block';
   const evtSrc = new EventSource(url);
   state.sse = evtSrc;

@@ -41,6 +41,9 @@
               <button class="meta-btn" data-value="breaststroke" onclick="selectMeta('stroke', this)">평영</button>
               <button class="meta-btn" data-value="butterfly" onclick="selectMeta('stroke', this)">접영</button>
               <button class="meta-btn" data-value="unknown" onclick="selectMeta('stroke', this)">모름</button>
+              <button class="meta-btn" data-value="start" onclick="selectMeta('stroke', this)">🏁 스타트</button>
+              <button class="meta-btn" data-value="flip_turn" onclick="selectMeta('stroke', this)">🔄 플립턴</button>
+              <button class="meta-btn" data-value="touch_turn" onclick="selectMeta('stroke', this)">🤲 터치턴</button>
             </div>
           </div>
 
@@ -55,6 +58,17 @@
             </div>
           </div>
         </div>
+
+          <div class="meta-group">
+            <div class="meta-label">🎯 수영 목적 <span class="required">*</span></div>
+            <div class="meta-options" id="purpose-options">
+              <button class="meta-btn" data-value="record" onclick="selectMeta('purpose', this)">🏅 기록 단축</button>
+              <button class="meta-btn" data-value="health" onclick="selectMeta('purpose', this)">💪 건강하게 오래</button>
+              <button class="meta-btn" data-value="technique" onclick="selectMeta('purpose', this)">🎯 영법 교정</button>
+              <button class="meta-btn" data-value="competition" onclick="selectMeta('purpose', this)">🏆 대회 준비</button>
+              <button class="meta-btn" data-value="hobby" onclick="selectMeta('purpose', this)">😊 취미/건강유지</button>
+            </div>
+          </div>
 
         <div class="meta-next-wrap">
           <button class="meta-next-btn" id="meta-next-btn" onclick="proceedToUpload()" disabled>
