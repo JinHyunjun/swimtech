@@ -1,0 +1,31 @@
+# ── Web Framework ────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9      # 파일 업로드
+aiofiles==23.2.1
+
+# ── Database ──────────────────────────────────────
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# ── Task Queue ────────────────────────────────────
+celery==5.4.0
+redis==5.0.4
+
+# ── Object Storage ────────────────────────────────
+minio==7.2.7
+
+# ── Computer Vision (핵심) ────────────────────────
+opencv-python-headless==4.9.0.80   # headless: GUI 없는 서버용
+mediapipe==0.10.11
+numpy==1.26.4
+
+# ── Utilities ─────────────────────────────────────
+python-dotenv==1.0.1
+pydantic==2.7.1
+pydantic-settings==2.2.1
+httpx==0.27.0
+python-jose[cryptography]==3.3.0   # JWT
+passlib[bcrypt]==1.7.4

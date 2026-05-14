@@ -1,0 +1,57 @@
+# ================================================
+# SwimTech .gitignore
+# ================================================
+
+# 환경 변수 (절대 커밋 금지)
+.env
+.env.local
+.env.production
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# Docker 볼륨 로컬 데이터
+postgres-data/
+minio-data/
+redis-data/
+
+# 업로드된 영상 파일
+uploads/
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# 분석 결과 임시 파일
+analysis/tmp/
+analysis/output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 로그
+*.log
+logs/
+
+# Node (프론트엔드)
+node_modules/
+frontend/dist/

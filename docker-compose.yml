@@ -1,0 +1,169 @@
+version: "3.9"
+
+# ================================================
+# SwimTech — docker-compose.yml
+# 실행: docker-compose up -d
+# 중지: docker-compose down
+# 로그: docker-compose logs -f [서비스명]
+# ================================================
+
+services:
+
+  # ── FastAPI 백엔드 ──────────────────────────────
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: swim-api
+    ports:
+      - "${HOST_IP}:8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET=swim-videos
+      - SECRET_KEY=${SECRET_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - HOST_IP=${HOST_IP}
+    volumes:
+      - ./api:/app
+      - ./analysis:/app/analysis
+      - ./credentials:/app/credentials
+      - ./video:/app/video          # 로컬 영상 폴더 → 컨테이너 /app/video
+      - ./frontend:/app/frontend    # 프론트엔드 정적 파일
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── Celery Worker (비동기 영상 분석) ────────────
+  worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: swim-worker
+    command: celery -A worker worker --loglevel=info --concurrency=2 -Q swim-analysis
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET=swim-videos
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+    volumes:
+      - ./api:/app
+      - ./analysis:/app/analysis
+      - ./credentials:/app/credentials
+      - ./video:/app/video          # 로컬 영상 폴더 → 컨테이너 /app/video
+      - ./frontend:/app/frontend    # 프론트엔드 정적 파일
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── PostgreSQL ──────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: swim-postgres
+    ports:
+      - "${HOST_IP}:${POSTGRES_EXTERNAL_PORT}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── Redis (Celery 브로커 + 캐시) ────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: swim-redis
+    ports:
+      - "${HOST_IP}:6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── MinIO (영상 파일 오브젝트 스토리지) ──────────
+  minio:
+    image: minio/minio:latest
+    container_name: swim-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "${HOST_IP}:9000:9000"
+      - "${HOST_IP}:9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── Metabase (고객 대시보드) ─────────────────────
+  metabase:
+    image: metabase/metabase:latest
+    container_name: swim-metabase
+    ports:
+      - "${HOST_IP}:${METABASE_EXTERNAL_PORT}:3000"
+    environment:
+      - MB_DB_TYPE=${MB_DB_TYPE}
+      - MB_DB_HOST=postgres
+      - MB_DB_PORT=${MB_DB_PORT}
+      - MB_DB_DBNAME=${MB_DB_DBNAME}
+      - MB_DB_USER=${MB_DB_USER}
+      - MB_DB_PASS=${MB_DB_PASS}
+      - MB_SITE_URL=http://${HOST_IP}:${METABASE_EXTERNAL_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+  # ── Flower (Celery 작업 모니터링) ───────────────
+  flower:
+    image: mher/flower:latest
+    container_name: swim-flower
+    command: celery flower --broker=redis://redis:6379/0 --port=5555
+    ports:
+      - "${HOST_IP}:5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - swim-net
+    restart: unless-stopped
+
+networks:
+  swim-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
