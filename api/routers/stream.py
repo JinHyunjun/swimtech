@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from minio import Minio
 import tempfile
+import psycopg2
 
 router = APIRouter()
 
@@ -15,10 +16,14 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
 MINIO_ACCESS   = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET   = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
 MINIO_BUCKET   = os.getenv("MINIO_BUCKET", "swim-videos")
+DATABASE_URL   = os.getenv("DATABASE_URL", "")
 
 def get_minio():
     return Minio(MINIO_ENDPOINT, access_key=MINIO_ACCESS,
                  secret_key=MINIO_SECRET, secure=False)
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL)
 
 
 def sse(data: dict) -> str:
@@ -26,7 +31,8 @@ def sse(data: dict) -> str:
     return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-def analyze_stream(video_path: str):
+def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", purpose: str = "",
+                   video_id: int = 0, customer_id: int = 0):
     """
     pose.py의 분석 로직을 프레임 단위로 yield
     → SSE 제너레이터
@@ -157,7 +163,15 @@ def analyze_stream(video_path: str):
     # ── 최종 요약 전송 ──────────────────────────────
     from classifier import classify_stroke, generate_rule_based_feedback
 
-    classification = classify_stroke(frame_metrics)
+    # 사용자가 직접 선택한 영법이 있으면 우선 적용
+    if forced_stroke and forced_stroke != "unknown":
+        class ForcedClassification:
+            stroke_type = forced_stroke
+            confidence  = 100.0
+            reason      = "사용자 직접 선택"
+        classification = ForcedClassification()
+    else:
+        classification = classify_stroke(frame_metrics)
     summary_data = {}
 
     if l_elbows:
@@ -178,35 +192,147 @@ def analyze_stream(video_path: str):
         classification.stroke_type
     )
 
+    # 목적별 추가 피드백
+    purpose_feedback = {
+        "record":      "📊 기록 단축 목적: 스트로크 수 줄이기와 발차기 효율에 집중하세요. 턴 동작도 함께 점검하면 좋습니다.",
+        "health":      "💪 건강 수영 목적: 좌우 대칭 유지와 불필요한 힘 빼기가 핵심입니다. 호흡 리듬을 일정하게 유지하세요.",
+        "technique":   "🎯 영법 교정 목적: 기본기 각도를 이상적인 수치와 비교했습니다. 반복 드릴로 근육 기억을 만들어주세요.",
+        "competition": "🏆 대회 준비 목적: 스타트·턴·피니시 구간 분석도 추가로 필요합니다. 레이스 페이스 유지 훈련을 병행하세요.",
+        "hobby":       "😊 취미 수영 목적: 부상 위험 자세를 중점 점검했습니다. 무리 없이 즐기는 것이 가장 중요합니다.",
+    }.get(purpose, "")
+
+    if purpose_feedback:
+        feedback["feedback"] = purpose_feedback + "\n\n" + feedback["feedback"]
+
+    # ── DB 저장 ────────────────────────────────────────────────────────
+    try:
+        conn = get_db()
+        cur  = conn.cursor()
+
+        # video 레코드 없으면 자동 생성
+        vid = video_id
+        if vid == 0:
+            cur.execute(
+                "INSERT INTO videos (original_filename, status, duration_sec, processed_at)"
+                " VALUES (%s, 'done', %s, NOW()) RETURNING id",
+                (os.path.basename(video_path), int(duration)),
+            )
+            vid = cur.fetchone()[0]
+        else:
+            cur.execute(
+                "UPDATE videos SET status='done', duration_sec=%s, processed_at=NOW() WHERE id=%s",
+                (int(duration), vid),
+            )
+
+        cid = customer_id if customer_id else None
+
+        l_min = round(float(min(l_elbows)), 2) if l_elbows else None
+        r_min = round(float(min(r_elbows)), 2) if r_elbows else None
+
+        cur.execute("""
+            INSERT INTO analysis_results (
+                video_id, customer_id,
+                stroke_type, confidence,
+                purpose, context,
+                l_elbow_avg, r_elbow_avg,
+                l_elbow_min, r_elbow_min,
+                arm_symmetry,
+                kick_count, kick_freq_hz,
+                head_angle_avg,
+                ai_feedback, drill_recommendations,
+                analysis_duration_sec
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s,
+                %s, %s, %s
+            ) RETURNING id
+        """, (
+            vid, cid,
+            classification.stroke_type, classification.confidence,
+            purpose or None, context or None,
+            summary_data.get("left_arm_angle_avg"),  summary_data.get("right_arm_angle_avg"),
+            l_min, r_min,
+            summary_data.get("arm_symmetry_score"),
+            summary_data.get("kick_count"),           summary_data.get("kick_frequency_hz"),
+            summary_data.get("head_angle_avg"),
+            feedback.get("feedback"),
+            str(feedback.get("drills", [])),
+            int(duration),
+        ))
+        cur.fetchone()  # analysis_id (필요 시 활용 가능)
+
+        # frame_metrics 배치 INSERT (10프레임 간격)
+        batch = [
+            (
+                vid,
+                m.frame_number, m.timestamp_sec,
+                m.left_elbow_angle,    m.right_elbow_angle,
+                m.left_shoulder_angle, m.right_shoulder_angle,
+                m.head_angle, m.body_roll, m.kick_detected,
+            )
+            for m in frame_metrics[::10]
+            if m.landmarks_visible
+        ]
+        if batch:
+            cur.executemany("""
+                INSERT INTO frame_metrics (
+                    video_id, frame_number, timestamp_sec,
+                    l_elbow_angle, r_elbow_angle,
+                    l_shoulder_angle, r_shoulder_angle,
+                    head_angle, body_roll, kick_detected
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, batch)
+
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as _db_err:
+        # DB 저장 실패는 스트리밍 결과에 영향 주지 않음
+        print(f"[stream] DB 저장 실패: {_db_err}", flush=True)
+    # ───────────────────────────────────────────────────────────────────
+
     yield sse({
-        "type": "done",
+        "type":          "done",
         "stroke_type":   classification.stroke_type,
+        "context":       context,
+        "purpose":       purpose,
         "confidence":    classification.confidence,
         "reason":        classification.reason,
-        "feedback":      feedback["feedback"],
-        "drills":        feedback["drills"],
+        # 개선된 피드백 구조 (강점 + 개선점 + 상세 설명)
+        "feedback":      feedback.get("feedback", ""),
+        "strengths":     feedback.get("strengths", []),
+        "improvements":  feedback.get("improvements", []),
+        "drills":        feedback.get("drills", []),
+        "stroke_name":   feedback.get("stroke_name", ""),
         **summary_data,
     })
 
 
 @router.get("/analyze")
-def stream_analyze(video_key: str = "", local_path: str = ""):
+def stream_analyze(video_key: str = "", local_path: str = "", forced_stroke: str = "",
+                   context: str = "", purpose: str = "",
+                   video_id: int = 0, customer_id: int = 0):
     """
-    video_key : MinIO object key (Docker 환경)
-    local_path: 로컬 파일 경로 (개발/테스트용)
+    video_key  : MinIO object key (Docker 환경)
+    local_path : 로컬 파일 경로 (개발/테스트용)
+    video_id   : 기존 videos 레코드 ID (0이면 자동 생성)
+    customer_id: 고객 ID (없으면 NULL)
     """
     def generator():
         if local_path:
-            # 로컬 파일 직접 분석 (테스트용)
-            yield from analyze_stream(local_path)
+            yield from analyze_stream(local_path, forced_stroke=forced_stroke,
+                                      context=context, purpose=purpose,
+                                      video_id=video_id, customer_id=customer_id)
 
         elif video_key:
-            # MinIO에서 다운로드 후 분석
             minio = get_minio()
             with tempfile.TemporaryDirectory() as tmpdir:
                 local = os.path.join(tmpdir, "input.mp4")
                 minio.fget_object(MINIO_BUCKET, video_key, local)
-                yield from analyze_stream(local)
+                yield from analyze_stream(local, forced_stroke=forced_stroke,
+                                          context=context, purpose=purpose,
+                                          video_id=video_id, customer_id=customer_id)
         else:
             yield sse({"type": "error", "message": "video_key 또는 local_path 필요"})
 

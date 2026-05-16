@@ -53,38 +53,40 @@ CREATE TABLE IF NOT EXISTS analysis_results (
     customer_id     INTEGER REFERENCES customers(id),
     session_id      INTEGER REFERENCES sessions(id),
 
+    analyzed_at     TIMESTAMP DEFAULT NOW(),
+
     -- 영법 분류
     stroke_type     VARCHAR(30),   -- freestyle / backstroke / breaststroke / butterfly
     confidence      NUMERIC(5,2),  -- 분류 신뢰도 0~100
 
+    -- 분석 목적 / 컨텍스트
+    purpose         TEXT,          -- 고객 목표 (customers.goal)
+    context         TEXT,          -- 분류 근거 설명
+
     -- 팔 분석
-    left_arm_angle_avg   NUMERIC(6,2),
-    right_arm_angle_avg  NUMERIC(6,2),
-    left_arm_angle_min   NUMERIC(6,2),
-    right_arm_angle_min  NUMERIC(6,2),
-    arm_symmetry_score   NUMERIC(5,2),  -- 0~100
+    l_elbow_avg     NUMERIC(6,2),
+    r_elbow_avg     NUMERIC(6,2),
+    l_elbow_min     NUMERIC(6,2),
+    r_elbow_min     NUMERIC(6,2),
+    arm_symmetry    NUMERIC(5,2),  -- 0~100
 
     -- 발차기 분석
-    kick_count           INTEGER,
-    kick_frequency_hz    NUMERIC(5,3),
-    kick_amplitude_score NUMERIC(5,2),
+    kick_count      INTEGER,
+    kick_freq_hz    NUMERIC(5,3),
 
     -- 머리/시선 분석
-    head_angle_avg       NUMERIC(6,2),
-    head_rotation_score  NUMERIC(5,2),
+    head_angle_avg      NUMERIC(6,2),
+    head_rotation_score NUMERIC(5,2),
 
     -- 전체 점수
-    overall_score        NUMERIC(5,2),  -- 0~100
+    overall_score   NUMERIC(5,2),  -- 0~100
 
-    -- Claude AI 피드백
-    ai_feedback          TEXT,
-    drill_recommendations    TEXT,       -- JSON array
-    youtube_recommendations  TEXT,       -- JSON array
+    -- 피드백
+    ai_feedback              TEXT,
+    drill_recommendations    TEXT,
+    youtube_recommendations  TEXT,
 
-    -- 분석 소요 시간
-    analysis_duration_sec  INTEGER,
-
-    created_at      TIMESTAMP DEFAULT NOW()
+    analysis_duration_sec INTEGER
 );
 
 -- ── 프레임별 상세 데이터 테이블 (Metabase 시각화용) ──
@@ -94,22 +96,18 @@ CREATE TABLE IF NOT EXISTS frame_metrics (
     frame_number    INTEGER NOT NULL,
     timestamp_sec   NUMERIC(8,3),
 
-    -- 포즈 랜드마크 좌표 (JSON)
-    landmarks       JSONB,
-
     -- 계산된 지표
-    left_elbow_angle    NUMERIC(6,2),
-    right_elbow_angle   NUMERIC(6,2),
-    left_shoulder_angle NUMERIC(6,2),
-    right_shoulder_angle NUMERIC(6,2),
-    head_angle          NUMERIC(6,2),
-    hip_angle           NUMERIC(6,2),
-    body_roll_angle     NUMERIC(6,2),
+    l_elbow_angle    NUMERIC(6,2),
+    r_elbow_angle    NUMERIC(6,2),
+    l_shoulder_angle NUMERIC(6,2),
+    r_shoulder_angle NUMERIC(6,2),
+    head_angle       NUMERIC(6,2),
+    body_roll        NUMERIC(6,2),
 
     -- 발차기 감지
-    kick_detected   BOOLEAN DEFAULT FALSE,
+    kick_detected    BOOLEAN DEFAULT FALSE,
 
-    created_at      TIMESTAMP DEFAULT NOW()
+    created_at       TIMESTAMP DEFAULT NOW()
 );
 
 -- ── 인덱스 ───────────────────────────────────────

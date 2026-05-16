@@ -1,0 +1,99 @@
+# ================================================
+# SwimTech — Caddyfile
+# 로컬 HTTPS 자동 설정
+# ================================================
+
+# localhost HTTPS (로컬 자체 서명 인증서 자동 생성)
+localhost {
+
+  # SwimTech 메인 앱
+  handle / {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /api/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /auth/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /videos/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /stream/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /analysis/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /customers/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /static/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /login {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /landing {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /upload {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /viewer {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /app {
+    reverse_proxy swim-api:8000
+  }
+
+  # Metabase 대시보드
+  handle /metabase/* {
+    uri strip_prefix /metabase
+    reverse_proxy swim-metabase:3000
+  }
+
+  # Flower 모니터링 (내부용)
+  handle /flower/* {
+    uri strip_prefix /flower
+    reverse_proxy swim-flower:5555
+  }
+
+  # MinIO 콘솔 (내부용)
+  handle /minio/* {
+    uri strip_prefix /minio
+    reverse_proxy swim-minio:9001
+  }
+
+  # 헤더 보안 설정
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    X-XSS-Protection "1; mode=block"
+    -Server
+  }
+
+  # 로그
+  log {
+    output file /data/logs/swimtech.log
+    format json
+  }
+}
+
+# HTTP → HTTPS 리다이렉트
+http://localhost {
+  redir https://localhost{uri} permanent
+}

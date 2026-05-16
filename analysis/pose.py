@@ -53,6 +53,7 @@ class FrameMetric:
     left_shoulder_angle: Optional[float] = None
     right_shoulder_angle: Optional[float] = None
     head_angle: Optional[float] = None
+    body_roll: Optional[float] = None
     kick_detected: bool = False
     landmarks_visible: bool = False
 
@@ -207,6 +208,10 @@ def analyze_video(video_path: str, output_path: Optional[str] = None) -> Analysi
                 metric.left_shoulder_angle  = round(l_shoulder, 2)
                 metric.right_shoulder_angle = round(r_shoulder, 2)
                 metric.head_angle           = round(head_angle, 2)
+
+                dy = lms[LM.LEFT_SHOULDER].y - lms[LM.RIGHT_SHOULDER].y
+                dx = lms[LM.LEFT_SHOULDER].x - lms[LM.RIGHT_SHOULDER].x
+                metric.body_roll = round(float(np.degrees(np.arctan2(dy, dx))), 2)
 
                 l_elbows.append(l_elbow);   r_elbows.append(r_elbow)
                 l_shoulders.append(l_shoulder); r_shoulders.append(r_shoulder)

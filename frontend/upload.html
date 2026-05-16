@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech &mdash; 영상 업로드</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.upload-page {
+  display: flex; align-items: center; justify-content: center;
+  height: calc(100vh - 53px); padding: 24px;
+}
+.upload-wrap { width: 100%; max-width: 560px; }
+.upload-nav {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.back-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  transition: all .2s;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+.meta-badge { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.meta-tag {
+  font-size: 11px; color: var(--muted); background: var(--surface2);
+  border: 0.5px solid var(--border); border-radius: 4px; padding: 3px 8px;
+}
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: 12px;
+  padding: 48px 24px; text-align: center;
+  transition: border-color .2s; background: var(--surface);
+}
+.upload-zone:hover { border-color: var(--blue); }
+.upload-zone.drag-over {
+  border-color: var(--blue); background: rgba(59,130,246,.06);
+}
+.upload-icon { font-size: 40px; margin-bottom: 12px; }
+.upload-title { font-size: 15px; color: var(--text); margin-bottom: 6px; font-weight: 500; }
+.upload-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+.select-file-btn {
+  display: inline-block;
+  background: var(--blue); color: #fff;
+  padding: 11px 28px; border-radius: 8px;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: background .2s;
+  border: none;
+}
+.select-file-btn:hover { background: #2563eb; }
+.selected-info {
+  display: none; align-items: center; gap: 10px;
+  margin-top: 16px; padding: 12px 16px;
+  background: rgba(59,130,246,.08);
+  border: 0.5px solid rgba(59,130,246,.3);
+  border-radius: 8px;
+}
+.selected-info.show { display: flex; }
+.selected-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.selected-size { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.upload-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+.proceed-btn {
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; padding: 11px 28px; font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: all .2s;
+}
+.proceed-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.proceed-btn:not(:disabled):hover { background: #2563eb; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">수영 영법 분석 플랫폼</span>
+    </div>
+    <div class="header-right">
+      <button onclick="doLogout()" style="background:none;border:0.5px solid #333;color:#666;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="upload-page">
+    <div class="upload-wrap">
+
+      <div class="upload-nav">
+        <button class="back-btn" onclick="history.back()">&#8592; 영법 선택으로</button>
+        <span style="font-size:14px;font-weight:500;color:var(--text);">영상 파일 선택</span>
+      </div>
+
+      <div class="meta-badge" id="meta-badge"></div>
+
+      <div class="upload-zone" id="upload-zone">
+        <div class="upload-icon">&#9654;</div>
+        <p class="upload-title">수영 영상을 선택해주세요</p>
+        <p class="upload-sub">MP4, MOV, AVI 지원 &middot; 드래그 앤 드롭도 가능</p>
+
+        <!-- 핵심: label이 input을 완전히 감싸는 구조 -->
+        <label class="select-file-btn">
+          &#128193; 파일 선택
+          <input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv"
+                 style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
+        </label>
+      </div>
+
+      <div class="selected-info" id="selected-info">
+        <span style="font-size:18px;">&#127909;</span>
+        <span class="selected-name" id="selected-name"></span>
+        <span class="selected-size" id="selected-size"></span>
+      </div>
+
+      <div class="upload-actions">
+        <button class="proceed-btn" id="proceed-btn" onclick="goToViewer()" disabled>
+          분석 시작 &#8594;
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// 로그인 확인
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return; }
+  } catch { window.location.href = '/login'; return; }
+})();
+
+// 메타 정보
+const stroke  = sessionStorage.getItem('swimtech_stroke')  || '';
+const context = sessionStorage.getItem('swimtech_context') || '';
+const purpose = sessionStorage.getItem('swimtech_purpose') || '';
+if (!stroke || !context || !purpose) { window.location.href = '/'; }
+
+const STROKE_KO  = { freestyle:'자유형', backstroke:'배영', breaststroke:'평영', butterfly:'접영', unknown:'모름', start:'스타트', flip_turn:'플립턴', touch_turn:'터치턴' };
+const CONTEXT_KO = { free_swim:'자유수영', lesson:'강습 후', competition:'대회', training:'훈련', drill:'드릴 연습' };
+const PURPOSE_KO = { record:'기록 단축', health:'건강하게 오래', technique:'영법 교정', competition:'대회 준비', hobby:'취미/건강유지' };
+
+document.getElementById('meta-badge').innerHTML =
+  '<span class="meta-tag">&#127946; ' + (STROKE_KO[stroke]   || stroke)  + '</span>' +
+  '<span class="meta-tag">&#128205; ' + (CONTEXT_KO[context] || context) + '</span>' +
+  '<span class="meta-tag">&#127919; ' + (PURPOSE_KO[purpose] || purpose) + '</span>';
+
+// 파일 선택 이벤트
+const fileInput  = document.getElementById('file-input');
+const uploadZone = document.getElementById('upload-zone');
+let   selectedFile = null;
+
+fileInput.addEventListener('change', function() {
+  if (this.files && this.files[0]) handleFile(this.files[0]);
+});
+
+// 드래그 앤 드롭
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  selectedFile = file;
+  document.getElementById('selected-name').textContent = file.name;
+  document.getElementById('selected-size').textContent = (file.size / 1048576).toFixed(1) + ' MB';
+  document.getElementById('selected-info').classList.add('show');
+  document.getElementById('proceed-btn').disabled = false;
+}
+
+function goToViewer() {
+  if (!selectedFile) return;
+  sessionStorage.setItem('swimtech_filename', selectedFile.name);
+  window.location.href = '/viewer';
+}
+
+async function doLogout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+</script>
+</body>
+</html>

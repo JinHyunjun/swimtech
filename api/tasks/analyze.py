@@ -27,7 +27,7 @@ def get_db():
 
 
 @celery_app.task(name="tasks.analyze.run_analysis", bind=True, max_retries=3)
-def run_analysis(self, object_key: str, customer_id: int):
+def run_analysis(self, object_key: str, customer_id: int, video_id: int):
     """
     영상 분석 메인 태스크
     """
@@ -62,25 +62,35 @@ def run_analysis(self, object_key: str, customer_id: int):
             conn = get_db()
             cur  = conn.cursor()
 
+            # 고객 목표(purpose) 조회
+            cur.execute("SELECT goal FROM customers WHERE id = %s", (customer_id,))
+            row     = cur.fetchone()
+            purpose = row[0] if row else None
+
+            # analysis_results INSERT
             cur.execute("""
                 INSERT INTO analysis_results (
-                    customer_id,
+                    video_id, customer_id,
                     stroke_type, confidence,
-                    left_arm_angle_avg, right_arm_angle_avg,
-                    left_arm_angle_min, right_arm_angle_min,
-                    arm_symmetry_score,
-                    kick_count, kick_frequency_hz,
+                    purpose, context,
+                    l_elbow_avg, r_elbow_avg,
+                    l_elbow_min, r_elbow_min,
+                    arm_symmetry,
+                    kick_count, kick_freq_hz,
                     head_angle_avg, head_rotation_score,
                     overall_score,
                     ai_feedback, drill_recommendations, youtube_recommendations,
                     analysis_duration_sec
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s
                 ) RETURNING id
             """, (
-                customer_id,
+                video_id, customer_id,
                 classification.stroke_type, classification.confidence,
+                purpose, classification.reason,
                 summary.left_arm_angle_avg,  summary.right_arm_angle_avg,
                 summary.left_arm_angle_min,  summary.right_arm_angle_min,
                 summary.arm_symmetry_score,
@@ -95,39 +105,57 @@ def run_analysis(self, object_key: str, customer_id: int):
 
             analysis_id = cur.fetchone()[0]
 
-            # 프레임 상세 데이터 배치 저장 (10프레임 간격으로 축약)
+            # frame_metrics 배치 INSERT (10프레임 간격으로 축약)
             batch = []
             for m in summary.frame_metrics[::10]:
                 batch.append((
-                    analysis_id,
+                    video_id,
                     m.frame_number, m.timestamp_sec,
-                    m.left_elbow_angle,  m.right_elbow_angle,
+                    m.left_elbow_angle,   m.right_elbow_angle,
                     m.left_shoulder_angle, m.right_shoulder_angle,
-                    m.head_angle, m.kick_detected
+                    m.head_angle, m.body_roll, m.kick_detected,
                 ))
 
             cur.executemany("""
                 INSERT INTO frame_metrics (
                     video_id, frame_number, timestamp_sec,
-                    left_elbow_angle, right_elbow_angle,
-                    left_shoulder_angle, right_shoulder_angle,
-                    head_angle, kick_detected
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    l_elbow_angle, r_elbow_angle,
+                    l_shoulder_angle, r_shoulder_angle,
+                    head_angle, body_roll, kick_detected
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """, batch)
+
+            # videos 테이블 상태 갱신
+            cur.execute(
+                "UPDATE videos SET status = 'done', minio_result_key = %s,"
+                " duration_sec = %s, processed_at = NOW() WHERE id = %s",
+                (result_key, int(summary.duration_sec), video_id),
+            )
 
             conn.commit()
             cur.close()
             conn.close()
 
             return {
-                "status": "done",
-                "analysis_id": analysis_id,
-                "stroke_type": classification.stroke_type,
-                "overall_score": summary.overall_score,
-                "kick_count": summary.kick_count,
+                "status":          "done",
+                "analysis_id":     analysis_id,
+                "video_id":        video_id,
+                "stroke_type":     classification.stroke_type,
+                "overall_score":   summary.overall_score,
+                "kick_count":      summary.kick_count,
                 "result_video_key": result_key,
-                "feedback": feedback_data["feedback"],
+                "feedback":        feedback_data["feedback"],
             }
 
     except Exception as exc:
+        # videos 테이블을 failed로 표시
+        try:
+            conn = get_db()
+            cur  = conn.cursor()
+            cur.execute("UPDATE videos SET status = 'failed' WHERE id = %s", (video_id,))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception:
+            pass
         raise self.retry(exc=exc, countdown=10)

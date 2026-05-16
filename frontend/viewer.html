@@ -1,0 +1,477 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 분석 뷰어</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">수영 영법 분석 플랫폼</span>
+    </div>
+    <div class="header-right">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-label" id="status-label">대기 중</span>
+      <button onclick="logout()" style="background:none;border:0.5px solid #333;color:#666;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;margin-left:12px;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- 왼쪽: 영상 플레이어 -->
+    <div class="main-col">
+      <div class="player-wrap" id="player-wrap" style="display:flex;flex-direction:column;">
+        <div class="video-container">
+          <video id="video" playsinline></video>
+          <canvas id="overlay-canvas"></canvas>
+
+          <div class="live-overlay" id="live-overlay">
+            <div class="ov-row"><span class="ov-label">L 팔꿈치</span><span class="ov-val" id="ov-le">--</span></div>
+            <div class="ov-row"><span class="ov-label">R 팔꿈치</span><span class="ov-val" id="ov-re">--</span></div>
+            <div class="ov-row"><span class="ov-label">머리 각도</span><span class="ov-val" id="ov-head">--</span></div>
+            <div class="ov-row"><span class="ov-label">경과</span><span class="ov-val" id="ov-time">0:00</span></div>
+          </div>
+
+          <div class="kick-badge" id="kick-badge">KICK!</div>
+          <div class="stroke-badge" id="stroke-badge" style="display:none"></div>
+
+          <!-- 영상 변경 버튼 -->
+          <button class="remove-video-btn" id="remove-video-btn" onclick="changeVideo()" title="영상 변경">✕</button>
+        </div>
+
+        <div class="progress-bar" id="progress-bar" onclick="seekVideo(event)">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <div class="controls">
+          <button class="ctrl-btn" id="play-btn" onclick="togglePlay()" title="재생/일시정지">&#9654;</button>
+          <span class="time-display" id="time-display">0:00 / 0:00</span>
+          <div class="ctrl-spacer"></div>
+          <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">&#9654; 분석 시작</button>
+          <button class="reset-btn" onclick="resetAll()" title="처음부터">&#8635;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 지표 패널 -->
+    <div class="side-col">
+
+      <!-- 선택 정보 -->
+      <div class="meta-info-card" id="meta-info-card" style="display:flex;"></div>
+
+      <!-- 종합 점수 -->
+      <div class="score-card" id="score-card">
+        <div class="score-label">종합 점수</div>
+        <div class="score-val" id="score-val">--</div>
+        <div class="score-sub">/ 100점</div>
+        <div class="score-bar-wrap"><div class="score-bar-fill" id="score-bar"></div></div>
+      </div>
+
+      <!-- 세부 지표 -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">좌우 대칭</div>
+          <div class="metric-val" id="m-sym">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar sym-bar" id="b-sym"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">발차기 횟수</div>
+          <div class="metric-val" id="m-kick">0</div>
+          <div class="metric-bar-wrap"><div class="metric-bar kick-bar" id="b-kick"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">발차기 빈도</div>
+          <div class="metric-val" id="m-freq">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar freq-bar" id="b-freq"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">머리 자세</div>
+          <div class="metric-val" id="m-head">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar head-bar" id="b-head"></div></div>
+        </div>
+      </div>
+
+      <!-- 분석 진행 -->
+      <div class="progress-card" id="progress-card">
+        <div class="progress-label">분석 진행률</div>
+        <div class="analysis-bar-wrap"><div class="analysis-bar-fill" id="analysis-bar"></div></div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+      </div>
+
+      <!-- 피드백 -->
+      <div class="feedback-card" id="feedback-card" style="display:none">
+        <div class="feedback-title">&#9888; 피드백</div>
+        <div class="feedback-body" id="feedback-body"></div>
+      </div>
+
+      <!-- 추천 드릴 -->
+      <div class="drill-card" id="drill-card" style="display:none">
+        <div class="drill-title">&#9998; 추천 드릴</div>
+        <ul class="drill-list" id="drill-list"></ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const API_BASE = window.location.origin;
+
+// ── 인증 확인 ──────────────────────────────────────────
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) window.location.href = '/login';
+  } catch { window.location.href = '/login'; }
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+// ── sessionStorage 읽기 ────────────────────────────────
+const selectedStroke   = sessionStorage.getItem('swimtech_stroke');
+const selectedContext  = sessionStorage.getItem('swimtech_context');
+const selectedPurpose  = sessionStorage.getItem('swimtech_purpose');
+const selectedFilename = sessionStorage.getItem('swimtech_filename');
+
+if (!selectedStroke || !selectedContext || !selectedPurpose) window.location.href = '/';
+if (!selectedFilename) window.location.href = '/upload';
+
+// ── 한글 매핑 ─────────────────────────────────────────
+const STROKE_KO = {
+  freestyle:'자유형', backstroke:'배영', breaststroke:'평영',
+  butterfly:'접영', unknown:'미선택', start:'스타트',
+  flip_turn:'플립턴', touch_turn:'터치턴'
+};
+const CONTEXT_KO = { free_swim:'자유수영', lesson:'강습 후', competition:'대회', training:'훈련', drill:'드릴 연습' };
+const PURPOSE_KO = { record:'기록 단축', health:'건강하게 오래', technique:'영법 교정', competition:'대회 준비', hobby:'취미/건강유지' };
+
+// ── 메타 정보 카드 표시 ────────────────────────────────
+document.getElementById('meta-info-card').innerHTML = `
+  <div class="meta-info-item">영법 <span>${STROKE_KO[selectedStroke]  || selectedStroke}</span></div>
+  <div class="meta-info-item">환경 <span>${CONTEXT_KO[selectedContext] || selectedContext}</span></div>
+  <div class="meta-info-item">목적 <span>${PURPOSE_KO[selectedPurpose] || selectedPurpose}</span></div>
+`;
+
+// ── 상태 ──────────────────────────────────────────────
+const state = {
+  frameData: [],
+  sse: null,
+  kickCount: 0,
+  analyzing: false,
+  localPath: `/app/video/${selectedFilename}`,
+};
+
+// ── DOM refs ──────────────────────────────────────────
+const video      = document.getElementById('video');
+const canvas     = document.getElementById('overlay-canvas');
+const ctx        = canvas.getContext('2d');
+const analyzeBtn = document.getElementById('analyze-btn');
+
+// ── 영상 로드 (서버 스트리밍) ─────────────────────────
+video.src = `/api/video-stream/${encodeURIComponent(selectedFilename)}`;
+video.load();
+
+video.addEventListener('loadedmetadata', () => {
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  setStatus('ready', '영상 로드 완료 — ' + selectedFilename);
+  analyzeBtn.disabled = false;
+});
+
+video.addEventListener('error', () => {
+  setStatus('', '영상 로드 실패');
+  alert(`영상 파일을 찾을 수 없습니다: ${selectedFilename}\n서버의 /app/video/ 폴더에 파일이 있는지 확인해주세요.`);
+});
+
+// ── 스켈레톤 연결 정의 ────────────────────────────────
+const CONNECTIONS = [
+  [11,13],[13,15],[12,14],[14,16],
+  [11,12],[23,24],[11,23],[12,24],[23,27],[24,28],
+];
+const KEY_PTS = [11,12,13,14,15,16,23,24,27,28,0];
+
+// ── 재생 컨트롤 ───────────────────────────────────────
+function togglePlay() {
+  if (video.paused) video.play(); else video.pause();
+}
+video.addEventListener('play',  () => document.getElementById('play-btn').textContent = '⏸');
+video.addEventListener('pause', () => document.getElementById('play-btn').textContent = '▶');
+
+video.addEventListener('timeupdate', () => {
+  const cur = video.currentTime, dur = video.duration || 1;
+  document.getElementById('progress-fill').style.width = (cur / dur * 100).toFixed(1) + '%';
+  document.getElementById('time-display').textContent  = fmtTime(cur) + ' / ' + fmtTime(dur);
+  document.getElementById('ov-time').textContent        = fmtTime(cur);
+  updateOverlayFromCache(cur);
+});
+
+function seekVideo(e) {
+  const bar  = document.getElementById('progress-bar');
+  const rect = bar.getBoundingClientRect();
+  video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration;
+}
+
+// ── 분석 시작 ─────────────────────────────────────────
+function startAnalysis() {
+  if (state.analyzing) return;
+
+  state.analyzing = true;
+  state.frameData = [];
+  state.kickCount = 0;
+
+  analyzeBtn.textContent = '⏳ 분석 중...';
+  analyzeBtn.classList.add('running');
+  analyzeBtn.disabled = true;
+
+  document.getElementById('feedback-card').style.display = 'none';
+  document.getElementById('drill-card').style.display    = 'none';
+  setStatus('running', '분석 중...');
+
+  const sb = document.getElementById('stroke-badge');
+  sb.textContent  = `${STROKE_KO[selectedStroke]} · ${PURPOSE_KO[selectedPurpose]}`;
+  sb.style.display = 'block';
+
+  const url = `${API_BASE}/stream/analyze?local_path=${encodeURIComponent(state.localPath)}&forced_stroke=${selectedStroke}&context=${selectedContext}&purpose=${selectedPurpose}`;
+  const evtSrc = new EventSource(url);
+  state.sse = evtSrc;
+
+  evtSrc.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if      (d.type === 'frame') { state.frameData.push(d); updateLivePanel(d); }
+    else if (d.type === 'done')  { finishAnalysis(d); evtSrc.close(); }
+    else if (d.type === 'error') { alert('분석 오류: ' + d.message); resetAnalyzeBtn(); evtSrc.close(); }
+  };
+
+  evtSrc.onerror = () => {
+    alert('서버 연결 오류\nFastAPI 서버가 실행 중인지 확인해주세요.\n' + API_BASE);
+    resetAnalyzeBtn();
+    evtSrc.close();
+  };
+
+  video.play();
+}
+
+// ── 실시간 패널 업데이트 ──────────────────────────────
+function updateLivePanel(d) {
+  const pct = d.progress || 0;
+  document.getElementById('analysis-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+
+  if (!d.landmarks_visible) return;
+
+  setOvVal('ov-le',   d.left_elbow_angle,  '°', 80, 120);
+  setOvVal('ov-re',   d.right_elbow_angle, '°', 80, 120);
+  setOvVal('ov-head', d.head_angle,        '°', 155, 180);
+
+  if (d.kick_detected) {
+    state.kickCount = d.kick_count;
+    const kb = document.getElementById('kick-badge');
+    kb.classList.add('show');
+    setTimeout(() => kb.classList.remove('show'), 300);
+    document.getElementById('m-kick').textContent    = state.kickCount;
+    document.getElementById('b-kick').style.width    = Math.min(100, state.kickCount * 3) + '%';
+  }
+
+  if (d.left_elbow_angle && d.right_elbow_angle) {
+    const sym = Math.max(0, 100 - Math.abs(d.left_elbow_angle - d.right_elbow_angle) * 2);
+    document.getElementById('m-sym').textContent = sym.toFixed(1);
+    document.getElementById('b-sym').style.width = sym + '%';
+  }
+}
+
+// ── 캐시 프레임 → 오버레이 동기화 ────────────────────
+function updateOverlayFromCache(currentTime) {
+  if (!state.frameData.length) return;
+  const target = state.frameData.find(f => Math.abs(f.timestamp - currentTime) < 0.12);
+  if (!target || !target.landmarks_visible) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+  drawSkeleton(target.skeleton);
+  setOvVal('ov-le',   target.left_elbow_angle,  '°', 80, 120);
+  setOvVal('ov-re',   target.right_elbow_angle, '°', 80, 120);
+  setOvVal('ov-head', target.head_angle,        '°', 155, 180);
+}
+
+// ── Canvas 스켈레톤 ───────────────────────────────────
+function drawSkeleton(skeleton) {
+  if (!skeleton) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const W = canvas.width, H = canvas.height;
+
+  ctx.strokeStyle = 'rgba(0,255,100,0.7)';
+  ctx.lineWidth   = 2;
+  for (const [a, b] of CONNECTIONS) {
+    const pa = skeleton[a], pb = skeleton[b];
+    if (!pa || !pb) continue;
+    ctx.beginPath(); ctx.moveTo(pa.x * W, pa.y * H); ctx.lineTo(pb.x * W, pb.y * H); ctx.stroke();
+  }
+  for (const idx of KEY_PTS) {
+    const p = skeleton[idx];
+    if (!p) continue;
+    ctx.beginPath(); ctx.arc(p.x * W, p.y * H, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#3b82f6'; ctx.fill();
+  }
+}
+
+// ── 분석 완료 ─────────────────────────────────────────
+function finishAnalysis(d) {
+  state.analyzing = false;
+  setStatus('done', '분석 완료');
+
+  const strokeNames = { freestyle:'자유형', backstroke:'배영', breaststroke:'평영', butterfly:'접영', unknown:'미확인' };
+  const sb = document.getElementById('stroke-badge');
+  sb.textContent   = `${strokeNames[d.stroke_type] || d.stroke_type} · 신뢰도 ${Math.round(d.confidence)}%`;
+  sb.style.display = 'block';
+
+  const sym   = d.arm_symmetry_score  || 0;
+  const head  = d.head_rotation_score || 0;
+  const freq  = Math.min(100, (d.kick_frequency_hz || 0) * 20);
+  const score = Math.round(sym * 0.4 + head * 0.3 + freq * 0.3);
+
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('score-bar').style.width = score + '%';
+  document.getElementById('m-head').textContent    = head.toFixed(1);
+  document.getElementById('b-head').style.width    = head + '%';
+  document.getElementById('m-freq').textContent    = (d.kick_frequency_hz || 0).toFixed(2) + '/s';
+  document.getElementById('b-freq').style.width    = Math.min(100, (d.kick_frequency_hz || 0) * 33) + '%';
+
+  const feedbackCard = document.getElementById('feedback-card');
+  const feedbackBody = document.getElementById('feedback-body');
+  feedbackBody.innerHTML = '';
+
+  if (d.strengths && d.strengths.length) {
+    const t = document.createElement('div');
+    t.className = 'feedback-section-title strength'; t.textContent = '✅ 강점';
+    feedbackBody.appendChild(t);
+    d.strengths.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'feedback-item strength-item';
+      item.innerHTML = `
+        <div class="fb-header">
+          <span class="fb-item-name">${s.item}</span>
+          <span class="fb-value good">${s.value}</span>
+          <span class="fb-ideal">이상: ${s.ideal}</span>
+        </div>
+        <div class="fb-comment">${s.comment}</div>
+        ${s.reason ? `<div class="fb-reason">💡 ${s.reason}</div>` : ''}
+      `;
+      feedbackBody.appendChild(item);
+    });
+  }
+
+  if (d.improvements && d.improvements.length) {
+    const t = document.createElement('div');
+    t.className = 'feedback-section-title improvement'; t.textContent = '⚠️ 개선점';
+    feedbackBody.appendChild(t);
+    d.improvements.forEach(imp => {
+      const item = document.createElement('div');
+      item.className = 'feedback-item improvement-item';
+      item.innerHTML = `
+        <div class="fb-header">
+          <span class="fb-item-name">${imp.item}</span>
+          <span class="fb-value warn">${imp.value}</span>
+          <span class="fb-ideal">이상: ${imp.ideal}</span>
+        </div>
+        <div class="fb-comment">${imp.comment}</div>
+        ${imp.worst_moment ? `<div class="fb-moment">📍 ${imp.worst_moment}</div>` : ''}
+        ${imp.reason ? `<div class="fb-reason">💡 ${imp.reason}</div>` : ''}
+      `;
+      feedbackBody.appendChild(item);
+    });
+  }
+
+  if (!d.strengths && !d.improvements && d.feedback) feedbackBody.textContent = d.feedback;
+  feedbackCard.style.display = 'block';
+
+  if (d.drills && d.drills.length) {
+    const list = document.getElementById('drill-list');
+    list.innerHTML = '';
+    const drills = typeof d.drills === 'string'
+      ? d.drills.replace(/[\[\]']/g, '').split(',').map(s => s.trim())
+      : d.drills;
+    drills.forEach(drill => { const li = document.createElement('li'); li.textContent = drill; list.appendChild(li); });
+    document.getElementById('drill-card').style.display = 'block';
+  }
+
+  document.getElementById('analysis-bar').style.width = '100%';
+  document.getElementById('progress-pct').textContent = '100%';
+  resetAnalyzeBtn();
+  showDashboardBtn();
+}
+
+function showDashboardBtn() {
+  const existing = document.getElementById('dashboard-btn-wrap');
+  if (existing) existing.remove();
+  const drillCard = document.getElementById('drill-card');
+  if (!drillCard) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'dashboard-btn-wrap';
+  wrap.style.cssText = 'margin-top:12px;padding:0 16px 16px;';
+  wrap.innerHTML = `
+    <a href="http://localhost:43001" target="_blank"
+       style="display:flex;align-items:center;justify-content:center;gap:8px;
+              width:100%;padding:12px;border-radius:10px;
+              background:linear-gradient(135deg,#3b82f6,#06b6d4);
+              color:#fff;font-size:14px;font-weight:600;
+              text-decoration:none;box-sizing:border-box;">
+      📊 나만의 수영 대시보드 확인하기
+    </a>
+    <p style="text-align:center;font-size:11px;color:#666;margin-top:6px;">
+      분석 데이터가 Metabase 대시보드에 자동으로 저장됩니다
+    </p>
+  `;
+  drillCard.parentNode.insertBefore(wrap, drillCard.nextSibling);
+}
+
+// ── 영상 변경 (업로드 페이지로) ──────────────────────
+function changeVideo() {
+  if (state.sse) { state.sse.close(); state.sse = null; }
+  video.pause(); video.src = '';
+  window.location.href = '/upload';
+}
+
+// ── 처음부터 (메타 선택으로) ─────────────────────────
+function resetAll() {
+  if (state.sse) { state.sse.close(); state.sse = null; }
+  video.pause(); video.src = '';
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+// ── 유틸 ─────────────────────────────────────────────
+function setOvVal(id, val, unit, min, max) {
+  if (val == null) return;
+  const el = document.getElementById(id);
+  el.textContent = val.toFixed(1) + unit;
+  el.className   = 'ov-val ' + (val >= min && val <= max ? 'good' : 'warn');
+}
+
+function fmtTime(sec) {
+  if (!sec || isNaN(sec)) return '0:00';
+  return Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+}
+
+function setStatus(type, label) {
+  document.getElementById('status-dot').className   = 'status-dot ' + type;
+  document.getElementById('status-label').textContent = label;
+}
+
+function resetAnalyzeBtn() {
+  state.analyzing         = false;
+  analyzeBtn.textContent  = '▶ 분석 시작';
+  analyzeBtn.classList.remove('running');
+  analyzeBtn.disabled     = false;
+}
+</script>
+</body>
+</html>
+

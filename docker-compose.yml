@@ -6,8 +6,29 @@ version: "3.9"
 # 중지: docker-compose down
 # 로그: docker-compose logs -f [서비스명]
 # ================================================
+# 포트 규칙: 5 + 기존포트 (예: 8000 → 58000)
+# HTTPS:    Caddy 리버스 프록시 경유
+# ================================================
 
 services:
+
+  # ── Caddy (HTTPS 리버스 프록시) ─────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: swim-caddy
+    ports:
+      - "${HOST_IP}:443:443"
+      - "${HOST_IP}:80:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - metabase
+    networks:
+      - swim-net
+    restart: unless-stopped
 
   # ── FastAPI 백엔드 ──────────────────────────────
   api:
@@ -16,7 +37,7 @@ services:
       dockerfile: Dockerfile
     container_name: swim-api
     ports:
-      - "${HOST_IP}:8000:8000"
+      - "${HOST_IP}:${API_EXTERNAL_PORT}:8000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
@@ -26,13 +47,15 @@ services:
       - MINIO_BUCKET=swim-videos
       - SECRET_KEY=${SECRET_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ADMIN_ID=${ADMIN_ID}
+      - ADMIN_PW=${ADMIN_PW}
       - HOST_IP=${HOST_IP}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis
       - ./credentials:/app/credentials
-      - ./video:/app/video          # 로컬 영상 폴더 → 컨테이너 /app/video
-      - ./frontend:/app/frontend    # 프론트엔드 정적 파일
+      - ./video:/app/video
+      - ./frontend:/app/frontend
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +67,7 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── Celery Worker (비동기 영상 분석) ────────────
+  # ── Celery Worker ────────────────────────────────
   worker:
     build:
       context: ./api
@@ -64,8 +87,7 @@ services:
       - ./api:/app
       - ./analysis:/app/analysis
       - ./credentials:/app/credentials
-      - ./video:/app/video          # 로컬 영상 폴더 → 컨테이너 /app/video
-      - ./frontend:/app/frontend    # 프론트엔드 정적 파일
+      - ./video:/app/video
     depends_on:
       - postgres
       - redis
@@ -74,7 +96,7 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── PostgreSQL ──────────────────────────────────
+  # ── PostgreSQL ───────────────────────────────────
   postgres:
     image: postgres:15-alpine
     container_name: swim-postgres
@@ -96,26 +118,26 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── Redis (Celery 브로커 + 캐시) ────────────────
+  # ── Redis ────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: swim-redis
     ports:
-      - "${HOST_IP}:6379:6379"
+      - "${HOST_IP}:${REDIS_EXTERNAL_PORT}:6379"
     volumes:
       - redis-data:/data
     networks:
       - swim-net
     restart: unless-stopped
 
-  # ── MinIO (영상 파일 오브젝트 스토리지) ──────────
+  # ── MinIO ────────────────────────────────────────
   minio:
     image: minio/minio:latest
     container_name: swim-minio
     command: server /data --console-address ":9001"
     ports:
-      - "${HOST_IP}:9000:9000"
-      - "${HOST_IP}:9001:9001"
+      - "${HOST_IP}:${MINIO_API_EXTERNAL_PORT}:9000"
+      - "${HOST_IP}:${MINIO_CONSOLE_EXTERNAL_PORT}:9001"
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -125,7 +147,7 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── Metabase (고객 대시보드) ─────────────────────
+  # ── Metabase ─────────────────────────────────────
   metabase:
     image: metabase/metabase:latest
     container_name: swim-metabase
@@ -138,7 +160,7 @@ services:
       - MB_DB_DBNAME=${MB_DB_DBNAME}
       - MB_DB_USER=${MB_DB_USER}
       - MB_DB_PASS=${MB_DB_PASS}
-      - MB_SITE_URL=http://${HOST_IP}:${METABASE_EXTERNAL_PORT}
+      - MB_SITE_URL=https://localhost/metabase
     depends_on:
       postgres:
         condition: service_healthy
@@ -146,13 +168,13 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── Flower (Celery 작업 모니터링) ───────────────
+  # ── Flower ───────────────────────────────────────
   flower:
     image: mher/flower:latest
     container_name: swim-flower
     command: celery flower --broker=redis://redis:6379/0 --port=5555
     ports:
-      - "${HOST_IP}:5555:5555"
+      - "${HOST_IP}:${FLOWER_EXTERNAL_PORT}:5555"
     depends_on:
       - redis
     networks:
@@ -167,3 +189,5 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  caddy-data:
+  caddy-config:
