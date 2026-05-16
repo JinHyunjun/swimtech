@@ -43,6 +43,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /register {
+    reverse_proxy swim-api:8000
+  }
+
   handle /landing {
     reverse_proxy swim-api:8000
   }

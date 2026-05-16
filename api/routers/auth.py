@@ -8,6 +8,8 @@ from fastapi import APIRouter, HTTPException, Response, Cookie
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from jose import jwt
+import psycopg2
+import bcrypt
 
 router = APIRouter()
 
@@ -15,10 +17,13 @@ SECRET_KEY = os.getenv("SECRET_KEY", "swimtech-secret-key")
 ALGORITHM  = "HS256"
 TOKEN_EXPIRE_HOURS = 24
 
-# .env에서 계정 관리 (여러 계정 가능)
-# ADMIN_ID=admin / ADMIN_PW=swimtech1234 형태
 ADMIN_ID = os.getenv("ADMIN_ID", "admin")
 ADMIN_PW = os.getenv("ADMIN_PW", "swimtech1234")
+
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL)
 
 
 class LoginRequest(BaseModel):
@@ -26,12 +31,19 @@ class LoginRequest(BaseModel):
     password: str
 
 
-def create_token(username: str) -> str:
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    username: str
+    password: str
+
+
+def create_token(username: str, customer_id: int | None = None) -> str:
     expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
-    return jwt.encode(
-        {"sub": username, "exp": expire},
-        SECRET_KEY, algorithm=ALGORITHM
-    )
+    payload = {"sub": username, "exp": expire}
+    if customer_id is not None:
+        payload["customer_id"] = customer_id
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_token(token: str) -> str:
@@ -43,12 +55,75 @@ def verify_token(token: str) -> str:
         return None
 
 
+def decode_token(token: str) -> dict:
+    """토큰 디코딩 → payload dict 반환, 실패 시 {}"""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return {}
+
+
+@router.post("/register")
+def register(body: RegisterRequest):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("SELECT id FROM customers WHERE username = %s", (body.username,))
+        if cur.fetchone():
+            cur.close(); conn.close()
+            raise HTTPException(400, "이미 사용 중인 아이디입니다.")
+
+        cur.execute("SELECT id FROM customers WHERE email = %s", (body.email,))
+        if cur.fetchone():
+            cur.close(); conn.close()
+            raise HTTPException(400, "이미 사용 중인 이메일입니다.")
+
+        password_bytes = body.password.encode('utf-8')[:72]
+        password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
+        cur.execute(
+            "INSERT INTO customers (name, email, username, password_hash) VALUES (%s, %s, %s, %s)",
+            (body.name, body.email, body.username, password_hash),
+        )
+        conn.commit()
+        cur.close(); conn.close()
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
 @router.post("/login")
 def login(body: LoginRequest, response: Response):
-    if body.username != ADMIN_ID or body.password != ADMIN_PW:
-        raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+    customer_id = None
 
-    token = create_token(body.username)
+    # 1) customers 테이블에서 username 조회
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, password_hash FROM customers WHERE username = %s",
+            (body.username,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+    if row:
+        db_id, password_hash = row
+        pw_bytes = body.password.encode("utf-8")[:72]
+        if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
+            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+        customer_id = db_id
+    else:
+        # 2) DB에 없으면 admin 계정 fallback
+        if body.username != ADMIN_ID or body.password != ADMIN_PW:
+            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+
+    token = create_token(body.username, customer_id)
 
     # HttpOnly 쿠키로 저장 (JS에서 접근 불가 → XSS 방어)
     response.set_cookie(

@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS customers (
     id              SERIAL PRIMARY KEY,
     name            VARCHAR(100) NOT NULL,
     email           VARCHAR(200) UNIQUE NOT NULL,
+    username        VARCHAR(100) UNIQUE,
+    password_hash   VARCHAR(200),
     phone           VARCHAR(20),
     level           VARCHAR(20) DEFAULT 'beginner',  -- beginner / intermediate / advanced
     goal            TEXT,

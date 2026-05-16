@@ -4,11 +4,12 @@ GET /stream/analyze?video_key=uploads/1/xxx.mp4
 → Server-Sent Events로 프레임별 분석 결과 실시간 전송
 """
 import os, sys, json, asyncio
-from fastapi import APIRouter
+from fastapi import APIRouter, Cookie
 from fastapi.responses import StreamingResponse
 from minio import Minio
 import tempfile
 import psycopg2
+from routers.auth import decode_token
 
 router = APIRouter()
 
@@ -312,13 +313,16 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
 @router.get("/analyze")
 def stream_analyze(video_key: str = "", local_path: str = "", forced_stroke: str = "",
                    context: str = "", purpose: str = "",
-                   video_id: int = 0, customer_id: int = 0):
+                   video_id: int = 0, swimtech_token: str = Cookie(default=None)):
     """
     video_key  : MinIO object key (Docker 환경)
     local_path : 로컬 파일 경로 (개발/테스트용)
     video_id   : 기존 videos 레코드 ID (0이면 자동 생성)
-    customer_id: 고객 ID (없으면 NULL)
+    customer_id: JWT 쿠키에서 추출 (없으면 NULL)
     """
+    payload = decode_token(swimtech_token) if swimtech_token else {}
+    customer_id = payload.get("customer_id") or 0
+
     def generator():
         if local_path:
             yield from analyze_stream(local_path, forced_stroke=forced_stroke,

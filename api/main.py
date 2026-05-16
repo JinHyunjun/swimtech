@@ -56,6 +56,14 @@ def login_page():
         return FileResponse(path)
     return {"error": "login.html not found"}
 
+# 회원가입 페이지
+@app.get("/register")
+def register_page():
+    path = os.path.join(FRONTEND_DIR, "register.html")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return {"error": "register.html not found"}
+
 # 랜딩 페이지 (로그인 불필요, 서비스 소개)
 @app.get("/landing")
 def landing_page():

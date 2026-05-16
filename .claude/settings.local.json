@@ -8,7 +8,8 @@
       "PowerShell(docker exec swim-postgres *)",
       "Bash(node --check frontend/viewer.html)",
       "Bash(powershell *)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(Test-Path *)"
     ]
   }
 }

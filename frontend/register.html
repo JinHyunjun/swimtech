@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwimTech — 로그인</title>
+<title>SwimTech — 회원가입</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -125,7 +125,17 @@
   <div class="logo">
     <span class="logo-icon">🏊</span>
     <div class="logo-title">SwimTech</div>
-    <div class="logo-sub">수영 영법 분석 플랫폼</div>
+    <div class="logo-sub">회원가입</div>
+  </div>
+
+  <div class="form-group">
+    <label>이름</label>
+    <input type="text" id="name" placeholder="이름 입력" autocomplete="name">
+  </div>
+
+  <div class="form-group">
+    <label>이메일</label>
+    <input type="email" id="email" placeholder="이메일 입력" autocomplete="email">
   </div>
 
   <div class="form-group">
@@ -135,61 +145,79 @@
 
   <div class="form-group">
     <label>비밀번호</label>
-    <input type="password" id="password" placeholder="비밀번호 입력" autocomplete="current-password"
-           onkeydown="if(event.key==='Enter') doLogin()">
+    <input type="password" id="password" placeholder="비밀번호 입력" autocomplete="new-password">
   </div>
 
-  <button class="btn" id="login-btn" onclick="doLogin()">로그인</button>
+  <div class="form-group">
+    <label>비밀번호 확인</label>
+    <input type="password" id="password-confirm" placeholder="비밀번호 재입력" autocomplete="new-password"
+           onkeydown="if(event.key==='Enter') doRegister()">
+  </div>
+
+  <button class="btn" id="register-btn" onclick="doRegister()">회원가입</button>
 
   <div class="error" id="error-msg"></div>
 
   <div class="footer">
-    계정이 없으신가요? <a href="/register">회원가입</a>
+    이미 계정이 있으신가요? <a href="/login">로그인</a>
   </div>
 </div>
 
 <script>
-async function doLogin() {
+async function doRegister() {
+  const name     = document.getElementById('name').value.trim();
+  const email    = document.getElementById('email').value.trim();
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
-  const btn      = document.getElementById('login-btn');
+  const confirm  = document.getElementById('password-confirm').value;
+  const btn      = document.getElementById('register-btn');
   const errMsg   = document.getElementById('error-msg');
 
-  if (!username || !password) {
-    showError('아이디와 비밀번호를 입력해주세요.');
+  errMsg.style.display = 'none';
+
+  if (!name || !email || !username || !password || !confirm) {
+    showError('모든 항목을 입력해주세요.');
+    return;
+  }
+
+  if (password !== confirm) {
+    showError('비밀번호가 일치하지 않습니다.');
+    return;
+  }
+
+  if (password.length < 6) {
+    showError('비밀번호는 6자 이상이어야 합니다.');
     return;
   }
 
   btn.disabled    = true;
-  btn.textContent = '로그인 중...';
-  errMsg.style.display = 'none';
+  btn.textContent = '처리 중...';
 
   try {
-    const res = await fetch('/auth/login', {
+    const res = await fetch('/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ name, email, username, password }),
     });
 
     if (res.ok) {
-      window.location.href = '/';
+      window.location.href = '/login';
     } else {
       const data = await res.json();
-      showError(data.detail || '로그인에 실패했습니다.');
+      showError(data.detail || '회원가입에 실패했습니다.');
     }
   } catch (e) {
     showError('서버에 연결할 수 없습니다.');
   } finally {
     btn.disabled    = false;
-    btn.textContent = '로그인';
+    btn.textContent = '회원가입';
   }
 }
 
 function showError(msg) {
   const el = document.getElementById('error-msg');
-  el.textContent     = msg;
-  el.style.display   = 'block';
+  el.textContent   = msg;
+  el.style.display = 'block';
 }
 </script>
 </body>

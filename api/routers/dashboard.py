@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, HTTPException, Cookie
 import psycopg2
 
-from routers.auth import verify_token
+from routers.auth import verify_token, decode_token
 
 router = APIRouter()
 
@@ -22,17 +22,30 @@ def _require_auth(swimtech_token: str | None):
 @router.get("/summary")
 def dashboard_summary(swimtech_token: str = Cookie(default=None)):
     _require_auth(swimtech_token)
+    payload = decode_token(swimtech_token) if swimtech_token else {}
+    customer_id = payload.get("customer_id")  # admin이면 None
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, customer_id, stroke_type, overall_score,
-                   l_elbow_avg, r_elbow_avg,
-                   arm_symmetry, kick_count, kick_freq_hz,
-                   head_angle_avg, analyzed_at
-            FROM analysis_results
-            ORDER BY analyzed_at ASC
-        """)
+        if customer_id is not None:
+            cur.execute("""
+                SELECT id, customer_id, stroke_type, overall_score,
+                       l_elbow_avg, r_elbow_avg,
+                       arm_symmetry, kick_count, kick_freq_hz,
+                       head_angle_avg, analyzed_at
+                FROM analysis_results
+                WHERE customer_id = %s
+                ORDER BY analyzed_at ASC
+            """, (customer_id,))
+        else:
+            cur.execute("""
+                SELECT id, customer_id, stroke_type, overall_score,
+                       l_elbow_avg, r_elbow_avg,
+                       arm_symmetry, kick_count, kick_freq_hz,
+                       head_angle_avg, analyzed_at
+                FROM analysis_results
+                ORDER BY analyzed_at ASC
+            """)
         rows = cur.fetchall()
         cur.close()
         conn.close()
