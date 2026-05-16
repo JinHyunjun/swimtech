@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 대시보드</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+.dash-page {
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.dash-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 숫자 카드 4개 */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.summary-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.summary-card-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+.summary-card-value {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+}
+.summary-card-value.blue   { color: var(--blue); }
+.summary-card-value.green  { color: var(--green); }
+.summary-card-value.amber  { color: var(--amber); }
+.summary-card-value.cyan   { color: var(--cyan); }
+.summary-card-unit {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* 차트 그리드 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.chart-card-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+.chart-wrap {
+  position: relative;
+  height: 220px;
+}
+
+/* 테이블 */
+.table-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.table-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.analysis-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+  padding: 0 10px 10px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.analysis-table td {
+  padding: 10px 10px 10px 0;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text);
+}
+.analysis-table tr:last-child td { border-bottom: none; }
+.analysis-table tr:hover td { background: rgba(255,255,255,.02); }
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.badge-blue   { background: rgba(59,130,246,.15); color: var(--blue); border: 0.5px solid rgba(59,130,246,.3); }
+.badge-green  { background: rgba(74,222,128,.12); color: var(--green); border: 0.5px solid rgba(74,222,128,.3); }
+.badge-amber  { background: rgba(245,158,11,.12); color: var(--amber); border: 0.5px solid rgba(245,158,11,.3); }
+.badge-purple { background: rgba(167,139,250,.12); color: var(--purple); border: 0.5px solid rgba(167,139,250,.3); }
+
+.empty-msg {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 0;
+  font-size: 13px;
+}
+
+.loading-overlay {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 0;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid   { grid-template-columns: 1fr; }
+}
+@media (max-width: 500px) {
+  .summary-cards { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">대시보드</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()" style="background:none;border:0.5px solid #333;color:#666;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="dash-page">
+    <div class="dash-topbar">
+      <a href="/" class="back-btn">← 분석하러 가기</a>
+      <div class="dash-title">분석 현황 대시보드</div>
+    </div>
+
+    <!-- 숫자 카드 -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-card-label">총 분석 횟수</div>
+        <div class="summary-card-value blue" id="card-total">—</div>
+        <div class="summary-card-unit">회</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-label">평균 종합점수</div>
+        <div class="summary-card-value green" id="card-avg-score">—</div>
+        <div class="summary-card-unit">점</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-label">최고 종합점수</div>
+        <div class="summary-card-value amber" id="card-max-score">—</div>
+        <div class="summary-card-unit">점</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-label">총 발차기 횟수</div>
+        <div class="summary-card-value cyan" id="card-total-kicks">—</div>
+        <div class="summary-card-unit">회</div>
+      </div>
+    </div>
+
+    <!-- 차트 2×2 -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">회차별 종합점수 추이</div>
+        <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">회차별 팔꿈치 각도 변화</div>
+        <div class="chart-wrap"><canvas id="chart-elbow"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">발차기 횟수 증감</div>
+        <div class="chart-wrap"><canvas id="chart-kick"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">좌우 대칭 점수 추이</div>
+        <div class="chart-wrap"><canvas id="chart-sym"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 최근 분석 목록 테이블 -->
+    <div class="table-card">
+      <div class="table-card-title">최근 분석 목록</div>
+      <div id="table-wrap">
+        <div class="loading-overlay">데이터 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+const CHART_DEFAULTS = {
+  color: '#e8e8e8',
+  grid: 'rgba(255,255,255,0.06)',
+  tick: '#666',
+};
+
+function chartOpts(extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: CHART_DEFAULTS.color, font: { size: 11 }, boxWidth: 12 } } },
+    scales: {
+      x: {
+        ticks: { color: CHART_DEFAULTS.tick, font: { size: 10 }, maxTicksLimit: 8 },
+        grid:  { color: CHART_DEFAULTS.grid },
+      },
+      y: {
+        ticks: { color: CHART_DEFAULTS.tick, font: { size: 10 } },
+        grid:  { color: CHART_DEFAULTS.grid },
+        ...extra,
+      },
+    },
+  };
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}/${dd}`;
+}
+
+function strokeLabel(s) {
+  const map = {
+    freestyle: '자유형', backstroke: '배영', breaststroke: '평영',
+    butterfly: '접영', unknown: '미상', start: '스타트',
+    flip_turn: '플립턴', touch_turn: '터치턴',
+  };
+  return map[s] || s || '—';
+}
+
+function strokeBadge(s) {
+  const cls = { freestyle: 'blue', backstroke: 'cyan', breaststroke: 'green',
+                butterfly: 'purple', start: 'amber', flip_turn: 'amber',
+                touch_turn: 'amber' }[s] || 'blue';
+  return `<span class="badge badge-${cls}">${strokeLabel(s)}</span>`;
+}
+
+let charts = {};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function buildScoreChart(labels, scores) {
+  destroyChart('score');
+  const ctx = document.getElementById('chart-score').getContext('2d');
+  charts['score'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '종합점수',
+        data: scores,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.12)',
+        pointBackgroundColor: '#3b82f6',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4,
+      }],
+    },
+    options: {
+      ...chartOpts({ min: 0, max: 100 }),
+    },
+  });
+}
+
+function buildElbowChart(labels, leftAngles, rightAngles) {
+  destroyChart('elbow');
+  const ctx = document.getElementById('chart-elbow').getContext('2d');
+  charts['elbow'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '좌측 팔꿈치 각도(°)',
+          data: leftAngles,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74,222,128,0.08)',
+          pointBackgroundColor: '#4ade80',
+          tension: 0.3,
+          fill: false,
+          pointRadius: 4,
+        },
+        {
+          label: '우측 팔꿈치 각도(°)',
+          data: rightAngles,
+          borderColor: '#a78bfa',
+          backgroundColor: 'rgba(167,139,250,0.08)',
+          pointBackgroundColor: '#a78bfa',
+          tension: 0.3,
+          fill: false,
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: chartOpts(),
+  });
+}
+
+function buildKickChart(labels, kicks) {
+  destroyChart('kick');
+  const ctx = document.getElementById('chart-kick').getContext('2d');
+  charts['kick'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '발차기 횟수',
+        data: kicks,
+        backgroundColor: 'rgba(34,211,238,0.6)',
+        borderColor: '#22d3ee',
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      ...chartOpts({ min: 0 }),
+    },
+  });
+}
+
+function buildSymChart(labels, symScores) {
+  destroyChart('sym');
+  const ctx = document.getElementById('chart-sym').getContext('2d');
+  charts['sym'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '좌우 대칭 점수',
+        data: symScores,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245,158,11,0.12)',
+        pointBackgroundColor: '#f59e0b',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4,
+      }],
+    },
+    options: {
+      ...chartOpts({ min: 0, max: 100 }),
+    },
+  });
+}
+
+function buildTable(analyses) {
+  const wrap = document.getElementById('table-wrap');
+  if (!analyses.length) {
+    wrap.innerHTML = '<div class="empty-msg">아직 분석 데이터가 없습니다.</div>';
+    return;
+  }
+  const recent = [...analyses].reverse().slice(0, 20);
+  const rows = recent.map(a => `
+    <tr>
+      <td>${fmtDate(a.created_at)}</td>
+      <td>${strokeBadge(a.stroke_type)}</td>
+      <td style="font-weight:500;color:${scoreColor(a.overall_score)}">${a.overall_score != null ? a.overall_score.toFixed(1) : '—'}</td>
+      <td>${a.kick_count != null ? a.kick_count : '—'}</td>
+    </tr>
+  `).join('');
+  wrap.innerHTML = `
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>영법</th>
+          <th>종합점수</th>
+          <th>발차기 횟수</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function scoreColor(v) {
+  if (v == null) return 'var(--muted)';
+  if (v >= 80) return 'var(--green)';
+  if (v >= 60) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function avg(arr) {
+  const clean = arr.filter(v => v != null);
+  if (!clean.length) return null;
+  return clean.reduce((s, v) => s + v, 0) / clean.length;
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/dashboard/summary', { credentials: 'include' });
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    const analyses = data.analyses || [];
+
+    // 숫자 카드
+    const scores  = analyses.map(a => a.overall_score);
+    const kicks   = analyses.map(a => a.kick_count);
+    const validScores = scores.filter(v => v != null);
+    document.getElementById('card-total').textContent       = analyses.length;
+    document.getElementById('card-avg-score').textContent   = validScores.length ? (validScores.reduce((s,v)=>s+v,0)/validScores.length).toFixed(1) : '—';
+    document.getElementById('card-max-score').textContent   = validScores.length ? Math.max(...validScores).toFixed(1) : '—';
+    document.getElementById('card-total-kicks').textContent = kicks.reduce((s,v)=>s+(v||0), 0);
+
+    const labels = analyses.map((a, i) => {
+      const d = fmtDate(a.created_at);
+      return d !== '—' ? d : `#${i+1}`;
+    });
+
+    buildScoreChart(labels, scores);
+    buildElbowChart(labels, analyses.map(a => a.left_arm_angle_avg), analyses.map(a => a.right_arm_angle_avg));
+    buildKickChart(labels, kicks);
+    buildSymChart(labels, analyses.map(a => a.arm_symmetry_score));
+    buildTable(analyses);
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('table-wrap').innerHTML =
+      `<div class="empty-msg" style="color:var(--red)">데이터를 불러오지 못했습니다: ${e.message}</div>`;
+  }
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+// 인증 확인 후 데이터 로드
+(async () => {
+  try {
+    const r = await fetch('/auth/me', { credentials: 'include' });
+    if (!r.ok) { window.location.href = '/login'; return; }
+  } catch { window.location.href = '/login'; return; }
+  loadDashboard();
+})();
+</script>
+</body>
+</html>

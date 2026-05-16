@@ -7,7 +7,8 @@
       "PowerShell(docker cp C:\\\\swim\\\\test_stream.py swim-api:/app/test_stream.py; docker exec swim-api python /app/test_stream.py 2>&1)",
       "PowerShell(docker exec swim-postgres *)",
       "Bash(node --check frontend/viewer.html)",
-      "Bash(powershell *)"
+      "Bash(powershell *)",
+      "Bash(docker compose *)"
     ]
   }
 }

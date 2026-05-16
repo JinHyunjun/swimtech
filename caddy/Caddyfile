@@ -59,6 +59,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /dashboard {
+    reverse_proxy swim-api:8000
+  }
+
   # Metabase 대시보드
   handle /metabase/* {
     uri strip_prefix /metabase

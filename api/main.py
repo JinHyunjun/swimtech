@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
-from routers import videos, customers, analysis, stream, auth
+from routers import videos, customers, analysis, stream, auth, dashboard
 from routers.auth import verify_token
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(videos.router,    prefix="/videos",    tags=["영상"])
 app.include_router(customers.router, prefix="/customers", tags=["고객"])
 app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
 app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분석"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
 
 @app.get("/api/health")
 def health():
@@ -96,6 +97,13 @@ def serve_viewer(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("viewer.html")
+
+# 대시보드 페이지
+@app.get("/dashboard")
+def serve_dashboard(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("dashboard.html")
 
 # 레거시 루트 (기존 index.html 직접 접근용)
 @app.get("/app")
