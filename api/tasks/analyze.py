@@ -51,7 +51,6 @@ def run_analysis(self, object_key: str, customer_id: int, video_id: int):
 
             # ── 3. 영법 분류 ──────────────────────────
             classification = classify_stroke(summary.frame_metrics)
-            feedback_data  = generate_rule_based_feedback(summary, classification.stroke_type)
 
             # ── 4. 오버레이 영상 업로드 ───────────────
             result_key = object_key.replace("uploads/", "results/").replace(".mp4", "_analyzed.mp4")
@@ -62,10 +61,11 @@ def run_analysis(self, object_key: str, customer_id: int, video_id: int):
             conn = get_db()
             cur  = conn.cursor()
 
-            # 고객 목표(purpose) 조회
+            # 고객 목표(purpose) 조회 후 피드백 생성
             cur.execute("SELECT goal FROM customers WHERE id = %s", (customer_id,))
             row     = cur.fetchone()
             purpose = row[0] if row else None
+            feedback_data = generate_rule_based_feedback(summary, classification.stroke_type, purpose=purpose or "")
 
             # analysis_results INSERT
             cur.execute("""

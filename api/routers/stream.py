@@ -190,20 +190,9 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
 
     feedback = generate_rule_based_feedback(
         type("S", (), summary_data)(),
-        classification.stroke_type
+        classification.stroke_type,
+        purpose=purpose,
     )
-
-    # 목적별 추가 피드백
-    purpose_feedback = {
-        "record":      "📊 기록 단축 목적: 스트로크 수 줄이기와 발차기 효율에 집중하세요. 턴 동작도 함께 점검하면 좋습니다.",
-        "health":      "💪 건강 수영 목적: 좌우 대칭 유지와 불필요한 힘 빼기가 핵심입니다. 호흡 리듬을 일정하게 유지하세요.",
-        "technique":   "🎯 영법 교정 목적: 기본기 각도를 이상적인 수치와 비교했습니다. 반복 드릴로 근육 기억을 만들어주세요.",
-        "competition": "🏆 대회 준비 목적: 스타트·턴·피니시 구간 분석도 추가로 필요합니다. 레이스 페이스 유지 훈련을 병행하세요.",
-        "hobby":       "😊 취미 수영 목적: 부상 위험 자세를 중점 점검했습니다. 무리 없이 즐기는 것이 가장 중요합니다.",
-    }.get(purpose, "")
-
-    if purpose_feedback:
-        feedback["feedback"] = purpose_feedback + "\n\n" + feedback["feedback"]
 
     # ── DB 저장 ────────────────────────────────────────────────────────
     try:

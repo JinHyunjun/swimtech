@@ -337,9 +337,10 @@ STROKE_STANDARDS = {
 }
 
 
-def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
+def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -> dict:
     """
     강점(strengths) + 개선점(improvements) + 각도별 상세 설명 + 시점 정보 포함 피드백 생성
+    purpose: record | health | technique | competition | hobby
     """
     std = STROKE_STANDARDS.get(stroke_type, STROKE_STANDARDS["freestyle"])
 
@@ -358,81 +359,163 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
     ideal_k_min, ideal_k_max = std["kick_freq_ideal"]
     ideal_h_min, ideal_h_max = std["head_angle_ideal"]
 
-    strengths    = []  # ✅ 강점
-    improvements = []  # ⚠️ 개선점
+    strengths    = []
+    improvements = []
 
-    # ── 팔꿈치 각도 평가 ──────────────────────────────
+    def _severity(diff: float) -> str:
+        if diff <= 5:
+            return "살짝"
+        elif diff <= 15:
+            return "조금"
+        return "많이"
+
+    def _why(mapping: dict) -> str:
+        return mapping.get(purpose, mapping.get("technique", list(mapping.values())[0]))
+
+    ELBOW_WIDE_WHY = {
+        "record":      "팔꿈치가 벌어지면 물의 저항이 커져 속도가 느려집니다",
+        "health":      "이 자세가 반복되면 어깨 관절에 무리가 갈 수 있어요",
+        "technique":   "기본기를 다지는 단계에서 꼭 잡아야 할 부분이에요",
+        "competition": "기록 단축의 핵심 포인트입니다",
+        "hobby":       "오래 즐기려면 이 부분만 신경 써주세요",
+    }
+    ELBOW_NARROW_WHY = {
+        "record":      "팔꿈치가 너무 좁으면 수압을 충분히 받지 못해 추진력이 줄어요",
+        "health":      "어깨 관절에 무리가 집중될 수 있어요",
+        "technique":   "풀 단계에서 수압을 제대로 받지 못하고 있어요",
+        "competition": "스트로크 효율이 낮아 기록에 영향을 줍니다",
+        "hobby":       "편안한 영법을 위해 조금 수정해보세요",
+    }
+    SYM_WHY = {
+        "record":      "좌우가 다르면 직선으로 나가지 않아 거리 손실이 생겨요",
+        "health":      "한쪽에 지속적으로 무리가 가서 근육 불균형이 생길 수 있어요",
+        "technique":   "대칭 동작은 모든 영법의 기본입니다",
+        "competition": "레인 이탈이 기록에 직접 영향을 줍니다",
+        "hobby":       "양쪽을 균등하게 쓰면 더 오래 지치지 않고 즐길 수 있어요",
+    }
+    KICK_SLOW_WHY = {
+        "record":      "발차기가 부족하면 하체가 가라앉아 저항이 커져요",
+        "health":      "발차기 리듬이 맞지 않으면 허리에 부담이 올 수 있어요",
+        "technique":   "발차기 리듬이 스트로크와 맞지 않아요",
+        "competition": "하체 안정화가 기록 단축의 기반입니다",
+        "hobby":       "발차기 리듬만 잡아도 훨씬 편안해져요",
+    }
+    KICK_FAST_WHY = {
+        "record":      "과도한 발차기는 체력을 낭비해 후반 속도 저하로 이어져요",
+        "health":      "발차기가 너무 많으면 무릎과 발목에 무리가 와요",
+        "technique":   "팔 동작과 타이밍을 맞추는 게 먼저예요",
+        "competition": "체력 배분이 레이스 전략의 핵심입니다",
+        "hobby":       "힘을 빼고 편안하게 차는 게 더 오래 즐길 수 있어요",
+    }
+    HEAD_HIGH_WHY = {
+        "record":      "머리가 들리면 엉덩이가 가라앉아 저항이 크게 늘어요",
+        "health":      "목이 지속적으로 뒤로 젖혀지면 경추에 무리가 올 수 있어요",
+        "technique":   "시선 처리가 전체 자세의 기초예요",
+        "competition": "머리 자세 교정만으로 속도 5~8% 향상이 가능합니다",
+        "hobby":       "시선을 조금만 아래로 향하면 훨씬 편안해져요",
+    }
+
+    # ── 팔꿈치 각도 평가 (왼팔) ──────────────────────────────
     if l_avg:
         if ideal_e_min <= l_avg <= ideal_e_max:
             strengths.append({
                 "item": "왼팔 팔꿈치 각도",
                 "value": f"{l_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"이상적인 범위에 있습니다. {std['elbow_reason'][:40]}...",
+                "summary": "왼팔 팔꿈치 각도가 딱 맞아요! 하이 엘보우 자세가 잘 잡혀 있어요 👍",
+                "why": "이 각도에서 손바닥이 뒤쪽을 향해 수압을 최대로 받을 수 있어 추진력이 가장 효율적으로 발생합니다.",
+                "how": "지금 자세를 유지하면서 더욱 일관성 있게 반복해보세요.",
+                "comment": "이상적인 범위에 있습니다.",
                 "reason": std["elbow_reason"],
             })
         elif l_avg < ideal_e_min:
+            diff = ideal_e_min - l_avg
             improvements.append({
                 "item": "왼팔 팔꿈치 각도",
                 "value": f"{l_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"각도가 {ideal_e_min - l_avg:.0f}° 부족합니다. 팔꿈치를 좀 더 구부려주세요.",
+                "summary": f"왼팔 팔꿈치가 {_severity(diff)} 좁게 구부러져 있어요",
+                "why": _why(ELBOW_NARROW_WHY),
+                "how": "풀 단계에서 팔꿈치를 조금 더 구부려 손바닥이 뒤를 향하게 해보세요.",
+                "comment": f"각도가 {diff:.0f}° 부족합니다. 팔꿈치를 좀 더 구부려주세요.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"영상 전반부에서 가장 작은 각도({l_min:.1f}°)가 감지됐습니다.",
             })
         else:
+            diff = l_avg - ideal_e_max
             improvements.append({
                 "item": "왼팔 팔꿈치 각도",
                 "value": f"{l_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"각도가 {l_avg - ideal_e_max:.0f}° 큽니다. 하이 엘보우 자세를 유지하세요.",
+                "summary": f"왼팔 팔꿈치가 {_severity(diff)} 넓게 벌어져 있어요",
+                "why": _why(ELBOW_WIDE_WHY),
+                "how": "팔꿈치를 안쪽으로 당기며 물을 뒤로 미는 '하이 엘보우' 감각을 찾아보세요.",
+                "comment": f"각도가 {diff:.0f}° 큽니다. 하이 엘보우 자세를 유지하세요.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최대 각도({l_avg:.1f}°)가 반복적으로 감지됐습니다.",
             })
 
+    # ── 팔꿈치 각도 평가 (오른팔) ──────────────────────────────
     if r_avg:
         if ideal_e_min <= r_avg <= ideal_e_max:
             strengths.append({
                 "item": "오른팔 팔꿈치 각도",
                 "value": f"{r_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"이상적인 범위에 있습니다.",
+                "summary": "오른팔 팔꿈치 각도가 딱 맞아요! 균형 잡힌 스트로크가 나오고 있어요 👍",
+                "why": "이 각도에서 손바닥이 뒤쪽을 향해 수압을 최대로 받을 수 있어 추진력이 가장 효율적으로 발생합니다.",
+                "how": "지금 자세를 유지하면서 더욱 일관성 있게 반복해보세요.",
+                "comment": "이상적인 범위에 있습니다.",
                 "reason": std["elbow_reason"],
             })
         elif r_avg < ideal_e_min:
+            diff = ideal_e_min - r_avg
             improvements.append({
                 "item": "오른팔 팔꿈치 각도",
                 "value": f"{r_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"각도가 {ideal_e_min - r_avg:.0f}° 부족합니다.",
+                "summary": f"오른팔 팔꿈치가 {_severity(diff)} 좁게 구부러져 있어요",
+                "why": _why(ELBOW_NARROW_WHY),
+                "how": "풀 단계에서 팔꿈치를 조금 더 구부려 손바닥이 뒤를 향하게 해보세요.",
+                "comment": f"각도가 {diff:.0f}° 부족합니다.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최소 각도({r_min:.1f}°)가 감지됐습니다.",
             })
         else:
+            diff = r_avg - ideal_e_max
             improvements.append({
                 "item": "오른팔 팔꿈치 각도",
                 "value": f"{r_avg:.1f}°",
                 "ideal": f"{ideal_e_min}~{ideal_e_max}°",
-                "comment": f"각도가 {r_avg - ideal_e_max:.0f}° 큽니다.",
+                "summary": f"오른팔 팔꿈치가 {_severity(diff)} 넓게 벌어져 있어요",
+                "why": _why(ELBOW_WIDE_WHY),
+                "how": "팔꿈치를 안쪽으로 당기며 물을 뒤로 미는 '하이 엘보우' 감각을 찾아보세요.",
+                "comment": f"각도가 {diff:.0f}° 큽니다.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최대 각도({r_avg:.1f}°)가 반복 감지됐습니다.",
             })
 
     # ── 좌우 대칭 평가 ────────────────────────────────
-    diff = abs(l_avg - r_avg) if l_avg and r_avg else 0
+    arm_diff = abs(l_avg - r_avg) if l_avg and r_avg else 0
     if sym >= 85:
         strengths.append({
             "item": "좌우 대칭",
             "value": f"{sym:.0f}점",
             "ideal": "85점 이상",
+            "summary": "양팔이 균형 있게 움직이고 있어요! 직선으로 잘 나가고 있을 거예요 😊",
+            "why": "좌우 대칭이 좋으면 직선으로 추진되어 불필요한 에너지 낭비가 없습니다.",
+            "how": "지금의 균형 감각을 피로할 때도 유지할 수 있도록 연습해보세요.",
             "comment": "좌우 팔 동작이 매우 균형 잡혀 있습니다.",
             "reason": std["symmetry_reason"],
         })
     elif sym >= 70:
         improvements.append({
             "item": "좌우 대칭",
-            "value": f"{sym:.0f}점 (차이 {diff:.0f}°)",
+            "value": f"{sym:.0f}점 (차이 {arm_diff:.0f}°)",
             "ideal": "85점 이상",
+            "summary": f"양팔 각도가 {_severity(arm_diff)} 차이가 나요",
+            "why": _why(SYM_WHY),
+            "how": "한 팔씩 번갈아 단팔 드릴을 해보면서 각 팔의 감각을 맞춰보세요.",
             "comment": "좌우 팔 각도 차이가 있습니다. 거울 앞에서 양팔 드릴을 연습하세요.",
             "reason": std["symmetry_reason"],
             "worst_moment": "영상 전반에 걸쳐 좌우 차이가 관찰됩니다.",
@@ -440,9 +523,12 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
     else:
         improvements.append({
             "item": "좌우 대칭",
-            "value": f"{sym:.0f}점 (차이 {diff:.0f}°)",
+            "value": f"{sym:.0f}점 (차이 {arm_diff:.0f}°)",
             "ideal": "85점 이상",
-            "comment": f"좌우 팔 각도 차이({diff:.0f}°)가 큽니다. 한쪽 팔에 편향된 스트로크를 교정해야 합니다.",
+            "summary": f"양팔 각도가 많이 차이가 나요 (약 {arm_diff:.0f}° 차이)",
+            "why": _why(SYM_WHY),
+            "how": "한 팔씩 번갈아 단팔 드릴을 해보면서 각 팔의 감각을 맞춰보세요.",
+            "comment": f"좌우 팔 각도 차이({arm_diff:.0f}°)가 큽니다. 한쪽 팔에 편향된 스트로크를 교정해야 합니다.",
             "reason": std["symmetry_reason"],
             "worst_moment": "영상 전반에 걸쳐 좌우 차이가 관찰됩니다.",
         })
@@ -454,23 +540,36 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
                 "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
-                "comment": f"이상적인 발차기 리듬을 유지하고 있습니다.",
+                "summary": "발차기 리듬이 이상적이에요! 체력을 효율적으로 사용하고 있어요 👏",
+                "why": "이 범위에서 추진력 보조와 체력 소모의 균형이 최적화됩니다.",
+                "how": "지금의 리듬을 유지하면서 팔 동작과의 타이밍을 더 맞춰보세요.",
+                "comment": "이상적인 발차기 리듬을 유지하고 있습니다.",
                 "reason": std["kick_reason"],
             })
         elif freq < ideal_k_min:
+            k_diff = ideal_k_min - freq
+            k_sev = "살짝" if k_diff <= 0.5 else ("조금" if k_diff <= 1.0 else "많이")
             improvements.append({
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
                 "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
-                "comment": f"발차기가 부족합니다. 발목 유연성 훈련과 킥 드릴을 추가하세요.",
+                "summary": f"발차기가 {k_sev} 부족해요",
+                "why": _why(KICK_SLOW_WHY),
+                "how": "킥보드를 잡고 발차기 드릴만 집중 연습해보세요.",
+                "comment": "발차기가 부족합니다. 발목 유연성 훈련과 킥 드릴을 추가하세요.",
                 "reason": std["kick_reason"],
                 "worst_moment": f"{dur:.0f}초 영상에서 총 {kick}회로 평균보다 낮습니다.",
             })
         else:
+            k_diff = freq - ideal_k_max
+            k_sev = "살짝" if k_diff <= 0.5 else ("조금" if k_diff <= 1.0 else "많이")
             improvements.append({
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
                 "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
+                "summary": f"발차기가 {k_sev} 과도해요",
+                "why": _why(KICK_FAST_WHY),
+                "how": "팔 스트로크에만 집중하면서 발차기 횟수를 의식적으로 줄여보세요.",
                 "comment": "발차기가 과도합니다. 체력 낭비를 줄이고 상체 추진력을 높이세요.",
                 "reason": std["kick_reason"],
                 "worst_moment": "영상 후반부에서 과도한 킥이 집중적으로 관찰됩니다.",
@@ -483,14 +582,21 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
                 "item": "머리/시선 자세",
                 "value": f"{head:.1f}°",
                 "ideal": f"{ideal_h_min}~{ideal_h_max}°",
+                "summary": "시선 처리가 완벽해요! 몸의 수평 자세가 잘 유지되고 있어요 ✨",
+                "why": "올바른 시선 처리만으로 속도를 5~8% 향상시킬 수 있습니다.",
+                "how": "지금의 머리 자세를 피로할 때도 유지하는 데 집중해보세요.",
                 "comment": "시선과 머리 자세가 이상적입니다.",
                 "reason": std["head_reason"],
             })
         else:
+            h_diff = abs(head - (ideal_h_min + ideal_h_max) / 2)
             improvements.append({
                 "item": "머리/시선 자세",
                 "value": f"{head:.1f}°",
                 "ideal": f"{ideal_h_min}~{ideal_h_max}°",
+                "summary": f"머리가 {_severity(h_diff)} 들려 있어요",
+                "why": _why(HEAD_HIGH_WHY),
+                "how": "시선을 수면 아래 45° 방향으로 유지하면서 턱을 살짝 당겨보세요.",
                 "comment": "머리가 너무 들려 있습니다. 시선을 수면 아래 45° 방향으로 향하세요.",
                 "reason": std["head_reason"],
                 "worst_moment": "호흡 구간에서 머리가 과도하게 올라오는 패턴이 감지됩니다.",
@@ -502,6 +608,9 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
             "item": "전반적 자세",
             "value": "—",
             "ideal": "—",
+            "summary": "전체적으로 자세가 아주 훌륭해요! 🎉",
+            "why": "모든 주요 지표가 이상적인 범위 안에 들어와 있습니다.",
+            "how": "현재 패턴을 유지하면서 속도 향상에 집중해보세요.",
             "comment": "전반적으로 좋은 자세입니다! 현재 패턴을 유지하면서 속도 향상에 집중하세요.",
             "reason": "",
         })
@@ -512,9 +621,8 @@ def generate_rule_based_feedback(summary, stroke_type: str) -> dict:
         "drills":       std["drills"],
         "youtube_queries": std["youtube_queries"],
         "stroke_name":  std["name"],
-        # 기존 호환성 유지
         "feedback": "\n".join(
-            f"⚠️ {i['item']}: {i['value']} (이상 {i['ideal']}) — {i['comment']}"
+            f"⚠️ {i['item']}: {i.get('summary', i['comment'])} — {i.get('why', '')}"
             for i in improvements
         ),
     }
