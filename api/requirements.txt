@@ -33,3 +33,7 @@ passlib[bcrypt]==1.7.4
 # ── Google Sheets 연동 ────────────────────────────
 google-auth-oauthlib==1.2.0
 google-api-python-client==2.132.0
+
+# ── Security ──────────────────────────────────────
+slowapi==0.1.9
+email-validator==2.1.0

@@ -2,8 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SwimTech — 홈</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#3b82f6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 <style>
 .home-wrap {
@@ -148,6 +155,23 @@
 
 </div>
 
+<!-- PWA 설치 배너 -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#1e1e2e;border-top:1px solid #3b82f6;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;z-index:9999;
+  padding-bottom:max(12px, env(safe-area-inset-bottom));">
+  <span style="font-size:24px;">🏊</span>
+  <div style="flex:1;">
+    <div style="font-size:13px;font-weight:600;color:#e8e8e8;">SwimTech 앱 설치</div>
+    <div id="pwa-banner-msg" style="font-size:11px;color:#888;margin-top:2px;"></div>
+  </div>
+  <button id="pwa-install-btn" style="display:none;background:#3b82f6;color:#fff;
+    border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;
+    cursor:pointer;min-height:44px;">설치</button>
+  <button onclick="closePwaBanner()" style="background:none;border:none;color:#666;
+    font-size:18px;cursor:pointer;padding:4px 8px;min-height:44px;">✕</button>
+</div>
+
 <script>
 "use strict";
 
@@ -163,6 +187,52 @@ async function logout() {
   await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
   window.location.href = '/login';
 }
+
+// ── PWA 설치 배너 ──────────────────────────────────────
+const banner = document.getElementById('pwa-banner');
+const msg    = document.getElementById('pwa-banner-msg');
+const btn    = document.getElementById('pwa-install-btn');
+
+function closePwaBanner() {
+  banner.style.display = 'none';
+  localStorage.setItem('pwa-banner-closed', '1');
+}
+
+if (!localStorage.getItem('pwa-banner-closed')) {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  if (!isStandalone) {
+    if (isIOS && isSafari) {
+      msg.textContent = "Safari에서 공유 → '홈 화면에 추가'를 탭하세요";
+      banner.style.display = 'flex';
+    } else {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        const deferredPrompt = e;
+        msg.textContent = '홈 화면에 추가하면 앱처럼 사용할 수 있어요';
+        btn.style.display = 'block';
+        banner.style.display = 'flex';
+        btn.addEventListener('click', async () => {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') closePwaBanner();
+        });
+      });
+    }
+  }
+}
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('SW registered'); })
+        .catch(function(err) { console.log('SW registration skipped:', err.message); });
+    });
+  }
 </script>
 </body>
 </html>

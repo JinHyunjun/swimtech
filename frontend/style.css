@@ -262,3 +262,44 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, 'S
   transition: background .2s;
 }
 .remove-video-btn:hover { background: rgba(239,68,68,0.8); border-color: #ef4444; }
+
+/* ── 모바일 PWA 최적화 ────────────────────────── */
+/* iOS 폰트 크기 자동 조정 방지 */
+html { -webkit-text-size-adjust: 100%; }
+
+/* 터치 친화적 버튼 최소 높이 */
+button, .btn, .meta-btn, .file-select-btn, .choice-btn,
+.analyze-btn, .ctrl-btn { min-height: 44px; }
+
+/* 하단 safe area (iPhone 노치/홈바 대응) */
+body { padding-bottom: env(safe-area-inset-bottom); }
+
+@media (max-width: 768px) {
+  /* 사이드바 숨김 */
+  .side-col { display: none; }
+  .layout { grid-template-columns: 1fr; }
+  .main-col { border-right: none; }
+
+  /* 카드 1열 배치 */
+  .metrics-grid { grid-template-columns: 1fr; }
+  .choice-grid  { grid-template-columns: 1fr; }
+
+  /* 버튼 전체 너비 */
+  .choice-btn, .file-select-btn { width: 100%; }
+
+  /* 헤더 압축 */
+  .logo-sub { display: none; }
+  .header { padding: 10px 16px; }
+
+  /* 홈 화면 패딩 축소 */
+  .home-wrap { padding: 20px 16px; }
+
+  /* 업로드/메타 페이지 패딩 */
+  .meta-page, .upload-page { padding: 16px; }
+
+  /* 드롭존 최소 높이 */
+  .dropzone { min-height: 200px; margin: 12px; }
+
+  /* 대시보드 패딩 축소 */
+  .dash-page { padding: 16px 12px; }
+}

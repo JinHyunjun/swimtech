@@ -1,9 +1,15 @@
-import os, uuid, io
+import io
+import logging
+import os
+import re
+import uuid
+
 import psycopg2
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from minio import Minio
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 minio_client = Minio(
     os.getenv("MINIO_ENDPOINT", "minio:9000"),
@@ -15,9 +21,20 @@ minio_client = Minio(
 BUCKET       = os.getenv("MINIO_BUCKET",  "swim-videos")
 DATABASE_URL = os.getenv("DATABASE_URL",  "")
 
+ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+MAX_FILE_SIZE      = 500 * 1024 * 1024  # 500 MB
+
+_UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9가-힣_\-]')
+
 
 def _get_db():
     return psycopg2.connect(DATABASE_URL)
+
+
+def _sanitize_filename(filename: str) -> str:
+    name, ext = os.path.splitext(filename)
+    safe = _UNSAFE_CHARS.sub("_", name)
+    return (safe or "upload") + ext.lower()
 
 
 @router.post("/upload")
@@ -25,13 +42,22 @@ async def upload_video(
     customer_id: int,
     file: UploadFile = File(...)
 ):
-    allowed = {".mp4", ".mov", ".avi", ".mkv"}
-    ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in allowed:
-        raise HTTPException(400, f"지원하지 않는 형식: {ext}")
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "허용되지 않는 파일 형식입니다. (mp4, mov, avi, mkv, webm)")
 
-    object_key   = f"uploads/{customer_id}/{uuid.uuid4()}{ext}"
-    content      = await file.read()
+    mime = (file.content_type or "").lower()
+    if not mime.startswith("video/"):
+        raise HTTPException(400, "비디오 파일만 업로드할 수 있습니다.")
+
+    content = await file.read()
+
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(400, "파일 크기는 500MB를 초과할 수 없습니다.")
+
+    safe_name    = _sanitize_filename(file.filename or "upload.mp4")
+    safe_ext     = os.path.splitext(safe_name)[1]
+    object_key   = f"uploads/{customer_id}/{uuid.uuid4()}{safe_ext}"
     file_size_mb = round(len(content) / 1_048_576, 2)
 
     try:
@@ -42,10 +68,10 @@ async def upload_video(
             io.BytesIO(content), len(content),
             content_type=file.content_type,
         )
-    except Exception as e:
-        raise HTTPException(500, f"스토리지 저장 실패: {e}")
+    except Exception:
+        logger.error("upload: MinIO error", exc_info=True)
+        raise HTTPException(500, "스토리지 저장에 실패했습니다.")
 
-    # videos 테이블에 레코드 생성 → video_id 확보
     try:
         conn = _get_db()
         cur  = conn.cursor()
@@ -56,20 +82,19 @@ async def upload_video(
             VALUES (%s, %s, %s, %s, 'uploaded')
             RETURNING id
             """,
-            (customer_id, file.filename, object_key, file_size_mb),
+            (customer_id, safe_name, object_key, file_size_mb),
         )
         video_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
-    except Exception as e:
-        raise HTTPException(500, f"DB 저장 실패: {e}")
+    except Exception:
+        logger.error("upload: DB insert error", exc_info=True)
+        raise HTTPException(500, "영상 정보 저장에 실패했습니다.")
 
-    # Celery 분석 태스크 등록 (video_id 함께 전달)
     from tasks.analyze import run_analysis
     task = run_analysis.delay(object_key, customer_id, video_id)
 
-    # task_id를 videos 테이블에 기록
     try:
         conn = _get_db()
         cur  = conn.cursor()
@@ -90,6 +115,7 @@ async def upload_video(
         "task_id":    task.id,
         "message":    "분석이 시작되었습니다. task_id로 진행 상황을 확인하세요.",
     }
+
 
 @router.get("/task/{task_id}")
 def get_task_status(task_id: str):

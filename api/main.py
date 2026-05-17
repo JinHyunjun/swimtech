@@ -1,10 +1,17 @@
+import logging
 import os
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from rate_limit import limiter
 from routers import videos, customers, analysis, stream, auth, dashboard, sheets
 from routers.auth import verify_token
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="SwimTech API",
@@ -12,12 +19,17 @@ app = FastAPI(
     version="0.1.0"
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["https://localhost"],
+    allow_origin_regex=r"https://[^./]+\.trycloudflare\.com",
     allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router,      prefix="/auth",      tags=["인증"])
@@ -147,6 +159,25 @@ async def stream_video_file(filename: str, request: Request):
     if not os.path.exists(video_path):
         raise HTTPException(status_code=404, detail=f"영상 파일 없음: {safe_name}")
     return FileResponse(video_path, media_type="video/mp4", headers={"Accept-Ranges": "bytes"})
+
+# PWA 필수 파일
+@app.get("/manifest.json")
+def serve_manifest():
+    path = os.path.join(FRONTEND_DIR, "manifest.json")
+    return FileResponse(path, media_type="application/manifest+json")
+
+@app.get("/sw.js")
+def serve_sw():
+    path = os.path.join(FRONTEND_DIR, "sw.js")
+    return FileResponse(path, media_type="application/javascript")
+
+@app.get("/static/icons/{filename}")
+def serve_icon(filename: str):
+    safe = os.path.basename(filename)
+    path = os.path.join(FRONTEND_DIR, "static", "icons", safe)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Icon not found")
+    return FileResponse(path, media_type="image/png")
 
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
