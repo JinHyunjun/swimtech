@@ -126,6 +126,10 @@ CREATE INDEX IF NOT EXISTS idx_frame_timestamp    ON frame_metrics(video_id, tim
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS google_token TEXT;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS sheets_id TEXT;
 
+-- ── 소셜 로그인 컬럼 추가 ──────────────────────────────────────
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_provider TEXT;  -- google / kakao / local
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_id TEXT;
+
 -- ── 샘플 고객 데이터 (테스트용) ──────────────────
 INSERT INTO customers (name, email, phone, level, goal) VALUES
     ('홍길동', 'hong@example.com', '010-1234-5678', 'intermediate', '자유형 턴 개선'),

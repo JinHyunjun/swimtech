@@ -50,6 +50,8 @@ services:
       - ADMIN_ID=${ADMIN_ID}
       - ADMIN_PW=${ADMIN_PW}
       - HOST_IP=${HOST_IP}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis
