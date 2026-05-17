@@ -130,6 +130,7 @@ def login(body: LoginRequest, response: Response):
         key="swimtech_token",
         value=token,
         httponly=True,
+        secure=True,
         max_age=60 * 60 * TOKEN_EXPIRE_HOURS,
         samesite="lax",
     )

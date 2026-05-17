@@ -9,6 +9,7 @@ Track 3. Start & Turn → 스타트/턴 전문 모델
 적절한 트랙의 모델을 자동 선택합니다.
 """
 import os
+import urllib.parse
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
@@ -337,6 +338,47 @@ STROKE_STANDARDS = {
 }
 
 
+_YT_QUERIES = {
+    "freestyle": {
+        "elbow_wide":   "freestyle high elbow catch drill",
+        "elbow_narrow": "freestyle catch up drill tutorial",
+        "symmetry":     "freestyle arm symmetry drill",
+        "kick_slow":    "freestyle kick drill tutorial",
+        "kick_fast":    "freestyle two beat kick drill",
+        "head":         "freestyle head position drill",
+    },
+    "backstroke": {
+        "elbow_wide":   "backstroke high elbow pull drill",
+        "elbow_narrow": "backstroke catch drill tutorial",
+        "symmetry":     "backstroke arm symmetry drill",
+        "kick_slow":    "backstroke kick drill tutorial",
+        "kick_fast":    "backstroke flutter kick control",
+        "head":         "backstroke head position drill",
+    },
+    "breaststroke": {
+        "elbow_wide":   "breaststroke pull drill tutorial",
+        "elbow_narrow": "breaststroke catch drill tutorial",
+        "symmetry":     "breaststroke symmetry drill tutorial",
+        "kick_slow":    "breaststroke whip kick drill",
+        "kick_fast":    "breaststroke kick timing drill",
+        "head":         "breaststroke head position drill",
+    },
+    "butterfly": {
+        "elbow_wide":   "butterfly high elbow drill",
+        "elbow_narrow": "butterfly catch drill tutorial",
+        "symmetry":     "butterfly arm symmetry drill",
+        "kick_slow":    "butterfly dolphin kick drill",
+        "kick_fast":    "butterfly kick timing drill",
+        "head":         "butterfly head position drill",
+    },
+}
+
+
+def _build_yt_url(stroke: str, issue: str, fallback: str = "") -> str:
+    query = _YT_QUERIES.get(stroke, {}).get(issue) or fallback or "swimming drill tutorial"
+    return f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}"
+
+
 def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -> dict:
     """
     강점(strengths) + 개선점(improvements) + 각도별 상세 설명 + 시점 정보 포함 피드백 생성
@@ -440,6 +482,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": f"각도가 {diff:.0f}° 부족합니다. 팔꿈치를 좀 더 구부려주세요.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"영상 전반부에서 가장 작은 각도({l_min:.1f}°)가 감지됐습니다.",
+                "youtube_url": _build_yt_url(stroke_type, "elbow_narrow", std["youtube_queries"][0]),
             })
         else:
             diff = l_avg - ideal_e_max
@@ -453,6 +496,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": f"각도가 {diff:.0f}° 큽니다. 하이 엘보우 자세를 유지하세요.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최대 각도({l_avg:.1f}°)가 반복적으로 감지됐습니다.",
+                "youtube_url": _build_yt_url(stroke_type, "elbow_wide", std["youtube_queries"][0]),
             })
 
     # ── 팔꿈치 각도 평가 (오른팔) ──────────────────────────────
@@ -480,6 +524,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": f"각도가 {diff:.0f}° 부족합니다.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최소 각도({r_min:.1f}°)가 감지됐습니다.",
+                "youtube_url": _build_yt_url(stroke_type, "elbow_narrow", std["youtube_queries"][0]),
             })
         else:
             diff = r_avg - ideal_e_max
@@ -493,6 +538,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": f"각도가 {diff:.0f}° 큽니다.",
                 "reason": std["elbow_reason"],
                 "worst_moment": f"최대 각도({r_avg:.1f}°)가 반복 감지됐습니다.",
+                "youtube_url": _build_yt_url(stroke_type, "elbow_wide", std["youtube_queries"][0]),
             })
 
     # ── 좌우 대칭 평가 ────────────────────────────────
@@ -519,6 +565,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
             "comment": "좌우 팔 각도 차이가 있습니다. 거울 앞에서 양팔 드릴을 연습하세요.",
             "reason": std["symmetry_reason"],
             "worst_moment": "영상 전반에 걸쳐 좌우 차이가 관찰됩니다.",
+            "youtube_url": _build_yt_url(stroke_type, "symmetry", std["youtube_queries"][0]),
         })
     else:
         improvements.append({
@@ -531,6 +578,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
             "comment": f"좌우 팔 각도 차이({arm_diff:.0f}°)가 큽니다. 한쪽 팔에 편향된 스트로크를 교정해야 합니다.",
             "reason": std["symmetry_reason"],
             "worst_moment": "영상 전반에 걸쳐 좌우 차이가 관찰됩니다.",
+            "youtube_url": _build_yt_url(stroke_type, "symmetry", std["youtube_queries"][0]),
         })
 
     # ── 발차기 평가 ───────────────────────────────────
@@ -559,6 +607,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": "발차기가 부족합니다. 발목 유연성 훈련과 킥 드릴을 추가하세요.",
                 "reason": std["kick_reason"],
                 "worst_moment": f"{dur:.0f}초 영상에서 총 {kick}회로 평균보다 낮습니다.",
+                "youtube_url": _build_yt_url(stroke_type, "kick_slow", std["youtube_queries"][0]),
             })
         else:
             k_diff = freq - ideal_k_max
@@ -573,6 +622,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": "발차기가 과도합니다. 체력 낭비를 줄이고 상체 추진력을 높이세요.",
                 "reason": std["kick_reason"],
                 "worst_moment": "영상 후반부에서 과도한 킥이 집중적으로 관찰됩니다.",
+                "youtube_url": _build_yt_url(stroke_type, "kick_fast", std["youtube_queries"][0]),
             })
 
     # ── 머리/시선 평가 ────────────────────────────────
@@ -600,6 +650,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "comment": "머리가 너무 들려 있습니다. 시선을 수면 아래 45° 방향으로 향하세요.",
                 "reason": std["head_reason"],
                 "worst_moment": "호흡 구간에서 머리가 과도하게 올라오는 패턴이 감지됩니다.",
+                "youtube_url": _build_yt_url(stroke_type, "head", std["youtube_queries"][0]),
             })
 
     # 모두 좋으면 기본 메시지

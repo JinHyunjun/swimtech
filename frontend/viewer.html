@@ -384,6 +384,12 @@ function finishAnalysis(d) {
         <div class="fb-comment">${imp.comment}</div>
         ${imp.worst_moment ? `<div class="fb-moment">📍 ${imp.worst_moment}</div>` : ''}
         ${imp.reason ? `<div class="fb-reason">💡 ${imp.reason}</div>` : ''}
+        ${imp.youtube_url ? `<a href="${imp.youtube_url}" target="_blank" rel="noopener noreferrer"
+           style="display:inline-block;margin-top:6px;padding:3px 10px;
+                  background:#ff0000;color:#fff;border-radius:4px;
+                  font-size:11px;font-weight:600;text-decoration:none;">
+          📺 참고 영상 보기
+        </a>` : ''}
       `;
       feedbackBody.appendChild(item);
     });

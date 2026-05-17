@@ -67,6 +67,23 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /meta {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /chat {
+    reverse_proxy swim-api:8000
+  }
+
+  # Flowise AI 챗봇 (HTTPS 경유 — iframe 혼합 콘텐츠 문제 없음)
+  handle /flowise/* {
+    uri strip_prefix /flowise
+    reverse_proxy swim-flowise:3000 {
+      header_up Host {upstream_hostport}
+    }
+    header -X-Frame-Options
+  }
+
   # Metabase 대시보드
   handle /metabase/* {
     uri strip_prefix /metabase

@@ -9,7 +9,8 @@
       "Bash(node --check frontend/viewer.html)",
       "Bash(powershell *)",
       "Bash(docker compose *)",
-      "Bash(Test-Path *)"
+      "Bash(Test-Path *)",
+      "Bash(docker exec swim-postgres *)"
     ]
   }
 }

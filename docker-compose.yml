@@ -168,6 +168,21 @@ services:
       - swim-net
     restart: unless-stopped
 
+  # ── Flowise AI ──────────────────────────────────
+  flowise:
+    image: flowiseai/flowise
+    container_name: swim-flowise
+    ports:
+      - "${HOST_IP}:43000:3000"
+    environment:
+      - FLOWISE_USERNAME=
+      - FLOWISE_PASSWORD=
+    volumes:
+      - flowise-data:/root/.flowise
+    networks:
+      - swim-net
+    restart: unless-stopped
+
   # ── Flower ───────────────────────────────────────
   flower:
     image: mher/flower:latest
@@ -191,3 +206,4 @@ volumes:
   minio-data:
   caddy-data:
   caddy-config:
+  flowise-data:

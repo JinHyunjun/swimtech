@@ -292,9 +292,10 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
         # 개선된 피드백 구조 (강점 + 개선점 + 상세 설명)
         "feedback":      feedback.get("feedback", ""),
         "strengths":     feedback.get("strengths", []),
-        "improvements":  feedback.get("improvements", []),
-        "drills":        feedback.get("drills", []),
-        "stroke_name":   feedback.get("stroke_name", ""),
+        "improvements":     feedback.get("improvements", []),
+        "drills":           feedback.get("drills", []),
+        "stroke_name":      feedback.get("stroke_name", ""),
+        "youtube_queries":  feedback.get("youtube_queries", []),
         **summary_data,
     })
 

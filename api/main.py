@@ -73,10 +73,10 @@ def landing_page():
     return RedirectResponse(url="/login")
 
 def _auth_redirect(request: Request):
-    """토큰 미검증 시 landing 리디렉트. 검증 통과 시 None 반환."""
+    """토큰 미검증 시 login 리디렉트. 검증 통과 시 None 반환."""
     token = request.cookies.get("swimtech_token")
     if not token or not verify_token(token):
-        return RedirectResponse(url="/landing")
+        return RedirectResponse(url="/login")
     return None
 
 def _serve(filename: str):
@@ -85,8 +85,15 @@ def _serve(filename: str):
         return FileResponse(path)
     raise HTTPException(status_code=404, detail=f"{filename} not found")
 
-# 루트 → 메타 선택 페이지
+# 루트 → 홈 선택 화면
 @app.get("/")
+def serve_home(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("landing.html")
+
+# 영상 분석 메타 선택 페이지
+@app.get("/meta")
 def serve_meta(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
@@ -112,6 +119,13 @@ def serve_dashboard(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("dashboard.html")
+
+# AI 코치 챗봇 페이지
+@app.get("/chat")
+def serve_chat(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("chat.html")
 
 # 레거시 루트 (기존 index.html 직접 접근용)
 @app.get("/app")
