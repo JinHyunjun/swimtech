@@ -122,6 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_frame_video        ON frame_metrics(video_id);
 CREATE INDEX IF NOT EXISTS idx_frame_timestamp    ON frame_metrics(video_id, timestamp_sec);
 
 -- ── 샘플 고객 데이터 (테스트용) ──────────────────
+-- ── Google Sheets 연동 컬럼 추가 (기존 DB 마이그레이션용) ─────
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS google_token TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS sheets_id TEXT;
+
+-- ── 샘플 고객 데이터 (테스트용) ──────────────────
 INSERT INTO customers (name, email, phone, level, goal) VALUES
     ('홍길동', 'hong@example.com', '010-1234-5678', 'intermediate', '자유형 턴 개선'),
     ('김수영', 'kim@example.com',  '010-9876-5432', 'beginner',     '기본 자세 교정')

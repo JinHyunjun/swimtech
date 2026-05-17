@@ -11,6 +11,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /api/sheets/* {
+    reverse_proxy swim-api:8000
+  }
+
   handle /api/* {
     reverse_proxy swim-api:8000
   }

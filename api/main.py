@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
-from routers import videos, customers, analysis, stream, auth, dashboard
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets
 from routers.auth import verify_token
 
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(customers.router, prefix="/customers", tags=["고객"])
 app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
 app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분석"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
+app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
 
 @app.get("/api/health")
 def health():

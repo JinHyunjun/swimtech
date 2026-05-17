@@ -29,3 +29,7 @@ pydantic-settings==2.2.1
 httpx==0.27.0
 python-jose[cryptography]==3.3.0   # JWT
 passlib[bcrypt]==1.7.4
+
+# ── Google Sheets 연동 ────────────────────────────
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.132.0
