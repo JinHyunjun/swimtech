@@ -1,0 +1,34 @@
+{
+  "_schema": {
+    "stroke_type":  "freestyle | backstroke | breaststroke | butterfly | unknown",
+    "skill_level":  "beginner | intermediate | advanced | elite",
+    "purpose_tag":  "competition | tutorial | health | masters",
+    "source":       "출처 설명 (채널명, 대회명 등)"
+  },
+  "_example": {
+    "video_001.mp4": {
+      "stroke_type": "freestyle",
+      "skill_level": "elite",
+      "purpose_tag": "competition",
+      "source": "olympic_2024"
+    },
+    "video_002.mp4": {
+      "stroke_type": "breaststroke",
+      "skill_level": "intermediate",
+      "purpose_tag": "tutorial",
+      "source": "effortless_swimming_yt"
+    },
+    "video_003.mp4": {
+      "stroke_type": "backstroke",
+      "skill_level": "beginner",
+      "purpose_tag": "health",
+      "source": "swimming_for_seniors_yt"
+    },
+    "video_004.mp4": {
+      "stroke_type": "freestyle",
+      "skill_level": "advanced",
+      "purpose_tag": "masters",
+      "source": "masters_swimming_competition_2023"
+    }
+  }
+}

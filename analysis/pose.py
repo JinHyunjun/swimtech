@@ -87,24 +87,110 @@ def lm_xy(landmarks, idx) -> list:
 
 
 class KickDetector:
-    def __init__(self, threshold: float = 0.015):
-        self.threshold = threshold
-        self._prev_y: Optional[float] = None
-        self._direction: int = 0
+    """
+    영법별 발차기 감지기 — 동적 threshold 자동 캘리브레이션.
+
+    처음 CALIBRATION_FRAMES 프레임에서 발목 Y좌표 이동 범위를 측정해
+    threshold를 영상 환경에 맞게 자동 조정합니다.
+
+    모드:
+    - freestyle / backstroke / unknown : 교대 킥 (각 발 독립 추적)
+    - breaststroke                     : 개구리 킥 (양발 평균 Y)
+    - butterfly                        : 돌핀킥   (양발 평균 Y)
+    """
+
+    CALIBRATION_FRAMES = 30
+
+    _MODE = {
+        "freestyle":    "alternating",
+        "backstroke":   "alternating",
+        "breaststroke": "sync",
+        "butterfly":    "sync",
+    }
+    _COOLDOWN = {
+        "freestyle":    6,
+        "backstroke":   6,
+        "butterfly":    10,
+        "breaststroke": 15,
+    }
+
+    def __init__(self, stroke_type: str = "unknown"):
+        self.stroke_type     = stroke_type
+        self._mode           = self._MODE.get(stroke_type, "alternating")
+        self.threshold       = 0.020          # 캘리브레이션 전 기본값
+        self.cooldown_frames = self._COOLDOWN.get(stroke_type, 6)
+
+        # 캘리브레이션
+        self.calibrated  = False
+        self._calib_l: list = []
+        self._calib_r: list = []
+
+        # 교대 킥 상태
+        self._prev_l: Optional[float] = None
+        self._prev_r: Optional[float] = None
+        self._dir_l:  int             = 0
+        self._dir_r:  int             = 0
+
+        # 동기 킥 상태 (breaststroke / butterfly)
+        self._prev_avg: Optional[float] = None
+        self._dir_avg:  int             = 0
+
+        self._cooldown: int  = 0
         self.kick_count: int = 0
 
+    def _calibrate(self, l_y: float, r_y: float) -> bool:
+        """30프레임 수집 후 threshold 자동 설정. 완료되면 True 반환."""
+        self._calib_l.append(l_y)
+        self._calib_r.append(r_y)
+
+        if len(self._calib_l) >= self.CALIBRATION_FRAMES:
+            range_l   = max(self._calib_l) - min(self._calib_l)
+            range_r   = max(self._calib_r) - min(self._calib_r)
+            avg_range = (range_l + range_r) / 2
+            # 이동 범위의 20% 를 threshold로, 최소 0.010 보장
+            self.threshold = max(avg_range * 0.20, 0.010)
+            self.calibrated = True
+            return True
+        return False
+
+    def _check(self, cur: float, prev: float, direction: int):
+        delta = cur - prev
+        if delta > self.threshold and direction != 1:
+            return 1, False
+        elif delta < -self.threshold and direction == 1:
+            return -1, True
+        return direction, False
+
     def update(self, l_y: float, r_y: float) -> bool:
-        avg_y = (l_y + r_y) / 2
+        if not self.calibrated:
+            self._calibrate(l_y, r_y)
+            return False
+
         kicked = False
-        if self._prev_y is not None:
-            delta = avg_y - self._prev_y
-            if delta > self.threshold and self._direction != 1:
-                self._direction = 1
-            elif delta < -self.threshold and self._direction == 1:
-                self._direction = -1
-                self.kick_count += 1
-                kicked = True
-        self._prev_y = avg_y
+
+        if self._cooldown > 0:
+            self._cooldown -= 1
+
+        if self._mode == "alternating":
+            if self._prev_l is not None and self._prev_r is not None:
+                self._dir_l, kick_l = self._check(l_y, self._prev_l, self._dir_l)
+                self._dir_r, kick_r = self._check(r_y, self._prev_r, self._dir_r)
+                if (kick_l or kick_r) and self._cooldown == 0:
+                    self.kick_count += 1
+                    self._cooldown = self.cooldown_frames
+                    kicked = True
+            self._prev_l = l_y
+            self._prev_r = r_y
+        else:  # sync — breaststroke / butterfly
+            avg_y = (l_y + r_y) / 2
+            if self._prev_avg is not None:
+                self._dir_avg, kick_avg = self._check(avg_y, self._prev_avg, self._dir_avg)
+                if kick_avg and self._cooldown == 0:
+                    self.kick_count += 1
+                    self._cooldown = self.cooldown_frames
+                    kicked = True
+            self._prev_avg = avg_y
+
         return kicked
 
 

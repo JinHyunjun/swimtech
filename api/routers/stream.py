@@ -66,7 +66,7 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
     yield sse({"type": "meta", "fps": fps,
                "total_frames": total_frames, "duration": duration})
 
-    kick_detector  = KickDetector()
+    kick_detector  = KickDetector(stroke_type=forced_stroke or "unknown")
     frame_metrics  = []
     l_elbows, r_elbows, head_angles = [], [], []
     kick_count = 0

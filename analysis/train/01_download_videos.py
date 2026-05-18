@@ -220,6 +220,67 @@ TRACK_DESC = {
     "start_turn":  "스타트/턴 모델",
 }
 
+# ══════════════════════════════════════════════════════════
+# 목적별 카테고리 (--category 옵션)
+# 기존 3-Track과 별개로 목적 기반 데이터 수집에 사용
+# ══════════════════════════════════════════════════════════
+HEALTH_QUERIES = [
+    "건강 수영 중장년",
+    "수영 부상 예방",
+    "swimming for health adults",
+    "low impact swimming workout",
+    "수영 어깨 부상 예방",
+    "swimming injury prevention",
+    "건강하게 오래 수영하기",
+    "수영 재활 운동",
+    "swimming for seniors",
+    "gentle swimming technique",
+]
+
+MASTERS_QUERIES = [
+    "마스터즈 수영",
+    "masters swimming technique",
+    "adult swimming improvement",
+    "수영 효율 향상",
+    "swimming efficiency adults",
+    "마스터즈 수영 대회",
+    "masters swimming competition",
+    "수영 지구력 훈련",
+    "swimming endurance training",
+    "triathlon swimming technique",
+]
+
+CATEGORIES = {
+    "competition": {
+        "keywords":     [q for qs in COMPETITION_QUERIES.values() for q in qs],
+        "max_videos":   100,
+        "max_duration": 300,
+        "save_dir":     os.path.join(BASE_DIR, "competition"),
+        "desc":         "대회/기록 영상 (올림픽·세계선수권)",
+    },
+    "tutorial": {
+        "keywords":     [q for qs in TUTORIAL_QUERIES.values() for q in qs],
+        "max_videos":   80,
+        "max_duration": 600,
+        "save_dir":     os.path.join(BASE_DIR, "tutorial"),
+        "desc":         "교습/강의 영상 (유튜버·인플루언서)",
+    },
+    "health": {
+        "keywords":     HEALTH_QUERIES,
+        "max_videos":   60,
+        "max_duration": 600,
+        "save_dir":     os.path.join(BASE_DIR, "health"),
+        "desc":         "건강 수영 영상 (중장년·부상 예방)",
+    },
+    "masters": {
+        "keywords":     MASTERS_QUERIES,
+        "max_videos":   50,
+        "max_duration": 480,
+        "save_dir":     os.path.join(BASE_DIR, "masters"),
+        "desc":         "마스터즈 영상 (성인 효율·지구력)",
+    },
+}
+
 
 def check_yt_dlp():
     try:
@@ -283,26 +344,100 @@ def download_track(track: str, stroke_filter: str = "all", max_videos: int = 15)
     return total
 
 
+def download_by_category(category: str):
+    """목적별 카테고리 단위 수집 (CATEGORIES dict 기반)."""
+    cfg        = CATEGORIES[category]
+    save_dir   = cfg["save_dir"]
+    max_videos = cfg["max_videos"]
+    max_dur    = cfg["max_duration"]
+    keywords   = cfg["keywords"]
+
+    os.makedirs(save_dir, exist_ok=True)
+    downloaded = 0
+
+    print(f"\n{'='*60}")
+    print(f"  Category: {cfg['desc']}")
+    print(f"  저장 경로: {save_dir}")
+    print(f"  목표: {max_videos}개 / 최대 {max_dur}초")
+    print(f"{'='*60}")
+
+    for query in keywords:
+        if downloaded >= max_videos:
+            break
+        remaining = max_videos - downloaded
+        print(f"  [검색] '{query}' (남은 {remaining}개)")
+
+        cmd = [
+            "yt-dlp",
+            f"ytsearch{remaining}:{query}",
+            "--output", os.path.join(save_dir, "%(title)s.%(ext)s"),
+            "--format", "mp4/bestvideo[height<=720]",
+            "--max-downloads", str(remaining),
+            "--no-playlist",
+            "--match-filter", f"duration < {max_dur}",
+            "--ignore-errors",
+            "--quiet",
+            "--progress",
+        ]
+        subprocess.run(cmd)
+        files = [f for f in os.listdir(save_dir) if f.endswith(".mp4")]
+        downloaded = len(files)
+
+    print(f"\n  → {category}: {downloaded}개 수집 완료")
+    return downloaded
+
+
 def main():
-    parser = argparse.ArgumentParser(description="SwimTech 3-Track 영상 수집")
+    parser = argparse.ArgumentParser(
+        description="SwimTech 영상 수집 (3-Track 또는 목적별 카테고리)",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "예시:\n"
+            "  python 01_download_videos.py                          # 전체 트랙\n"
+            "  python 01_download_videos.py --track competition      # 대회 트랙만\n"
+            "  python 01_download_videos.py --category health        # 건강 카테고리\n"
+            "  python 01_download_videos.py --category all           # 목적별 전체\n"
+            "  python 01_download_videos.py --track tutorial --stroke freestyle --max 20"
+        )
+    )
     parser.add_argument("--track",
         choices=["competition", "tutorial", "start_turn", "all"],
-        default="all", help="수집할 트랙 (기본: all)")
+        default=None, help="3-Track 기반 수집 (기본: --category 없으면 all)")
+    parser.add_argument("--category",
+        choices=list(CATEGORIES.keys()) + ["all"],
+        default=None, help="목적별 카테고리 수집 (competition/tutorial/health/masters/all)")
     parser.add_argument("--stroke",
         choices=["freestyle","backstroke","breaststroke","butterfly","medley","drill","all"],
-        default="all", help="특정 영법만 수집 (기본: all)")
+        default="all", help="--track 모드에서 특정 영법만 수집 (기본: all)")
     parser.add_argument("--max", type=int, default=15,
-        help="카테고리당 최대 영상 수 (기본: 15)")
+        help="--track 모드: 카테고리당 최대 영상 수 (기본: 15)")
     args = parser.parse_args()
 
     if not check_yt_dlp():
         print("❌ yt-dlp 미설치\n   pip install yt-dlp")
         sys.exit(1)
 
-    tracks = ["competition", "tutorial", "start_turn"] if args.track == "all" else [args.track]
+    # ── 목적별 카테고리 모드 ──────────────────────────────
+    if args.category:
+        cats = list(CATEGORIES.keys()) if args.category == "all" else [args.category]
+        grand_total = 0
+        print(f"\n🏊 SwimTech 목적별 영상 수집 시작")
+        print(f"   카테고리: {cats}")
+        for cat in cats:
+            grand_total += download_by_category(cat)
+        print(f"\n🎉 목적별 수집 완료: 총 {grand_total}개")
+        print(f"\n저장 구조:")
+        for cat, cfg in CATEGORIES.items():
+            print(f"  {cfg['save_dir'].replace(BASE_DIR, 'data')}  ← {cfg['desc']}")
+        print(f"\n다음 단계: python analysis/train/02_extract_features.py")
+        return
+
+    # ── 기존 3-Track 모드 ────────────────────────────────
+    track_arg  = args.track or "all"
+    tracks     = ["competition", "tutorial", "start_turn"] if track_arg == "all" else [track_arg]
     grand_total = 0
 
-    print(f"\n🏊 SwimTech 영상 수집 시작")
+    print(f"\n🏊 SwimTech 3-Track 영상 수집 시작")
     print(f"   트랙: {tracks}")
     print(f"   영법 필터: {args.stroke}")
     print(f"   카테고리당 최대: {args.max}개")
