@@ -88,108 +88,127 @@ def lm_xy(landmarks, idx) -> list:
 
 class KickDetector:
     """
-    영법별 발차기 감지기 — 동적 threshold 자동 캘리브레이션.
+    영법별 발차기 감지기 — 캘리브레이션 없이 rolling std 기반 실시간 적응 threshold.
 
-    처음 CALIBRATION_FRAMES 프레임에서 발목 Y좌표 이동 범위를 측정해
-    threshold를 영상 환경에 맞게 자동 조정합니다.
+    최근 60프레임 발목 Y 표준편차 * 0.5 를 threshold로 사용해
+    촬영 환경에 자동 적응. 각 발 독립 쿨다운으로 교대 킥 정확 감지.
 
-    모드:
-    - freestyle / backstroke / unknown : 교대 킥 (각 발 독립 추적)
-    - breaststroke                     : 개구리 킥 (양발 평균 Y)
-    - butterfly                        : 돌핀킥   (양발 평균 Y)
+    - freestyle / backstroke / unknown : 각 발 독립 감지 (쿨다운 5프레임)
+    - butterfly                        : 양발 평균 Y, 아래→위 전환 (쿨다운 8프레임)
+    - breaststroke                     : 양발 평균 Y, 위→아래 전환 (쿨다운 12프레임)
     """
 
-    CALIBRATION_FRAMES = 30
+    _WINDOW = 60  # rolling std 계산에 사용할 최근 프레임 수 (양발 × 2)
 
-    _MODE = {
-        "freestyle":    "alternating",
-        "backstroke":   "alternating",
-        "breaststroke": "sync",
-        "butterfly":    "sync",
-    }
     _COOLDOWN = {
-        "freestyle":    6,
-        "backstroke":   6,
-        "butterfly":    10,
-        "breaststroke": 15,
+        "freestyle":    5,
+        "backstroke":   5,
+        "butterfly":    8,
+        "breaststroke": 12,
+        "unknown":      5,
     }
 
     def __init__(self, stroke_type: str = "unknown"):
-        self.stroke_type     = stroke_type
-        self._mode           = self._MODE.get(stroke_type, "alternating")
-        self.threshold       = 0.020          # 캘리브레이션 전 기본값
-        self.cooldown_frames = self._COOLDOWN.get(stroke_type, 6)
+        self.stroke_type = stroke_type
+        self.kick_count  = 0
+        self._y_buf: list = []          # 양발 Y값 rolling 버퍼
 
-        # 캘리브레이션
-        self.calibrated  = False
-        self._calib_l: list = []
-        self._calib_r: list = []
-
-        # 교대 킥 상태
+        # 교대 킥 상태 (freestyle / backstroke / unknown)
         self._prev_l: Optional[float] = None
         self._prev_r: Optional[float] = None
-        self._dir_l:  int             = 0
-        self._dir_r:  int             = 0
+        self._dir_l:  int = 0           # +1=내려가는중, -1=올라가는중
+        self._dir_r:  int = 0
+        self._cool_l: int = 0           # 발별 독립 쿨다운
+        self._cool_r: int = 0
 
-        # 동기 킥 상태 (breaststroke / butterfly)
+        # 동기 킥 상태 (butterfly / breaststroke)
         self._prev_avg: Optional[float] = None
-        self._dir_avg:  int             = 0
+        self._dir_avg:  int = 0
+        self._cool_avg: int = 0
 
-        self._cooldown: int  = 0
-        self.kick_count: int = 0
+        self._base_cd = self._COOLDOWN.get(stroke_type, 5)
 
-    def _calibrate(self, l_y: float, r_y: float) -> bool:
-        """30프레임 수집 후 threshold 자동 설정. 완료되면 True 반환."""
-        self._calib_l.append(l_y)
-        self._calib_r.append(r_y)
-
-        if len(self._calib_l) >= self.CALIBRATION_FRAMES:
-            range_l   = max(self._calib_l) - min(self._calib_l)
-            range_r   = max(self._calib_r) - min(self._calib_r)
-            avg_range = (range_l + range_r) / 2
-            # 이동 범위의 20% 를 threshold로, 최소 0.010 보장
-            self.threshold = max(avg_range * 0.20, 0.010)
-            self.calibrated = True
-            return True
-        return False
-
-    def _check(self, cur: float, prev: float, direction: int):
-        delta = cur - prev
-        if delta > self.threshold and direction != 1:
-            return 1, False
-        elif delta < -self.threshold and direction == 1:
-            return -1, True
-        return direction, False
+    def _threshold(self) -> float:
+        """최근 60프레임 발목 Y 표준편차의 0.5배 (최소 0.008, 최대 0.04)."""
+        if len(self._y_buf) < 10:
+            return 0.015
+        std = float(np.std(self._y_buf[-self._WINDOW:]))
+        return float(np.clip(std * 0.5, 0.008, 0.04))
 
     def update(self, l_y: float, r_y: float) -> bool:
-        if not self.calibrated:
-            self._calibrate(l_y, r_y)
-            return False
+        # rolling 버퍼 유지 (오래된 데이터 제거)
+        self._y_buf.append(l_y)
+        self._y_buf.append(r_y)
+        if len(self._y_buf) > self._WINDOW * 4:
+            del self._y_buf[:self._WINDOW * 2]
 
+        thr    = self._threshold()
         kicked = False
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-
-        if self._mode == "alternating":
-            if self._prev_l is not None and self._prev_r is not None:
-                self._dir_l, kick_l = self._check(l_y, self._prev_l, self._dir_l)
-                self._dir_r, kick_r = self._check(r_y, self._prev_r, self._dir_r)
-                if (kick_l or kick_r) and self._cooldown == 0:
-                    self.kick_count += 1
-                    self._cooldown = self.cooldown_frames
-                    kicked = True
-            self._prev_l = l_y
-            self._prev_r = r_y
-        else:  # sync — breaststroke / butterfly
-            avg_y = (l_y + r_y) / 2
+        if self.stroke_type == "butterfly":
+            # 양발 평균 Y: 아래(+)→위(-) 전환 시 1카운트
+            if self._cool_avg > 0:
+                self._cool_avg -= 1
+            avg = (l_y + r_y) / 2
             if self._prev_avg is not None:
-                self._dir_avg, kick_avg = self._check(avg_y, self._prev_avg, self._dir_avg)
-                if kick_avg and self._cooldown == 0:
-                    self.kick_count += 1
-                    self._cooldown = self.cooldown_frames
-                    kicked = True
-            self._prev_avg = avg_y
+                delta = avg - self._prev_avg
+                if delta > thr:
+                    self._dir_avg = 1
+                elif delta < -thr:
+                    if self._dir_avg == 1 and self._cool_avg == 0:
+                        self.kick_count += 1
+                        self._cool_avg = self._base_cd
+                        kicked = True
+                    self._dir_avg = -1
+            self._prev_avg = avg
+
+        elif self.stroke_type == "breaststroke":
+            # 양발 평균 Y: 위(-)→아래(+) 전환 시 1카운트 (모였다 벌어지는 패턴)
+            if self._cool_avg > 0:
+                self._cool_avg -= 1
+            avg = (l_y + r_y) / 2
+            if self._prev_avg is not None:
+                delta = avg - self._prev_avg
+                if delta < -thr:
+                    self._dir_avg = -1
+                elif delta > thr:
+                    if self._dir_avg == -1 and self._cool_avg == 0:
+                        self.kick_count += 1
+                        self._cool_avg = self._base_cd
+                        kicked = True
+                    self._dir_avg = 1
+            self._prev_avg = avg
+
+        else:  # freestyle, backstroke, unknown — 각 발 독립 감지
+            # 왼발: 아래(+)→위(-) 전환 시 1카운트
+            if self._cool_l > 0:
+                self._cool_l -= 1
+            if self._prev_l is not None:
+                delta_l = l_y - self._prev_l
+                if delta_l > thr:
+                    self._dir_l = 1
+                elif delta_l < -thr:
+                    if self._dir_l == 1 and self._cool_l == 0:
+                        self.kick_count += 1
+                        self._cool_l = self._base_cd
+                        kicked = True
+                    self._dir_l = -1
+            self._prev_l = l_y
+
+            # 오른발: 독립 쿨다운
+            if self._cool_r > 0:
+                self._cool_r -= 1
+            if self._prev_r is not None:
+                delta_r = r_y - self._prev_r
+                if delta_r > thr:
+                    self._dir_r = 1
+                elif delta_r < -thr:
+                    if self._dir_r == 1 and self._cool_r == 0:
+                        self.kick_count += 1
+                        self._cool_r = self._base_cd
+                        kicked = True
+                    self._dir_r = -1
+            self._prev_r = r_y
 
         return kicked
 
@@ -251,7 +270,7 @@ def analyze_video(video_path: str, output_path: Optional[str] = None) -> Analysi
             os.makedirs(out_dir, exist_ok=True)
         writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
 
-    kick_detector = KickDetector()
+    kick_detector = KickDetector(stroke_type="freestyle")
     summary = AnalysisSummary(total_frames=total_frames, duration_sec=total_frames / fps)
     l_elbows, r_elbows, l_shoulders, r_shoulders, head_angles = [], [], [], [], []
 

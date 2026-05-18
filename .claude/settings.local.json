@@ -24,7 +24,11 @@
       "PowerShell(python --version 2>&1; python -c \"from PIL import Image; print\\('PIL OK'\\)\" 2>&1)",
       "PowerShell(python C:\\\\swim\\\\scripts\\\\gen_icons.py)",
       "PowerShell(\\(Get-Content \"C:\\\\swim\\\\frontend\\\\style.css\" | Measure-Object -Line\\).Lines)",
-      "PowerShell(python -c \"import json; json.load\\(open\\('C:/swim/frontend/manifest.json', encoding='utf-8'\\)\\); print\\('JSON OK'\\)\" 2>&1)"
+      "PowerShell(python -c \"import json; json.load\\(open\\('C:/swim/frontend/manifest.json', encoding='utf-8'\\)\\); print\\('JSON OK'\\)\" 2>&1)",
+      "Bash(not exist *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
