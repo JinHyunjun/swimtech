@@ -48,6 +48,7 @@ KAKAO_REDIRECT_URI  = "https://localhost/auth/kakao/callback"
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9]{4,20}$')
 _PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$')
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
+_NICKNAME_RE = re.compile(r'^[가-힣a-zA-Z0-9]{2,20}$')
 
 
 # ── DB / Redis helpers ────────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ def _ensure_social_columns():
         cur = conn.cursor()
         cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_provider TEXT")
         cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_id TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS nickname TEXT")
         conn.commit()
         cur.close()
         conn.close()
@@ -146,6 +148,10 @@ class RegisterRequest(BaseModel):
     email: str
     username: str
     password: str
+
+
+class NicknameRequest(BaseModel):
+    nickname: str
 
 
 # ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
@@ -212,7 +218,8 @@ def _find_or_create_social_user(
     social_id: str,
     email: str,
     name: str,
-) -> tuple[int, str]:
+) -> tuple[int, str, bool]:
+    """기존 사용자 → (id, username, False), 신규 가입 → (id, username, True)"""
     conn = get_db()
     cur = conn.cursor()
 
@@ -223,7 +230,7 @@ def _find_or_create_social_user(
     row = cur.fetchone()
     if row:
         cur.close(); conn.close()
-        return row[0], row[1]
+        return row[0], row[1], False
 
     if email:
         cur.execute("SELECT id, username FROM customers WHERE email = %s", (email,))
@@ -235,7 +242,7 @@ def _find_or_create_social_user(
             )
             conn.commit()
             cur.close(); conn.close()
-            return row[0], row[1]
+            return row[0], row[1], False
 
     base_username = (email.split("@")[0] if email else f"{provider}_{social_id}")
     username = base_username
@@ -256,7 +263,7 @@ def _find_or_create_social_user(
     customer_id = cur.fetchone()[0]
     conn.commit()
     cur.close(); conn.close()
-    return customer_id, username
+    return customer_id, username, True
 
 
 # ── 로컬 인증 ─────────────────────────────────────────────────────────────────
@@ -384,10 +391,76 @@ def logout(response: Response):
 def me(swimtech_token: str = Cookie(default=None)):
     if not swimtech_token:
         raise HTTPException(401, "로그인이 필요합니다.")
-    username = verify_token(swimtech_token)
+    payload = decode_token(swimtech_token)
+    username = payload.get("sub")
     if not username:
         raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
-    return {"username": username, "status": "authenticated"}
+
+    customer_id     = payload.get("customer_id")
+    nickname        = None
+    social_provider = None
+
+    if customer_id:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT nickname, social_provider FROM customers WHERE id = %s",
+                (customer_id,),
+            )
+            row = cur.fetchone()
+            cur.close(); conn.close()
+            if row:
+                nickname, social_provider = row
+        except Exception:
+            logger.warning("me: DB lookup failed", exc_info=True)
+
+    return {
+        "username":        username,
+        "status":          "authenticated",
+        "nickname":        nickname,
+        "social_provider": social_provider,
+        "needs_nickname":  nickname is None and social_provider not in (None, "local"),
+    }
+
+
+@router.post("/nickname")
+def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=None)):
+    if not swimtech_token:
+        raise HTTPException(401, "로그인이 필요합니다.")
+    payload = decode_token(swimtech_token)
+    if not payload.get("sub"):
+        raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
+    customer_id = payload.get("customer_id")
+    if not customer_id:
+        raise HTTPException(400, "닉네임 설정은 소셜 로그인 계정만 가능합니다.")
+
+    nickname = body.nickname.strip()
+    if not _NICKNAME_RE.match(nickname):
+        raise HTTPException(400, "닉네임은 2~20자, 한글·영문·숫자만 사용 가능합니다.")
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id FROM customers WHERE nickname = %s AND id != %s",
+            (nickname, customer_id),
+        )
+        if cur.fetchone():
+            cur.close(); conn.close()
+            raise HTTPException(400, "이미 사용 중인 닉네임입니다.")
+        cur.execute(
+            "UPDATE customers SET nickname = %s WHERE id = %s",
+            (nickname, customer_id),
+        )
+        conn.commit()
+        cur.close(); conn.close()
+        return {"status": "ok", "nickname": nickname}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("set_nickname: DB error", exc_info=True)
+        raise HTTPException(500, "내부 오류가 발생했습니다.")
 
 
 # ── Google OAuth ──────────────────────────────────────────────────────────────
@@ -444,11 +517,12 @@ def google_callback(code: str):
     if not social_id:
         raise HTTPException(400, "Google 사용자 정보를 가져올 수 없습니다.")
 
-    customer_id, username = _find_or_create_social_user("google", social_id, email, name)
+    customer_id, username, is_new = _find_or_create_social_user("google", social_id, email, name)
     token   = create_token(username, customer_id)
     refresh = create_refresh_token(username, customer_id)
 
-    resp = RedirectResponse(url="/", status_code=302)
+    redirect_url = "/nickname" if is_new else "/"
+    resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)
     return resp
@@ -505,11 +579,12 @@ def kakao_callback(code: str):
     if not social_id:
         raise HTTPException(400, "카카오 사용자 정보를 가져올 수 없습니다.")
 
-    customer_id, username = _find_or_create_social_user("kakao", social_id, email, name)
+    customer_id, username, is_new = _find_or_create_social_user("kakao", social_id, email, name)
     token   = create_token(username, customer_id)
     refresh = create_refresh_token(username, customer_id)
 
-    resp = RedirectResponse(url="/", status_code=302)
+    redirect_url = "/nickname" if is_new else "/"
+    resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)
     return resp

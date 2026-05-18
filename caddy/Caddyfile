@@ -87,6 +87,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /nickname {
+    reverse_proxy swim-api:8000
+  }
+
   # Flowise AI 챗봇 (HTTPS 경유 — iframe 혼합 콘텐츠 문제 없음)
   handle /flowise/* {
     uri strip_prefix /flowise

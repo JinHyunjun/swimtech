@@ -85,6 +85,11 @@ def landing_page():
         return FileResponse(path)
     return RedirectResponse(url="/login")
 
+# 닉네임 설정 페이지 (소셜 로그인 후 신규 가입 시)
+@app.get("/nickname")
+def nickname_page():
+    return _serve("nickname.html")
+
 def _auth_redirect(request: Request):
     """토큰 미검증 시 login 리디렉트. 검증 통과 시 None 반환."""
     token = request.cookies.get("swimtech_token")
