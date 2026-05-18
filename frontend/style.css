@@ -1,17 +1,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #0d0d0d;
-  --surface:  #161616;
-  --surface2: #1e1e1e;
-  --border:   #2a2a2a;
-  --text:     #e8e8e8;
-  --muted:    #666;
-  --blue:     #3b82f6;
+  --bg:       #0a1628;
+  --surface:  #1a3a5c;
+  --surface2: #0f2942;
+  --border:   #1e4d6b;
+  --text:     #e8f4f8;
+  --muted:    #90c4d4;
+  --blue:     #00b4d8;
   --green:    #4ade80;
   --amber:    #f59e0b;
   --red:      #f87171;
-  --cyan:     #22d3ee;
+  --cyan:     #48cae4;
   --purple:   #a78bfa;
 }
 
@@ -88,7 +88,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, 'S
 .ctrl-spacer { flex: 1; }
 .analyze-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px;
   padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
-.analyze-btn:hover { background: #2563eb; }
+.analyze-btn:hover { background: #0096c7; }
 .analyze-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
 .analyze-btn.running { background: #059669; }
 .reset-btn { background: none; border: 0.5px solid var(--border); color: var(--muted);
@@ -162,7 +162,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, 'S
   background: var(--blue); border-color: var(--blue);
   color: #fff; cursor: pointer;
 }
-.meta-next-btn:not(:disabled):hover { background: #2563eb; }
+.meta-next-btn:not(:disabled):hover { background: #0096c7; }
 
 /* ── 사이드 메타 정보 ─────────────────────────── */
 .meta-info-card {
@@ -181,7 +181,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, 'S
   padding: 10px 24px; font-size: 14px; font-weight: 500;
   cursor: pointer; transition: all .2s;
 }
-.file-select-btn:hover { background: #2563eb; transform: translateY(-1px); }
+.file-select-btn:hover { background: #0096c7; transform: translateY(-1px); }
 .file-select-btn-outline {
   background: var(--surface2); color: var(--text);
   border: 0.5px solid var(--border);
@@ -212,8 +212,8 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, 'S
   padding: 10px 12px; margin-bottom: 8px;
   border: 0.5px solid var(--border);
 }
-.strength-item   { border-left: 2px solid #4ade80; }
-.improvement-item{ border-left: 2px solid #fb923c; }
+.strength-item   { border-left: 2px solid #4ade80; background: #0d3b4a; }
+.improvement-item{ border-left: 2px solid #fb923c; background: #2a1f00; }
 
 .fb-header {
   display: flex; align-items: center; gap: 8px;

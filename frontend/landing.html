@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SwimTech — 홈</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#3b82f6">
+<meta name="theme-color" content="#00b4d8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,16 +13,67 @@
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 <style>
+/* ── 파도 애니메이션 ─── */
+@keyframes ocean-wave {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ocean-wave2 {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .home-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 53px);
   padding: 32px 24px;
+  position: relative;
+  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  overflow: hidden;
 }
+
+/* 물결 레이어 1 */
+.home-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 200%;
+  height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.15' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,15 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 60px;
+  animation: ocean-wave 8s linear infinite;
+  pointer-events: none;
+}
+
+/* 물결 레이어 2 */
+.home-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 200%;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%2348cae4' fill-opacity='0.1' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 40px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none;
+}
+
 .home-inner {
   width: 100%;
   max-width: 620px;
+  position: relative;
+  z-index: 1;
 }
 .home-title {
   text-align: center;
@@ -33,6 +84,7 @@
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
+  text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .home-title p {
   font-size: 13px;
@@ -58,19 +110,36 @@
   border-radius: 16px;
   text-decoration: none;
   color: var(--text);
-  transition: border-color .2s, background .2s, transform .15s;
+  transition: border-color .3s, background .3s, transform .2s, box-shadow .3s;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+/* 카드 하단 물결 라인 효과 */
+.choice-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  transition: left .4s ease;
+}
+.choice-card:hover::after {
+  left: 100%;
 }
 .choice-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,180,216,0.15);
 }
 .choice-card.analysis:hover {
   border-color: var(--blue);
-  background: rgba(59,130,246,.06);
+  background: rgba(0,180,216,.08);
 }
 .choice-card.ai:hover {
   border-color: var(--purple);
-  background: rgba(167,139,250,.06);
+  background: rgba(167,139,250,.08);
 }
 .choice-icon {
   font-size: 52px;
@@ -111,7 +180,7 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #333;color:#666;border-radius:6px;
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
                      padding:4px 12px;font-size:11px;cursor:pointer;">
         로그아웃
       </button>
@@ -157,7 +226,7 @@
 
 <!-- PWA 설치 배너 -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;
-  background:#1e1e2e;border-top:1px solid #3b82f6;padding:12px 16px;
+  background:#0d2137;border-top:1px solid #00b4d8;padding:12px 16px;
   display:flex;align-items:center;gap:12px;z-index:9999;
   padding-bottom:max(12px, env(safe-area-inset-bottom));">
   <span style="font-size:24px;">🏊</span>
@@ -165,7 +234,7 @@
     <div style="font-size:13px;font-weight:600;color:#e8e8e8;">SwimTech 앱 설치</div>
     <div id="pwa-banner-msg" style="font-size:11px;color:#888;margin-top:2px;"></div>
   </div>
-  <button id="pwa-install-btn" style="display:none;background:#3b82f6;color:#fff;
+  <button id="pwa-install-btn" style="display:none;background:#00b4d8;color:#fff;
     border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;
     cursor:pointer;min-height:44px;">설치</button>
   <button onclick="closePwaBanner()" style="background:none;border:none;color:#666;
