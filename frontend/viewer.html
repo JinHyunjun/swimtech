@@ -422,6 +422,7 @@ function finishAnalysis(d) {
   document.getElementById('analysis-bar').style.width = '100%';
   document.getElementById('progress-pct').textContent = '100%';
   lastAnalysisData = d;
+  sessionStorage.setItem('dashboard_refresh', 'true');
   resetAnalyzeBtn();
   showDashboardBtn();
   showActionButtons(d);

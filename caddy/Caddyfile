@@ -126,6 +126,7 @@ localhost {
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=()"
     X-XSS-Protection "1; mode=block"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com http://localhost:43000; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' blob:;"
     -Server
   }
 

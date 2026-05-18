@@ -500,6 +500,9 @@ async function logout() {
     const r = await fetch('/auth/me', { credentials: 'include' });
     if (!r.ok) { window.location.href = '/login'; return; }
   } catch { window.location.href = '/login'; return; }
+  if (sessionStorage.getItem('dashboard_refresh') === 'true') {
+    sessionStorage.removeItem('dashboard_refresh');
+  }
   loadDashboard();
 })();
 </script>
