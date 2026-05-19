@@ -153,6 +153,20 @@ def serve_pool(request: Request):
     if redir: return redir
     return _serve("pool.html")
 
+# 온보딩 튜토리얼 페이지
+@app.get("/onboarding")
+def serve_onboarding(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("onboarding.html")
+
+# 수영 용어 사전 페이지
+@app.get("/glossary")
+def serve_glossary(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("glossary.html")
+
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")
 def share_page(token: str):

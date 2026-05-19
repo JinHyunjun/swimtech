@@ -249,7 +249,11 @@ async function doLogin() {
     });
 
     if (res.ok) {
-      window.location.href = '/';
+      if (!localStorage.getItem('onboarding_done')) {
+        window.location.href = '/onboarding';
+      } else {
+        window.location.href = '/';
+      }
     } else {
       const data = await res.json();
       showError(data.detail || '로그인에 실패했습니다.');

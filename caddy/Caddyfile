@@ -95,6 +95,14 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /onboarding {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /glossary {
+    reverse_proxy swim-api:8000
+  }
+
   handle /share/* {
     reverse_proxy swim-api:8000
   }
