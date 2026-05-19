@@ -184,26 +184,43 @@ def classify_stroke(frame_metrics: list) -> StrokeClassification:
 # ── 영법별 피드백 기준값 ───────────────────────────────
 
 # ══════════════════════════════════════════════════════
-# 영법별 기준값 + 상세 설명
+# 영법별 기준값 + 상세 설명 (논문 기반 수치 적용 v1.5.0)
 # ══════════════════════════════════════════════════════
 STROKE_STANDARDS = {
     "freestyle": {
         "name": "자유형",
-        "elbow_angle_ideal": (80, 110),
-        "head_angle_ideal":  (160, 180),
+        # Swim Pembrokeshire (2017), PMC4000476, PMC4738963 기반
+        "elbow_normal_range":    (80, 120),
+        "elbow_catch_ideal":     (80, 100),
+        "elbow_pull_ideal":      (110, 120),
+        "head_normal_range":     (155, 175),
+        "symmetry_good":         85,
+        "symmetry_warning":      70,
+        "kick_freq_competition": (1.5, 3.0),
+        "kick_freq_health":      (0.5, 1.5),
+        "kick_freq_min":         0.3,
+        "references": [
+            "Swim Pembrokeshire (2017): Elbow angle 110-120° in pull phase",
+            "PMC4000476: Dropped elbow prevalence 61.3% pull-through, 53.2% recovery",
+            "PMC4738963: 6-beat kick optimal for stroke length and efficiency",
+        ],
+        # 하위 호환
+        "elbow_angle_ideal": (80, 120),
+        "head_angle_ideal":  (155, 175),
         "kick_freq_ideal":   (1.5, 3.0),
         "elbow_reason": (
-            "자유형에서 팔꿈치 각도 80~110°는 '하이 엘보우(High Elbow)' 자세를 유지하는 핵심입니다. "
-            "이 각도에서 손바닥이 뒤쪽을 향해 수압을 최대로 받을 수 있어 추진력이 가장 효율적으로 발생합니다. "
+            "자유형에서 팔꿈치 각도 80~120°는 '하이 엘보우(High Elbow)' 자세의 핵심입니다. "
+            "풀 단계 최적은 110~120°(Swim Pembrokeshire, 2017)이며, "
+            "이 각도에서 손바닥이 뒤쪽을 향해 수압을 최대로 받아 추진력이 가장 효율적으로 발생합니다. "
             "각도가 너무 크면 팔이 옆으로 벌어져 저항이 증가하고, 너무 작으면 어깨 부상 위험이 높아집니다."
         ),
         "kick_reason": (
-            "자유형 발차기는 1.5~3.0회/초가 이상적입니다. "
-            "이 범위에서 추진력 보조와 체력 소모의 균형이 최적화됩니다. "
+            "자유형 발차기는 경기용 1.5~3.0회/초(6비트 킥), 건강/장거리용 0.5~1.5회/초(2비트 킥)가 기준입니다. "
+            "6비트 킥은 스트로크 길이와 효율 면에서 최적(PMC4738963)이며, "
             "엘리트 단거리 선수는 3.0회 이상, 장거리는 1.5~2.0회를 유지합니다."
         ),
         "head_reason": (
-            "머리 각도 160~180°는 시선이 수면 아래 45° 방향을 향하는 자세입니다. "
+            "머리 각도 155~175°는 시선이 수면 아래 45° 방향을 향하는 자세입니다. "
             "머리가 수면 위로 올라올수록 엉덩이와 다리가 가라앉아 저항이 크게 증가합니다. "
             "올바른 시선 처리만으로 속도를 5~8% 향상시킬 수 있습니다."
         ),
@@ -220,15 +237,27 @@ STROKE_STANDARDS = {
     },
     "backstroke": {
         "name": "배영",
-        "elbow_angle_ideal": (90, 130),
+        "elbow_normal_range":    (80, 120),
+        "head_normal_range":     (155, 175),
+        "symmetry_good":         85,
+        "symmetry_warning":      70,
+        "kick_freq_competition": (1.5, 3.0),
+        "kick_freq_health":      (0.5, 1.5),
+        "kick_freq_min":         0.3,
+        "references": [
+            "PMC4738963: 발차기 빈도와 스트로크 효율 관계",
+            "PMC3438875: 수영 관련 어깨 부상 역학 연구",
+        ],
+        # 하위 호환
+        "elbow_angle_ideal": (80, 120),
         "head_angle_ideal":  (155, 175),
         "kick_freq_ideal":   (1.5, 3.0),
         "elbow_reason": (
-            "배영에서 팔꿈치 각도 90~130°는 물을 아래로 밀어내는 풀 단계에서 최대 추진력을 만드는 범위입니다. "
+            "배영에서 팔꿈치 각도 80~120°는 물을 아래로 밀어내는 풀 단계에서 최대 추진력을 만드는 범위입니다. "
             "팔꿈치가 너무 펴지면 어깨 관절에 과부하가 걸리고 추진력이 떨어집니다."
         ),
         "kick_reason": (
-            "배영 발차기는 자유형과 동일하게 1.5~3.0회/초가 권장됩니다. "
+            "배영 발차기는 경기용 1.5~3.0회/초, 건강용 0.5~1.5회/초가 권장됩니다. "
             "무릎을 거의 구부리지 않고 발목의 유연성으로 추진력을 만드는 것이 핵심입니다."
         ),
         "head_reason": (
@@ -247,15 +276,28 @@ STROKE_STANDARDS = {
     },
     "breaststroke": {
         "name": "평영",
-        "elbow_angle_ideal": (70, 100),
+        # 평영: 동시 킥, 스트로크당 1회 킥
+        "elbow_normal_range":    (70, 110),
+        "head_normal_range":     (150, 170),
+        "symmetry_good":         90,
+        "symmetry_warning":      75,
+        "kick_freq_competition": (0.8, 1.5),
+        "kick_freq_health":      (0.4, 1.0),
+        "kick_freq_min":         0.2,
+        "references": [
+            "PMC4000476: 수영 자세 분석 및 어깨 부상 연구",
+            "PMC3438875: 평영 관련 무릎 부상 역학 연구",
+        ],
+        # 하위 호환
+        "elbow_angle_ideal": (70, 110),
         "head_angle_ideal":  (150, 170),
         "kick_freq_ideal":   (0.5, 1.5),
         "elbow_reason": (
-            "평영 풀 단계에서 팔꿈치 각도 70~100°는 손바닥이 뒤를 향해 최대 수압을 받는 범위입니다. "
+            "평영 풀 단계에서 팔꿈치 각도 70~110°는 손바닥이 뒤를 향해 최대 수압을 받는 범위입니다. "
             "팔꿈치가 너무 넓게 벌어지면 저항이 커지고, 너무 좁으면 추진력이 줄어듭니다."
         ),
         "kick_reason": (
-            "평영 발차기는 스트로크 1회당 1번(0.5~1.5회/초)이 기준입니다. "
+            "평영 발차기는 경기용 0.8~1.5회/초, 건강용 0.4~1.0회/초(스트로크 1회당 1번)이 기준입니다. "
             "발목을 바깥쪽으로 벌린 후 모으면서 수압으로 추진력을 만드는 휩킥(Whip Kick)이 핵심입니다."
         ),
         "head_reason": (
@@ -274,15 +316,28 @@ STROKE_STANDARDS = {
     },
     "butterfly": {
         "name": "접영",
-        "elbow_angle_ideal": (80, 115),
-        "head_angle_ideal":  (155, 175),
+        # 접영: 돌핀킥 스트로크당 2회
+        "elbow_normal_range":    (80, 120),
+        "head_normal_range":     (150, 170),
+        "symmetry_good":         90,
+        "symmetry_warning":      75,
+        "kick_freq_competition": (1.0, 2.5),
+        "kick_freq_health":      (0.5, 1.2),
+        "kick_freq_min":         0.3,
+        "references": [
+            "PMC4000476: 접영 팔꿈치 자세와 어깨 부상 연관성",
+            "PMC4738963: 돌핀킥 최적 빈도 연구",
+        ],
+        # 하위 호환
+        "elbow_angle_ideal": (80, 120),
+        "head_angle_ideal":  (150, 170),
         "kick_freq_ideal":   (1.0, 2.5),
         "elbow_reason": (
-            "접영에서 팔꿈치 각도 80~115°는 풀 단계에서 최대 추진력을 내는 범위입니다. "
+            "접영에서 팔꿈치 각도 80~120°는 풀 단계에서 최대 추진력을 내는 범위입니다. "
             "접영도 하이 엘보우 자세가 필요하며, 이 범위를 벗어나면 추진력 손실과 어깨 부상으로 이어집니다."
         ),
         "kick_reason": (
-            "접영 돌핀킥은 스트로크 1회당 2번(1.0~2.5회/초)이 이상적입니다. "
+            "접영 돌핀킥은 경기용 1.0~2.5회/초, 건강용 0.5~1.2회/초가 이상적입니다. "
             "상체 웨이브 동작과 킥이 일치할 때 추진력이 극대화됩니다."
         ),
         "head_reason": (
@@ -301,6 +356,15 @@ STROKE_STANDARDS = {
     },
     "start": {
         "name": "스타트",
+        "elbow_normal_range":    (160, 180),
+        "head_normal_range":     (155, 175),
+        "symmetry_good":         85,
+        "symmetry_warning":      70,
+        "kick_freq_competition": (0, 1),
+        "kick_freq_health":      (0, 1),
+        "kick_freq_min":         0,
+        "references": [],
+        # 하위 호환
         "elbow_angle_ideal": (160, 180),
         "head_angle_ideal":  (155, 175),
         "kick_freq_ideal":   (0, 1),
@@ -313,6 +377,15 @@ STROKE_STANDARDS = {
     },
     "flip_turn": {
         "name": "플립턴",
+        "elbow_normal_range":    (80, 110),
+        "head_normal_range":     (150, 170),
+        "symmetry_good":         85,
+        "symmetry_warning":      70,
+        "kick_freq_competition": (0.5, 2.0),
+        "kick_freq_health":      (0.5, 2.0),
+        "kick_freq_min":         0,
+        "references": [],
+        # 하위 호환
         "elbow_angle_ideal": (80, 110),
         "head_angle_ideal":  (150, 170),
         "kick_freq_ideal":   (0.5, 2.0),
@@ -325,6 +398,15 @@ STROKE_STANDARDS = {
     },
     "touch_turn": {
         "name": "터치턴",
+        "elbow_normal_range":    (70, 100),
+        "head_normal_range":     (150, 170),
+        "symmetry_good":         90,
+        "symmetry_warning":      75,
+        "kick_freq_competition": (0.3, 1.0),
+        "kick_freq_health":      (0.3, 1.0),
+        "kick_freq_min":         0,
+        "references": [],
+        # 하위 호환
         "elbow_angle_ideal": (70, 100),
         "head_angle_ideal":  (150, 170),
         "kick_freq_ideal":   (0.3, 1.0),
@@ -335,6 +417,18 @@ STROKE_STANDARDS = {
         "drills": ["터치 타이밍 드릴", "두손 터치 교정 훈련"],
         "youtube_queries": ["breaststroke butterfly turn tutorial", "평영 접영 턴 교정"],
     },
+}
+
+
+# ══════════════════════════════════════════════════════
+# 목적별 점수 가중치 (논문 기반 스트로크 효율 반영)
+# ══════════════════════════════════════════════════════
+SCORE_WEIGHTS = {
+    "record":      {"elbow": 0.35, "kick": 0.30, "symmetry": 0.25, "head": 0.10},
+    "competition": {"elbow": 0.35, "kick": 0.30, "symmetry": 0.25, "head": 0.10},
+    "technique":   {"elbow": 0.35, "symmetry": 0.25, "head": 0.25, "kick": 0.15},
+    "health":      {"symmetry": 0.35, "head": 0.25, "elbow": 0.25, "kick": 0.15},
+    "hobby":       {"symmetry": 0.30, "head": 0.25, "elbow": 0.25, "kick": 0.20},
 }
 
 
@@ -381,8 +475,9 @@ def _build_yt_url(stroke: str, issue: str, fallback: str = "") -> str:
 
 def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -> dict:
     """
-    강점(strengths) + 개선점(improvements) + 각도별 상세 설명 + 시점 정보 포함 피드백 생성
+    강점(strengths) + 개선점(improvements) + 부상위험감지 + 논문출처 + 가중치점수 피드백 생성
     purpose: record | health | technique | competition | hobby
+    논문 기반 기준값 적용 (v1.5.0): PMC4000476, PMC3438875, PMC4738963, Swim Pembrokeshire 2017
     """
     std = STROKE_STANDARDS.get(stroke_type, STROKE_STANDARDS["freestyle"])
 
@@ -397,9 +492,22 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
     dur   = getattr(summary, "duration_sec",          0) or 0
     total = getattr(summary, "total_frames",          0) or 0
 
-    ideal_e_min, ideal_e_max = std["elbow_angle_ideal"]
-    ideal_k_min, ideal_k_max = std["kick_freq_ideal"]
-    ideal_h_min, ideal_h_max = std["head_angle_ideal"]
+    # 논문 기반 기준값
+    ideal_e_min, ideal_e_max = std.get("elbow_normal_range", std.get("elbow_angle_ideal", (80, 120)))
+    ideal_h_min, ideal_h_max = std.get("head_normal_range",  std.get("head_angle_ideal",  (155, 175)))
+    sym_good    = std.get("symmetry_good",    85)
+    sym_warning = std.get("symmetry_warning", 70)
+
+    # 목적별 킥 기준 선택
+    if purpose in ("record", "competition", "technique"):
+        ideal_k_min, ideal_k_max = std.get("kick_freq_competition", (1.5, 3.0))
+        kick_purpose_label = "경기/기록"
+    elif purpose in ("health", "hobby"):
+        ideal_k_min, ideal_k_max = std.get("kick_freq_health", (0.5, 1.5))
+        kick_purpose_label = "건강/여가"
+    else:
+        ideal_k_min, ideal_k_max = std.get("kick_freq_competition", (1.5, 3.0))
+        kick_purpose_label = "경기/기록"
 
     strengths    = []
     improvements = []
@@ -456,6 +564,16 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
         "competition": "머리 자세 교정만으로 속도 5~8% 향상이 가능합니다",
         "hobby":       "시선을 조금만 아래로 향하면 훨씬 편안해져요",
     }
+
+    # ── 부상 위험 요소 수집 (PMC4000476, PMC3438875 기반) ─────────────
+    avg_elbow = ((l_avg + r_avg) / 2) if (l_avg and r_avg) else (l_avg or r_avg or 0)
+    injury_risks = []
+    if avg_elbow > 0 and (avg_elbow < ideal_e_min - 15 or avg_elbow > ideal_e_max + 15):
+        injury_risks.append("dropped_elbow")
+    if sym < 65:
+        injury_risks.append("asymmetry")
+    if head and (head < ideal_h_min - 10 or head > ideal_h_max + 10):
+        injury_risks.append("head_angle")
 
     # ── 팔꿈치 각도 평가 (왼팔) ──────────────────────────────
     if l_avg:
@@ -543,22 +661,22 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
 
     # ── 좌우 대칭 평가 ────────────────────────────────
     arm_diff = abs(l_avg - r_avg) if l_avg and r_avg else 0
-    if sym >= 85:
+    if sym >= sym_good:
         strengths.append({
             "item": "좌우 대칭",
             "value": f"{sym:.0f}점",
-            "ideal": "85점 이상",
+            "ideal": f"{sym_good}점 이상",
             "summary": "양팔이 균형 있게 움직이고 있어요! 직선으로 잘 나가고 있을 거예요 😊",
             "why": "좌우 대칭이 좋으면 직선으로 추진되어 불필요한 에너지 낭비가 없습니다.",
             "how": "지금의 균형 감각을 피로할 때도 유지할 수 있도록 연습해보세요.",
             "comment": "좌우 팔 동작이 매우 균형 잡혀 있습니다.",
             "reason": std["symmetry_reason"],
         })
-    elif sym >= 70:
+    elif sym >= sym_warning:
         improvements.append({
             "item": "좌우 대칭",
             "value": f"{sym:.0f}점 (차이 {arm_diff:.0f}°)",
-            "ideal": "85점 이상",
+            "ideal": f"{sym_good}점 이상",
             "summary": f"양팔 각도가 {_severity(arm_diff)} 차이가 나요",
             "why": _why(SYM_WHY),
             "how": "한 팔씩 번갈아 단팔 드릴을 해보면서 각 팔의 감각을 맞춰보세요.",
@@ -571,7 +689,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
         improvements.append({
             "item": "좌우 대칭",
             "value": f"{sym:.0f}점 (차이 {arm_diff:.0f}°)",
-            "ideal": "85점 이상",
+            "ideal": f"{sym_good}점 이상",
             "summary": f"양팔 각도가 많이 차이가 나요 (약 {arm_diff:.0f}° 차이)",
             "why": _why(SYM_WHY),
             "how": "한 팔씩 번갈아 단팔 드릴을 해보면서 각 팔의 감각을 맞춰보세요.",
@@ -581,14 +699,18 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
             "youtube_url": _build_yt_url(stroke_type, "symmetry", std["youtube_queries"][0]),
         })
 
-    # ── 발차기 평가 ───────────────────────────────────
+    # ── 발차기 평가 (목적별 기준 적용) ───────────────────────────────
     if freq:
         if ideal_k_min <= freq <= ideal_k_max:
+            if purpose in ("health", "hobby"):
+                kick_good_msg = "건강 수영에 적합한 발차기 빈도예요 👍"
+            else:
+                kick_good_msg = "발차기 리듬이 이상적이에요! 체력을 효율적으로 사용하고 있어요 👏"
             strengths.append({
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
-                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
-                "summary": "발차기 리듬이 이상적이에요! 체력을 효율적으로 사용하고 있어요 👏",
+                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초 ({kick_purpose_label})",
+                "summary": kick_good_msg,
                 "why": "이 범위에서 추진력 보조와 체력 소모의 균형이 최적화됩니다.",
                 "how": "지금의 리듬을 유지하면서 팔 동작과의 타이밍을 더 맞춰보세요.",
                 "comment": "이상적인 발차기 리듬을 유지하고 있습니다.",
@@ -597,11 +719,17 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
         elif freq < ideal_k_min:
             k_diff = ideal_k_min - freq
             k_sev = "살짝" if k_diff <= 0.5 else ("조금" if k_diff <= 1.0 else "많이")
+            if purpose in ("record", "competition"):
+                kick_slow_msg = f"기록 단축을 위해서는 발차기를 더 빠르게 해야 해요 (목표: {ideal_k_min}회/초 이상)"
+            elif purpose in ("health", "hobby"):
+                kick_slow_msg = f"발차기가 {k_sev} 부족해요 (건강 수영 기준: {ideal_k_min}회/초 이상)"
+            else:
+                kick_slow_msg = f"발차기가 {k_sev} 부족해요"
             improvements.append({
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
-                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
-                "summary": f"발차기가 {k_sev} 부족해요",
+                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초 ({kick_purpose_label})",
+                "summary": kick_slow_msg,
                 "why": _why(KICK_SLOW_WHY),
                 "how": "킥보드를 잡고 발차기 드릴만 집중 연습해보세요.",
                 "comment": "발차기 횟수가 조금 부족해요. 발목을 더 많이 쓰는 연습을 해보세요.",
@@ -615,7 +743,7 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
             improvements.append({
                 "item": "발차기 빈도",
                 "value": f"{freq:.2f}회/초 (총 {kick}회)",
-                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초",
+                "ideal": f"{ideal_k_min}~{ideal_k_max}회/초 ({kick_purpose_label})",
                 "summary": f"발차기가 {k_sev} 과도해요",
                 "why": _why(KICK_FAST_WHY),
                 "how": "팔 스트로크에만 집중하면서 발차기 횟수를 의식적으로 줄여보세요.",
@@ -653,6 +781,33 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
                 "youtube_url": _build_yt_url(stroke_type, "head", std["youtube_queries"][0]),
             })
 
+    # ── 부상 위험 경고 (2개 이상 조건 시 improvements 맨 앞에 삽입) ────
+    if len(injury_risks) >= 2:
+        if "dropped_elbow" in injury_risks:
+            risk_msg = (
+                "⚠️ 부상 주의: 팔꿈치가 처지는 자세(Dropped Elbow)가 감지됐어요.\n"
+                "연구에 따르면 이 자세는 어깨 충돌 증후군(Swimmer's Shoulder)의 \n"
+                "주요 원인이에요. (출처: PMC4000476)\n"
+                "강도를 낮추고 팔꿈치 위치를 먼저 교정해보세요."
+            )
+        else:
+            risk_msg = (
+                "⚠️ 부상 주의: 여러 자세 문제가 동시에 감지됐어요. "
+                "부상 위험을 줄이기 위해 강도를 낮추고 기본 자세부터 교정해주세요. "
+                "(출처: PMC4000476, PMC3438875)"
+            )
+        improvements.insert(0, {
+            "item": "부상 위험 경고",
+            "value": f"{len(injury_risks)}개 위험 요소",
+            "ideal": "0개",
+            "summary": risk_msg,
+            "why": "여러 자세 문제가 동시에 발생하면 어깨, 무릎 등 관절 부상 위험이 크게 높아집니다.",
+            "how": "강도를 낮추고 가장 심각한 자세 문제부터 하나씩 교정해보세요.",
+            "comment": risk_msg,
+            "reason": "PMC4000476, PMC3438875",
+            "is_injury_warning": True,
+        })
+
     # 모두 좋으면 기본 메시지
     if not improvements:
         improvements.append({
@@ -666,14 +821,46 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
             "reason": "",
         })
 
+    # ── 논문 출처 표시 ────────────────────────────────────────────────
+    references = std.get("references", [])
+    references_text = "\n".join(f"📚 {r}" for r in references) if references else ""
+
+    # ── 목적별 가중치 점수 계산 ─────────────────────────────────────
+    weights   = SCORE_WEIGHTS.get(purpose, SCORE_WEIGHTS["technique"])
+    elbow_mid = (ideal_e_min + ideal_e_max) / 2
+    kick_mid  = (ideal_k_min + ideal_k_max) / 2
+    head_mid  = (ideal_h_min + ideal_h_max) / 2
+
+    elbow_score = 100 if (ideal_e_min <= avg_elbow <= ideal_e_max) else (
+        max(0.0, 100 - abs(avg_elbow - elbow_mid) * 2) if avg_elbow else 100
+    )
+    kick_score = 100 if (ideal_k_min <= freq <= ideal_k_max) else (
+        max(0.0, 100 - abs(freq - kick_mid) * 30) if freq else 50
+    )
+    head_score = 100 if (ideal_h_min <= head <= ideal_h_max) else (
+        max(0.0, 100 - abs(head - head_mid) * 2) if head else 100
+    )
+    weighted_score = round(
+        weights["elbow"]    * elbow_score +
+        weights["kick"]     * kick_score  +
+        weights["symmetry"] * sym         +
+        weights["head"]     * head_score,
+        1,
+    )
+
     return {
-        "strengths":    strengths,
-        "improvements": improvements,
-        "drills":       std["drills"],
+        "strengths":       strengths,
+        "improvements":    improvements,
+        "drills":          std["drills"],
         "youtube_queries": std["youtube_queries"],
-        "stroke_name":  std["name"],
+        "stroke_name":     std["name"],
         "feedback": "\n".join(
             f"⚠️ {i['item']}: {i.get('summary', i['comment'])} — {i.get('why', '')}"
             for i in improvements
         ),
+        "references":      references,
+        "references_text": references_text,
+        "weighted_score":  weighted_score,
+        "score_weights":   weights,
+        "injury_risks":    injury_risks,
     }
