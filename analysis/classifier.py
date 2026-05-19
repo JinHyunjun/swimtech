@@ -1,14 +1,16 @@
 """
-SwimTech — 영법 분류 + 피드백 모듈 (3-Track 버전)
+SwimTech — 영법 분류 + 피드백 모듈 (3-Track + ML Score 버전)
 
 Track 1. Competition  → 올림픽/세계선수권 기반 대회 모델
 Track 2. Tutorial     → 강의 영상 기반 교습 모델
 Track 3. Start & Turn → 스타트/턴 전문 모델
 
-사용자가 선택한 목적(purpose)과 촬영환경(context)에 따라
-적절한 트랙의 모델을 자동 선택합니다.
+ML 점수 모델 연동 (v2.0):
+  score_{purpose}.pkl 로부터 목적별 적합도 예측 (0~1)
+  final_score = rule_score * 0.6 + ml_score * 100 * 0.4
 """
 import os
+import json
 import urllib.parse
 import numpy as np
 from dataclasses import dataclass
@@ -81,6 +83,101 @@ def _get_model(track: str):
     if track not in _models:
         _models[track] = _load_model(track)
     return _models[track]
+
+
+# ── ML 점수 모델 (목적별 적합도) ───────────────────────────
+
+_score_models: dict = {}
+
+def _load_score_model(purpose: str):
+    """score_{purpose}.pkl 로드. 없으면 None 반환."""
+    if purpose in _score_models:
+        return _score_models[purpose]
+    try:
+        import joblib
+        model_path = os.path.join(MODEL_DIR, f"score_{purpose}.pkl")
+        info_path  = os.path.join(MODEL_DIR, f"score_{purpose}_info.json")
+        if not os.path.exists(model_path):
+            _score_models[purpose] = (None, [])
+            return _score_models[purpose]
+        model = joblib.load(model_path)
+        feat_cols = []
+        if os.path.exists(info_path):
+            with open(info_path, encoding="utf-8") as f:
+                feat_cols = json.load(f).get("feature_cols", [])
+        _score_models[purpose] = (model, feat_cols)
+    except Exception:
+        _score_models[purpose] = (None, [])
+    return _score_models[purpose]
+
+
+def _build_score_feature_vec(frame_metrics: list, feat_cols: list) -> Optional[np.ndarray]:
+    """FrameMetric 리스트 → score model 특징 벡터 (feat_cols 순서)"""
+    valid = [m for m in frame_metrics if m.landmarks_visible]
+    if len(valid) < 5:
+        return None
+
+    l_elbows   = [m.left_elbow_angle  for m in valid if m.left_elbow_angle]
+    r_elbows   = [m.right_elbow_angle for m in valid if m.right_elbow_angle]
+    l_shoulders = [m.left_shoulder_angle  for m in valid if m.left_shoulder_angle]
+    r_shoulders = [m.right_shoulder_angle for m in valid if m.right_shoulder_angle]
+    heads      = [m.head_angle        for m in valid if m.head_angle]
+    kicks      = sum(1 for m in valid if m.kick_detected)
+    dur        = max(valid[-1].timestamp_sec - valid[0].timestamp_sec, 1.0)
+
+    def _s(lst): return np.std(lst) if len(lst) > 1 else 0.0
+
+    # 기본 집계값
+    base = {
+        "l_elbow_angle_mean":      np.mean(l_elbows)    if l_elbows    else 0.0,
+        "l_elbow_angle_std":       _s(l_elbows),
+        "l_elbow_angle_min":       np.min(l_elbows)     if l_elbows    else 0.0,
+        "r_elbow_angle_mean":      np.mean(r_elbows)    if r_elbows    else 0.0,
+        "r_elbow_angle_std":       _s(r_elbows),
+        "r_elbow_angle_min":       np.min(r_elbows)     if r_elbows    else 0.0,
+        "l_shoulder_angle_mean":   np.mean(l_shoulders) if l_shoulders else 0.0,
+        "l_shoulder_angle_std":    _s(l_shoulders),
+        "l_shoulder_angle_min":    np.min(l_shoulders)  if l_shoulders else 0.0,
+        "r_shoulder_angle_mean":   np.mean(r_shoulders) if r_shoulders else 0.0,
+        "r_shoulder_angle_std":    _s(r_shoulders),
+        "r_shoulder_angle_min":    np.min(r_shoulders)  if r_shoulders else 0.0,
+        "head_angle_mean":         np.mean(heads)       if heads       else 0.0,
+        "head_angle_std":          _s(heads),
+        "head_angle_min":          np.min(heads)        if heads       else 0.0,
+        "elbow_symmetry_mean":     abs(np.mean(l_elbows) - np.mean(r_elbows)) if (l_elbows and r_elbows) else 0.0,
+        "shoulder_symmetry_mean":  abs(np.mean(l_shoulders) - np.mean(r_shoulders)) if (l_shoulders and r_shoulders) else 0.0,
+        "kick_frequency":          kicks / dur,
+        "kick_ratio":              kicks / len(valid),
+        # 신규 특징 (없으면 0)
+        "head_v_angle_mean":       0.0,
+        "body_roll_deg_mean":      getattr(valid[0], "body_roll", 0.0) or 0.0,
+        "stroke_cycle_hz":         0.0,
+        "l_ankle_roll_std5_mean":  0.0,
+        "r_ankle_roll_std5_mean":  0.0,
+    }
+
+    if not feat_cols:
+        return np.array(list(base.values()))
+
+    return np.array([base.get(c, 0.0) for c in feat_cols])
+
+
+def predict_ml_score(frame_metrics: list, purpose: str) -> Optional[float]:
+    """
+    ML 점수 모델로 목적 적합도 예측.
+    returns: 0.0~1.0 사이 점수, 모델 없거나 실패 시 None
+    """
+    model, feat_cols = _load_score_model(purpose)
+    if model is None:
+        return None
+    vec = _build_score_feature_vec(frame_metrics, feat_cols)
+    if vec is None:
+        return None
+    try:
+        proba = model.predict_proba(vec.reshape(1, -1))[0]
+        return float(proba[1]) if len(proba) > 1 else float(proba[0])
+    except Exception:
+        return None
 
 
 FEATURE_COLS = [
@@ -473,11 +570,14 @@ def _build_yt_url(stroke: str, issue: str, fallback: str = "") -> str:
     return f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}"
 
 
-def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -> dict:
+def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "",
+                                  frame_metrics: list = None) -> dict:
     """
     강점(strengths) + 개선점(improvements) + 부상위험감지 + 논문출처 + 가중치점수 피드백 생성
     purpose: record | health | technique | competition | hobby
-    논문 기반 기준값 적용 (v1.5.0): PMC4000476, PMC3438875, PMC4738963, Swim Pembrokeshire 2017
+    frame_metrics: FrameMetric 리스트 전달 시 ML 점수 모델 보조 활용
+      final_score = rule_score * 0.6 + ml_score * 100 * 0.4
+    논문 기반 기준값 (v1.5.0): PMC4000476, PMC3438875, PMC4738963, Swim Pembrokeshire 2017
     """
     std = STROKE_STANDARDS.get(stroke_type, STROKE_STANDARDS["freestyle"])
 
@@ -840,13 +940,35 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
     head_score = 100 if (ideal_h_min <= head <= ideal_h_max) else (
         max(0.0, 100 - abs(head - head_mid) * 2) if head else 100
     )
-    weighted_score = round(
+    rule_score = round(
         weights["elbow"]    * elbow_score +
         weights["kick"]     * kick_score  +
         weights["symmetry"] * sym         +
         weights["head"]     * head_score,
         1,
     )
+
+    # ── ML 점수 보조 (score_{purpose}.pkl) ───────────────────────────
+    # purpose 매핑: rule-based purpose key → score model key
+    _purpose_to_score_key = {
+        "competition": "competition",
+        "record":      "competition",
+        "health":      "health",
+        "hobby":       "health",
+        "technique":   "tutorial",
+        "masters":     "masters",
+    }
+    score_key = _purpose_to_score_key.get(purpose, "tutorial")
+    ml_score_raw = predict_ml_score(frame_metrics, score_key) if frame_metrics else None
+
+    if ml_score_raw is not None:
+        weighted_score = round(rule_score * 0.6 + ml_score_raw * 100 * 0.4, 1)
+        ml_score_used  = True
+        ml_score_pct   = round(ml_score_raw * 100, 1)
+    else:
+        weighted_score = rule_score
+        ml_score_used  = False
+        ml_score_pct   = None
 
     return {
         "strengths":       strengths,
@@ -861,6 +983,9 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "") -
         "references":      references,
         "references_text": references_text,
         "weighted_score":  weighted_score,
+        "rule_score":      rule_score,
+        "ml_score":        ml_score_pct,
+        "ml_score_used":   ml_score_used,
         "score_weights":   weights,
         "injury_risks":    injury_risks,
     }

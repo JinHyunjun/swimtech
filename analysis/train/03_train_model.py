@@ -1,16 +1,17 @@
 """
-SwimTech — Step 3. 모델 학습 (3-Track 버전)
+SwimTech — Step 3. 모델 학습 (v2.0)
 
-각 트랙별로 독립적인 모델을 학습합니다.
-
-Track 1. Competition  → stroke 분류 (자유형/배영/평영/접영/혼영)
-Track 2. Tutorial     → stroke 분류 + 자세 점수
-Track 3. Start & Turn → 동작 분류 (start/flip_turn/touch_turn/streamline)
+학습 모델:
+  stroke_classifier.pkl  — 영법 분류 (RandomForest, 5-fold CV)
+  score_competition.pkl  — 대회 적합도 점수 (GradientBoosting)
+  score_health.pkl       — 건강 적합도 점수
+  score_tutorial.pkl     — 교습 적합도 점수
+  score_masters.pkl      — 마스터즈 적합도 점수
 
 실행:
     python analysis/train/03_train_model.py
-    python analysis/train/03_train_model.py --track competition
-    python analysis/train/03_train_model.py --track start_turn
+    python analysis/train/03_train_model.py --mode stroke
+    python analysis/train/03_train_model.py --mode score
 """
 import os, sys, argparse, json, warnings
 import numpy as np
@@ -18,142 +19,232 @@ import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 warnings.filterwarnings("ignore")
 
 BASE_DIR  = os.path.join(os.path.dirname(__file__), "data")
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+SUMMARY_CSV = os.path.join(BASE_DIR, "features_summary.csv")
 
-CSV_PATHS = {
-    "competition": os.path.join(BASE_DIR, "features_competition.csv"),
-    "tutorial":    os.path.join(BASE_DIR, "features_tutorial.csv"),
-    "start_turn":  os.path.join(BASE_DIR, "features_start_turn.csv"),
-}
-MODEL_NAMES = {
-    "competition": "model_competition.joblib",
-    "tutorial":    "model_tutorial.joblib",
-    "start_turn":  "model_start_turn.joblib",
-}
-ENCODER_NAMES = {
-    "competition": "encoder_competition.joblib",
-    "tutorial":    "encoder_tutorial.joblib",
-    "start_turn":  "encoder_start_turn.joblib",
-}
-
-FEATURE_COLS = [
-    "l_elbow_mean",   "l_elbow_std",   "l_elbow_min",
-    "r_elbow_mean",   "r_elbow_std",   "r_elbow_min",
-    "l_shoulder_mean","r_shoulder_mean",
-    "head_angle_mean","hip_angle_mean",
-    "body_roll_mean", "hip_roll_mean",
-    "elbow_symmetry_mean","shoulder_symmetry_mean",
-    "kick_frequency", "kick_ratio",
-    "entry_angle_mean","streamline_width_mean",
+# 학습에 사용할 기본 특징 컬럼 (summarize_video 출력 기준)
+_STAT_BASES = [
+    "l_elbow_angle", "r_elbow_angle",
+    "l_shoulder_angle", "r_shoulder_angle",
+    "head_angle", "head_v_angle",
+    "hip_angle", "body_roll", "body_roll_deg", "hip_roll",
+    "elbow_symmetry", "shoulder_symmetry",
+    "entry_angle", "streamline_width",
+    "shoulder_width",
+    "norm_l_wrist_x", "norm_r_wrist_x",
+    "norm_l_wrist_y", "norm_r_wrist_y",
+    "l_ankle_roll_std5", "r_ankle_roll_std5",
 ]
+BASE_FEATURE_COLS = (
+    [f"{b}_{s}" for b in _STAT_BASES for s in ("mean", "std", "min")]
+    + ["kick_frequency", "kick_ratio", "stroke_cycle_hz"]
+)
+
+PURPOSE_TAGS = ["competition", "health", "tutorial", "masters"]
 
 
-def train_track(track: str):
-    csv_path  = CSV_PATHS[track]
-    if not os.path.exists(csv_path):
-        print(f"  ❌ {csv_path} 없음 → 02_extract_features.py 먼저 실행")
+def _available_cols(df: pd.DataFrame, cols: list) -> list:
+    """df에 실제로 있는 컬럼만 반환"""
+    return [c for c in cols if c in df.columns]
+
+
+def _load_summary(min_samples: int = 2) -> pd.DataFrame:
+    if not os.path.exists(SUMMARY_CSV):
+        raise FileNotFoundError(
+            f"{SUMMARY_CSV} 없음\n먼저 실행: python analysis/train/02_extract_features.py"
+        )
+    df = pd.read_csv(SUMMARY_CSV)
+    print(f"  로드: {len(df)}개 비디오")
+    return df
+
+
+def _build_X(df: pd.DataFrame, feature_cols: list) -> np.ndarray:
+    cols = _available_cols(df, feature_cols)
+    return df[cols].fillna(0).values
+
+
+# ── 영법 분류 모델 ──────────────────────────────────────────────────────
+
+def train_stroke_classifier(df: pd.DataFrame):
+    print(f"\n{'='*55}")
+    print("  [1] 영법 분류 모델 (stroke_classifier)")
+    print(f"{'='*55}")
+
+    # 영법 레이블이 있고 unknown이 아닌 데이터만 사용
+    df_s = df[df["stroke_label"].notna() & (df["stroke_label"] != "unknown")].copy()
+    if len(df_s) < 6:
+        print(f"  ❌ 유효 데이터 부족 ({len(df_s)}개, 최소 6개 필요)")
         return
 
-    df = pd.read_csv(csv_path)
-    print(f"  데이터: {len(df)}개")
-    print(f"  레이블 분포:\n{df['label'].value_counts().to_string()}")
+    feat_cols = _available_cols(df_s, BASE_FEATURE_COLS)
+    X = df_s[feat_cols].fillna(0).values
+    le = LabelEncoder()
+    y  = le.fit_transform(df_s["stroke_label"].values)
 
-    if df["label"].value_counts().min() < 3:
-        print(f"  ⚠️  일부 레이블 데이터 부족 (최소 5개 이상 권장)")
+    print(f"  클래스: {list(le.classes_)}  |  샘플: {len(df_s)}개")
 
-    X   = df[FEATURE_COLS].fillna(0).values
-    le  = LabelEncoder()
-    y   = le.fit_transform(df["label"].values)
+    min_class = df_s["stroke_label"].value_counts().min()
+    n_splits  = min(5, min_class)
+    if n_splits < 2:
+        print("  ⚠️  일부 클래스 샘플 너무 적음 (최소 2개 필요)")
+        n_splits = 2
 
-    print(f"\n  클래스: {list(le.classes_)}")
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=42,
+                                               stratify=y if min_class >= 2 else None)
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     candidates = {
         "RandomForest": Pipeline([
-            ("sc", StandardScaler()),
-            ("clf", RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42))
+            ("sc",  StandardScaler()),
+            ("clf", RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)),
         ]),
         "GradientBoosting": Pipeline([
-            ("sc", StandardScaler()),
-            ("clf", GradientBoostingClassifier(n_estimators=100, random_state=42))
+            ("sc",  StandardScaler()),
+            ("clf", GradientBoostingClassifier(n_estimators=100, random_state=42)),
         ]),
         "SVM": Pipeline([
-            ("sc", StandardScaler()),
-            ("clf", SVC(kernel="rbf", probability=True, random_state=42))
+            ("sc",  StandardScaler()),
+            ("clf", SVC(kernel="rbf", probability=True, random_state=42)),
         ]),
     }
 
-    cv = StratifiedKFold(n_splits=min(5, df["label"].value_counts().min()), shuffle=True, random_state=42)
-    print(f"\n  ── 모델 비교 ──────────────────────────────")
-    best_name, best_score, best_model = None, 0, None
-
+    print(f"\n  ── 5-fold 교차검증 ──────────────────────────")
+    best_name, best_score, best_model = None, 0.0, None
     for name, model in candidates.items():
         try:
-            scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy")
+            scores = cross_val_score(model, X_tr, y_tr, cv=cv, scoring="accuracy")
             mean, std = scores.mean(), scores.std()
-            print(f"    {name:20s}: {mean:.3f} ± {std:.3f}")
+            print(f"    {name:22s}: {mean:.3f} ± {std:.3f}")
             if mean > best_score:
                 best_score, best_name, best_model = mean, name, model
         except Exception as e:
-            print(f"    {name:20s}: 실패 ({e})")
+            print(f"    {name:22s}: 실패 ({e})")
 
     if best_model is None:
         print("  ❌ 학습 실패")
         return
 
-    print(f"\n  🏆 최고: {best_name} ({best_score:.3f})")
-    best_model.fit(X_train, y_train)
+    print(f"\n  🏆 최고: {best_name}  CV={best_score:.3f}")
+    best_model.fit(X_tr, y_tr)
 
-    y_pred = best_model.predict(X_test)
-    print(f"\n  ── 테스트 결과 ────────────────────────────")
-    print(classification_report(y_test, y_pred, target_names=le.classes_))
+    y_pred = best_model.predict(X_te)
+    print(f"\n  ── 테스트 결과 ──────────────────────────────")
+    print(classification_report(y_te, y_pred, target_names=le.classes_, zero_division=0))
 
-    # 저장
     os.makedirs(MODEL_DIR, exist_ok=True)
-    model_path   = os.path.join(MODEL_DIR, MODEL_NAMES[track])
-    encoder_path = os.path.join(MODEL_DIR, ENCODER_NAMES[track])
-    info_path    = os.path.join(MODEL_DIR, f"info_{track}.json")
+    model_path   = os.path.join(MODEL_DIR, "stroke_classifier.pkl")
+    encoder_path = os.path.join(MODEL_DIR, "stroke_classifier_encoder.pkl")
+    info_path    = os.path.join(MODEL_DIR, "stroke_classifier_info.json")
 
     joblib.dump(best_model, model_path)
-    joblib.dump(le,         encoder_path)
-
-    info = {
-        "track":       track,
-        "model_name":  best_name,
-        "cv_accuracy": round(best_score, 4),
-        "classes":     list(le.classes_),
-        "feature_cols": FEATURE_COLS,
-        "train_size":  len(X_train),
-        "test_size":   len(X_test),
-    }
+    joblib.dump(le, encoder_path)
     with open(info_path, "w", encoding="utf-8") as f:
-        json.dump(info, f, ensure_ascii=False, indent=2)
+        json.dump({
+            "model_name":   best_name,
+            "cv_accuracy":  round(best_score, 4),
+            "classes":      list(le.classes_),
+            "feature_cols": feat_cols,
+            "train_size":   len(X_tr),
+            "test_size":    len(X_te),
+        }, f, ensure_ascii=False, indent=2)
 
-    print(f"\n  💾 모델 저장: {model_path}")
+    # 하위 호환: 기존 track별 파일명으로도 저장
+    joblib.dump(best_model, os.path.join(MODEL_DIR, "model_competition.joblib"))
+    joblib.dump(le,         os.path.join(MODEL_DIR, "encoder_competition.joblib"))
 
+    print(f"\n  💾 {model_path}")
+    print(f"  💾 {encoder_path}")
+
+
+# ── 목적별 점수 모델 ────────────────────────────────────────────────────
+
+def train_score_model(df: pd.DataFrame, purpose: str):
+    """purpose 폴더 비디오 = 1, 나머지 = 0 으로 이진 학습 후 확률값을 점수(0~1)로 사용"""
+    print(f"\n  ── score_{purpose} ─────────────────────────")
+
+    if "purpose_tag" not in df.columns:
+        print("    ❌ purpose_tag 컬럼 없음")
+        return
+
+    y_bin = (df["purpose_tag"] == purpose).astype(int).values
+    pos_n = y_bin.sum()
+    neg_n = len(y_bin) - pos_n
+
+    if pos_n < 3 or neg_n < 3:
+        print(f"    ⚠️  샘플 부족 (positive={pos_n}, negative={neg_n}, 각 3개 이상 필요) → skip")
+        return
+
+    feat_cols = _available_cols(df, BASE_FEATURE_COLS)
+    X = df[feat_cols].fillna(0).values
+
+    n_splits = min(5, min(pos_n, neg_n))
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    model = Pipeline([
+        ("sc",  StandardScaler()),
+        ("clf", GradientBoostingClassifier(n_estimators=150, max_depth=4,
+                                           learning_rate=0.1, random_state=42)),
+    ])
+
+    scores = cross_val_score(model, X, y_bin, cv=cv, scoring="f1")
+    print(f"    F1 (5-fold): {scores.mean():.3f} ± {scores.std():.3f}  "
+          f"[pos={pos_n}, neg={neg_n}]")
+
+    model.fit(X, y_bin)
+
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    model_path = os.path.join(MODEL_DIR, f"score_{purpose}.pkl")
+    info_path  = os.path.join(MODEL_DIR, f"score_{purpose}_info.json")
+
+    joblib.dump(model, model_path)
+    with open(info_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "purpose":      purpose,
+            "cv_f1_mean":   round(float(scores.mean()), 4),
+            "cv_f1_std":    round(float(scores.std()),  4),
+            "pos_samples":  int(pos_n),
+            "neg_samples":  int(neg_n),
+            "feature_cols": feat_cols,
+        }, f, ensure_ascii=False, indent=2)
+
+    print(f"    💾 {model_path}")
+
+
+# ── 메인 ────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--track",
-        choices=["competition","tutorial","start_turn","all"],
-        default="all")
+    parser.add_argument("--mode", choices=["stroke", "score", "all"], default="all",
+                        help="학습 모드: stroke=영법분류, score=목적별점수, all=전체")
     args = parser.parse_args()
 
-    tracks = ["competition","tutorial","start_turn"] if args.track == "all" else [args.track]
+    print("\n🏊 SwimTech 모델 학습 시작")
+    df = _load_summary()
 
-    for track in tracks:
-        print(f"\n{'='*50}\n  Track: {track}\n{'='*50}")
-        train_track(track)
+    if df.empty:
+        print("❌ 데이터 없음 — 먼저 02_extract_features.py 실행")
+        return
+
+    print(f"\n  purpose_tag 분포:\n{df['purpose_tag'].value_counts().to_string()}")
+    if "stroke_label" in df.columns:
+        print(f"\n  stroke_label 분포:\n{df['stroke_label'].value_counts().to_string()}")
+
+    if args.mode in ("stroke", "all"):
+        train_stroke_classifier(df)
+
+    if args.mode in ("score", "all"):
+        print(f"\n{'='*55}")
+        print("  [2] 목적별 점수 모델 (score_competition/health/tutorial/masters)")
+        print(f"{'='*55}")
+        for purpose in PURPOSE_TAGS:
+            train_score_model(df, purpose)
 
     print("\n✅ 학습 완료!")
     print("다음 단계: python analysis/train/04_evaluate_model.py")
