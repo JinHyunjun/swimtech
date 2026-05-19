@@ -180,8 +180,10 @@ body::after {
 }
 .check-list .ok  .icon { color: #4ade80; }
 .check-list .no  .icon { color: #f87171; }
-.check-list .ok { color: #c8e0ec; }
-.check-list .no { color: rgba(200,224,236,0.6); }
+.check-list .tip .icon { color: #fbbf24; }
+.check-list .ok  { color: #c8e0ec; }
+.check-list .no  { color: rgba(200,224,236,0.6); }
+.check-list .tip { color: rgba(200,224,236,0.85); }
 
 /* 목적 아이콘 목록 */
 .purpose-list {
@@ -361,11 +363,14 @@ body::after {
       <div class="slide-title">이렇게 촬영하면<br>더 정확해요!</div>
       <div class="slide-sub">촬영 방법에 따라 분석 정확도가 달라져요</div>
       <ul class="check-list">
-        <li class="ok"><span class="icon">✅</span><span>수영장 옆에서 <b>측면 촬영</b></span></li>
-        <li class="ok"><span class="icon">✅</span><span><b>전신이 나오게</b> 충분히 뒤로 물러나서</span></li>
-        <li class="ok"><span class="icon">✅</span><span><b>밝은 환경</b>에서 촬영 (조명 확보)</span></li>
-        <li class="no"><span class="icon">❌</span><span>너무 멀리서 촬영 (자세 식별 불가)</span></li>
-        <li class="no"><span class="icon">❌</span><span>물속에서 촬영 (AI 인식 어려움)</span></li>
+        <li class="ok"><span class="icon">✅</span><span>수영장 옆에서 <b>측면 촬영</b> (전신 자세 분석에 최적)</span></li>
+        <li class="ok"><span class="icon">✅</span><span><b>전신이 나오게</b> 촬영</span></li>
+        <li class="ok"><span class="icon">✅</span><span><b>밝은 환경</b>에서 촬영</span></li>
+        <li class="ok"><span class="icon">✅</span><span><b>수중 카메라 촬영</b>도 가능 (발차기 분석에 유리)</span></li>
+        <li class="tip"><span class="icon">💡</span><span><b>측면 촬영:</b> 팔꿈치 각도, 자세 분석에 유리</span></li>
+        <li class="tip"><span class="icon">💡</span><span><b>수중 촬영:</b> 발차기 패턴, 킥 분석에 유리</span></li>
+        <li class="no"><span class="icon">❌</span><span>너무 멀리서 촬영 (랜드마크 감지 어려움)</span></li>
+        <li class="no"><span class="icon">❌</span><span>역광 환경에서 촬영</span></li>
       </ul>
     </div>
   </div>
