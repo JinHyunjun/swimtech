@@ -15,6 +15,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
+<div class="toast-msg" id="share-toast" style="
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:#16a34a;color:#fff;
+  padding:10px 22px;border-radius:8px;
+  font-size:14px;font-weight:600;
+  opacity:0;transition:opacity 0.25s,transform 0.25s;
+  pointer-events:none;z-index:999;white-space:nowrap;">
+</div>
 
 <div class="app">
 
@@ -452,7 +461,65 @@ function showDashboardBtn() {
   drillCard.parentNode.insertBefore(wrap, drillCard.nextSibling);
 }
 
-// ── 액션 버튼 (Sheets + JPG) ─────────────────────────
+// ── 공유 토스트 ────────────────────────────────────
+function showShareToast(msg) {
+  const t = document.getElementById('share-toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2800);
+}
+
+// ── 결과 공유 ─────────────────────────────────────
+async function shareResult() {
+  if (!lastAnalysisData || !lastAnalysisData.analysis_id) {
+    alert('공유할 분석 결과가 없습니다. 분석 완료 후 시도해주세요.');
+    return;
+  }
+  const btn = document.getElementById('share-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 링크 생성 중...';
+  try {
+    const res = await fetch(`/analysis/${lastAnalysisData.analysis_id}/share`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || '공유 링크 생성 실패');
+    }
+    const data = await res.json();
+    const shareUrl = window.location.origin + data.share_url;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch(e) {
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      Object.assign(ta.style, { position:'fixed', top:'-9999px' });
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    btn.textContent = '✅ 링크가 복사됐어요!';
+    btn.style.background = '#16a34a';
+    showShareToast('✅ 링크가 복사됐어요!');
+    setTimeout(() => {
+      btn.textContent = '🔗 결과 공유하기';
+      btn.style.background = 'linear-gradient(135deg,#0077b6,#00b4d8)';
+      btn.disabled = false;
+    }, 3000);
+  } catch(e) {
+    btn.textContent = '❌ 실패';
+    btn.disabled = false;
+    alert(e.message || '공유 링크 생성에 실패했습니다.');
+  }
+}
+
+// ── 액션 버튼 (공유 + Sheets + JPG) ──────────────
 function showActionButtons() {
   const existing = document.getElementById('action-btn-wrap');
   if (existing) existing.remove();
@@ -461,7 +528,17 @@ function showActionButtons() {
   const wrap = document.createElement('div');
   wrap.id = 'action-btn-wrap';
   wrap.style.cssText = 'padding:0 16px 8px;display:flex;flex-direction:column;gap:8px;';
+  const shareBtn = (lastAnalysisData && lastAnalysisData.analysis_id)
+    ? `<button id="share-btn" onclick="shareResult()"
+         style="display:flex;align-items:center;justify-content:center;gap:8px;
+                width:100%;padding:11px;border-radius:10px;border:none;
+                background:linear-gradient(135deg,#0077b6,#00b4d8);color:#fff;
+                font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box;">
+         🔗 결과 공유하기
+       </button>`
+    : '';
   wrap.innerHTML = `
+    ${shareBtn}
     <button id="sheets-save-btn" onclick="saveToSheets()"
       style="display:flex;align-items:center;justify-content:center;gap:8px;
              width:100%;padding:11px;border-radius:10px;border:none;

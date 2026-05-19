@@ -135,3 +135,7 @@ INSERT INTO customers (name, email, phone, level, goal) VALUES
     ('홍길동', 'hong@example.com', '010-1234-5678', 'intermediate', '자유형 턴 개선'),
     ('김수영', 'kim@example.com',  '010-9876-5432', 'beginner',     '기본 자세 교정')
 ON CONFLICT (email) DO NOTHING;
+
+-- ── 공유 링크 기능 ──────────────────────────────────
+ALTER TABLE analysis_results ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
+CREATE INDEX IF NOT EXISTS idx_analysis_share_token ON analysis_results(share_token);

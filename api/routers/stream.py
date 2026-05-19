@@ -195,6 +195,7 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
     )
 
     # ── DB 저장 ────────────────────────────────────────────────────────
+    analysis_id = None
     try:
         conn = get_db()
         cur  = conn.cursor()
@@ -250,7 +251,8 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
             str(feedback.get("drills", [])),
             int(duration),
         ))
-        cur.fetchone()  # analysis_id (필요 시 활용 가능)
+        _row = cur.fetchone()
+        analysis_id = _row[0] if _row else None
 
         # frame_metrics 배치 INSERT (10프레임 간격)
         batch = [
@@ -284,6 +286,7 @@ def analyze_stream(video_path: str, forced_stroke: str = "", context: str = "", 
 
     yield sse({
         "type":          "done",
+        "analysis_id":   analysis_id,
         "stroke_type":   classification.stroke_type,
         "context":       context,
         "purpose":       purpose,

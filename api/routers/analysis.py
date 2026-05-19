@@ -1,6 +1,8 @@
 import os
-from fastapi import APIRouter, HTTPException
+import uuid
+from fastapi import APIRouter, HTTPException, Request
 import psycopg2
+from routers.auth import decode_token, verify_token
 
 router = APIRouter()
 
@@ -38,6 +40,45 @@ def get_analysis(video_id: int):
             "feedback": row[11], "drills": row[12],
             "created_at": str(row[13])
         }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.post("/{analysis_id}/share")
+def create_share_link(analysis_id: int, request: Request):
+    """분석 결과 공유 링크 생성 (JWT 인증 필요)"""
+    token_cookie = request.cookies.get("swimtech_token")
+    if not token_cookie or not verify_token(token_cookie):
+        raise HTTPException(401, "로그인이 필요합니다.")
+    payload = decode_token(token_cookie)
+    customer_id = payload.get("customer_id")
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT customer_id, share_token FROM analysis_results WHERE id=%s",
+            (analysis_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "분석 결과가 없습니다.")
+        if row[0] != customer_id:
+            raise HTTPException(403, "본인의 분석만 공유할 수 있습니다.")
+
+        share_token = row[1]
+        if not share_token:
+            share_token = uuid.uuid4().hex
+            cur.execute(
+                "UPDATE analysis_results SET share_token=%s WHERE id=%s",
+                (share_token, analysis_id),
+            )
+            conn.commit()
+
+        cur.close(); conn.close()
+        return {"share_url": f"/share/{share_token}"}
     except HTTPException:
         raise
     except Exception as e:

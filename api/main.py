@@ -1,5 +1,6 @@
 import logging
 import os
+import psycopg2
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -151,6 +152,57 @@ def serve_pool(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("pool.html")
+
+# 공유 결과 페이지 (로그인 불필요)
+@app.get("/share/{token}")
+def share_page(token: str):
+    return _serve("share.html")
+
+# 공유 결과 데이터 API (인증 불필요)
+@app.get("/api/share/{token}")
+def get_share_data(token: str):
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT stroke_type, purpose, analyzed_at,
+                   arm_symmetry, kick_count, kick_freq_hz,
+                   head_angle_avg, head_rotation_score, overall_score,
+                   ai_feedback, drill_recommendations
+            FROM analysis_results
+            WHERE share_token = %s
+        """, (token,))
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        if not row:
+            raise HTTPException(404, "공유된 분석 결과를 찾을 수 없습니다.")
+        (stroke_type, purpose, analyzed_at, arm_symmetry, kick_count,
+         kick_freq_hz, head_angle_avg, head_rotation_score, overall_score,
+         ai_feedback, drill_recommendations) = row
+
+        if overall_score is None:
+            sym  = float(arm_symmetry or 0)
+            head = float(head_rotation_score or 0)
+            freq = min(100.0, float(kick_freq_hz or 0) * 20)
+            overall_score = round(sym * 0.4 + head * 0.3 + freq * 0.3, 1)
+
+        return {
+            "stroke_type":  stroke_type,
+            "purpose":      purpose,
+            "analyzed_at":  str(analyzed_at) if analyzed_at else None,
+            "arm_symmetry": float(arm_symmetry) if arm_symmetry else 0,
+            "kick_count":   kick_count or 0,
+            "kick_freq_hz": float(kick_freq_hz) if kick_freq_hz else 0,
+            "head_angle_avg": float(head_angle_avg) if head_angle_avg else 0,
+            "overall_score":  float(overall_score),
+            "feedback":     ai_feedback or "",
+            "drills":       drill_recommendations or "",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
 
 # 레거시 루트 (기존 index.html 직접 접근용)
 @app.get("/app")
