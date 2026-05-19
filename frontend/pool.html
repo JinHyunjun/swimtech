@@ -7,7 +7,9 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=3d51b20b04a33ad0448c941c1268146e&libraries=services"></script>
+<script type="text/javascript"
+  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3d51b20b04a33ad0448c941c1268146e&libraries=services&autoload=false">
+</script>
 <style>
 .pool-layout {
   display: grid;
@@ -423,18 +425,20 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') searchByKeyword();
 });
 
-// 초기화
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(pos => {
-    myLat = pos.coords.latitude;
-    myLng = pos.coords.longitude;
+// 초기화: SDK가 완전히 로드된 뒤 geolocation 시작
+kakao.maps.load(function () {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+      initMap(myLat, myLng);
+    }, () => {
+      initMap(myLat, myLng);
+    }, { timeout: 6000 });
+  } else {
     initMap(myLat, myLng);
-  }, () => {
-    initMap(myLat, myLng);
-  }, { timeout: 6000 });
-} else {
-  initMap(myLat, myLng);
-}
+  }
+});
 </script>
 </body>
 </html>
