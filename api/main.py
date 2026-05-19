@@ -145,6 +145,13 @@ def serve_chat(request: Request):
     if redir: return redir
     return _serve("chat.html")
 
+# 수영장 찾기 페이지
+@app.get("/pool")
+def serve_pool(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("pool.html")
+
 # 레거시 루트 (기존 index.html 직접 접근용)
 @app.get("/app")
 def serve_index_legacy(request: Request):

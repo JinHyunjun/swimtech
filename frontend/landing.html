@@ -141,9 +141,25 @@
   border-color: var(--purple);
   background: rgba(167,139,250,.08);
 }
+.choice-card.pool:hover {
+  border-color: var(--cyan);
+  background: rgba(72,202,228,.08);
+}
+@media (min-width: 501px) {
+  .choice-card.pool {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    padding: 28px 40px;
+    gap: 24px;
+  }
+  .choice-card.pool .choice-icon { font-size: 44px; }
+  .choice-card.pool .choice-desc { text-align: left; }
+  .choice-card.pool .choice-btn { margin-top: 0; white-space: nowrap; }
+}
 .choice-icon {
   font-size: 52px;
   line-height: 1;
+  flex-shrink: 0;
 }
 .choice-title {
   font-size: 18px;
@@ -168,6 +184,7 @@
 }
 .choice-card.analysis .choice-btn { background: var(--blue); }
 .choice-card.ai       .choice-btn { background: var(--purple); }
+.choice-card.pool     .choice-btn { background: var(--cyan); color: #0a1628; }
 </style>
 </head>
 <body>
@@ -216,6 +233,19 @@
             질문해보세요
           </div>
           <button class="choice-btn">대화 시작하기</button>
+        </a>
+
+        <a href="/pool" class="choice-card pool">
+          <div class="choice-icon">🏊</div>
+          <div>
+            <div class="choice-title">수영장 찾기</div>
+            <div class="choice-desc">
+              카카오 지도로 주변 수영장을<br>
+              검색하고 위치 및 연락처를<br>
+              확인해보세요
+            </div>
+          </div>
+          <button class="choice-btn">수영장 찾기</button>
         </a>
 
       </div>
