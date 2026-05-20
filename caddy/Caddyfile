@@ -107,6 +107,14 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /faq {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /injury {
+    reverse_proxy swim-api:8000
+  }
+
   handle /plan {
     reverse_proxy swim-api:8000
   }

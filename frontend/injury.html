@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 부상 예방 가이드</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave  { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+@keyframes ocean-wave2 { 0%{transform:translateX(-50%);} 100%{transform:translateX(0);} }
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.injury-wrap {
+  min-height: calc(100vh - 53px);
+  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  padding: 28px 16px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.injury-wrap::before {
+  content: '';
+  position: fixed;
+  bottom: -10px; left: 0;
+  width: 200%; height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.12' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,15 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 60px;
+  animation: ocean-wave 8s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+.injury-wrap::after {
+  content: '';
+  position: fixed;
+  bottom: -4px; left: 0;
+  width: 200%; height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%2348cae4' fill-opacity='0.08' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 40px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+
+.injury-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.injury-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.injury-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 30px rgba(0,180,216,0.3);
+}
+.injury-header p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  margin-bottom: 20px;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  transition: color .2s, border-color .2s;
+}
+.back-link:hover { color: var(--blue); border-color: var(--blue); }
+
+/* 탭 */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  background: rgba(13,33,55,0.85);
+  border: 0.5px solid rgba(0,180,216,0.2);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  color: rgba(144,196,212,0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  background: rgba(0,180,216,0.15);
+  color: #00b4d8;
+  border: 0.5px solid rgba(0,180,216,0.3);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: flex; flex-direction: column; gap: 16px; }
+
+/* 섹션 카드 */
+.section-card {
+  background: rgba(13,33,55,0.85);
+  border: 0.5px solid rgba(0,180,216,0.15);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 18px 20px 12px;
+  border-bottom: 0.5px solid rgba(0,180,216,0.1);
+}
+.section-icon { font-size: 24px; margin-bottom: 6px; }
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.section-sub {
+  font-size: 11px;
+  color: rgba(248,113,113,0.8);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.section-body { padding: 18px 20px; }
+
+.cause-list {
+  margin-bottom: 18px;
+}
+.cause-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(245,158,11,0.8);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.cause-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cause-item {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 12px;
+  position: relative;
+}
+.cause-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: rgba(245,158,11,0.6);
+}
+
+/* 스트레칭 그리드 */
+.stretch-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(0,180,216,0.8);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.stretch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.stretch-card {
+  background: rgba(0,180,216,0.05);
+  border: 0.5px solid rgba(0,180,216,0.15);
+  border-radius: 10px;
+  padding: 14px;
+  transition: border-color .2s;
+}
+.stretch-card:hover { border-color: rgba(0,180,216,0.35); }
+
+.stretch-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 6px;
+}
+.stretch-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.stretch-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.stretch-time {
+  font-size: 10px;
+  background: rgba(72,202,228,.1);
+  border: 0.5px solid rgba(72,202,228,.2);
+  border-radius: 4px;
+  padding: 1px 7px;
+  color: var(--cyan);
+}
+.diff-easy   { background: rgba(74,222,128,.08);  color: var(--green);  border: 0.5px solid rgba(74,222,128,.2);  }
+.diff-medium { background: rgba(245,158,11,.08);  color: var(--amber);  border: 0.5px solid rgba(245,158,11,.2);  }
+.diff-hard   { background: rgba(248,113,113,.08); color: var(--red);    border: 0.5px solid rgba(248,113,113,.2); }
+.stretch-note {
+  font-size: 11px;
+  color: rgba(144,196,212,0.6);
+  line-height: 1.5;
+}
+
+/* 체크 섹션 */
+.check-section {
+  background: rgba(74,222,128,0.05);
+  border: 0.5px solid rgba(74,222,128,0.15);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.check-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(74,222,128,0.8);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.check-item {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.check-item::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: rgba(74,222,128,0.7);
+  font-size: 11px;
+}
+
+/* 하단 버튼 */
+.cta-section {
+  text-align: center;
+  margin-top: 32px;
+  padding: 24px;
+  background: rgba(13,33,55,0.7);
+  border: 0.5px solid rgba(0,180,216,0.15);
+  border-radius: 14px;
+}
+.cta-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.cta-desc  { font-size: 12px; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s, transform .15s;
+  cursor: pointer;
+}
+.cta-btn:hover { background: #0096b8; transform: translateY(-2px); }
+
+.ref-note {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 11px;
+  color: rgba(144,196,212,0.4);
+}
+
+@media (max-width: 500px) {
+  .stretch-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">부상 예방 가이드</span>
+    </div>
+  </header>
+
+  <div class="injury-wrap">
+    <div class="injury-inner">
+      <a href="/" class="back-link">← 홈으로</a>
+
+      <div class="injury-header">
+        <h1>🩺 부상 예방 가이드</h1>
+        <p>수영 중 흔히 발생하는 부위별 부상 원인과 예방 스트레칭을 확인하세요</p>
+      </div>
+
+      <!-- 부위 탭 -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="shoulder" onclick="switchTab(this)">🦾 어깨</button>
+        <button class="tab-btn" data-tab="knee" onclick="switchTab(this)">🦵 무릎</button>
+        <button class="tab-btn" data-tab="back" onclick="switchTab(this)">🔙 허리</button>
+        <button class="tab-btn" data-tab="neck" onclick="switchTab(this)">🧠 목</button>
+      </div>
+
+      <!-- 어깨 -->
+      <div id="tab-shoulder" class="tab-content active">
+
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-icon">🦾</div>
+            <div class="section-title">어깨 부상 예방</div>
+            <div class="section-sub">Swimmer's Shoulder — 수영 선수 어깨 통증의 가장 흔한 원인</div>
+          </div>
+          <div class="section-body">
+            <div class="cause-list">
+              <div class="cause-title">⚠ 주요 원인</div>
+              <div class="cause-items">
+                <div class="cause-item">Dropped Elbow (팔꿈치 처짐) 자세</div>
+                <div class="cause-item">좌우 비대칭 스트로크</div>
+                <div class="cause-item">과도한 훈련량 및 쉬지 않는 반복 동작</div>
+              </div>
+            </div>
+
+            <div class="stretch-title">🧘 예방 스트레칭 루틴 (입수 전 5분)</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">01</div>
+                <div class="stretch-name">어깨 돌리기</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">전방 10회 / 후방 10회. 천천히 크게 원을 그리듯 회전합니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">02</div>
+                <div class="stretch-name">팔꿈치 당기기 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">좌우 각 30초. 한쪽 팔꿈치를 반대편 손으로 당겨 어깨를 늘려줍니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">03</div>
+                <div class="stretch-name">어깨 외회전 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 30초</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">수건 활용, 등 뒤에서 양손으로 수건을 잡고 천천히 당겨 30초 유지.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">04</div>
+                <div class="stretch-name">벽 스트레칭 (가슴 열기)</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 30초</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">벽에 한 손을 짚고 몸을 반대 방향으로 돌려 가슴 근육을 열어줍니다.</div>
+              </div>
+            </div>
+
+            <div class="check-section">
+              <div class="check-title">📊 SwimTech 분석으로 확인할 것</div>
+              <div class="check-item">팔꿈치 각도가 권장 범위 내인지 확인</div>
+              <div class="check-item">좌우 대칭 점수 85점 이상 유지</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 무릎 -->
+      <div id="tab-knee" class="tab-content">
+
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-icon">🦵</div>
+            <div class="section-title">무릎 부상 예방</div>
+            <div class="section-sub">Breaststroke Knee — 평영 선수에게 특히 빈번</div>
+          </div>
+          <div class="section-body">
+            <div class="cause-list">
+              <div class="cause-title">⚠ 주요 원인</div>
+              <div class="cause-items">
+                <div class="cause-item">평영 발차기 시 무릎 외반 (안쪽으로 꺾임)</div>
+                <div class="cause-item">발목 유연성 부족으로 인한 보상 동작</div>
+                <div class="cause-item">과도한 평영 훈련량</div>
+              </div>
+            </div>
+
+            <div class="stretch-title">🧘 예방 스트레칭 루틴</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">01</div>
+                <div class="stretch-name">무릎 굴신 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 30초</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">앉아서 발뒤꿈치를 엉덩이 쪽으로 당기며 30초 유지.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">02</div>
+                <div class="stretch-name">발목 돌리기</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">발목을 시계 방향/반시계 방향으로 각 10회 천천히 돌립니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">03</div>
+                <div class="stretch-name">고관절 외회전 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 30초</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">비둘기 자세 (Pigeon Pose). 양 다리 각 30초씩 유지. 무릎에 무리가 가면 즉시 중단.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">04</div>
+                <div class="stretch-name">쿼드 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 30초</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">서서 발목을 잡고 허벅지 앞면을 30초 늘립니다. 벽을 짚어 균형을 잡아도 됩니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 허리 -->
+      <div id="tab-back" class="tab-content">
+
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-icon">🔙</div>
+            <div class="section-title">허리 부상 예방</div>
+            <div class="section-sub">코어 약화 및 접영 과신전이 주된 원인</div>
+          </div>
+          <div class="section-body">
+            <div class="cause-list">
+              <div class="cause-title">⚠ 주요 원인</div>
+              <div class="cause-items">
+                <div class="cause-item">과도한 바디롤로 인한 허리 회전 부담</div>
+                <div class="cause-item">코어 근력 부족 — 허리로 하중 보상</div>
+                <div class="cause-item">접영 허리 과신전 (과도한 활처럼 휘는 자세)</div>
+              </div>
+            </div>
+
+            <div class="stretch-title">💪 예방 운동</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">01</div>
+                <div class="stretch-name">플랭크</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 3분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">30초 × 3세트. 엉덩이가 올라가거나 내려가지 않도록 일직선을 유지합니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">02</div>
+                <div class="stretch-name">코어 드로인</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">누워서 복부를 척추 방향으로 천천히 당겨 10초 유지 × 10회. 허리를 바닥에 붙입니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">03</div>
+                <div class="stretch-name">캣-카우 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">네발 자세에서 등을 둥글게/아치로 10회 반복. 호흡과 함께 천천히 진행합니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">04</div>
+                <div class="stretch-name">브릿지 운동</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 3분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">누워서 엉덩이를 들어 올려 15회 × 3세트. 엉덩이를 꽉 쥐고 허리를 곧게 유지합니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 목 -->
+      <div id="tab-neck" class="tab-content">
+
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-icon">🧠</div>
+            <div class="section-title">목 부상 예방</div>
+            <div class="section-sub">잘못된 호흡 자세와 배영 시 머리 위치가 주된 원인</div>
+          </div>
+          <div class="section-body">
+            <div class="cause-list">
+              <div class="cause-title">⚠ 주요 원인</div>
+              <div class="cause-items">
+                <div class="cause-item">자유형 호흡 시 머리를 너무 높이 드는 습관</div>
+                <div class="cause-item">배영 시 머리 위치 불안정 (좌우 흔들림)</div>
+              </div>
+            </div>
+
+            <div class="stretch-title">🧘 예방 스트레칭</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">01</div>
+                <div class="stretch-name">목 좌우 기울이기</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">좌우 각 30초. 어깨는 고정하고 귀가 어깨에 닿듯이 천천히 기울입니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">02</div>
+                <div class="stretch-name">목 전후 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">앞뒤 각 30초. 턱을 가슴에 당기거나 위를 바라보며 유지. 과도하게 뒤로 젖히지 않습니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">03</div>
+                <div class="stretch-name">목 돌리기</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">매우 천천히 10회. 뒷목 근육이 당기면 즉시 속도를 늦춥니다. 통증 시 중단.</div>
+              </div>
+            </div>
+
+            <div class="check-section">
+              <div class="check-title">📊 SwimTech 분석으로 확인할 것</div>
+              <div class="check-item">머리/시선 자세 점수 확인</div>
+              <div class="check-item">호흡 구간 머리 각도 패턴 분석</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-section">
+        <div class="cta-title">내 자세의 부상 위험을 직접 확인하세요</div>
+        <div class="cta-desc">
+          SwimTech 분석으로 팔꿈치 각도, 좌우 대칭, 머리 자세를 수치로 확인하고<br>
+          실제 부상 위험 요소를 파악해보세요.
+        </div>
+        <a href="/upload" class="cta-btn">🎬 분석으로 부상 위험 확인하기</a>
+      </div>
+
+      <div class="ref-note">
+        참고 출처: PMC4000476 (어깨), PMC3438875 (무릎) — 스포츠 의학 연구 기반
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+function switchTab(el) {
+  const tab = el.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+</script>
+</body>
+</html>

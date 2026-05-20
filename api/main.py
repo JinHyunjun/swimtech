@@ -136,6 +136,16 @@ def terms_page():
 def drill_page():
     return _serve("drill.html")
 
+# FAQ (로그인 불필요)
+@app.get("/faq")
+def faq_page():
+    return _serve("faq.html")
+
+# 부상 예방 가이드 (로그인 불필요)
+@app.get("/injury")
+def injury_page():
+    return _serve("injury.html")
+
 # 훈련 플랜 (로그인 불필요)
 @app.get("/plan")
 def plan_page():
