@@ -103,6 +103,14 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /privacy {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /terms {
+    reverse_proxy swim-api:8000
+  }
+
   handle /share/* {
     reverse_proxy swim-api:8000
   }

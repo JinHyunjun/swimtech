@@ -86,6 +86,22 @@ def landing_page():
         return FileResponse(path)
     return RedirectResponse(url="/login")
 
+# 개인정보처리방침 (로그인 불필요)
+@app.get("/privacy")
+def privacy_page():
+    path = os.path.join(FRONTEND_DIR, "privacy.html")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return {"error": "privacy.html not found"}
+
+# 이용약관 (로그인 불필요)
+@app.get("/terms")
+def terms_page():
+    path = os.path.join(FRONTEND_DIR, "terms.html")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return {"error": "terms.html not found"}
+
 # 닉네임 설정 페이지 (소셜 로그인 후 신규 가입 시)
 @app.get("/nickname")
 def nickname_page():
