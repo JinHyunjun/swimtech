@@ -25,7 +25,6 @@ services:
       - caddy-config:/config
     depends_on:
       - api
-      - metabase
     networks:
       - swim-net
     restart: unless-stopped
@@ -150,27 +149,6 @@ services:
       - swim-net
     restart: unless-stopped
 
-  # ── Metabase ─────────────────────────────────────
-  metabase:
-    image: metabase/metabase:latest
-    container_name: swim-metabase
-    ports:
-      - "${HOST_IP}:${METABASE_EXTERNAL_PORT}:3000"
-    environment:
-      - MB_DB_TYPE=${MB_DB_TYPE}
-      - MB_DB_HOST=postgres
-      - MB_DB_PORT=${MB_DB_PORT}
-      - MB_DB_DBNAME=${MB_DB_DBNAME}
-      - MB_DB_USER=${MB_DB_USER}
-      - MB_DB_PASS=${MB_DB_PASS}
-      - MB_SITE_URL=https://localhost/metabase
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - swim-net
-    restart: unless-stopped
-
   # ── Flowise AI ──────────────────────────────────
   flowise:
     image: flowiseai/flowise
@@ -191,6 +169,7 @@ services:
     image: mher/flower:latest
     container_name: swim-flower
     command: celery flower --broker=redis://redis:6379/0 --port=5555
+    profiles: ["dev"]
     ports:
       - "${HOST_IP}:${FLOWER_EXTERNAL_PORT}:5555"
     depends_on:
