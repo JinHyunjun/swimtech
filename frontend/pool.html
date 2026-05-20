@@ -260,7 +260,7 @@ function searchPools(lat, lng) {
   document.getElementById('pool-list-body').innerHTML = '<div class="pool-loading">🔍 수영장 검색 중...</div>';
   document.getElementById('pool-count').textContent = '';
   clearMarkers();
-  infowindow.close();
+  if (infowindow) infowindow.close();
 
   ps.keywordSearch('수영장', onSearchDone, {
     location: new kakao.maps.LatLng(lat, lng),
@@ -375,6 +375,7 @@ function setActiveItem(idx) {
 }
 
 function searchByKeyword() {
+  if (!map || !ps) return;
   const query = document.getElementById('search-input').value.trim();
   if (!query) { searchPools(myLat, myLng); return; }
 
@@ -405,6 +406,10 @@ function searchByKeyword() {
 }
 
 function moveToMyLocation() {
+  if (!map) {
+    alert('지도를 로드하는 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
   if (!navigator.geolocation) {
     alert('이 브라우저는 위치 서비스를 지원하지 않습니다.');
     return;
