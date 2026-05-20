@@ -425,20 +425,25 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') searchByKeyword();
 });
 
-// 초기화: SDK가 완전히 로드된 뒤 geolocation 시작
-kakao.maps.load(function () {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      myLat = pos.coords.latitude;
-      myLng = pos.coords.longitude;
+// 초기화: SDK 로드 확인 후 geolocation 시작
+if (typeof kakao === 'undefined') {
+  document.getElementById('pool-list-body').innerHTML =
+    '<div class="pool-empty">카카오맵 SDK를 불러오지 못했습니다.<br>페이지를 새로고침해 주세요.</div>';
+} else {
+  kakao.maps.load(function () {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        initMap(myLat, myLng);
+      }, () => {
+        initMap(myLat, myLng);
+      }, { timeout: 6000 });
+    } else {
       initMap(myLat, myLng);
-    }, () => {
-      initMap(myLat, myLng);
-    }, { timeout: 6000 });
-  } else {
-    initMap(myLat, myLng);
-  }
-});
+    }
+  });
+}
 </script>
 </body>
 </html>
