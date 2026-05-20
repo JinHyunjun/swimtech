@@ -10,7 +10,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -68,6 +68,7 @@ app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
 app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분석"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
 app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
+app.include_router(badge.router,    prefix="/api/badges",    tags=["뱃지"])
 
 @app.get("/api/health")
 def health():
@@ -134,6 +135,18 @@ def terms_page():
 @app.get("/drill")
 def drill_page():
     return _serve("drill.html")
+
+# 훈련 플랜 (로그인 불필요)
+@app.get("/plan")
+def plan_page():
+    return _serve("plan.html")
+
+# 뱃지/업적 (로그인 필요)
+@app.get("/badges")
+def badges_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("badge.html")
 
 # 닉네임 설정 페이지 (소셜 로그인 후 신규 가입 시)
 @app.get("/nickname")

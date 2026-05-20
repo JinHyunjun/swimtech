@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException, Cookie
+from pydantic import BaseModel, Field
 import psycopg2
 
 from routers.auth import verify_token, decode_token
@@ -121,6 +123,88 @@ def dashboard_history(swimtech_token: str = Cookie(default=None)):
                 "analyzed_at": str(r[5]) if r[5] else None,
             })
         return {"history": results}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+class GoalBody(BaseModel):
+    goal: int = Field(..., ge=1, le=7)
+
+
+def _ensure_weekly_goal_column(conn):
+    cur = conn.cursor()
+    cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS weekly_goal INTEGER DEFAULT 3")
+    conn.commit()
+    cur.close()
+
+
+@router.get("/weekly")
+def dashboard_weekly(swimtech_token: str = Cookie(default=None)):
+    _require_auth(swimtech_token)
+    payload = decode_token(swimtech_token) if swimtech_token else {}
+    customer_id = payload.get("customer_id")
+    try:
+        conn = get_db()
+        _ensure_weekly_goal_column(conn)
+        cur = conn.cursor()
+
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())  # 이번 주 월요일
+        week_end   = week_start + timedelta(days=6)           # 이번 주 일요일
+
+        if customer_id is not None:
+            cur.execute("""
+                SELECT COUNT(*) FROM analysis_results
+                WHERE customer_id = %s
+                  AND analyzed_at::date BETWEEN %s AND %s
+            """, (customer_id, week_start, week_end))
+        else:
+            cur.execute("""
+                SELECT COUNT(*) FROM analysis_results
+                WHERE analyzed_at::date BETWEEN %s AND %s
+            """, (week_start, week_end))
+        achieved = cur.fetchone()[0]
+
+        goal = 3
+        if customer_id is not None:
+            cur.execute("SELECT weekly_goal FROM customers WHERE id = %s", (customer_id,))
+            row = cur.fetchone()
+            if row and row[0] is not None:
+                goal = row[0]
+
+        cur.close()
+        conn.close()
+        pct = min(100, round(achieved / goal * 100)) if goal else 0
+        return {
+            "goal": goal,
+            "achieved": achieved,
+            "percentage": pct,
+            "remaining": max(0, goal - achieved),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.post("/goal")
+def dashboard_set_goal(body: GoalBody, swimtech_token: str = Cookie(default=None)):
+    _require_auth(swimtech_token)
+    payload = decode_token(swimtech_token) if swimtech_token else {}
+    customer_id = payload.get("customer_id")
+    if customer_id is None:
+        raise HTTPException(403, "관리자 계정은 목표를 설정할 수 없습니다.")
+    try:
+        conn = get_db()
+        _ensure_weekly_goal_column(conn)
+        cur = conn.cursor()
+        cur.execute("UPDATE customers SET weekly_goal = %s WHERE id = %s", (body.goal, customer_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {"goal": body.goal}
     except HTTPException:
         raise
     except Exception as e:

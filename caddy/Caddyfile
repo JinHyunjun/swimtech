@@ -107,6 +107,14 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /plan {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /badges {
+    reverse_proxy swim-api:8000
+  }
+
   handle /privacy {
     reverse_proxy swim-api:8000
   }

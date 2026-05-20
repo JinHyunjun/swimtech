@@ -262,6 +262,92 @@
 }
 .history-view-btn:hover { border-color: var(--blue); color: var(--blue); }
 
+/* 주간 목표 */
+.weekly-card {
+  background: linear-gradient(135deg, #0f2942, #1a3a5c);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.weekly-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.weekly-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.weekly-stats { font-size: 13px; color: var(--muted); }
+.weekly-stats strong { color: var(--blue); font-size: 16px; }
+.weekly-bar-bg {
+  height: 8px;
+  background: rgba(255,255,255,.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.weekly-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #00b4d8, #48cae4);
+  transition: width .7s ease;
+}
+.weekly-bar-fill.done { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+.weekly-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.weekly-msg { font-size: 12px; color: var(--muted); }
+.weekly-msg.done { color: var(--green); font-weight: 600; }
+.weekly-goal-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.weekly-goal-btn:hover { border-color: var(--blue); color: var(--blue); }
+.weekly-goal-select {
+  background: var(--surface);
+  border: 0.5px solid var(--blue);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+}
+
+/* 미니 뱃지 */
+.mini-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+.mini-badge-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mini-badge-emojis { display: flex; gap: 6px; font-size: 22px; flex: 1; }
+.mini-badge-link {
+  font-size: 12px;
+  color: var(--blue);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity .2s;
+}
+.mini-badge-link:hover { opacity: .75; }
+
 @media (max-width: 900px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
   .charts-grid   { grid-template-columns: 1fr; }
@@ -288,6 +374,36 @@
     <div class="dash-topbar">
       <a href="/" class="back-btn">← 분석하러 가기</a>
       <div class="dash-title">분석 현황 대시보드</div>
+    </div>
+
+    <!-- 주간 목표 -->
+    <div class="weekly-card">
+      <div class="weekly-header">
+        <span class="weekly-title">📅 이번 주 목표</span>
+        <span class="weekly-stats" id="weekly-stats">— / — 회 달성</span>
+      </div>
+      <div class="weekly-bar-bg">
+        <div class="weekly-bar-fill" id="weekly-bar" style="width:0%"></div>
+      </div>
+      <div class="weekly-footer">
+        <span class="weekly-msg" id="weekly-msg">불러오는 중...</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select id="goal-select" class="weekly-goal-select" onchange="saveGoal(this.value)">
+            <option>1</option><option>2</option><option selected>3</option>
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>
+          <button class="weekly-goal-btn" id="goal-edit-btn" onclick="toggleGoalEdit()">목표 변경</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 미니 뱃지 -->
+    <div class="mini-badge-row">
+      <span class="mini-badge-label">🏅 내 뱃지</span>
+      <div class="mini-badge-emojis" id="mini-badge-emojis">
+        <span style="color:var(--muted);font-size:13px;">불러오는 중...</span>
+      </div>
+      <a href="/badges" class="mini-badge-link">전체 보기 →</a>
     </div>
 
     <!-- 숫자 카드 -->
@@ -593,6 +709,69 @@ async function loadDashboard() {
   }
 }
 
+async function loadWeekly() {
+  try {
+    const res = await fetch('/api/dashboard/weekly', { credentials: 'include' });
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('weekly-stats').innerHTML =
+      `<strong>${d.achieved}</strong> / ${d.goal}회 달성 (${d.percentage}%)`;
+    const bar = document.getElementById('weekly-bar');
+    bar.style.width = d.percentage + '%';
+    if (d.percentage >= 100) bar.classList.add('done');
+    const msg = document.getElementById('weekly-msg');
+    if (d.percentage >= 100) {
+      msg.textContent = '🎉 이번 주 목표 달성!';
+      msg.className = 'weekly-msg done';
+    } else {
+      msg.textContent = `${d.remaining}회 남았어요!`;
+    }
+    // 목표 select 현재값 세팅
+    const sel = document.getElementById('goal-select');
+    for (let opt of sel.options) {
+      if (parseInt(opt.value) === d.goal) { opt.selected = true; break; }
+    }
+  } catch { /* 무시 */ }
+}
+
+function toggleGoalEdit() {
+  const sel = document.getElementById('goal-select');
+  const btn = document.getElementById('goal-edit-btn');
+  const showing = sel.style.display === 'block';
+  sel.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? '목표 변경' : '닫기';
+}
+
+async function saveGoal(val) {
+  try {
+    await fetch('/api/dashboard/goal', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal: parseInt(val) }),
+    });
+    toggleGoalEdit();
+    loadWeekly();
+  } catch { /* 무시 */ }
+}
+
+async function loadBadgeMini() {
+  try {
+    const res = await fetch('/api/badges', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const earned = (data.badges || []).filter(b => b.earned);
+    const wrap = document.getElementById('mini-badge-emojis');
+    if (!earned.length) {
+      wrap.innerHTML = '<span style="color:var(--muted);font-size:13px;">아직 없어요 — 첫 분석을 시작해보세요!</span>';
+    } else {
+      const show = earned.slice(0, 3);
+      const rest = earned.length > 3 ? `<span style="font-size:13px;color:var(--muted);margin-left:2px;">+${earned.length - 3}</span>` : '';
+      wrap.innerHTML = show.map(b => `<span title="${b.name}">${b.emoji}</span>`).join('') + rest;
+    }
+  } catch { /* 무시 */ }
+}
+
 async function loadHistory() {
   const wrap = document.getElementById('history-list');
   try {
@@ -650,6 +829,8 @@ async function logout() {
   }
   loadDashboard();
   loadHistory();
+  loadWeekly();
+  loadBadgeMini();
 })();
 </script>
 <script>

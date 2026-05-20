@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 훈련 플랜</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.plan-page {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.plan-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.back-btn {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .2s;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.plan-title { font-size: 20px; font-weight: 600; color: var(--text); }
+.plan-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* 탭 */
+.tab-bar {
+  display: flex;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  gap: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(0,180,216,.18), rgba(72,202,228,.12));
+  color: var(--blue);
+  border: 0.5px solid rgba(0,180,216,.25);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* 플랜 카드 */
+.plan-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.plan-card-header {
+  padding: 20px 24px 14px;
+  border-bottom: 0.5px solid var(--border);
+}
+.plan-card-icon { font-size: 28px; margin-bottom: 6px; }
+.plan-card-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.plan-card-desc  { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
+
+/* 플랜 테이블 */
+.plan-table-wrap { overflow-x: auto; padding: 0; }
+.plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.plan-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  background: rgba(0,0,0,.15);
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+.plan-table td {
+  padding: 12px 16px;
+  color: var(--text);
+  border-bottom: 0.5px solid var(--border);
+  line-height: 1.5;
+  vertical-align: top;
+}
+.plan-table tr:last-child td { border-bottom: none; }
+.plan-table tr:hover td { background: rgba(0,180,216,.03); }
+
+.week-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.week-1 { background: rgba(0,180,216,.12);  color: var(--blue);   border: 0.5px solid rgba(0,180,216,.3);  }
+.week-2 { background: rgba(74,222,128,.1);  color: var(--green);  border: 0.5px solid rgba(74,222,128,.3); }
+.week-3 { background: rgba(245,158,11,.1);  color: var(--amber);  border: 0.5px solid rgba(245,158,11,.3); }
+.week-4 { background: rgba(167,139,250,.1); color: var(--purple); border: 0.5px solid rgba(167,139,250,.3);}
+
+.analysis-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(167,139,250,.1);
+  border: 0.5px solid rgba(167,139,250,.25);
+  border-radius: 4px;
+  color: var(--purple);
+  white-space: nowrap;
+}
+
+/* 하단 버튼 */
+.plan-card-footer {
+  padding: 16px 24px;
+  border-top: 0.5px solid var(--border);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.plan-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform .15s, opacity .2s;
+}
+.plan-btn:hover { transform: translateY(-1px); opacity: .9; }
+.plan-btn-primary   { background: var(--blue); color: #fff; border: none; }
+.plan-btn-secondary { background: none; color: var(--cyan); border: 1px solid var(--cyan); }
+.plan-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .plan-page { padding: 16px; }
+  .plan-hint { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">훈련 플랜</span>
+    </div>
+  </header>
+
+  <div class="plan-page">
+    <div class="plan-topbar">
+      <a href="/" class="back-btn">← 홈으로</a>
+      <div>
+        <div class="plan-title">📅 수영 훈련 플랜</div>
+        <div class="plan-sub">목적에 맞는 4주 플랜으로 체계적으로 성장하세요</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="speed">🏅 기록 단축</button>
+      <button class="tab-btn" data-tab="health">💪 건강하게 오래</button>
+      <button class="tab-btn" data-tab="form">🎯 영법 교정</button>
+      <button class="tab-btn" data-tab="hobby">😊 취미/건강유지</button>
+    </div>
+
+    <!-- 기록 단축 -->
+    <div id="tab-speed" class="tab-content active">
+      <div class="plan-card">
+        <div class="plan-card-header">
+          <div class="plan-card-icon">🏅</div>
+          <div class="plan-card-title">기록 단축 4주 플랜</div>
+          <div class="plan-card-desc">스피드와 효율을 함께 높이는 집중 훈련. 분석을 통해 매주 개선 포인트를 확인합니다.</div>
+        </div>
+        <div class="plan-table-wrap">
+          <table class="plan-table">
+            <thead>
+              <tr>
+                <th>주차</th>
+                <th>월</th>
+                <th>수</th>
+                <th>금</th>
+                <th>주말</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="week-badge week-1">1주</span></td>
+                <td>6비트킥 드릴 30분</td>
+                <td>단팔 자유형 30분</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+                <td>자유수영 45분</td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-2">2주</span></td>
+                <td>스피드 인터벌</td>
+                <td>턴 연습</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+                <td>장거리 60분</td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-3">3주</span></td>
+                <td>스타트 연습</td>
+                <td>페이스 조절</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+                <td>레이스 시뮬레이션</td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-4">4주</span></td>
+                <td>컨디션 조절</td>
+                <td>가벼운 수영</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+                <td>🎯 목표 기록 도전</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="plan-card-footer">
+          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
+          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
+          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 건강하게 오래 -->
+    <div id="tab-health" class="tab-content">
+      <div class="plan-card">
+        <div class="plan-card-header">
+          <div class="plan-card-icon">💪</div>
+          <div class="plan-card-title">건강하게 오래 4주 플랜</div>
+          <div class="plan-card-desc">무리 없이 꾸준히 수영하는 습관을 만듭니다. 주 2~3회, 천천히 볼륨을 늘려갑니다.</div>
+        </div>
+        <div class="plan-table-wrap">
+          <table class="plan-table">
+            <thead>
+              <tr>
+                <th>주차</th>
+                <th>화</th>
+                <th>목</th>
+                <th>주말</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="week-badge week-1">1주</span></td>
+                <td>자유수영 20분 (천천히)</td>
+                <td>킥보드 + 자유영</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-2">2주</span></td>
+                <td>자유수영 25분</td>
+                <td>배영 교대</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-3">3주</span></td>
+                <td>자유수영 30분</td>
+                <td>2영법 교대</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-4">4주</span></td>
+                <td>자유수영 35분</td>
+                <td>자유롭게</td>
+                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="plan-card-footer">
+          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
+          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
+          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 영법 교정 -->
+    <div id="tab-form" class="tab-content">
+      <div class="plan-card">
+        <div class="plan-card-header">
+          <div class="plan-card-icon">🎯</div>
+          <div class="plan-card-title">영법 교정 4주 플랜</div>
+          <div class="plan-card-desc">매주 한 가지 포인트에 집중해 자세를 체계적으로 교정합니다. SwimTech 분석으로 진행 상황을 확인하세요.</div>
+        </div>
+        <div class="plan-table-wrap">
+          <table class="plan-table">
+            <thead>
+              <tr>
+                <th>주차</th>
+                <th>집중 드릴</th>
+                <th>확인 방법</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="week-badge week-1">1주</span></td>
+                <td>핑거드래그 + 캐치업 드릴</td>
+                <td><span class="analysis-tag">📊 분석으로 팔꿈치 확인</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-2">2주</span></td>
+                <td>6비트킥 + 발목 유연성</td>
+                <td><span class="analysis-tag">📊 분석으로 발차기 확인</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-3">3주</span></td>
+                <td>바디롤 + 호흡 타이밍</td>
+                <td><span class="analysis-tag">📊 분석으로 머리 자세 확인</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-4">4주</span></td>
+                <td>전체 통합 수영</td>
+                <td><span class="analysis-tag">📊 종합 분석 + 1주 대비</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="plan-card-footer">
+          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
+          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
+          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 취미/건강유지 -->
+    <div id="tab-hobby" class="tab-content">
+      <div class="plan-card">
+        <div class="plan-card-header">
+          <div class="plan-card-icon">😊</div>
+          <div class="plan-card-title">취미/건강유지 4주 플랜</div>
+          <div class="plan-card-desc">부담 없이 즐기면서도 조금씩 성장하는 플랜. 좋아하는 것에서 시작하세요.</div>
+        </div>
+        <div class="plan-table-wrap">
+          <table class="plan-table">
+            <thead>
+              <tr>
+                <th>주차</th>
+                <th>주간 내용</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="week-badge week-1">1주</span></td>
+                <td>좋아하는 영법 위주로 자유롭게 수영 &nbsp;·&nbsp; <span class="analysis-tag">📊 분석 1회</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-2">2주</span></td>
+                <td>새로운 영법 하나 도전해보기 &nbsp;·&nbsp; <span class="analysis-tag">📊 분석 1회</span></td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-3">3주</span></td>
+                <td>드릴 가이드에서 드릴 1~2개 따라하기 &nbsp;·&nbsp; 가볍게 즐기기</td>
+              </tr>
+              <tr>
+                <td><span class="week-badge week-4">4주</span></td>
+                <td>자유롭게 수영 &nbsp;·&nbsp; <span class="analysis-tag">📊 4주 전과 비교 분석</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="plan-card-footer">
+          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
+          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
+          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .plan-page -->
+</div>
+
+<script>
+"use strict";
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
