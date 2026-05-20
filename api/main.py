@@ -4,7 +4,8 @@ import psycopg2
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -20,9 +21,36 @@ app = FastAPI(
     version="0.1.0"
 )
 
+_API_PREFIXES = ("/api/", "/auth/", "/videos/", "/analysis/", "/stream/", "/customers/")
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    path = request.url.path
+    is_api = any(path.startswith(p) for p in _API_PREFIXES)
+    if not is_api:
+        if exc.status_code == 404:
+            html = os.path.join(FRONTEND_DIR, "404.html")
+            if os.path.exists(html):
+                return FileResponse(html, status_code=404)
+        elif exc.status_code >= 500:
+            html = os.path.join(FRONTEND_DIR, "500.html")
+            if os.path.exists(html):
+                return FileResponse(html, status_code=exc.status_code)
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc.detail)})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logging.error("Unhandled exception: %s", exc, exc_info=True)
+    html = os.path.join(FRONTEND_DIR, "500.html")
+    if os.path.exists(html):
+        return FileResponse(html, status_code=500)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.add_middleware(
     CORSMiddleware,
@@ -101,6 +129,11 @@ def terms_page():
     if os.path.exists(path):
         return FileResponse(path)
     return {"error": "terms.html not found"}
+
+# 드릴 가이드 (로그인 불필요)
+@app.get("/drill")
+def drill_page():
+    return _serve("drill.html")
 
 # 닉네임 설정 페이지 (소셜 로그인 후 신규 가입 시)
 @app.get("/nickname")

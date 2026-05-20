@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 404</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ocean-wave2 {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+@keyframes float-up {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.error-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  overflow: hidden;
+  padding: 32px 24px;
+}
+
+.error-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 200%;
+  height: 80px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.12' d='M0,40 C360,80 720,0 1080,40 C1260,60 1350,20 1440,40 L1440,80 L0,80 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 80px;
+  animation: ocean-wave 9s linear infinite;
+  pointer-events: none;
+}
+
+.error-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 200%;
+  height: 50px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 50'%3E%3Cpath fill='%2348cae4' fill-opacity='0.08' d='M0,25 C360,50 720,0 1080,25 C1260,37 1350,12 1440,25 L1440,50 L0,50 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 50px;
+  animation: ocean-wave2 13s linear infinite;
+  pointer-events: none;
+}
+
+.error-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+}
+
+.error-emoji {
+  font-size: 80px;
+  line-height: 1;
+  margin-bottom: 20px;
+  display: block;
+  animation: float-up 3.5s ease-in-out infinite;
+}
+
+.error-code {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #00b4d8, #48cae4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+  letter-spacing: -4px;
+}
+
+.error-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.error-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 36px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  padding: 12px 28px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .2s, transform .15s;
+}
+.btn-primary:hover { background: #0096b8; transform: translateY(-2px); }
+
+.btn-secondary {
+  padding: 12px 28px;
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .2s, transform .15s;
+}
+.btn-secondary:hover { background: rgba(72,202,228,.1); transform: translateY(-2px); }
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,180,216,0.06);
+  border: 0.5px solid rgba(0,180,216,0.1);
+  pointer-events: none;
+  animation: float-up ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+<div class="error-wrap">
+  <!-- 버블 장식 -->
+  <div class="bubble" style="width:120px;height:120px;top:10%;left:5%;animation-duration:6s;animation-delay:-2s;"></div>
+  <div class="bubble" style="width:60px;height:60px;top:20%;right:8%;animation-duration:4.5s;animation-delay:-1s;"></div>
+  <div class="bubble" style="width:80px;height:80px;bottom:20%;left:12%;animation-duration:5.5s;animation-delay:-3s;"></div>
+  <div class="bubble" style="width:40px;height:40px;bottom:30%;right:15%;animation-duration:7s;animation-delay:-0.5s;"></div>
+
+  <div class="error-inner">
+    <span class="error-emoji">🏊</span>
+    <div class="error-code">404</div>
+    <div class="error-title">수영하다 길을 잃었나요?</div>
+    <div class="error-desc">
+      요청하신 페이지를 찾을 수 없어요.<br>
+      주소를 다시 확인하거나 아래 버튼을 이용해주세요.
+    </div>
+    <div class="error-actions">
+      <a href="/" class="btn-primary">🏠 홈으로 돌아가기</a>
+      <a href="/upload" class="btn-secondary">🎬 분석 시작하기</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

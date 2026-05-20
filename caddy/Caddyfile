@@ -103,6 +103,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /drill {
+    reverse_proxy swim-api:8000
+  }
+
   handle /privacy {
     reverse_proxy swim-api:8000
   }
@@ -122,12 +126,6 @@ localhost {
       header_up Host {upstream_hostport}
     }
     header -X-Frame-Options
-  }
-
-  # Metabase 대시보드
-  handle /metabase/* {
-    uri strip_prefix /metabase
-    reverse_proxy swim-metabase:3000
   }
 
   # Flower 모니터링 (내부용)

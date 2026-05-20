@@ -73,6 +73,60 @@ def dashboard_summary(swimtech_token: str = Cookie(default=None)):
         raise HTTPException(500, f"DB 오류: {e}")
 
 
+@router.get("/history")
+def dashboard_history(swimtech_token: str = Cookie(default=None)):
+    _require_auth(swimtech_token)
+    payload = decode_token(swimtech_token) if swimtech_token else {}
+    customer_id = payload.get("customer_id")
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        if customer_id is not None:
+            cur.execute("""
+                SELECT id, stroke_type, purpose, overall_score, ai_feedback, analyzed_at
+                FROM analysis_results
+                WHERE customer_id = %s
+                ORDER BY analyzed_at DESC
+                LIMIT 10
+            """, (customer_id,))
+        else:
+            cur.execute("""
+                SELECT id, stroke_type, purpose, overall_score, ai_feedback, analyzed_at
+                FROM analysis_results
+                ORDER BY analyzed_at DESC
+                LIMIT 10
+            """)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        results = []
+        for i, r in enumerate(rows):
+            curr_score = float(r[3]) if r[3] is not None else None
+            prev_score = float(rows[i + 1][3]) if i + 1 < len(rows) and rows[i + 1][3] is not None else None
+            if curr_score is not None and prev_score is not None:
+                diff = round(curr_score - prev_score, 1)
+                trend = "↑" if diff > 0 else ("↓" if diff < 0 else "→")
+            else:
+                diff = None
+                trend = "→"
+            results.append({
+                "id": r[0],
+                "stroke_type": r[1],
+                "purpose": r[2],
+                "score": curr_score,
+                "score_diff": diff,
+                "trend": trend,
+                "feedback": (r[4] or "")[:200],
+                "analyzed_at": str(r[5]) if r[5] else None,
+            })
+        return {"history": results}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
 @router.get("/frames/{analysis_id}")
 def dashboard_frames(analysis_id: int, swimtech_token: str = Cookie(default=None)):
     _require_auth(swimtech_token)

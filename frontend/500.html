@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 500</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ocean-wave2 {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50%       { transform: rotate(8deg) translateY(-8px); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.error-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(-45deg, #0a1628, #12202f, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 10s ease infinite;
+  overflow: hidden;
+  padding: 32px 24px;
+}
+
+.error-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 200%;
+  height: 90px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 90'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.1' d='M0,45 C240,90 480,0 720,45 C960,90 1200,0 1440,45 L1440,90 L0,90 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 90px;
+  animation: ocean-wave 7s linear infinite;
+  pointer-events: none;
+}
+
+.error-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 200%;
+  height: 55px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 55'%3E%3Cpath fill='%2348cae4' fill-opacity='0.07' d='M0,28 C360,55 720,0 1080,28 C1260,41 1350,14 1440,28 L1440,55 L0,55 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 55px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none;
+}
+
+.error-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+}
+
+.error-emoji {
+  font-size: 80px;
+  line-height: 1;
+  margin-bottom: 20px;
+  display: block;
+  animation: sway 4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.error-code {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #f87171, #fb923c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+  letter-spacing: -4px;
+}
+
+.error-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.error-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 36px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  padding: 12px 28px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .2s, transform .15s;
+}
+.btn-primary:hover { background: #0096b8; transform: translateY(-2px); }
+
+.btn-secondary {
+  padding: 12px 28px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .2s, transform .15s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,.04); transform: translateY(-2px); }
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(248,113,113,0.04);
+  border: 0.5px solid rgba(248,113,113,0.08);
+  pointer-events: none;
+  animation: sway ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+<div class="error-wrap">
+  <div class="bubble" style="width:140px;height:140px;top:8%;left:4%;animation-duration:7s;animation-delay:-3s;"></div>
+  <div class="bubble" style="width:70px;height:70px;top:15%;right:6%;animation-duration:5s;animation-delay:-1.5s;"></div>
+  <div class="bubble" style="width:90px;height:90px;bottom:18%;left:10%;animation-duration:6s;animation-delay:-2s;"></div>
+
+  <div class="error-inner">
+    <span class="error-emoji">🌊</span>
+    <div class="error-code">500</div>
+    <div class="error-title">잠시 파도가 거칩니다</div>
+    <div class="error-desc">
+      서버에 일시적인 문제가 발생했어요.<br>
+      잠시 후 다시 시도해주시면 정상적으로 이용하실 수 있어요.
+    </div>
+    <div class="error-actions">
+      <button class="btn-primary" onclick="location.reload()">🔄 새로고침</button>
+      <a href="/" class="btn-secondary">🏠 홈으로 돌아가기</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

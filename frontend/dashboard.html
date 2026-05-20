@@ -166,6 +166,102 @@
   font-size: 13px;
 }
 
+/* 히스토리 타임라인 */
+.history-section {
+  margin-top: 20px;
+}
+.history-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.history-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color .2s;
+}
+.history-card:hover { border-color: rgba(0,180,216,.35); }
+.history-date {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  min-width: 80px;
+}
+.history-body { flex: 1; min-width: 0; }
+.history-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.history-stroke {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  background: rgba(0,180,216,.1);
+  border: 0.5px solid rgba(0,180,216,.25);
+  border-radius: 4px;
+  padding: 1px 7px;
+}
+.history-purpose {
+  font-size: 11px;
+  color: var(--muted);
+}
+.history-feedback {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-score-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 56px;
+}
+.history-score {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+.history-diff {
+  font-size: 11px;
+  font-weight: 600;
+}
+.history-diff.up   { color: var(--green); }
+.history-diff.down { color: var(--red); }
+.history-diff.same { color: var(--muted); }
+.history-view-btn {
+  padding: 6px 14px;
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color .2s, color .2s;
+}
+.history-view-btn:hover { border-color: var(--blue); color: var(--blue); }
+
 @media (max-width: 900px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
   .charts-grid   { grid-template-columns: 1fr; }
@@ -243,6 +339,14 @@
       <div class="table-card-title">최근 분석 목록</div>
       <div id="table-wrap">
         <div class="loading-overlay">데이터 불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- 분석 히스토리 타임라인 -->
+    <div class="history-section">
+      <div class="history-header">📅 분석 히스토리</div>
+      <div id="history-list" class="history-list">
+        <div class="loading-overlay">히스토리 불러오는 중...</div>
       </div>
     </div>
   </div>
@@ -489,6 +593,47 @@ async function loadDashboard() {
   }
 }
 
+async function loadHistory() {
+  const wrap = document.getElementById('history-list');
+  try {
+    const res = await fetch('/api/dashboard/history', { credentials: 'include' });
+    if (!res.ok) { wrap.innerHTML = ''; return; }
+    const data = await res.json();
+    const list = data.history || [];
+    if (!list.length) {
+      wrap.innerHTML = '<div class="empty-msg">아직 분석 기록이 없습니다.</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(h => {
+      const date = h.analyzed_at ? h.analyzed_at.slice(0, 10).replace(/-/g, '.') : '—';
+      const score = h.score != null ? h.score.toFixed(1) : '—';
+      const scoreColor = h.score == null ? 'var(--muted)' : h.score >= 80 ? 'var(--green)' : h.score >= 60 ? 'var(--amber)' : 'var(--red)';
+      const diffClass = h.trend === '↑' ? 'up' : h.trend === '↓' ? 'down' : 'same';
+      const diffText = h.score_diff != null ? `${h.trend}${Math.abs(h.score_diff)}점` : '—';
+      const purpose = h.purpose ? ` · ${h.purpose}` : '';
+      const preview = h.feedback ? h.feedback.slice(0, 60) + (h.feedback.length > 60 ? '…' : '') : '';
+      return `
+        <div class="history-card">
+          <div class="history-date">${date}</div>
+          <div class="history-body">
+            <div class="history-top">
+              <span class="history-stroke">${h.stroke_type || '—'}</span>
+              <span class="history-purpose">${purpose}</span>
+            </div>
+            <div class="history-feedback">${preview}</div>
+          </div>
+          <div class="history-score-wrap">
+            <div class="history-score" style="color:${scoreColor}">${score}</div>
+            <div class="history-diff ${diffClass}">${diffText}</div>
+          </div>
+          <a href="/viewer?id=${h.id}" class="history-view-btn">결과 보기</a>
+        </div>`;
+    }).join('');
+  } catch {
+    wrap.innerHTML = '<div class="empty-msg" style="color:var(--red)">히스토리를 불러오지 못했습니다.</div>';
+  }
+}
+
 async function logout() {
   await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
   window.location.href = '/login';
@@ -504,6 +649,7 @@ async function logout() {
     sessionStorage.removeItem('dashboard_refresh');
   }
   loadDashboard();
+  loadHistory();
 })();
 </script>
 <script>
