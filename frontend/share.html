@@ -433,7 +433,7 @@ async function copyLink() {
 
 async function shareKakao() {
   // Kakao SDK share
-  if (window.Kakao && Kakao.isInitialized()) {
+  if (window.Kakao && Kakao.isInitialized() && Kakao.Share) {
     try {
       Kakao.Share.sendDefault({
         objectType: 'feed',

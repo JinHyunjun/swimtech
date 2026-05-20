@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -90,6 +91,7 @@ def open_folder():
         return {"status": "fallback"}
 
 FRONTEND_DIR = "/app/frontend"
+templates = Jinja2Templates(directory=FRONTEND_DIR)
 
 # 로그인 페이지
 @app.get("/login")
@@ -223,7 +225,10 @@ def serve_chat(request: Request):
 def serve_pool(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
-    return _serve("pool.html")
+    return templates.TemplateResponse("pool.html", {
+        "request": request,
+        "kakao_js_key": os.getenv("KAKAO_JS_KEY", ""),
+    })
 
 # 온보딩 튜토리얼 페이지
 @app.get("/onboarding")
