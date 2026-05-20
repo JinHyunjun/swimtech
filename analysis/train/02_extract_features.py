@@ -33,13 +33,13 @@ BASE_DIR    = os.path.join(os.path.dirname(__file__), "data")
 FRAMES_CSV  = os.path.join(BASE_DIR, "features_frames.csv")
 SUMMARY_CSV = os.path.join(BASE_DIR, "features_summary.csv")
 
-# 목적 태그 매핑 (top-level 폴더 → purpose)
+# 카테고리 → (purpose_tag, skill_level) 매핑
 CATEGORY_TO_PURPOSE = {
-    "competition": "competition",
-    "tutorial":    "tutorial",
-    "health":      "health",
-    "masters":     "masters",
-    "start_turn":  "competition",
+    "competition": ("competition", "elite"),
+    "tutorial":    ("technique",   "beginner"),
+    "health":      ("health",      "beginner"),
+    "masters":     ("hobby",       "intermediate"),
+    "start_turn":  ("competition", "elite"),
 }
 
 # 카테고리별 특징 가중치 (score model 학습 시 참고용)
@@ -108,7 +108,8 @@ def _stroke_cycle_hz(l_seq: list, r_seq: list, fps: float, skip: int) -> float:
 # ── 프레임 특징 추출 ────────────────────────────────────────────────────
 
 def extract_frames(video_path: str, category: str, purpose_tag: str,
-                   stroke_label: str, skip: int = 5) -> list:
+                   stroke_label: str, skill_level: str = "unknown",
+                   skip: int = 5) -> list:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         return []
@@ -191,21 +192,33 @@ def extract_frames(video_path: str, category: str, purpose_tag: str,
                 l_wrist_seq.append(lms[LM.LEFT_WRIST].y)
                 r_wrist_seq.append(lms[LM.RIGHT_WRIST].y)
 
+                # 좌우 대칭 점수 (0~100): 팔꿈치 각도 차이 기반
+                sym_score = round(max(0.0, 100.0 - abs(l_elbow - r_elbow)), 2)
+                # 발차기 강도: 양발목 rolling std 평균
+                kick_inten = round((l_ank_std + r_ank_std) / 2, 6)
+
                 frame_rows.append({
                     "video_id":          video_id,
                     "frame":             frame_num,
                     "timestamp":         round(frame_num / fps, 3),
                     "category":          category,
                     "purpose_tag":       purpose_tag,
+                    "skill_level":       skill_level,
                     "stroke_label":      stroke_label,
-                    # 기존
+                    # 주요 특징 (spec 순서)
+                    "left_elbow_angle":  round(l_elbow,    2),
+                    "right_elbow_angle": round(r_elbow,    2),
+                    "symmetry_score":    sym_score,
+                    "head_angle":        round(head_angle, 2),
+                    "body_roll":         body_roll,
+                    "kick_intensity":    kick_inten,
+                    "shoulder_width":    round(sw, 4),
+                    # 기존 (하위 호환)
                     "l_elbow_angle":     round(l_elbow,    2),
                     "r_elbow_angle":     round(r_elbow,    2),
                     "l_shoulder_angle":  round(l_shoulder, 2),
                     "r_shoulder_angle":  round(r_shoulder, 2),
-                    "head_angle":        round(head_angle, 2),
                     "hip_angle":         round(hip_angle,  2),
-                    "body_roll":         body_roll,
                     "hip_roll":          hip_roll,
                     "elbow_symmetry":    round(abs(l_elbow - r_elbow),     2),
                     "shoulder_symmetry": round(abs(l_shoulder - r_shoulder), 2),
@@ -213,10 +226,8 @@ def extract_frames(video_path: str, category: str, purpose_tag: str,
                     "total_kicks":       kick_detector.kick_count,
                     "entry_angle":       entry_ang,
                     "streamline_width":  streamline,
-                    # 신규
                     "head_v_angle":      head_v,
                     "body_roll_deg":     body_roll_d,
-                    "shoulder_width":    round(sw, 4),
                     "norm_l_wrist_x":    norm_l_wx,
                     "norm_r_wrist_x":    norm_r_wx,
                     "norm_l_wrist_y":    norm_l_wy,
@@ -285,7 +296,7 @@ def summarize_video(frame_rows: list) -> dict:
 # ── 비디오 스캔 ─────────────────────────────────────────────────────────
 
 def scan_videos(base_dir: str, category_filter: str = "all"):
-    """(video_path, category, purpose_tag, stroke_label) 튜플 yield"""
+    """(video_path, category, purpose_tag, stroke_label, skill_level) 튜플 yield"""
     for top in sorted(os.listdir(base_dir)):
         top_path = os.path.join(base_dir, top)
         if not os.path.isdir(top_path) or top.startswith("_"):
@@ -293,7 +304,7 @@ def scan_videos(base_dir: str, category_filter: str = "all"):
         if category_filter != "all" and top != category_filter:
             continue
 
-        purpose = CATEGORY_TO_PURPOSE.get(top, top)
+        purpose_tag, skill_level = CATEGORY_TO_PURPOSE.get(top, (top, "unknown"))
         subdirs = [d for d in os.listdir(top_path)
                    if os.path.isdir(os.path.join(top_path, d))]
 
@@ -304,11 +315,11 @@ def scan_videos(base_dir: str, category_filter: str = "all"):
                 stroke   = "_".join(parts[1:]) if len(parts) > 1 else sub
                 for f in os.listdir(sub_path):
                     if f.lower().endswith(".mp4"):
-                        yield os.path.join(sub_path, f), sub, purpose, stroke
+                        yield os.path.join(sub_path, f), sub, purpose_tag, stroke, skill_level
         else:
             for f in os.listdir(top_path):
                 if f.lower().endswith(".mp4"):
-                    yield os.path.join(top_path, f), top, purpose, "unknown"
+                    yield os.path.join(top_path, f), top, purpose_tag, "unknown", skill_level
 
 
 # ── 메인 ────────────────────────────────────────────────────────────────
@@ -336,16 +347,16 @@ def main():
     videos = list(scan_videos(BASE_DIR, args.category))
     print(f"\n총 {len(videos)}개 비디오 발견 (이미 처리됨: {len(done_videos)}개)\n")
 
-    for i, (vpath, category, purpose, stroke) in enumerate(videos, 1):
+    for i, (vpath, category, purpose, stroke, skill_level) in enumerate(videos, 1):
         vname = os.path.basename(vpath)
         if vname in done_videos:
             print(f"  [{i}/{len(videos)}] {vname} — skip")
             continue
 
         print(f"  [{i}/{len(videos)}] {vname}")
-        print(f"           category={category}  purpose={purpose}  stroke={stroke}")
+        print(f"           category={category}  purpose={purpose}  skill={skill_level}  stroke={stroke}")
 
-        rows = extract_frames(vpath, category, purpose, stroke, skip=args.skip)
+        rows = extract_frames(vpath, category, purpose, stroke, skill_level, skip=args.skip)
         if not rows:
             print(f"           ⚠️ 감지 실패")
             continue

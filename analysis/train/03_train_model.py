@@ -17,12 +17,12 @@ import os, sys, argparse, json, warnings
 import numpy as np
 import pandas as pd
 import joblib
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.svm import SVC
-from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
+from sklearn.model_selection import StratifiedKFold, KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, f1_score, mean_absolute_error
 warnings.filterwarnings("ignore")
 
 BASE_DIR  = os.path.join(os.path.dirname(__file__), "data")
@@ -47,7 +47,7 @@ BASE_FEATURE_COLS = (
     + ["kick_frequency", "kick_ratio", "stroke_cycle_hz"]
 )
 
-PURPOSE_TAGS = ["competition", "health", "tutorial", "masters"]
+PURPOSE_TAGS = ["competition", "health", "technique", "hobby"]
 
 
 def _available_cols(df: pd.DataFrame, cols: list) -> list:
@@ -166,16 +166,21 @@ def train_stroke_classifier(df: pd.DataFrame):
 # ── 목적별 점수 모델 ────────────────────────────────────────────────────
 
 def train_score_model(df: pd.DataFrame, purpose: str):
-    """purpose 폴더 비디오 = 1, 나머지 = 0 으로 이진 학습 후 확률값을 점수(0~1)로 사용"""
+    """
+    Soft label 회귀 방식:
+      해당 목적 카테고리 = 1.0, 나머지 = 0.3
+    GradientBoostingRegressor → predict()로 0~1 점수 출력
+    """
     print(f"\n  ── score_{purpose} ─────────────────────────")
 
     if "purpose_tag" not in df.columns:
         print("    ❌ purpose_tag 컬럼 없음")
         return
 
-    y_bin = (df["purpose_tag"] == purpose).astype(int).values
-    pos_n = y_bin.sum()
-    neg_n = len(y_bin) - pos_n
+    # Soft labels: 해당 목적=1.0, 나머지=0.3
+    y_soft = np.where(df["purpose_tag"] == purpose, 1.0, 0.3)
+    pos_n  = int((y_soft == 1.0).sum())
+    neg_n  = int((y_soft == 0.3).sum())
 
     if pos_n < 3 or neg_n < 3:
         print(f"    ⚠️  샘플 부족 (positive={pos_n}, negative={neg_n}, 각 3개 이상 필요) → skip")
@@ -184,20 +189,27 @@ def train_score_model(df: pd.DataFrame, purpose: str):
     feat_cols = _available_cols(df, BASE_FEATURE_COLS)
     X = df[feat_cols].fillna(0).values
 
-    n_splits = min(5, min(pos_n, neg_n))
-    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    n_splits = min(5, min(pos_n, neg_n, len(df)))
+    cv = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     model = Pipeline([
         ("sc",  StandardScaler()),
-        ("clf", GradientBoostingClassifier(n_estimators=150, max_depth=4,
-                                           learning_rate=0.1, random_state=42)),
+        ("reg", GradientBoostingRegressor(n_estimators=150, max_depth=4,
+                                          learning_rate=0.1, random_state=42)),
     ])
 
-    scores = cross_val_score(model, X, y_bin, cv=cv, scoring="f1")
-    print(f"    F1 (5-fold): {scores.mean():.3f} ± {scores.std():.3f}  "
+    mae_scores = -cross_val_score(model, X, y_soft, cv=cv,
+                                  scoring="neg_mean_absolute_error")
+    print(f"    MAE (5-fold): {mae_scores.mean():.4f} ± {mae_scores.std():.4f}  "
           f"[pos={pos_n}, neg={neg_n}]")
 
-    model.fit(X, y_bin)
+    model.fit(X, y_soft)
+
+    # 학습 데이터 전체 MAE
+    y_pred  = model.predict(X)
+    mae_all = mean_absolute_error(y_soft, y_pred)
+    rmse_all = float(np.sqrt(np.mean((y_soft - y_pred) ** 2)))
+    print(f"    학습 MAE={mae_all:.4f}  RMSE={rmse_all:.4f}")
 
     os.makedirs(MODEL_DIR, exist_ok=True)
     model_path = os.path.join(MODEL_DIR, f"score_{purpose}.pkl")
@@ -206,12 +218,15 @@ def train_score_model(df: pd.DataFrame, purpose: str):
     joblib.dump(model, model_path)
     with open(info_path, "w", encoding="utf-8") as f:
         json.dump({
-            "purpose":      purpose,
-            "cv_f1_mean":   round(float(scores.mean()), 4),
-            "cv_f1_std":    round(float(scores.std()),  4),
-            "pos_samples":  int(pos_n),
-            "neg_samples":  int(neg_n),
-            "feature_cols": feat_cols,
+            "purpose":       purpose,
+            "model_type":    "regressor",
+            "cv_mae_mean":   round(float(mae_scores.mean()), 4),
+            "cv_mae_std":    round(float(mae_scores.std()),  4),
+            "train_mae":     round(mae_all,  4),
+            "train_rmse":    round(rmse_all, 4),
+            "pos_samples":   int(pos_n),
+            "neg_samples":   int(neg_n),
+            "feature_cols":  feat_cols,
         }, f, ensure_ascii=False, indent=2)
 
     print(f"    💾 {model_path}")
@@ -241,10 +256,17 @@ def main():
 
     if args.mode in ("score", "all"):
         print(f"\n{'='*55}")
-        print("  [2] 목적별 점수 모델 (score_competition/health/tutorial/masters)")
+        print("  [2] 목적별 점수 모델 (score_competition/health/technique/hobby)")
         print(f"{'='*55}")
         for purpose in PURPOSE_TAGS:
             train_score_model(df, purpose)
+
+    # feature_columns.pkl 저장
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    feat_cols = _available_cols(df, BASE_FEATURE_COLS)
+    feat_path = os.path.join(MODEL_DIR, "feature_columns.pkl")
+    joblib.dump(feat_cols, feat_path)
+    print(f"\n  💾 {feat_path}  ({len(feat_cols)}개 컬럼)")
 
     print("\n✅ 학습 완료!")
     print("다음 단계: python analysis/train/04_evaluate_model.py")

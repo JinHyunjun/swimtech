@@ -14,6 +14,7 @@ import json
 import urllib.parse
 import numpy as np
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
@@ -173,6 +174,12 @@ def predict_ml_score(frame_metrics: list, purpose: str) -> Optional[float]:
     vec = _build_score_feature_vec(frame_metrics, feat_cols)
     if vec is None:
         return None
+    try:
+        # 회귀 모델 (GradientBoostingRegressor) 우선 시도
+        val = float(model.predict(vec.reshape(1, -1))[0])
+        return min(1.0, max(0.0, val))
+    except Exception:
+        pass
     try:
         proba = model.predict_proba(vec.reshape(1, -1))[0]
         return float(proba[1]) if len(proba) > 1 else float(proba[0])
@@ -954,9 +961,9 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "",
         "competition": "competition",
         "record":      "competition",
         "health":      "health",
-        "hobby":       "health",
-        "technique":   "tutorial",
-        "masters":     "masters",
+        "hobby":       "hobby",
+        "technique":   "technique",
+        "masters":     "hobby",
     }
     score_key = _purpose_to_score_key.get(purpose, "tutorial")
     ml_score_raw = predict_ml_score(frame_metrics, score_key) if frame_metrics else None
@@ -989,3 +996,97 @@ def generate_rule_based_feedback(summary, stroke_type: str, purpose: str = "",
         "score_weights":   weights,
         "injury_risks":    injury_risks,
     }
+
+
+# ── ML 모델 로드 공개 API ──────────────────────────────────────────────
+
+_ml_models_cache: Optional[dict] = None
+
+def load_ml_models() -> Optional[dict]:
+    """
+    stroke_classifier.pkl + score_*.pkl 일괄 로드.
+    models/ 디렉터리가 없거나 모델이 하나도 없으면 None 반환.
+    """
+    global _ml_models_cache
+    if _ml_models_cache is not None:
+        return _ml_models_cache
+
+    models_dir = Path(MODEL_DIR)
+    if not models_dir.exists():
+        return None
+
+    try:
+        import joblib
+    except ImportError:
+        return None
+
+    loaded: dict = {}
+
+    stroke_path = models_dir / "stroke_classifier.pkl"
+    if stroke_path.exists():
+        try:
+            loaded["stroke_classifier"] = joblib.load(stroke_path)
+        except Exception:
+            pass
+
+    for purpose in ("competition", "health", "technique", "hobby"):
+        p = models_dir / f"score_{purpose}.pkl"
+        if p.exists():
+            try:
+                loaded[f"score_{purpose}"] = joblib.load(p)
+            except Exception:
+                pass
+
+    feat_path = models_dir / "feature_columns.pkl"
+    if feat_path.exists():
+        try:
+            loaded["feature_columns"] = joblib.load(feat_path)
+        except Exception:
+            pass
+
+    if not loaded:
+        return None
+
+    _ml_models_cache = loaded
+    return loaded
+
+
+def ml_score_adjustment(features: dict, purpose: str, rule_score: float) -> float:
+    """
+    ML 점수 모델로 rule_score를 보정.
+    features: {"l_elbow_angle_mean": ..., "kick_ratio": ..., ...} 형태 dict
+    purpose:  "competition" | "health" | "technique" | "hobby" | "record" | "hobby" 등
+    rule_score: 규칙 기반 점수 (0~100)
+
+    반환: final_score = rule_score * 0.6 + ml_score * 100 * 0.4
+    모델 없거나 예측 실패 시 rule_score 그대로 반환.
+    """
+    ml_models = load_ml_models()
+    if ml_models is None:
+        return rule_score
+
+    _purpose_map = {
+        "competition": "competition",
+        "record":      "competition",
+        "health":      "health",
+        "hobby":       "hobby",
+        "technique":   "technique",
+        "masters":     "hobby",
+    }
+    score_key = _purpose_map.get(purpose, "technique")
+    model     = ml_models.get(f"score_{score_key}")
+    feat_cols = ml_models.get("feature_columns", [])
+
+    if model is None or not feat_cols:
+        return rule_score
+
+    try:
+        import numpy as np
+        vec = np.array([features.get(c, 0.0) for c in feat_cols], dtype=float)
+        raw = float(model.predict(vec.reshape(1, -1))[0])
+        ml_score = min(1.0, max(0.0, raw))
+    except Exception:
+        return rule_score
+
+    final = round(rule_score * 0.6 + ml_score * 100 * 0.4, 1)
+    return final
