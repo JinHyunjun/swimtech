@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="toast-msg" id="share-toast" style="
@@ -163,6 +164,9 @@ const selectedFilename = sessionStorage.getItem('swimtech_filename');
 
 if (!selectedStroke || !selectedContext || !selectedPurpose) window.location.href = '/';
 if (!selectedFilename) window.location.href = '/upload';
+
+// Kakao SDK init
+try { Kakao.init('3d51b20b04a33ad0448c941c1268146e'); } catch(e) {}
 
 // ── 한글 매핑 ─────────────────────────────────────────
 const STROKE_KO = {
@@ -493,6 +497,46 @@ async function shareResult() {
     }
     const data = await res.json();
     const shareUrl = window.location.origin + data.share_url;
+
+    const resetBtn = () => setTimeout(() => {
+      btn.textContent = '🔗 결과 공유하기';
+      btn.style.background = 'linear-gradient(135deg,#0077b6,#00b4d8)';
+      btn.disabled = false;
+    }, 3000);
+
+    // Kakao SDK
+    if (window.Kakao && Kakao.isInitialized()) {
+      try {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: 'SwimTech 수영 영법 분석 결과',
+            description: '내 수영 분석 결과를 확인해보세요!',
+            imageUrl: window.location.origin + '/static/icons/icon-512.png',
+            link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+          },
+          buttons: [{ title: '결과 확인하기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+        });
+        btn.textContent = '✅ 카카오톡으로 공유했어요!';
+        btn.style.background = '#fee500';
+        btn.style.color = '#000';
+        resetBtn();
+        return;
+      } catch(e) {}
+    }
+
+    // Web Share API
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'SwimTech 수영 분석 결과', text: '내 수영 영법 분석 결과를 확인해보세요!', url: shareUrl });
+        btn.textContent = '✅ 공유됐어요!';
+        btn.style.background = '#16a34a';
+        resetBtn();
+        return;
+      } catch(e) {}
+    }
+
+    // 클립보드 복사 fallback
     try {
       await navigator.clipboard.writeText(shareUrl);
     } catch(e) {
@@ -506,12 +550,8 @@ async function shareResult() {
     }
     btn.textContent = '✅ 링크가 복사됐어요!';
     btn.style.background = '#16a34a';
-    showShareToast('✅ 링크가 복사됐어요!');
-    setTimeout(() => {
-      btn.textContent = '🔗 결과 공유하기';
-      btn.style.background = 'linear-gradient(135deg,#0077b6,#00b4d8)';
-      btn.disabled = false;
-    }, 3000);
+    showShareToast('✅ 링크가 복사됐어요! 카카오톡에 붙여넣기 해보세요.');
+    resetBtn();
   } catch(e) {
     btn.textContent = '❌ 실패';
     btn.disabled = false;
@@ -801,7 +841,7 @@ function resetAll() {
   if (state.sse) { state.sse.close(); state.sse = null; }
   video.pause(); video.src = '';
   sessionStorage.clear();
-  window.location.href = '/';
+  window.location.href = '/upload';
 }
 
 // ── 유틸 ─────────────────────────────────────────────

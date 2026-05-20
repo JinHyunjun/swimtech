@@ -465,8 +465,18 @@ async function shareKakao() {
   }
 
   // 최종 fallback: 링크 복사
-  await copyLink();
-  showToast('✅ 링크가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = shareUrl;
+    Object.assign(ta.style, { position:'fixed', top:'-9999px' });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  showToast('✅ 링크가 복사됐어요! 카카오톡에 붙여넣기 해보세요.');
 }
 
 loadShare();
