@@ -132,10 +132,20 @@ def run_analysis(
 
             feedback_data = generate_rule_based_feedback(
                 summary,
-                classification.stroke_type,
+                normalized_stroke,
                 purpose=purpose,
                 frame_metrics=summary.frame_metrics,
             )
+
+            # AI 감지 영법이 다르고 신뢰도가 충분할 때 경고 추가
+            if (classification.confidence >= 70 and
+                    classification.stroke_type != normalized_stroke):
+                warning = (
+                    f"[AI 감지] AI가 다른 영법({classification.stroke_type})을 감지했습니다 "
+                    f"(신뢰도 {classification.confidence:.0f}%). "
+                    f"선택하신 영법({normalized_stroke})으로 분석을 진행했습니다."
+                )
+                feedback_data["feedback"] = warning + "\n\n" + feedback_data["feedback"]
 
             # analysis_results INSERT
             cur.execute("""
@@ -159,7 +169,7 @@ def run_analysis(
                 ) RETURNING id
             """, (
                 video_id, customer_id,
-                classification.stroke_type, classification.confidence,
+                normalized_stroke, classification.confidence,
                 purpose, classification.reason,
                 summary.left_arm_angle_avg,  summary.right_arm_angle_avg,
                 summary.left_arm_angle_min,  summary.right_arm_angle_min,
@@ -210,7 +220,7 @@ def run_analysis(
                 "status":           "done",
                 "analysis_id":      analysis_id,
                 "video_id":         video_id,
-                "stroke_type":      classification.stroke_type,
+                "stroke_type":      normalized_stroke,
                 "overall_score":    summary.overall_score,
                 "kick_count":       summary.kick_count,
                 "result_video_key": result_key,

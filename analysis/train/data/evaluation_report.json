@@ -1,0 +1,140 @@
+{
+  "n_total": 197,
+  "n_evaluated": 16,
+  "sample_pct": 0.1,
+  "stroke_classifier": {
+    "status": "ok",
+    "accuracy": 0.75,
+    "n_samples": 4,
+    "class_accuracy": {
+      "backstroke": {
+        "correct": 1,
+        "total": 1,
+        "accuracy": 1.0
+      },
+      "breaststroke": {
+        "correct": 1,
+        "total": 1,
+        "accuracy": 1.0
+      },
+      "butterfly": {
+        "correct": 0,
+        "total": 1,
+        "accuracy": 0.0
+      },
+      "freestyle": {
+        "correct": 1,
+        "total": 1,
+        "accuracy": 1.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "classes": [
+      "backstroke",
+      "breaststroke",
+      "butterfly",
+      "freestyle"
+    ],
+    "samples": [
+      {
+        "video": "Is This The Easiest 1_10⧸100m Frees",
+        "true": "freestyle",
+        "pred": "freestyle"
+      },
+      {
+        "video": "New World Record ｜ Men's 100m Backs",
+        "true": "backstroke",
+        "pred": "backstroke"
+      },
+      {
+        "video": "Phelps reclaims 200m Butterfly gold",
+        "true": "butterfly",
+        "pred": "breaststroke"
+      },
+      {
+        "video": "Mens 100 breaststroke highspeed cam",
+        "true": "breaststroke",
+        "pred": "breaststroke"
+      }
+    ]
+  },
+  "score_models": {
+    "competition": {
+      "status": "ok",
+      "model_type": "regressor",
+      "n_samples": 16,
+      "mae": 0.0023,
+      "rmse": 0.0027,
+      "per_purpose_mean_score": {
+        "competition": 0.9976,
+        "health": 0.3004,
+        "hobby": 0.3015,
+        "technique": 0.2998
+      }
+    },
+    "health": {
+      "status": "ok",
+      "model_type": "regressor",
+      "n_samples": 16,
+      "mae": 0.0004,
+      "rmse": 0.0005,
+      "per_purpose_mean_score": {
+        "competition": 0.3001,
+        "health": 0.9995,
+        "hobby": 0.2999,
+        "technique": 0.2998
+      }
+    },
+    "technique": {
+      "status": "ok",
+      "model_type": "regressor",
+      "n_samples": 16,
+      "mae": 0.0001,
+      "rmse": 0.0002,
+      "per_purpose_mean_score": {
+        "competition": 0.3,
+        "health": 0.2999,
+        "hobby": 0.3,
+        "technique": 1.0
+      }
+    },
+    "hobby": {
+      "status": "ok",
+      "model_type": "regressor",
+      "n_samples": 16,
+      "mae": 0.0008,
+      "rmse": 0.001,
+      "per_purpose_mean_score": {
+        "competition": 0.301,
+        "health": 0.3,
+        "hobby": 0.9993,
+        "technique": 0.2992
+      }
+    }
+  }
+}

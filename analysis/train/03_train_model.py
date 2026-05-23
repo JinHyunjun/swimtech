@@ -47,7 +47,8 @@ BASE_FEATURE_COLS = (
     + ["kick_frequency", "kick_ratio", "stroke_cycle_hz"]
 )
 
-PURPOSE_TAGS = ["competition", "health", "technique", "hobby"]
+PURPOSE_TAGS   = ["competition", "health", "technique", "hobby"]
+VALID_STROKES  = {"freestyle", "backstroke", "breaststroke", "butterfly"}
 
 
 def _available_cols(df: pd.DataFrame, cols: list) -> list:
@@ -62,6 +63,16 @@ def _load_summary(min_samples: int = 2) -> pd.DataFrame:
         )
     df = pd.read_csv(SUMMARY_CSV)
     print(f"  로드: {len(df)}개 비디오")
+
+    before = len(df)
+    if "stroke_label" in df.columns:
+        df = df[df["stroke_label"] != "medley"]
+    if "category" in df.columns:
+        df = df[df["category"] != "medley"]
+    excluded = before - len(df)
+    if excluded > 0:
+        print(f"  medley 제외: {excluded}개 → {len(df)}개 남음")
+
     return df
 
 
@@ -77,8 +88,13 @@ def train_stroke_classifier(df: pd.DataFrame):
     print("  [1] 영법 분류 모델 (stroke_classifier)")
     print(f"{'='*55}")
 
-    # 영법 레이블이 있고 unknown이 아닌 데이터만 사용
-    df_s = df[df["stroke_label"].notna() & (df["stroke_label"] != "unknown")].copy()
+    # 4개 유효 영법 클래스만 사용 (medley/unknown 제외)
+    df_s = df[
+        df["stroke_label"].notna() &
+        (df["stroke_label"] != "unknown") &
+        (df["stroke_label"] != "medley") &
+        (df["stroke_label"].isin(VALID_STROKES))
+    ].copy()
     if len(df_s) < 6:
         print(f"  ❌ 유효 데이터 부족 ({len(df_s)}개, 최소 6개 필요)")
         return
