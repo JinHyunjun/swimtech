@@ -417,6 +417,7 @@ def me(swimtech_token: str = Cookie(default=None)):
 
     return {
         "username":        username,
+        "customer_id":     customer_id,
         "status":          "authenticated",
         "nickname":        nickname,
         "social_provider": social_provider,

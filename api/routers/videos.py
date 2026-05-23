@@ -40,6 +40,9 @@ def _sanitize_filename(filename: str) -> str:
 @router.post("/upload")
 async def upload_video(
     customer_id: int,
+    stroke_type: str = "freestyle",
+    env: str = "default",
+    purpose: str = "",
     file: UploadFile = File(...)
 ):
     ext = os.path.splitext(file.filename or "")[1].lower()
@@ -93,7 +96,7 @@ async def upload_video(
         raise HTTPException(500, "영상 정보 저장에 실패했습니다.")
 
     from tasks.analyze import run_analysis
-    task = run_analysis.delay(object_key, customer_id, video_id)
+    task = run_analysis.delay(object_key, customer_id, video_id, stroke_type, env, purpose)
 
     try:
         conn = _get_db()
