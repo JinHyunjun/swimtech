@@ -30,7 +30,10 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(python *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "PowerShell(Set-Location \"C:\\\\swim\\\\analysis\\\\train\"; foreach \\($f in @\\(\"02_extract_features.py\",\"03_train_model.py\",\"04_evaluate_model.py\",\"05_auto_label.py\",\"06_validate_data.py\"\\)\\) { $r = python $f --help 2>&1 | Select-Object -First 1; Write-Host \"${f}: $r\" })",
+      "PowerShell(head *)",
+      "PowerShell(Get-ChildItem -Path C:\\\\swim -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object {$_.Name -match \"\\(frontend|src|pages|components|public|analysis\\)\" -and $_.FullName -notmatch \"node_modules\"} | Select-Object -First 50 -ExpandProperty FullName)"
     ]
   }
 }

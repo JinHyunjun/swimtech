@@ -1,56 +1,56 @@
 {
-  "n_total": 197,
-  "n_evaluated": 16,
+  "n_total": 348,
+  "n_evaluated": 34,
   "sample_pct": 0.1,
   "stroke_classifier": {
     "status": "ok",
-    "accuracy": 0.75,
-    "n_samples": 4,
+    "accuracy": 0.6667,
+    "n_samples": 18,
     "class_accuracy": {
       "backstroke": {
-        "correct": 1,
-        "total": 1,
+        "correct": 5,
+        "total": 5,
         "accuracy": 1.0
       },
       "breaststroke": {
         "correct": 1,
-        "total": 1,
-        "accuracy": 1.0
+        "total": 4,
+        "accuracy": 0.25
       },
       "butterfly": {
-        "correct": 0,
-        "total": 1,
-        "accuracy": 0.0
+        "correct": 5,
+        "total": 5,
+        "accuracy": 1.0
       },
       "freestyle": {
         "correct": 1,
-        "total": 1,
-        "accuracy": 1.0
+        "total": 4,
+        "accuracy": 0.25
       }
     },
     "confusion_matrix": [
       [
-        1,
+        5,
         0,
         0,
         0
       ],
       [
-        0,
+        2,
         1,
-        0,
-        0
-      ],
-      [
-        0,
         1,
-        0,
         0
       ],
       [
         0,
         0,
+        5,
+        0
+      ],
+      [
+        2,
         0,
+        1,
         1
       ]
     ],
@@ -62,24 +62,54 @@
     ],
     "samples": [
       {
-        "video": "Is This The Easiest 1_10⧸100m Frees",
-        "true": "freestyle",
-        "pred": "freestyle"
+        "video": "How to improve your Butterfly ｜ Tip",
+        "true": "butterfly",
+        "pred": "butterfly"
       },
       {
-        "video": "New World Record ｜ Men's 100m Backs",
+        "video": "가장 쉽고 빠르게 배영 잘하는 방법 -1- #28.mp4",
         "true": "backstroke",
         "pred": "backstroke"
       },
       {
-        "video": "Phelps reclaims 200m Butterfly gold",
-        "true": "butterfly",
-        "pred": "breaststroke"
+        "video": "Hansen Takes Breaststroke Final.mp4",
+        "true": "breaststroke",
+        "pred": "butterfly"
       },
       {
-        "video": "Mens 100 breaststroke highspeed cam",
+        "video": "Rebecca Soni Breaks World Record - ",
         "true": "breaststroke",
-        "pred": "breaststroke"
+        "pred": "backstroke"
+      },
+      {
+        "video": "Closest swimming finish EVER! Ft. M",
+        "true": "butterfly",
+        "pred": "butterfly"
+      },
+      {
+        "video": "Unbelievable 100m Butterfly Showdow",
+        "true": "butterfly",
+        "pred": "butterfly"
+      },
+      {
+        "video": "Slow Motion 100M Freestyle Start.mp",
+        "true": "freestyle",
+        "pred": "backstroke"
+      },
+      {
+        "video": "3 Exercises for backstroke to breas",
+        "true": "backstroke",
+        "pred": "backstroke"
+      },
+      {
+        "video": "How To Pull In Butterfly.mp4",
+        "true": "butterfly",
+        "pred": "butterfly"
+      },
+      {
+        "video": "Improve your Backstroke Swimming te",
+        "true": "backstroke",
+        "pred": "backstroke"
       }
     ]
   },
@@ -87,53 +117,53 @@
     "competition": {
       "status": "ok",
       "model_type": "regressor",
-      "n_samples": 16,
-      "mae": 0.0023,
-      "rmse": 0.0027,
+      "n_samples": 34,
+      "mae": 0.0399,
+      "rmse": 0.1046,
       "per_purpose_mean_score": {
-        "competition": 0.9976,
-        "health": 0.3004,
-        "hobby": 0.3015,
-        "technique": 0.2998
+        "competition": 0.9376,
+        "health": 0.3062,
+        "hobby": 0.3094,
+        "technique": 0.307
       }
     },
     "health": {
       "status": "ok",
       "model_type": "regressor",
-      "n_samples": 16,
-      "mae": 0.0004,
-      "rmse": 0.0005,
+      "n_samples": 34,
+      "mae": 0.004,
+      "rmse": 0.0056,
       "per_purpose_mean_score": {
-        "competition": 0.3001,
-        "health": 0.9995,
-        "hobby": 0.2999,
-        "technique": 0.2998
+        "competition": 0.3007,
+        "health": 0.9936,
+        "hobby": 0.2968,
+        "technique": 0.2981
       }
     },
     "technique": {
       "status": "ok",
       "model_type": "regressor",
-      "n_samples": 16,
-      "mae": 0.0001,
-      "rmse": 0.0002,
+      "n_samples": 34,
+      "mae": 0.0371,
+      "rmse": 0.1006,
       "per_purpose_mean_score": {
-        "competition": 0.3,
-        "health": 0.2999,
-        "hobby": 0.3,
-        "technique": 1.0
+        "competition": 0.3543,
+        "health": 0.3065,
+        "hobby": 0.3075,
+        "technique": 0.9892
       }
     },
     "hobby": {
       "status": "ok",
       "model_type": "regressor",
-      "n_samples": 16,
-      "mae": 0.0008,
-      "rmse": 0.001,
+      "n_samples": 34,
+      "mae": 0.0029,
+      "rmse": 0.004,
       "per_purpose_mean_score": {
-        "competition": 0.301,
-        "health": 0.3,
-        "hobby": 0.9993,
-        "technique": 0.2992
+        "competition": 0.3016,
+        "health": 0.2999,
+        "hobby": 0.9975,
+        "technique": 0.3002
       }
     }
   }

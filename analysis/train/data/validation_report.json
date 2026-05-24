@@ -1,9 +1,54 @@
 {
-  "total": 199,
-  "ok": 31,
-  "warn": 76,
-  "bad": 92,
+  "total": 398,
+  "ok": 53,
+  "warn": 154,
+  "bad": 191,
   "videos": [
+    {
+      "video": "3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Adam Peaty ｜ 100m Breaststroke ｜ Tokyo Olympics 2020 ｜ Underwater Slo Mo Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Adam Peaty ｜ 100m Breaststroke ｜ Tokyo Olympics 2020 ｜ Underwater Slo Mo Technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Athletes in Motion： The Backstroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Athletes in Motion： The Backstroke.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
     {
       "video": "Backstroke - slowmotion.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Backstroke - slowmotion.mp4",
@@ -12,6 +57,15 @@
       "skill_level": "elite",
       "detect_rate": 0.8667,
       "status": "✅ 정상"
+    },
+    {
+      "video": "Backstroke Ryan Murphy.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Backstroke Ryan Murphy.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
     },
     {
       "video": "Backstroke start in super slow motion. Backcrawl olympic start.mp4",
@@ -23,6 +77,15 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Backstroke swimming technique ｜ Arms ｜ Part 2 ｜ How to swim back.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Backstroke swimming technique ｜ Arms ｜ Part 2 ｜ How to swim back.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Backstroke swimming technique ｜ Rotation ｜ Swim faster.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Backstroke swimming technique ｜ Rotation ｜ Swim faster.mp4",
       "category": "competition",
@@ -30,6 +93,15 @@
       "skill_level": "elite",
       "detect_rate": 0.7333,
       "status": "⚠️ 주의"
+    },
+    {
+      "video": "Butterfly Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Butterfly Swimming Technique ｜ Stroke.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
     },
     {
       "video": "Fix Your Backstroke (You're Swimming it WRONG).mp4",
@@ -41,6 +113,24 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "Great Backstroke Turn Advice.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Great Backstroke Turn Advice.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Swim Backstroke ｜ Technique For Back Crawl Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\How To Swim Backstroke ｜ Technique For Back Crawl Swimming.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "How to Swim Backstroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\How to Swim Backstroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
       "category": "competition",
@@ -48,6 +138,15 @@
       "skill_level": "elite",
       "detect_rate": 0.5,
       "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to Swim Freestyle ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\How to Swim Freestyle ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
     },
     {
       "video": "How to do a Backstroke Start ｜ Olympic Champion Stephanie Rice.mp4",
@@ -59,8 +158,62 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Hubert Kos Shatters Men’s 200m Backstroke WR with Stunning 1_45.12 ｜ Swimming World Cup 2025.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Hubert Kos Shatters Men’s 200m Backstroke WR with Stunning 1_45.12 ｜ Swimming World Cup 2025.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Improve your Backstroke Swimming technique ｜ Learn from an Olympic Medallist ｜ Olympians' Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Improve your Backstroke Swimming technique ｜ Learn from an Olympic Medallist ｜ Olympians' Tips.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8667,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "MONA backstroke in slow motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\MONA backstroke in slow motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 1.0,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Men's 200m Individual Medley ｜ Rio 2016 Replay.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Men's 200m Individual Medley ｜ Rio 2016 Replay.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
@@ -77,6 +230,24 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Michael Phelps Freestyle Stroke Analysis.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Michael Phelps Freestyle Stroke Analysis.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.9333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Michael Phelps breaks 200m Freestyle World Record ｜ Beijing 2008 Olympic Games.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Michael Phelps breaks 200m Freestyle World Record ｜ Beijing 2008 Olympic Games.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Missy Franklin Slow Motion Start - W 200 Backstroke - ARENA Grand Prix Series at Santa Clara.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Missy Franklin Slow Motion Start - W 200 Backstroke - ARENA Grand Prix Series at Santa Clara.mp4",
       "category": "competition",
@@ -84,6 +255,15 @@
       "skill_level": "elite",
       "detect_rate": 0.1333,
       "status": "❌ 불량"
+    },
+    {
+      "video": "New Way to Swim Breaststroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\New Way to Swim Breaststroke.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
     },
     {
       "video": "New World Record ｜ Men's 100m Backstroke ｜ 19th FINA World Championships.mp4",
@@ -104,6 +284,24 @@
       "status": "✅ 정상"
     },
     {
+      "video": "Paris 2024 ｜ Hungary's Hubert Kos wins the Men's 200m Backstroke final ｜ SportsMax.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Paris 2024 ｜ Hungary's Hubert Kos wins the Men's 200m Backstroke final ｜ SportsMax.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Peaty wins gold with new world record - Full Race.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Peaty wins gold with new world record - Full Race.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
       "category": "competition",
@@ -122,6 +320,15 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Ryan Lochte   Backstroke Stroke   Swim Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Ryan Lochte   Backstroke Stroke   Swim Technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Ryan Murphy 100 back High speed camera   slo motion 1080i youtube 2.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Ryan Murphy 100 back High speed camera   slo motion 1080i youtube 2.mp4",
       "category": "competition",
@@ -131,8 +338,71 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Slow-mo Olympic swim dive.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Slow-mo Olympic swim dive.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.9333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Swimming - Men's 200M Freestyle Final - Beijing 2008 Summer Olympic Games.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Swimming - Men's 200M Freestyle Final - Beijing 2008 Summer Olympic Games.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "The Smoothest 59 Second 100m Freestyle Ever？.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\The Smoothest 59 Second 100m Freestyle Ever？.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Women's 100m freestyle Final 🏊‍♀️ ｜ Paris Champions.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\Women's 100m freestyle Final 🏊‍♀️ ｜ Paris Champions.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "World Record Alert! Hubert Kos Clocks 48.16 in the 100m Backstroke ｜ Swimming World Cup 2025.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\World Record Alert! Hubert Kos Clocks 48.16 in the 100m Backstroke ｜ Swimming World Cup 2025.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "backstroke 3 cycles slow.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\backstroke 3 cycles slow.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0,
+      "status": "❌ 불량"
+    },
+    {
       "video": "라이언 머피 배영 (반복) ｜ 2016 리우 올림픽.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\라이언 머피 배영 (반복) ｜ 2016 리우 올림픽.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "🏊‍♀️ 🏊🏻‍♂️ The best swimming finals at Tokyo2020 ｜ Top Moments.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_backstroke\\🏊‍♀️ 🏊🏻‍♂️ The best swimming finals at Tokyo2020 ｜ Top Moments.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
@@ -149,12 +419,75 @@
       "status": "❌ 불량"
     },
     {
+      "video": "A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Adam Peaty Loop technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Adam Peaty Loop technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Adam Peaty Top Tips： Breaststroke catch.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Adam Peaty Top Tips： Breaststroke catch.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Adam Peaty ｜ 100m Breaststroke ｜ Tokyo Olympics 2020 ｜ Underwater Slo Mo Technique.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Adam Peaty ｜ 100m Breaststroke ｜ Tokyo Olympics 2020 ｜ Underwater Slo Mo Technique.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.0,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Adam Peaty's ｜ Breaststroke Kick! ｜ Swim Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Adam Peaty's ｜ Breaststroke Kick! ｜ Swim Technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Breastroke - Phelps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Breastroke - Phelps.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Pullout Technique of World Class Swimmers (Slow Motion).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Breaststroke Pullout Technique of World Class Swimmers (Slow Motion).mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Swimming Technique ｜ Kick.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Breaststroke Swimming Technique ｜ Kick.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
       "status": "❌ 불량"
     },
     {
@@ -176,6 +509,33 @@
       "status": "✅ 정상"
     },
     {
+      "video": "Breaststroke swimming： SECRET TIPS.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Breaststroke swimming： SECRET TIPS.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Butterfly Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Butterfly Swimming Technique ｜ Stroke.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Can we swim as fast as Adam Peaty？ (World Record Speed).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Can we swim as fast as Adam Peaty？ (World Record Speed).mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Caspar Corbeau Shatters 200m Breaststroke WR Under 2 Minutes! 😱 ｜ SWC 2025.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Caspar Corbeau Shatters 200m Breaststroke WR Under 2 Minutes! 😱 ｜ SWC 2025.mp4",
       "category": "competition",
@@ -185,12 +545,39 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Emre Sakci  - 50m Breaststroke New World Record - 24.95.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Emre Sakci  - 50m Breaststroke New World Record - 24.95.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Hansen Takes Breaststroke Final.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Hansen Takes Breaststroke Final.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "How To Swim Breaststroke PERFECTLY..mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\How To Swim Breaststroke PERFECTLY..mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Breaststroke ｜ Technique For Breaststroke Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\How To Swim Breaststroke ｜ Technique For Breaststroke Swimming.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
       "status": "❌ 불량"
     },
     {
@@ -221,6 +608,24 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Kate Douglass is dominant in the 200m breaststroke ｜ U.S. Olympic Swimming Trials presented by Lilly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Kate Douglass is dominant in the 200m breaststroke ｜ U.S. Olympic Swimming Trials presented by Lilly.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "MONA breaststroke in slow motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\MONA breaststroke in slow motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 1.0,
+      "status": "✅ 정상"
+    },
+    {
       "video": "Mens 100 breaststroke highspeed camera   slow motion.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Mens 100 breaststroke highspeed camera   slow motion.mp4",
       "category": "competition",
@@ -248,6 +653,42 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Rebecca Soni Breaks World Record - 200m Breaststroke ｜ London 2012 Olympics.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Rebecca Soni Breaks World Record - 200m Breaststroke ｜ London 2012 Olympics.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Rebecca Soni's stroke in slow motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Rebecca Soni's stroke in slow motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Slow Motion Breaststroke 2.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Slow Motion Breaststroke 2.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Slow Motion Breaststroke.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Slow Motion Breaststroke.mp4",
       "category": "competition",
@@ -266,12 +707,66 @@
       "status": "❌ 불량"
     },
     {
+      "video": "The Secret to Perfect Breaststroke Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\The Secret to Perfect Breaststroke Technique.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "평영 잘하는 법(feat 스테파니 라이스).mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\평영 잘하는 법(feat 스테파니 라이스).mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.1,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "2 World Records in 1 Day for Gretchen Walsh in 100M Butterfly ｜ 2025 TYR Pro Series Ft. Lauderdale.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\2 World Records in 1 Day for Gretchen Walsh in 100M Butterfly ｜ 2025 TYR Pro Series Ft. Lauderdale.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "3 Drills for Better Butterfly Hip Position.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\3 Drills for Better Butterfly Hip Position.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Amy - Royal Swim Team - Butterfly Underwater Stroke Capture - Slow Motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Amy - Royal Swim Team - Butterfly Underwater Stroke Capture - Slow Motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "BUTTERFLY SWIMMING： HOW TO SWIM SMOOTHLY (STEP-BY-STEP GUIDE).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\BUTTERFLY SWIMMING： HOW TO SWIM SMOOTHLY (STEP-BY-STEP GUIDE).mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0667,
       "status": "❌ 불량"
     },
     {
@@ -293,6 +788,15 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Butterfly Slow motion Fast swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly Slow motion Fast swimming.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Butterfly Swim with MINIMAL Strength.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly Swim with MINIMAL Strength.mp4",
       "category": "competition",
@@ -300,6 +804,24 @@
       "skill_level": "elite",
       "detect_rate": 0.6333,
       "status": "⚠️ 주의"
+    },
+    {
+      "video": "Butterfly Swimming Start.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly Swimming Start.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Butterfly Swimming Technique ｜ Kick.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly Swimming Technique ｜ Kick.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2333,
+      "status": "❌ 불량"
     },
     {
       "video": "Butterfly Swimming Technique ｜ Stroke.mp4",
@@ -320,12 +842,111 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "Butterfly technique 접영 물속 자세 Phelps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly technique 접영 물속 자세 Phelps.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Butterfly.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "CAELEB DRESSEL Analysis 100 METER FLY WINS GOLD SETS RECORD ｜ TOKYO 2020 OLYMPICS.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\CAELEB DRESSEL Analysis 100 METER FLY WINS GOLD SETS RECORD ｜ TOKYO 2020 OLYMPICS.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Caeleb Dressel - 100 Fly World Record - Underwater Slo Motion Video.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Caeleb Dressel - 100 Fly World Record - Underwater Slo Motion Video.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Caeleb Dressel 100 fly high speed camera   slow motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Caeleb Dressel 100 fly high speed camera   slow motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Closest swimming finish EVER! Ft. Michael Phelps ⏱️.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Closest swimming finish EVER! Ft. Michael Phelps ⏱️.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Butterfly In 7 Steps!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\How To Swim Butterfly In 7 Steps!.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "How To Swim Butterfly PERFECTLY..mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\How To Swim Butterfly PERFECTLY..mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to Swim Butterfly ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\How to Swim Butterfly ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to improve your Butterfly ｜ Tips, Drills & Technique with Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\How to improve your Butterfly ｜ Tips, Drills & Technique with Olympic Champion Stephanie Rice..mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Improve your Butterfly swimming (5 Stages) technique for beginners.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Improve your Butterfly swimming (5 Stages) technique for beginners.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Josh Liendo Shatters 100m Butterfly World Record with 47.68! ｜ Swimming World Cup 2025.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Josh Liendo Shatters 100m Butterfly World Record with 47.68! ｜ Swimming World Cup 2025.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
       "status": "❌ 불량"
     },
     {
@@ -338,6 +959,24 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Learn To Swim Butterfly Technique Correct And Fast ｜ With Jeanette Ottesen - World-champion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Learn To Swim Butterfly Technique Correct And Fast ｜ With Jeanette Ottesen - World-champion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Master undulation in the Butterfly ft. Dylan Carter ｜ Olympians' Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Master undulation in the Butterfly ft. Dylan Carter ｜ Olympians' Tips.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Men's 100m Butterfly Final ｜ Paris Champions.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Men's 100m Butterfly Final ｜ Paris Champions.mp4",
       "category": "competition",
@@ -347,8 +986,44 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Men's 200m Butterfly Final 🏊‍♂️ ｜ Paris Champions.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Men's 200m Butterfly Final 🏊‍♂️ ｜ Paris Champions.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Michael Phelps - Butterfly 1⧸3 (Underwater Camera).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Michael Phelps - Butterfly 1⧸3 (Underwater Camera).mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Michael Phelps wins 15th Gold - Men's 100m Butterfly ｜ London 2012 Olympic Games.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Michael Phelps wins 15th Gold - Men's 100m Butterfly ｜ London 2012 Olympic Games.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Peaty wins gold with new world record - Full Race.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Peaty wins gold with new world record - Full Race.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Perfect Butterfly Technique with Viktor Bromer ｜ Gillette World Sport.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Perfect Butterfly Technique with Viktor Bromer ｜ Gillette World Sport.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
@@ -374,6 +1049,33 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Rio 2016 4 x 100 Freestyle Relay - Underwater Camera.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Sarah Sjöström -  Sprint Butterfly Technique (Underwater & Slow Motion).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Sarah Sjöström -  Sprint Butterfly Technique (Underwater & Slow Motion).mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Sarah Sjöström 🆚 Margaret Mac Neil - 100m butterfly ｜ Head-to-head.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Sarah Sjöström 🆚 Margaret Mac Neil - 100m butterfly ｜ Head-to-head.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Slow Motion Butterfly.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Slow Motion Butterfly.mp4",
       "category": "competition",
@@ -381,6 +1083,24 @@
       "skill_level": "elite",
       "detect_rate": 0.6667,
       "status": "⚠️ 주의"
+    },
+    {
+      "video": "Slow Motion ： swim butterfly to catch up my brother.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Slow Motion ： swim butterfly to catch up my brother.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Swim Butterfly Like a PRO Without Struggle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Swim Butterfly Like a PRO Without Struggle.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
     },
     {
       "video": "Swimming Slow Butterfly by Maria Krivileva.mp4",
@@ -392,12 +1112,30 @@
       "status": "❌ 불량"
     },
     {
+      "video": "This Small Mistake Makes Butterfly Way Harder.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\This Small Mistake Makes Butterfly Way Harder.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Unbelievable 100m Butterfly Showdown ｜ Men’s Swimming ｜ FINA 2019.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Unbelievable 100m Butterfly Showdown ｜ Men’s Swimming ｜ FINA 2019.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Underwater Slow Motion - 2013 Arena Grand Prix at Santa Clara.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Underwater Slow Motion - 2013 Arena Grand Prix at Santa Clara.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
       "status": "❌ 불량"
     },
     {
@@ -410,12 +1148,48 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "Women's 100m freestyle Final 🏊‍♀️ ｜ Paris Champions.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_butterfly\\Women's 100m freestyle Final 🏊‍♀️ ｜ Paris Champions.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
       "video": "100m Butterfly Men world record Analysis.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\100m Butterfly Men world record Analysis.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "ADAM PEATY Analysis 100 METER #BREASTSTROKE WINS GOLD ｜ TOKYO 2020 OLYMPICS.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\ADAM PEATY Analysis 100 METER #BREASTSTROKE WINS GOLD ｜ TOKYO 2020 OLYMPICS.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
       "status": "❌ 불량"
     },
     {
@@ -428,12 +1202,30 @@
       "status": "❌ 불량"
     },
     {
+      "video": "And Popovici does it again! 🇷🇴🥇.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\And Popovici does it again! 🇷🇴🥇.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Butterfly technique 접영 물속 자세 Phelps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Butterfly technique 접영 물속 자세 Phelps.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
       "status": "⚠️ 주의"
     },
     {
@@ -464,12 +1256,75 @@
       "status": "✅ 정상"
     },
     {
+      "video": "Caeleb Dressel makes history with record 17.63 swim in 50 free at NCAA championships ｜ ESPN.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Caeleb Dressel makes history with record 17.63 swim in 50 free at NCAA championships ｜ ESPN.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Cameron McEvoy 20.88 WORLD RECORD ｜ Full Race (50m Freestyle).mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Cameron McEvoy 20.88 WORLD RECORD ｜ Full Race (50m Freestyle).mp4",
       "category": "competition",
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Cameron McEvoy 21.35 50 Freestyle Underwater.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Cameron McEvoy 21.35 50 Freestyle Underwater.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Cameron McEvoy： The Secrets Behind His ＂Splash and Dash＂ Speed.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Cameron McEvoy： The Secrets Behind His ＂Splash and Dash＂ Speed.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "David Popovici - SLO MO Technique - 200m Freestyle - Semi Final - European Championships 2022.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\David Popovici - SLO MO Technique - 200m Freestyle - Semi Final - European Championships 2022.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Freestyle Swimming Technique ｜ Kick.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Freestyle Swimming Technique ｜ Kick.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Freestyle Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Freestyle Swimming Technique ｜ Stroke.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "He has done it! Cameron McEvoy with the new World Record in the 50m Freestyle： 20.88 🇦🇺🔥.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\He has done it! Cameron McEvoy with the new World Record in the 50m Freestyle： 20.88 🇦🇺🔥.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
       "status": "❌ 불량"
     },
     {
@@ -491,6 +1346,15 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Is This The Easiest 1_10⧸100m Freestyle Ever？.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Is This The Easiest 1_10⧸100m Freestyle Ever？.mp4",
       "category": "competition",
@@ -500,6 +1364,15 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "Josh Liendo Shatters 100m Butterfly World Record with 47.68! ｜ Swimming World Cup 2025.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Josh Liendo Shatters 100m Butterfly World Record with 47.68! ｜ Swimming World Cup 2025.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Michael Phelps Freestyle Stroke Analysis.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Michael Phelps Freestyle Stroke Analysis.mp4",
       "category": "competition",
@@ -507,6 +1380,24 @@
       "skill_level": "elite",
       "detect_rate": 0.9333,
       "status": "✅ 정상"
+    },
+    {
+      "video": "Peaty wins gold with new world record - Full Race.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Peaty wins gold with new world record - Full Race.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Record-setting men's 200 freestyle ｜ 2025 NCAA swimming championships.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Record-setting men's 200 freestyle ｜ 2025 NCAA swimming championships.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
     },
     {
       "video": "Rio 2016 100m Butterfly Final- Underwater Camera.mp4",
@@ -527,6 +1418,15 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Slow Motion 100M Freestyle Start.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\Slow Motion 100M Freestyle Start.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "The SECRET Behind The FASTEST 100m Freestyle of All Time： Pan Zhanle.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\The SECRET Behind The FASTEST 100m Freestyle of All Time： Pan Zhanle.mp4",
       "category": "competition",
@@ -543,6 +1443,33 @@
       "skill_level": "elite",
       "detect_rate": 0.1667,
       "status": "❌ 불량"
+    },
+    {
+      "video": "The Speed is in Your HANDS.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\The Speed is in Your HANDS.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "They Changed The Rules To Make Him Slower.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\They Changed The Rules To Make Him Slower.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "You are 4 steps away from breathing like a pro swimmer!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_freestyle\\You are 4 steps away from breathing like a pro swimmer!.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
     },
     {
       "video": "A New World Record! ｜ Men's 100m Freestyle ｜ #Paris2024 Highlights.mp4",
@@ -1670,8 +2597,836 @@
       "status": "❌ 불량"
     },
     {
+      "video": "Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\Andrii Khloptsov 50 Free  22.81sec Stroke Analysis.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Improve Your Starts in Swimming ft. Coach Jack Bauerle ｜ Olympians' Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\How To Improve Your Starts in Swimming ft. Coach Jack Bauerle ｜ Olympians' Tips.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to Start Like Caeleb Dressel (NOT Michael Phelps).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\How to Start Like Caeleb Dressel (NOT Michael Phelps).mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Swimming Start Slow-Motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\Swimming Start Slow-Motion.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "The Swimming Start： How To Do it PERFECTLY..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\The Swimming Start： How To Do it PERFECTLY..mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "caeleb dressel start SLOW MOTION - Spire Institute.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\caeleb dressel start SLOW MOTION - Spire Institute.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "1 Swim Smarter Freestyle： Perfect Streamline.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\1 Swim Smarter Freestyle： Perfect Streamline.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Dolphin Kicking 101： How To Master It!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\Dolphin Kicking 101： How To Master It!.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to Improve Your Streamline with This Simple Drill! ｜ Swim Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\How to Improve Your Streamline with This Simple Drill! ｜ Swim Technique.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to Improve your Streamline! ｜ Swim Technique ｜ Freestyle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\How to Improve your Streamline! ｜ Swim Technique ｜ Freestyle.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Learn the Streamline ＂Lock＂ Technique - Swimming 101.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\Learn the Streamline ＂Lock＂ Technique - Swimming 101.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Swimming technique Tuesday #4 - Streamline.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\streamline_underwater\\Swimming technique Tuesday #4 - Streamline.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Backstroke swimming technique ｜ Rotation ｜ Swim faster.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\Backstroke swimming technique ｜ Rotation ｜ Swim faster.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Fast Swimming Technique Back to Breast Turn.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\Fast Swimming Technique Back to Breast Turn.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Great Backstroke Turn Advice.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\Great Backstroke Turn Advice.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_backstroke\\Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.8667,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Brent Hayden - Freestyle Flip Turn (Slow Motion).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Brent Hayden - Freestyle Flip Turn (Slow Motion).mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.0,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Flip turn tutorial for beginners.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Flip turn tutorial for beginners.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Freestyle Flip Turns For Complete Beginners ｜ Step by Step Tutorial.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Freestyle Flip Turns For Complete Beginners ｜ Step by Step Tutorial.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Freestyle flip turn in 3 steps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Freestyle flip turn in 3 steps.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Do a Flip Turn In 5 Steps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\How To Do a Flip Turn In 5 Steps.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Want a Great Freestyle Flip Turn？ Watch This Now.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Want a Great Freestyle Flip Turn？ Watch This Now.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Breaststroke Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Breaststroke Swimming Technique ｜ Stroke.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.2,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Swimming Turn.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Breaststroke Swimming Turn.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Turn Advice.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Breaststroke Turn Advice.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Fast Swimming Technique Back to Breast Turn.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Fast Swimming Technique Back to Breast Turn.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Open turn technique ｜ Breastroke turn ｜ Butterfly turn ｜ Individual Medley turns.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Open turn technique ｜ Breastroke turn ｜ Butterfly turn ｜ Individual Medley turns.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Secret for Fast Open Turns.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_touch\\Secret for Fast Open Turns.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "5 skills to learn the basics of backstroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\5 skills to learn the basics of backstroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "50m in 23 Strokes...IN 29 SECS!!!.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Backstroke Swimming Drills ｜ Learn Backstroke Swimming Exercises ｜ 5 Best Backstroke Swimming Drills.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Backstroke Swimming Drills ｜ Learn Backstroke Swimming Exercises ｜ 5 Best Backstroke Swimming Drills.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Backstroke Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Backstroke Swimming Technique ｜ Stroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Coordinate Your CATCH and KICK.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Coordinate Your CATCH and KICK.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Effortless Swimming's Butterfly, Backstroke & Breaststroke Clinics.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Effortless Swimming's Butterfly, Backstroke & Breaststroke Clinics.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Fix Your Backstroke (You're Swimming it WRONG).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Fix Your Backstroke (You're Swimming it WRONG).mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "High Shoulder...Not High Elbow？ ｜ Freestyle Catch.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\High Shoulder...Not High Elbow？ ｜ Freestyle Catch.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.9,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "How To Swim Backstroke ｜ Technique For Back Crawl Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How To Swim Backstroke ｜ Technique For Back Crawl Swimming.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to Breathe Correctly During Backstroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to Breathe Correctly During Backstroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to Swim Backstroke For Beginners.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to Swim Backstroke For Beginners.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to Swim Backstroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to Swim Backstroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to do a backstroke flipturn. Improve your swimming technique.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to master Backstroke Swimming ｜ Learn from an Olympic Medallist ｜ Olympians’ Tips.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to swim： Backstroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\How to swim： Backstroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Learn How to Swim Backstroke in 30 Seconds!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8667,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Olympic Swimmer Shares BACKSTROKE Secrets.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\Olympic Swimmer Shares BACKSTROKE Secrets.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.9,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "The Smoothest 59 Second 100m Freestyle Ever？.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\The Smoothest 59 Second 100m Freestyle Ever？.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "가장 쉽고 빠르게 배영 잘하는 방법 -1- #28.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\가장 쉽고 빠르게 배영 잘하는 방법 -1- #28.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.2,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "배영 기초 2. 배영 발차기(정석)⧸양 손 돌리기⧸ 물 안먹는 방법.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\배영 기초 2. 배영 발차기(정석)⧸양 손 돌리기⧸ 물 안먹는 방법.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Adam Peaty Top Tips： Breaststroke catch.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Adam Peaty Top Tips： Breaststroke catch.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Adam Peaty's Breaststroke Kick Timing.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Adam Peaty's Breaststroke Kick Timing.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.0333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breastroke Drills.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breastroke Drills.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.0333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Kick Drills #swimmingtips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke Kick Drills #swimmingtips.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.0333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke Swimming Technique ｜ Stroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.2,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Swimming ：： The 5 most important things.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke Swimming ：： The 5 most important things.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Breaststroke swimming： SECRET TIPS.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke swimming： SECRET TIPS.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Do Breastroke Kick.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How To Do Breastroke Kick.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Breaststroke For Beginners ｜ Detailed Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How To Swim Breaststroke For Beginners ｜ Detailed Technique.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "How To Swim Breaststroke PERFECTLY..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How To Swim Breaststroke PERFECTLY..mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Breaststroke Properly!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How To Swim Breaststroke Properly!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Swim Breaststroke ｜ Technique For Breaststroke Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How To Swim Breaststroke ｜ Technique For Breaststroke Swimming.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to Swim Breaststroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\How to Swim Breaststroke ｜ Expert tips from Olympic Champion Stephanie Rice..mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.2667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "If You Swim With A 2-Beat Kick (Or Trying To)... Do This.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\If You Swim With A 2-Beat Kick (Or Trying To)... Do This.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.9333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "Learn to Swim Breaststroke for Beginner in 5 minutes 🏊🌊🌞.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Learn to Swim Breaststroke for Beginner in 5 minutes 🏊🌊🌞.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8667,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "New Way to Swim Breaststroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\New Way to Swim Breaststroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Swimming： Basic Technique ｜ Breaststroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Swimming： Basic Technique ｜ Breaststroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "The Bottleneck To Good Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\The Bottleneck To Good Technique.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "평영 영법 교정 4th ( 평영 킥을 찰 때 주된 추진력을 내는 부분은 발바닥이기 때....mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\평영 영법 교정 4th ( 평영 킥을 찰 때 주된 추진력을 내는 부분은 발바닥이기 때....mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "BUTTERFLY SWIMMING： HOW TO SWIM SMOOTHLY (STEP-BY-STEP GUIDE).mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\BUTTERFLY SWIMMING： HOW TO SWIM SMOOTHLY (STEP-BY-STEP GUIDE).mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.0667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Butterfly Drills.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Butterfly Drills.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Butterfly Swim with MINIMAL Strength.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Butterfly Swim with MINIMAL Strength.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Butterfly Swimming Technique ｜ Stroke.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Butterfly Swimming Technique ｜ Stroke.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Butterfly Swimming Technique.  Timing.  How to swim butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Butterfly Swimming Technique.  Timing.  How to swim butterfly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Dolphin Kicking 101： How To Master It!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Dolphin Kicking 101： How To Master It!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Easy swimming Butterfly by @MARIAKRIVILEVA ｜ Техника плавания легкого и плавного баттерфляя.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Easy swimming Butterfly by @MARIAKRIVILEVA ｜ Техника плавания легкого и плавного баттерфляя.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "High Shoulder...Not High Elbow？ ｜ Freestyle Catch.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\High Shoulder...Not High Elbow？ ｜ Freestyle Catch.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.9,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "How To Breathe In Butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Breathe In Butterfly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To NOT BE EXHAUSTED Swimming Butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To NOT BE EXHAUSTED Swimming Butterfly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Pull In Butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Pull In Butterfly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.1667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Butterfly PERFECTLY..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Swim Butterfly PERFECTLY..mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How to Dolphin Kick ｜ Butterfly Kick Tutorial.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How to Dolphin Kick ｜ Butterfly Kick Tutorial.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How to improve your Butterfly ｜ Tips, Drills & Technique with Olympic Champion Stephanie Rice..mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How to improve your Butterfly ｜ Tips, Drills & Technique with Olympic Champion Stephanie Rice..mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Improve your Butterfly swimming (5 Stages) technique for beginners.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Improve your Butterfly swimming (5 Stages) technique for beginners.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Learn To Swim Butterfly ｜ A Simple Step-By-Step Guide To The Butterfly Swim Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Learn To Swim Butterfly ｜ A Simple Step-By-Step Guide To The Butterfly Swim Technique.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "New Way to Swim Butterfly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\New Way to Swim Butterfly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Swimming slow butterfly by @MARIAKRIVILEVA ⧸⧸ Баттерфляй ⧸⧸ Поворот в баттерфляе ⧸⧸ 200 Батт ⧸⧸.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\Swimming slow butterfly by @MARIAKRIVILEVA ⧸⧸ Баттерфляй ⧸⧸ Поворот в баттерфляе ⧸⧸ 200 Батт ⧸⧸.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.4,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "This Small Mistake Makes Butterfly Way Harder.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\This Small Mistake Makes Butterfly Way Harder.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "4 Essential Tips To Improve Your Swim Technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\4 Essential Tips To Improve Your Swim Technique.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "5 Freestyle Fixes That Actually Work.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\5 Freestyle Fixes That Actually Work.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.8333,
+      "status": "✅ 정상"
+    },
+    {
+      "video": "50m in 23 Strokes...IN 29 SECS!!!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\50m in 23 Strokes...IN 29 SECS!!!.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1680,16 +3435,7 @@
     },
     {
       "video": "55-min Ironman Swim Technique Breakdown.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\55-min Ironman Swim Technique Breakdown.mp4",
-      "category": "tutorial",
-      "purpose_tag": "technique",
-      "skill_level": "beginner",
-      "detect_rate": 0.5667,
-      "status": "⚠️ 주의"
-    },
-    {
-      "video": "All Fast Swimmers Do These Two Things.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\All Fast Swimmers Do These Two Things.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\55-min Ironman Swim Technique Breakdown.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1698,7 +3444,7 @@
     },
     {
       "video": "Coordinate Your CATCH and KICK.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Coordinate Your CATCH and KICK.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Coordinate Your CATCH and KICK.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1706,17 +3452,26 @@
       "status": "❌ 불량"
     },
     {
-      "video": "Freestyle Rotation： Rock Not Roll？.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Freestyle Rotation： Rock Not Roll？.mp4",
+      "video": "Correct Breathing Technique For Swimming Freestyle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Correct Breathing Technique For Swimming Freestyle.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
-      "detect_rate": 0.2,
-      "status": "❌ 불량"
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Freestyle flip turn in 3 steps.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Freestyle flip turn in 3 steps.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
     },
     {
       "video": "How I Transformed My High Elbow Catch ｜ Freestyle Technique Tips.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\How I Transformed My High Elbow Catch ｜ Freestyle Technique Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How I Transformed My High Elbow Catch ｜ Freestyle Technique Tips.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1724,8 +3479,35 @@
       "status": "✅ 정상"
     },
     {
+      "video": "How To Flip Turn ｜ Freestyle Swimming Tips For Beginners.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How To Flip Turn ｜ Freestyle Swimming Tips For Beginners.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Make Swim Breathing Easier ｜ Freestyle Swimming Technique Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How To Make Swim Breathing Easier ｜ Freestyle Swimming Technique Tips.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "How To Swim Freestyle Properly.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How To Swim Freestyle Properly.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "How To Swim Freestyle ｜ Technique For Front Crawl Swimming.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\How To Swim Freestyle ｜ Technique For Front Crawl Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How To Swim Freestyle ｜ Technique For Front Crawl Swimming.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1734,7 +3516,7 @@
     },
     {
       "video": "Ironman Triathlete Wants To Break 60-min Swim ｜ Freestyle Technique Breakdown.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Ironman Triathlete Wants To Break 60-min Swim ｜ Freestyle Technique Breakdown.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Ironman Triathlete Wants To Break 60-min Swim ｜ Freestyle Technique Breakdown.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1742,8 +3524,26 @@
       "status": "✅ 정상"
     },
     {
+      "video": "Is This The Easiest 1_10⧸100m Freestyle Ever？.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Is This The Easiest 1_10⧸100m Freestyle Ever？.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "Learn To Swim Freestyle ｜ A Simple Step-By-Step Guide.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Learn To Swim Freestyle ｜ A Simple Step-By-Step Guide.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Reach & Rotation 👍  Catch Up 👎 ｜ Freestyle Technique Analysis.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Reach & Rotation 👍  Catch Up 👎 ｜ Freestyle Technique Analysis.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Reach & Rotation 👍  Catch Up 👎 ｜ Freestyle Technique Analysis.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1752,7 +3552,7 @@
     },
     {
       "video": "Rotate Your Hips Before Applying Power.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Rotate Your Hips Before Applying Power.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Rotate Your Hips Before Applying Power.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1760,17 +3560,8 @@
       "status": "✅ 정상"
     },
     {
-      "video": "Smooth swimming step by step.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Smooth swimming step by step.mp4",
-      "category": "tutorial",
-      "purpose_tag": "technique",
-      "skill_level": "beginner",
-      "detect_rate": 0.7333,
-      "status": "⚠️ 주의"
-    },
-    {
       "video": "The Easy Way To Time Your Breathing In Freestyle.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\The Easy Way To Time Your Breathing In Freestyle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\The Easy Way To Time Your Breathing In Freestyle.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1779,7 +3570,7 @@
     },
     {
       "video": "The Smoothest 59 Second 100m Freestyle Ever？.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\The Smoothest 59 Second 100m Freestyle Ever？.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\The Smoothest 59 Second 100m Freestyle Ever？.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
@@ -1787,21 +3578,21 @@
       "status": "❌ 불량"
     },
     {
-      "video": "Use This To Reduce Your Stroke Count.mp4",
-      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\Use This To Reduce Your Stroke Count.mp4",
+      "video": "Why Your Freestyle Isn't Flowing ｜ Unlock Your Natural Rhythm.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Why Your Freestyle Isn't Flowing ｜ Unlock Your Natural Rhythm.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
-      "detect_rate": 0.7333,
-      "status": "⚠️ 주의"
+      "detect_rate": 0.9333,
+      "status": "✅ 정상"
     }
   ],
   "by_category": {
     "competition": {
-      "ok": 7,
-      "warn": 20,
-      "bad": 48,
-      "mean_rate": 0.4476
+      "ok": 15,
+      "warn": 48,
+      "bad": 115,
+      "mean_rate": 0.4367
     },
     "health": {
       "ok": 19,
@@ -1815,11 +3606,17 @@
       "bad": 22,
       "mean_rate": 0.488
     },
+    "start_turn": {
+      "ok": 2,
+      "warn": 21,
+      "bad": 7,
+      "mean_rate": 0.5644
+    },
     "tutorial": {
-      "ok": 4,
-      "warn": 6,
-      "bad": 4,
-      "mean_rate": 0.5929
+      "ok": 16,
+      "warn": 35,
+      "bad": 29,
+      "mean_rate": 0.5387
     }
   }
 }

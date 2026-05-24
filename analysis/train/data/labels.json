@@ -1888,5 +1888,1345 @@
     "detection_rate": 0.868,
     "excluded": false,
     "auto_labeled": true
+  },
+  "3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.605,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Athletes in Motion： The Backstroke.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.652,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "backstroke 3 cycles slow.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.0,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Backstroke Ryan Murphy.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.845,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Backstroke swimming technique ｜ Arms ｜ Part 2 ｜ How to swim back.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.754,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Great Backstroke Turn Advice.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.698,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to do a backstroke flipturn. Improve your swimming technique.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.476,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How To Swim Backstroke ｜ Technique For Back Crawl Swimming.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.651,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Swim Freestyle ｜ Expert tips from Olympic Champion Stephanie Rice..mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.525,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Hubert Kos Shatters Men’s 200m Backstroke WR with Stunning 1_45.12 ｜ Swimming World Cup 2025.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.402,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Improve your Backstroke Swimming technique ｜ Learn from an Olympic Medallist ｜ Olympians' Tips.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.742,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Learn How to Swim Backstroke in 30 Seconds!.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.5,
+    "detection_rate": 0.733,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "MONA backstroke in slow motion.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.5,
+    "detection_rate": 1.0,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Paris 2024 ｜ Hungary's Hubert Kos wins the Men's 200m Backstroke final ｜ SportsMax.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.584,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Ryan Lochte   Backstroke Stroke   Swim Technique.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.509,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Slow-mo Olympic swim dive.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.684,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "World Record Alert! Hubert Kos Clocks 48.16 in the 100m Backstroke ｜ Swimming World Cup 2025.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.415,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "🏊‍♀️ 🏊🏻‍♂️ The best swimming finals at Tokyo2020 ｜ Top Moments.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.551,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Adam Peaty Loop technique.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.433,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Adam Peaty Top Tips： Breaststroke catch.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.632,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Adam Peaty's ｜ Breaststroke Kick! ｜ Swim Technique.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.645,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Breastroke - Phelps.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.364,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Breaststroke Pullout Technique of World Class Swimmers (Slow Motion).mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.341,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Breaststroke Swimming Technique ｜ Kick.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.62,
+    "detection_rate": 0.577,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Breaststroke swimming： SECRET TIPS.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.7,
+    "detection_rate": 0.612,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Can we swim as fast as Adam Peaty？ (World Record Speed).mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.686,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Emre Sakci  - 50m Breaststroke New World Record - 24.95.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.376,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Hansen Takes Breaststroke Final.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.355,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How To Swim Breaststroke ｜ Technique For Breaststroke Swimming.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.56,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Kate Douglass is dominant in the 200m breaststroke ｜ U.S. Olympic Swimming Trials presented by Lilly.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.384,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "MONA breaststroke in slow motion.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.5,
+    "detection_rate": 1.0,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Rebecca Soni Breaks World Record - 200m Breaststroke ｜ London 2012 Olympics.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.558,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Rebecca Soni's stroke in slow motion.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.201,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Slow Motion Breaststroke 2.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.325,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "The Secret to Perfect Breaststroke Technique.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.292,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "2 World Records in 1 Day for Gretchen Walsh in 100M Butterfly ｜ 2025 TYR Pro Series Ft. Lauderdale.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.619,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "3 Drills for Better Butterfly Hip Position.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.64,
+    "detection_rate": 0.603,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Amy - Royal Swim Team - Butterfly Underwater Stroke Capture - Slow Motion.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.588,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Butterfly Slow motion Fast swimming.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.275,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Butterfly Swimming Start.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.086,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Butterfly Swimming Technique ｜ Kick.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.321,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "BUTTERFLY SWIMMING： HOW TO SWIM SMOOTHLY (STEP-BY-STEP GUIDE).mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.16,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Butterfly technique 접영 물속 자세 Phelps.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.854,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Butterfly.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.158,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Caeleb Dressel - 100 Fly World Record - Underwater Slo Motion Video.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.0,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Caeleb Dressel 100 fly high speed camera   slow motion.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.302,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Closest swimming finish EVER! Ft. Michael Phelps ⏱️.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.66,
+    "detection_rate": 0.534,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to improve your Butterfly ｜ Tips, Drills & Technique with Olympic Champion Stephanie Rice..mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.519,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Swim Butterfly In 7 Steps!.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.758,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Swim Butterfly ｜ Expert tips from Olympic Champion Stephanie Rice..mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.571,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Improve your Butterfly swimming (5 Stages) technique for beginners.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.684,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Josh Liendo Shatters 100m Butterfly World Record with 47.68! ｜ Swimming World Cup 2025.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.357,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Learn To Swim Butterfly Technique Correct And Fast ｜ With Jeanette Ottesen - World-champion.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.783,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Master undulation in the Butterfly ft. Dylan Carter ｜ Olympians' Tips.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.511,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Men's 200m Butterfly Final 🏊‍♂️ ｜ Paris Champions.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.57,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Michael Phelps - Butterfly 1⧸3 (Underwater Camera).mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.327,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Perfect Butterfly Technique with Viktor Bromer ｜ Gillette World Sport.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.657,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Sarah Sjöström -  Sprint Butterfly Technique (Underwater & Slow Motion).mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.015,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Sarah Sjöström 🆚 Margaret Mac Neil - 100m butterfly ｜ Head-to-head.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.483,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Slow Motion ： swim butterfly to catch up my brother.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.318,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Swim Butterfly Like a PRO Without Struggle.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.67,
+    "detection_rate": 0.577,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "This Small Mistake Makes Butterfly Way Harder.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.6,
+    "detection_rate": 0.883,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Underwater Slow Motion - 2013 Arena Grand Prix at Santa Clara.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.5,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "ADAM PEATY Analysis 100 METER #BREASTSTROKE WINS GOLD ｜ TOKYO 2020 OLYMPICS.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.397,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "And Popovici does it again! 🇷🇴🥇.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.418,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Caeleb Dressel makes history with record 17.63 swim in 50 free at NCAA championships ｜ ESPN.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.476,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Cameron McEvoy 21.35 50 Freestyle Underwater.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.147,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Cameron McEvoy： The Secrets Behind His ＂Splash and Dash＂ Speed.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.81,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "David Popovici - SLO MO Technique - 200m Freestyle - Semi Final - European Championships 2022.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.302,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Freestyle Swimming Technique ｜ Kick.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.352,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Freestyle Swimming Technique ｜ Stroke.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.518,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "He has done it! Cameron McEvoy with the new World Record in the 50m Freestyle： 20.88 🇦🇺🔥.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.656,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Record-setting men's 200 freestyle ｜ 2025 NCAA swimming championships.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.7,
+    "detection_rate": 0.675,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Slow Motion 100M Freestyle Start.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.5,
+    "detection_rate": 0.6,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "The Speed is in Your HANDS.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.896,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "They Changed The Rules To Make Him Slower.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.637,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "You are 4 steps away from breathing like a pro swimmer!.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_freestyle",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.84,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "caeleb dressel start SLOW MOTION - Spire Institute.mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.444,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How To Improve Your Starts in Swimming ft. Coach Jack Bauerle ｜ Olympians' Tips.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.797,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Start Like Caeleb Dressel (NOT Michael Phelps).mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.78,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Swimming Start Slow-Motion.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.7,
+    "detection_rate": 0.741,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "The Swimming Start： How To Do it PERFECTLY..mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.676,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "1 Swim Smarter Freestyle： Perfect Streamline.mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.415,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Dolphin Kicking 101： How To Master It!.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.735,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Improve Your Streamline with This Simple Drill! ｜ Swim Technique.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.664,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Improve your Streamline! ｜ Swim Technique ｜ Freestyle.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.798,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Learn the Streamline ＂Lock＂ Technique - Swimming 101.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.566,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Swimming technique Tuesday #4 - Streamline.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "streamline_underwater",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.578,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Fast Swimming Technique Back to Breast Turn.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_backstroke",
+    "stroke_confidence": 0.66,
+    "detection_rate": 0.799,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Brent Hayden - Freestyle Flip Turn (Slow Motion).mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.036,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Flip turn tutorial for beginners.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.654,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Freestyle flip turn in 3 steps.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.738,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Freestyle Flip Turns For Complete Beginners ｜ Step by Step Tutorial.mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.5,
+    "detection_rate": 0.819,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Do a Flip Turn In 5 Steps.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.638,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Breaststroke Swimming Turn.mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_touch",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.158,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Breaststroke Turn Advice.mp4": {
+    "stroke_type": "unknown",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_touch",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.472,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Open turn technique ｜ Breastroke turn ｜ Butterfly turn ｜ Individual Medley turns.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_touch",
+    "stroke_confidence": 0.66,
+    "detection_rate": 0.758,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "5 skills to learn the basics of backstroke.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.64,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Backstroke Swimming Drills ｜ Learn Backstroke Swimming Exercises ｜ 5 Best Backstroke Swimming Drills.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.545,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Backstroke Swimming Technique ｜ Stroke.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.437,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Effortless Swimming's Butterfly, Backstroke & Breaststroke Clinics.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.514,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "High Shoulder...Not High Elbow？ ｜ Freestyle Catch.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.67,
+    "detection_rate": 0.941,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Swim Backstroke For Beginners.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.659,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to swim： Backstroke.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.902,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Olympic Swimmer Shares BACKSTROKE Secrets.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.934,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "가장 쉽고 빠르게 배영 잘하는 방법 -1- #28.mp4": {
+    "stroke_type": "backstroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.433,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "배영 기초 2. 배영 발차기(정석)⧸양 손 돌리기⧸ 물 안먹는 방법.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.867,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Adam Peaty's Breaststroke Kick Timing.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.31,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Breastroke Drills.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.05,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Breaststroke Kick Drills #swimmingtips.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.379,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How To Do Breastroke Kick.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.377,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How To Swim Breaststroke For Beginners ｜ Detailed Technique.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.7,
+    "detection_rate": 0.891,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Swim Breaststroke Properly!.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.66,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "If You Swim With A 2-Beat Kick (Or Trying To)... Do This.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.966,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Learn to Swim Breaststroke for Beginner in 5 minutes 🏊🌊🌞.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.865,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Swimming： Basic Technique ｜ Breaststroke.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.676,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "The Bottleneck To Good Technique.mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.384,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "평영 영법 교정 4th ( 평영 킥을 찰 때 주된 추진력을 내는 부분은 발바닥이기 때....mp4": {
+    "stroke_type": "breaststroke",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.474,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Butterfly Drills.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.46,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Easy swimming Butterfly by @MARIAKRIVILEVA ｜ Техника плавания легкого и плавного баттерфляя.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.724,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Breathe In Butterfly.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.446,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "How to Dolphin Kick ｜ Butterfly Kick Tutorial.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.757,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To NOT BE EXHAUSTED Swimming Butterfly.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.84,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Pull In Butterfly.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.253,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "Learn To Swim Butterfly ｜ A Simple Step-By-Step Guide To The Butterfly Swim Technique.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.595,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Swimming slow butterfly by @MARIAKRIVILEVA ⧸⧸ Баттерфляй ⧸⧸ Поворот в баттерфляе ⧸⧸ 200 Батт ⧸⧸.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.488,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "4 Essential Tips To Improve Your Swim Technique.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.748,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "5 Freestyle Fixes That Actually Work.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.67,
+    "detection_rate": 0.886,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Correct Breathing Technique For Swimming Freestyle.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.68,
+    "detection_rate": 0.707,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Flip Turn ｜ Freestyle Swimming Tips For Beginners.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.62,
+    "detection_rate": 0.698,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Make Swim Breathing Easier ｜ Freestyle Swimming Technique Tips.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.67,
+    "detection_rate": 0.763,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Swim Freestyle Properly.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.702,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Learn To Swim Freestyle ｜ A Simple Step-By-Step Guide.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.732,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Why Your Freestyle Isn't Flowing ｜ Unlock Your Natural Rhythm.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.63,
+    "detection_rate": 0.962,
+    "excluded": false,
+    "auto_labeled": true
   }
 }

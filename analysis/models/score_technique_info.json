@@ -1,12 +1,12 @@
 {
   "purpose": "technique",
   "model_type": "regressor",
-  "cv_mae_mean": 0.0744,
-  "cv_mae_std": 0.0256,
-  "train_mae": 0.004,
-  "train_rmse": 0.0367,
-  "pos_samples": 14,
-  "neg_samples": 168,
+  "cv_mae_mean": 0.2193,
+  "cv_mae_std": 0.0172,
+  "train_mae": 0.038,
+  "train_rmse": 0.1011,
+  "pos_samples": 64,
+  "neg_samples": 269,
   "feature_cols": [
     "l_elbow_angle_mean",
     "l_elbow_angle_std",

@@ -387,12 +387,53 @@ def download_by_category(category: str):
     return downloaded
 
 
+FULL_RESTOCK_PLAN = [
+    # (track, stroke_filter, max_videos)  ← max_videos는 카테고리당 목표
+    ("competition", "butterfly",    35),
+    ("competition", "backstroke",   35),
+    ("competition", "breaststroke", 35),
+    ("competition", "freestyle",    35),
+    ("tutorial",    "butterfly",    20),
+    ("tutorial",    "backstroke",   20),
+    ("tutorial",    "breaststroke", 20),
+    ("tutorial",    "freestyle",    20),
+    # start_turn: 5개 카테고리 × 6 = 30개
+    ("start_turn",  "all",           6),
+]
+
+
+def run_full_restock():
+    grand_total = 0
+    steps = FULL_RESTOCK_PLAN
+
+    print("\n🏊 SwimTech Full-Restock 수집 시작")
+    print(f"   competition  butterfly/backstroke/breaststroke/freestyle → 각 35개")
+    print(f"   tutorial     butterfly/backstroke/breaststroke/freestyle → 각 20개")
+    print(f"   start_turn   전체 카테고리                               → 합계 30개")
+    print(f"   총 스텝: {len(steps)}개\n")
+
+    for i, (track, stroke, max_v) in enumerate(steps, 1):
+        label = f"{track}/{stroke}" if stroke != "all" else f"{track}/전체"
+        print(f"\n[{i}/{len(steps)}] {label}  (목표 {max_v}개/카테고리)")
+        count = download_track(track, stroke_filter=stroke, max_videos=max_v)
+        grand_total += count
+
+    print(f"\n🎉 Full-Restock 완료: 총 {grand_total}개")
+    print(f"\n저장 구조:")
+    print(f"  analysis/train/data/")
+    print(f"  ├── competition/  ← 대회 영상 (butterfly/backstroke/breaststroke/freestyle)")
+    print(f"  ├── tutorial/     ← 강의 영상 (butterfly/backstroke/breaststroke/freestyle)")
+    print(f"  └── start_turn/   ← 스타트/턴 영상")
+    print(f"\n다음 단계: python analysis/train/02_extract_features.py")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="SwimTech 영상 수집 (3-Track 또는 목적별 카테고리)",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=(
             "예시:\n"
+            "  python 01_download_videos.py --mode full_restock       # 전체 자동 수집\n"
             "  python 01_download_videos.py                          # 전체 트랙\n"
             "  python 01_download_videos.py --track competition      # 대회 트랙만\n"
             "  python 01_download_videos.py --category health        # 건강 카테고리\n"
@@ -400,6 +441,9 @@ def main():
             "  python 01_download_videos.py --track tutorial --stroke freestyle --max 20"
         )
     )
+    parser.add_argument("--mode",
+        choices=["full_restock"],
+        default=None, help="full_restock: competition(35)·tutorial(20)·start_turn(30) 일괄 수집")
     parser.add_argument("--track",
         choices=["competition", "tutorial", "start_turn", "all"],
         default=None, help="3-Track 기반 수집 (기본: --category 없으면 all)")
@@ -416,6 +460,11 @@ def main():
     if not check_yt_dlp():
         print("❌ yt-dlp 미설치\n   pip install yt-dlp")
         sys.exit(1)
+
+    # ── Full-Restock 모드 ────────────────────────────────
+    if args.mode == "full_restock":
+        run_full_restock()
+        return
 
     # ── 목적별 카테고리 모드 ──────────────────────────────
     if args.category:

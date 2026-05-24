@@ -1,6 +1,6 @@
 {
-  "model_name": "GradientBoosting",
-  "cv_accuracy": 0.26,
+  "model_name": "SVM",
+  "cv_accuracy": 0.3951,
   "classes": [
     "backstroke",
     "breaststroke",
@@ -75,6 +75,6 @@
     "kick_ratio",
     "stroke_cycle_hz"
   ],
-  "train_size": 47,
-  "test_size": 12
+  "train_size": 152,
+  "test_size": 39
 }

@@ -1,12 +1,12 @@
 {
   "purpose": "competition",
   "model_type": "regressor",
-  "cv_mae_mean": 0.2534,
-  "cv_mae_std": 0.0227,
-  "train_mae": 0.0102,
-  "train_rmse": 0.052,
-  "pos_samples": 59,
-  "neg_samples": 123,
+  "cv_mae_mean": 0.3036,
+  "cv_mae_std": 0.0191,
+  "train_mae": 0.0402,
+  "train_rmse": 0.1046,
+  "pos_samples": 160,
+  "neg_samples": 173,
   "feature_cols": [
     "l_elbow_angle_mean",
     "l_elbow_angle_std",
