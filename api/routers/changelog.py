@@ -12,7 +12,7 @@ router = APIRouter()
 
 _NOTION_PAGE_ID = "362cb889-5490-81a7-bc1f-e15501550f60"
 _API_VER = "2022-06-28"
-_CACHE_TTL = 3600  # 1시간
+_CACHE_TTL = 300  # 5분
 
 _cache: dict[str, Any] = {"data": None, "ts": 0.0}
 

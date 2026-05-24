@@ -31,6 +31,7 @@ After adding tests, run:
 
 import re
 import pytest
+from datetime import date
 from pathlib import Path
 from playwright.sync_api import Page, BrowserContext, expect
 
@@ -38,8 +39,8 @@ from playwright.sync_api import Page, BrowserContext, expect
 BASE_URL    = "https://localhost"
 TEST_USER   = "admin"
 TEST_PASS   = "swimtech1234"
-SHOT_DIR    = Path(__file__).parent / "screenshots"
-SHOT_DIR.mkdir(exist_ok=True)
+SHOT_DIR    = Path(__file__).parent / "screenshots" / date.today().strftime("%Y%m%d")
+SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── fixtures ───────────────────────────────────────────────────────────────
@@ -687,3 +688,123 @@ def test_plan_myplan_tab(page: Page):
     expect(page.locator("#myplan-content")).to_be_visible()
 
     shot(page, "12_plan_myplan_tab")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 13. 오늘 추가된 기능 통합 확인 (2026-05-24)
+#     changelog 캐시 TTL 단축 / 플랜 랜덤·빌더 탭 / 검색·드래그 / PWA 버튼
+#     ※ test_changelog_load 는 섹션 11에 이미 존재하므로 여기서는 생략
+# ══════════════════════════════════════════════════════════════════════════
+
+
+def test_changelog_page_renders(page: Page):
+    """/changelog 페이지 로드 — 헤더·콘텐츠 영역 렌더링 확인 (캐시 TTL 5분)."""
+    goto(page, "/changelog")
+    page.wait_for_timeout(3000)
+
+    expect(page.locator(".cl-header h1")).to_be_visible()
+    visible = (
+        page.locator("#cl-timeline").is_visible()
+        or page.locator("#cl-error").is_visible()
+        or page.locator("#cl-loading").is_visible()
+    )
+    assert visible, "changelog: 로딩/타임라인/에러 중 하나도 표시되지 않음"
+
+    shot(page, "13_changelog_load")
+
+
+def test_plan_random_tab(page: Page):
+    """/plan — 랜덤 생성 탭(data-tab='random') 탭 버튼 및 콘텐츠 영역 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+
+    expect(page.locator('[data-tab="random"]')).to_be_visible()
+
+    page.click('[data-tab="random"]')
+    page.wait_for_timeout(400)
+    expect(page.locator("#tab-random")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#r-name")).to_be_visible()
+
+    shot(page, "13_plan_random_tab")
+
+
+def test_plan_builder_tab(page: Page):
+    """/plan — 직접 구성 탭(data-tab='builder') 탭 버튼 및 에디터 로드 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+
+    expect(page.locator('[data-tab="builder"]')).to_be_visible()
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#builder-editor-body")).to_be_visible()
+
+    shot(page, "13_plan_builder_tab")
+
+
+def test_plan_builder_search(page: Page):
+    """직접 구성 탭 — #pool-search 검색창 존재 및 실시간 필터링 동작 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    search = page.locator("#pool-search")
+    expect(search).to_be_visible()
+
+    count_before = page.locator("#pool-list .pool-item").count()
+    assert count_before >= 1, "검색 전 풀 아이템 없음"
+
+    search.fill("캐치업")
+    page.wait_for_timeout(300)
+    count_after = page.locator("#pool-list .pool-item").count()
+    assert count_after < count_before, (
+        f"검색 후 필터링 안 됨: {count_before}개 → {count_after}개"
+    )
+
+    shot(page, "13_plan_builder_search")
+
+
+def test_plan_builder_drag(page: Page):
+    """직접 구성 탭 — 풀 아이템 draggable 속성 및 고정 기타 카드 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    items = page.locator("#pool-list .pool-item")
+    assert items.count() >= 1, "풀 아이템 없음"
+
+    draggable = items.first.get_attribute("draggable")
+    assert draggable == "true", f"풀 아이템에 draggable='true' 없음: {draggable}"
+
+    # 고정 기타 카드 (#pool-custom-pin) 존재 및 draggable
+    pin = page.locator("#pool-custom-pin")
+    expect(pin).to_be_visible()
+    assert pin.get_attribute("draggable") == "true", "기타 카드 draggable 없음"
+
+    shot(page, "13_plan_builder_drag")
+
+
+def test_pwa_install_btn(page: Page):
+    """landing.html — #pwa-install-btn DOM 존재 및 클릭 핸들러 오류 없음 확인."""
+    goto(page, "/landing")
+    page.wait_for_timeout(500)
+
+    btn = page.locator("#pwa-install-btn")
+    assert btn.count() == 1, "#pwa-install-btn 엘리먼트 없음"
+
+    # 버튼을 강제로 visible 상태로 만들어 클릭해도 JS 오류가 없는지 확인
+    page.evaluate("document.getElementById('pwa-install-btn').style.display = 'block'")
+    expect(btn).to_be_visible()
+
+    # deferredPrompt 없는 상태 클릭 — 오류 없이 조기 반환 확인
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    btn.click()
+    page.wait_for_timeout(300)
+    assert not errors, f"클릭 시 JS 오류 발생: {errors}"
+
+    shot(page, "13_pwa_install_btn")

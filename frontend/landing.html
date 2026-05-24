@@ -372,16 +372,25 @@ if (!localStorage.getItem('pwa-banner-closed')) {
       msg.textContent = "Safari에서 공유 → '홈 화면에 추가'를 탭하세요";
       banner.style.display = 'flex';
     } else {
+      let deferredPrompt = null;
+
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        const deferredPrompt = e;
+        deferredPrompt = e;
         msg.textContent = '홈 화면에 추가하면 앱처럼 사용할 수 있어요';
         btn.style.display = 'block';
         banner.style.display = 'flex';
-        btn.addEventListener('click', async () => {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') closePwaBanner();
+      });
+
+      btn.addEventListener('click', () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(({ outcome }) => {
+          if (outcome === 'accepted') {
+            btn.style.display = 'none';
+            closePwaBanner();
+          }
+          deferredPrompt = null;
         });
       });
     }
