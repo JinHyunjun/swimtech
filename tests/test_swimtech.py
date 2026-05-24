@@ -479,3 +479,44 @@ def test_badges_cards_exist(page: Page):
     assert cards.count() >= 1, f"badge-card count: {cards.count()}"
 
     shot(page, "10_badges_cards")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 11. /changelog
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_changelog_load(page: Page):
+    """릴리즈 노트 페이지 로드 — 헤더 및 컨테이너 렌더링 확인."""
+    goto(page, "/changelog")
+
+    expect(page.locator(".cl-header h1")).to_be_visible()
+    # 로딩·타임라인·에러 중 하나 이상 노출
+    loading  = page.locator("#cl-loading")
+    timeline = page.locator("#cl-timeline")
+    error    = page.locator("#cl-error")
+    page.wait_for_timeout(3000)
+
+    visible = (
+        timeline.is_visible()
+        or error.is_visible()
+        or loading.is_visible()
+    )
+    assert visible, "changelog: 로딩/타임라인/에러 중 하나도 표시되지 않음"
+
+    shot(page, "11_changelog_load")
+
+
+def test_changelog_api_responds(page: Page):
+    """GET /api/changelog — 200 또는 503(토큰 미설정) 응답 확인, 500/404 아님."""
+    resp = page.request.get("https://localhost/api/changelog")
+    assert resp.status in (200, 503), (
+        f"/api/changelog 응답 코드 {resp.status} — 200(정상) 또는 503(NOTION_TOKEN 미설정) 예상"
+    )
+
+
+def test_changelog_footer_link(page: Page):
+    """landing.html 푸터에 릴리즈 노트 링크 존재 확인."""
+    goto(page, "/landing")
+    link = page.locator("a[href='/changelog']")
+    expect(link.first).to_be_visible()
+    shot(page, "11_landing_changelog_link")

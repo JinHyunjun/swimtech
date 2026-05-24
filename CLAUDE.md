@@ -100,3 +100,20 @@ C:\swim\
 - Model file: `analysis/pose_landmarker.task`
 - Classifies 4 strokes: freestyle, backstroke, breaststroke, butterfly
 - Retraining pipeline: see recent commits for automated ML retraining setup
+
+---
+
+## Changelog Page (`/changelog`)
+
+- **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.
+  - Without it, `GET /api/changelog` returns `503` (expected — tests accept 200 or 503).
+- **Notion release notes page ID**: `362cb889-5490-81a7-bc1f-e15501550f60`
+- **Auto-reflection**: When a new version is released, update the Notion page and the web changelog updates automatically on next fetch (no redeploy needed).
+- **Router**: `api/routers/changelog.py`
+- **Frontend**: `frontend/changelog.html`
+- **Tests** (section 11 in `tests/test_swimtech.py`):
+  | Test | What it checks |
+  |---|---|
+  | `test_changelog_load` | Page renders header + one of loading/timeline/error |
+  | `test_changelog_api_responds` | `/api/changelog` returns 200 or 503, never 404/500 |
+  | `test_changelog_footer_link` | Landing page footer has a `/changelog` link |

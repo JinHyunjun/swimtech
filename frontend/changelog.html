@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 릴리즈 노트</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave  { 0%{transform:translateX(0);}    100%{transform:translateX(-50%);} }
+@keyframes ocean-wave2 { 0%{transform:translateX(-50%);} 100%{transform:translateX(0);}   }
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.cl-wrap {
+  min-height: calc(100vh - 53px);
+  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  padding: 32px 16px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.cl-wrap::before {
+  content: '';
+  position: fixed;
+  bottom: -10px; left: 0;
+  width: 200%; height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.12' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,15 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 60px;
+  animation: ocean-wave 8s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+.cl-wrap::after {
+  content: '';
+  position: fixed;
+  bottom: -4px; left: 0;
+  width: 200%; height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%2348cae4' fill-opacity='0.08' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 40px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+
+.cl-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.cl-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.cl-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 30px rgba(0,180,216,0.3);
+}
+.cl-header p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── 타임라인 ── */
+.timeline {
+  position: relative;
+  padding-left: 28px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #00b4d8 0%, rgba(0,180,216,0.1) 100%);
+}
+
+.tl-item {
+  position: relative;
+  margin-bottom: 28px;
+  animation: fadeInUp 0.4s ease both;
+}
+.tl-item:nth-child(1)  { animation-delay: 0.05s; }
+.tl-item:nth-child(2)  { animation-delay: 0.10s; }
+.tl-item:nth-child(3)  { animation-delay: 0.15s; }
+.tl-item:nth-child(4)  { animation-delay: 0.20s; }
+.tl-item:nth-child(5)  { animation-delay: 0.25s; }
+.tl-item:nth-child(6)  { animation-delay: 0.30s; }
+.tl-item:nth-child(7)  { animation-delay: 0.35s; }
+.tl-item:nth-child(8)  { animation-delay: 0.40s; }
+
+/* 타임라인 점 */
+.tl-dot {
+  position: absolute;
+  left: -24px;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #00b4d8;
+  border: 2px solid #0d2137;
+  box-shadow: 0 0 8px rgba(0,180,216,0.6);
+}
+.tl-item:first-child .tl-dot {
+  background: #48cae4;
+  box-shadow: 0 0 12px rgba(72,202,228,0.8);
+  width: 14px;
+  height: 14px;
+  left: -25px;
+}
+
+.tl-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: border-color .25s, box-shadow .25s;
+}
+.tl-card:hover {
+  border-color: rgba(0,180,216,0.4);
+  box-shadow: 0 4px 20px rgba(0,180,216,0.08);
+}
+
+.tl-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.tl-version {
+  font-size: 15px;
+  font-weight: 700;
+  color: #48cae4;
+  letter-spacing: -0.3px;
+}
+.tl-date {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+.tl-changes {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tl-change {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #c8d8e4;
+  line-height: 1.6;
+}
+.tl-change::before {
+  content: '•';
+  color: #00b4d8;
+  font-size: 16px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.tl-change.type-callout {
+  background: rgba(0,180,216,0.06);
+  border-left: 2px solid #00b4d8;
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+  color: #90c4d4;
+}
+.tl-change.type-callout::before { display: none; }
+.tl-change.type-text {
+  color: var(--muted);
+}
+.tl-change.type-text::before { content: ''; }
+
+/* ── 스켈레톤 로딩 ── */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.sk-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  margin-left: 4px;
+}
+.sk-title { height: 18px; width: 80px; margin-bottom: 12px; }
+.sk-line  { height: 13px; margin-bottom: 8px; }
+.sk-line:last-child { width: 60%; }
+
+/* ── 에러 상태 ── */
+.cl-error {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.cl-error .err-icon { font-size: 40px; margin-bottom: 12px; }
+.cl-error h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+.cl-error p  { font-size: 13px; line-height: 1.7; }
+.cl-error code {
+  display: inline-block;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: #48cae4;
+}
+
+/* ── 빈 상태 ── */
+.cl-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <a href="/landing" style="text-decoration:none;">
+        <span class="logo">SwimTech</span>
+      </a>
+      <span class="logo-sub">릴리즈 노트</span>
+    </div>
+    <div class="header-right">
+      <a href="/landing"
+         style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
+                padding:4px 12px;font-size:11px;cursor:pointer;text-decoration:none;">
+        홈으로
+      </a>
+    </div>
+  </header>
+
+  <div class="cl-wrap">
+    <div class="cl-inner">
+      <div class="cl-header">
+        <h1>📋 릴리즈 노트</h1>
+        <p>SwimTech의 업데이트 내역을 확인하세요</p>
+      </div>
+
+      <div id="cl-loading">
+        <div class="sk-card" style="margin-left:28px;">
+          <div class="skeleton sk-title"></div>
+          <div class="skeleton sk-line" style="width:90%"></div>
+          <div class="skeleton sk-line" style="width:75%"></div>
+          <div class="skeleton sk-line"></div>
+        </div>
+        <div class="sk-card" style="margin-left:28px;">
+          <div class="skeleton sk-title" style="width:60px;"></div>
+          <div class="skeleton sk-line" style="width:85%"></div>
+          <div class="skeleton sk-line" style="width:70%"></div>
+        </div>
+        <div class="sk-card" style="margin-left:28px;">
+          <div class="skeleton sk-title" style="width:70px;"></div>
+          <div class="skeleton sk-line" style="width:80%"></div>
+          <div class="skeleton sk-line"></div>
+        </div>
+      </div>
+
+      <div id="cl-error" style="display:none;" class="cl-error">
+        <div class="err-icon">⚠️</div>
+        <h3>데이터를 불러올 수 없습니다</h3>
+        <p id="cl-error-msg"></p>
+      </div>
+
+      <div id="cl-timeline" style="display:none;" class="timeline"></div>
+
+      <div id="cl-empty" style="display:none;" class="cl-empty">
+        릴리즈 노트가 없습니다.
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:24px 0 16px;font-size:12px;color:#7aafc2;position:relative;z-index:1;">
+    <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
+    <span style="margin:0 8px;opacity:0.5;">|</span>
+    <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
+    <span style="margin:0 8px;opacity:0.5;">|</span>
+    <a href="/changelog" style="color:#00b4d8;text-decoration:none;">릴리즈 노트</a>
+  </div>
+
+</div>
+<script>
+"use strict";
+
+async function loadChangelog() {
+  const loading  = document.getElementById('cl-loading');
+  const error    = document.getElementById('cl-error');
+  const errorMsg = document.getElementById('cl-error-msg');
+  const timeline = document.getElementById('cl-timeline');
+  const empty    = document.getElementById('cl-empty');
+
+  try {
+    const res = await fetch('/api/changelog');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    loading.style.display = 'none';
+
+    const versions = data.versions || [];
+    if (versions.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    timeline.style.display = 'block';
+    versions.forEach(v => {
+      const item = document.createElement('div');
+      item.className = 'tl-item';
+
+      const changeItems = (v.changes || []).map(c => {
+        const li = document.createElement('li');
+        li.className = `tl-change type-${c.type}`;
+        li.textContent = c.text;
+        return li.outerHTML;
+      }).join('');
+
+      item.innerHTML = `
+        <div class="tl-dot"></div>
+        <div class="tl-card">
+          <div class="tl-meta">
+            <span class="tl-version">${escHtml(v.version)}</span>
+            ${v.date ? `<span class="tl-date">${escHtml(v.date)}</span>` : ''}
+          </div>
+          ${changeItems ? `<ul class="tl-changes">${changeItems}</ul>` : ''}
+        </div>
+      `;
+      timeline.appendChild(item);
+    });
+  } catch (e) {
+    loading.style.display = 'none';
+    error.style.display = 'block';
+    const isToken = e.message && e.message.includes('NOTION_TOKEN');
+    if (isToken) {
+      errorMsg.innerHTML = `서버에 <code>NOTION_TOKEN</code> 환경변수가 설정되지 않았습니다.<br>.env 파일에 <code>NOTION_TOKEN=secret_xxx</code> 를 추가하세요.`;
+    } else {
+      errorMsg.textContent = e.message || '알 수 없는 오류가 발생했습니다.';
+    }
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+loadChangelog();
+</script>
+</body>
+</html>
