@@ -1,12 +1,12 @@
 {
   "purpose": "hobby",
   "model_type": "regressor",
-  "cv_mae_mean": 0.1446,
-  "cv_mae_std": 0.0093,
-  "train_mae": 0.0063,
-  "train_rmse": 0.0277,
+  "cv_mae_mean": 0.1386,
+  "cv_mae_std": 0.0151,
+  "train_mae": 0.0059,
+  "train_rmse": 0.0273,
   "pos_samples": 50,
-  "neg_samples": 283,
+  "neg_samples": 291,
   "feature_cols": [
     "l_elbow_angle_mean",
     "l_elbow_angle_std",

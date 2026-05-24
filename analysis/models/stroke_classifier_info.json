@@ -1,6 +1,6 @@
 {
-  "model_name": "SVM",
-  "cv_accuracy": 0.3951,
+  "model_name": "RandomForest",
+  "cv_accuracy": 0.4587,
   "classes": [
     "backstroke",
     "breaststroke",
@@ -75,6 +75,6 @@
     "kick_ratio",
     "stroke_cycle_hz"
   ],
-  "train_size": 152,
-  "test_size": 39
+  "train_size": 157,
+  "test_size": 40
 }

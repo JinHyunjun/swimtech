@@ -1,12 +1,12 @@
 {
   "purpose": "health",
   "model_type": "regressor",
-  "cv_mae_mean": 0.121,
-  "cv_mae_std": 0.0139,
-  "train_mae": 0.0038,
-  "train_rmse": 0.0053,
+  "cv_mae_mean": 0.118,
+  "cv_mae_std": 0.0069,
+  "train_mae": 0.0032,
+  "train_rmse": 0.0044,
   "pos_samples": 59,
-  "neg_samples": 274,
+  "neg_samples": 282,
   "feature_cols": [
     "l_elbow_angle_mean",
     "l_elbow_angle_std",

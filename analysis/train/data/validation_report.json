@@ -1,8 +1,8 @@
 {
-  "total": 398,
-  "ok": 53,
-  "warn": 154,
-  "bad": 191,
+  "total": 409,
+  "ok": 56,
+  "warn": 159,
+  "bad": 194,
   "videos": [
     {
       "video": "3 Exercises for backstroke to breaststroke (Crossover) flip turn with underwater slow motion footage.mp4",
@@ -480,6 +480,15 @@
       "skill_level": "elite",
       "detect_rate": 0.3667,
       "status": "❌ 불량"
+    },
+    {
+      "video": "Breaststroke Pullout Technique of World Class Swimmers Slow Motion.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\competition\\competition_breaststroke\\Breaststroke Pullout Technique of World Class Swimmers Slow Motion.mp4",
+      "category": "competition",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.9,
+      "status": "✅ 정상"
     },
     {
       "video": "Breaststroke Swimming Technique ｜ Kick.mp4",
@@ -2615,6 +2624,15 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "How to Dive Off the Blocks FASTER ｜ Swimming Start Tips.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\How to Dive Off the Blocks FASTER ｜ Swimming Start Tips.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.7333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "How to Start Like Caeleb Dressel (NOT Michael Phelps).mp4",
       "path": "C:\\swim\\analysis\\train\\data\\start_turn\\start_technique\\How to Start Like Caeleb Dressel (NOT Michael Phelps).mp4",
       "category": "start_turn",
@@ -2804,6 +2822,15 @@
       "status": "⚠️ 주의"
     },
     {
+      "video": "How to do a fast flipturn in freestyle. Swimming technique.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\How to do a fast flipturn in freestyle. Swimming technique.mp4",
+      "category": "start_turn",
+      "purpose_tag": "competition",
+      "skill_level": "elite",
+      "detect_rate": 0.3,
+      "status": "❌ 불량"
+    },
+    {
       "video": "Want a Great Freestyle Flip Turn？ Watch This Now.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\start_turn\\turn_flip\\Want a Great Freestyle Flip Turn？ Watch This Now.mp4",
       "category": "start_turn",
@@ -2864,6 +2891,15 @@
       "purpose_tag": "competition",
       "skill_level": "elite",
       "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
+    },
+    {
+      "video": "20-Second Drop： Watch This Triathlete's Insane Swim Improvement!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_backstroke\\20-Second Drop： Watch This Triathlete's Insane Swim Improvement!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7333,
       "status": "⚠️ 주의"
     },
     {
@@ -3110,12 +3146,30 @@
       "status": "✅ 정상"
     },
     {
+      "video": "Breaststroke Timing Progression Drill in 5 Easy Steps!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke Timing Progression Drill in 5 Easy Steps!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.7667,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "Breaststroke swimming： SECRET TIPS.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Breaststroke swimming： SECRET TIPS.mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
       "detect_rate": 0.4667,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "Coordinate Your CATCH and KICK.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\Coordinate Your CATCH and KICK.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.3,
       "status": "❌ 불량"
     },
     {
@@ -3216,6 +3270,15 @@
       "skill_level": "beginner",
       "detect_rate": 0.4,
       "status": "❌ 불량"
+    },
+    {
+      "video": "The Easy Way To Time Your Breathing In Freestyle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_breaststroke\\The Easy Way To Time Your Breathing In Freestyle.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.5667,
+      "status": "⚠️ 주의"
     },
     {
       "video": "평영 영법 교정 4th ( 평영 킥을 찰 때 주된 추진력을 내는 부분은 발바닥이기 때....mp4",
@@ -3335,12 +3398,30 @@
       "status": "❌ 불량"
     },
     {
+      "video": "How To Swim Butterfly In 7 Steps!.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Swim Butterfly In 7 Steps!.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.6333,
+      "status": "⚠️ 주의"
+    },
+    {
       "video": "How To Swim Butterfly PERFECTLY..mp4",
       "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Swim Butterfly PERFECTLY..mp4",
       "category": "tutorial",
       "purpose_tag": "technique",
       "skill_level": "beginner",
       "detect_rate": 0.3333,
+      "status": "❌ 불량"
+    },
+    {
+      "video": "How To Swim Butterfly ｜ Technique For Butterfly Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_butterfly\\How To Swim Butterfly ｜ Technique For Butterfly Swimming.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.2333,
       "status": "❌ 불량"
     },
     {
@@ -3405,6 +3486,15 @@
       "skill_level": "beginner",
       "detect_rate": 0.7,
       "status": "⚠️ 주의"
+    },
+    {
+      "video": "3 Steps To Finding Rhythm In Your Freestyle.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\3 Steps To Finding Rhythm In Your Freestyle.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 0.9333,
+      "status": "✅ 정상"
     },
     {
       "video": "4 Essential Tips To Improve Your Swim Technique.mp4",
@@ -3515,6 +3605,15 @@
       "status": "❌ 불량"
     },
     {
+      "video": "How To Use Your Core When Swimming.mp4",
+      "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\How To Use Your Core When Swimming.mp4",
+      "category": "tutorial",
+      "purpose_tag": "technique",
+      "skill_level": "beginner",
+      "detect_rate": 1.0,
+      "status": "✅ 정상"
+    },
+    {
       "video": "Ironman Triathlete Wants To Break 60-min Swim ｜ Freestyle Technique Breakdown.mp4",
       "path": "C:\\swim\\analysis\\train\\data\\tutorial\\tutorial_freestyle\\Ironman Triathlete Wants To Break 60-min Swim ｜ Freestyle Technique Breakdown.mp4",
       "category": "tutorial",
@@ -3589,10 +3688,10 @@
   ],
   "by_category": {
     "competition": {
-      "ok": 15,
+      "ok": 16,
       "warn": 48,
       "bad": 115,
-      "mean_rate": 0.4367
+      "mean_rate": 0.4393
     },
     "health": {
       "ok": 19,
@@ -3608,15 +3707,15 @@
     },
     "start_turn": {
       "ok": 2,
-      "warn": 21,
-      "bad": 7,
-      "mean_rate": 0.5644
+      "warn": 22,
+      "bad": 8,
+      "mean_rate": 0.5615
     },
     "tutorial": {
-      "ok": 16,
-      "warn": 35,
-      "bad": 29,
-      "mean_rate": 0.5387
+      "ok": 18,
+      "warn": 39,
+      "bad": 31,
+      "mean_rate": 0.5485
     }
   }
 }

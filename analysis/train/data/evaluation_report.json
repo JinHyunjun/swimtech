@@ -1,10 +1,10 @@
 {
-  "n_total": 348,
+  "n_total": 356,
   "n_evaluated": 34,
   "sample_pct": 0.1,
   "stroke_classifier": {
     "status": "ok",
-    "accuracy": 0.6667,
+    "accuracy": 0.9444,
     "n_samples": 18,
     "class_accuracy": {
       "backstroke": {
@@ -13,9 +13,9 @@
         "accuracy": 1.0
       },
       "breaststroke": {
-        "correct": 1,
+        "correct": 4,
         "total": 4,
-        "accuracy": 0.25
+        "accuracy": 1.0
       },
       "butterfly": {
         "correct": 5,
@@ -23,9 +23,9 @@
         "accuracy": 1.0
       },
       "freestyle": {
-        "correct": 1,
+        "correct": 3,
         "total": 4,
-        "accuracy": 0.25
+        "accuracy": 0.75
       }
     },
     "confusion_matrix": [
@@ -36,9 +36,9 @@
         0
       ],
       [
-        2,
-        1,
-        1,
+        0,
+        4,
+        0,
         0
       ],
       [
@@ -48,10 +48,10 @@
         0
       ],
       [
-        2,
-        0,
         1,
-        1
+        0,
+        0,
+        3
       ]
     ],
     "classes": [
@@ -62,23 +62,33 @@
     ],
     "samples": [
       {
+        "video": "Slow-mo Olympic swim dive.mp4",
+        "true": "backstroke",
+        "pred": "backstroke"
+      },
+      {
+        "video": "Slow Motion Breaststroke 2.mp4",
+        "true": "breaststroke",
+        "pred": "breaststroke"
+      },
+      {
         "video": "How to improve your Butterfly ｜ Tip",
         "true": "butterfly",
         "pred": "butterfly"
       },
       {
-        "video": "가장 쉽고 빠르게 배영 잘하는 방법 -1- #28.mp4",
+        "video": "How To Swim Breaststroke ｜ Techniqu",
+        "true": "breaststroke",
+        "pred": "breaststroke"
+      },
+      {
+        "video": "If You Swim With A 2-Beat Kick (Or ",
+        "true": "breaststroke",
+        "pred": "breaststroke"
+      },
+      {
+        "video": "Improve your Backstroke Swimming te",
         "true": "backstroke",
-        "pred": "backstroke"
-      },
-      {
-        "video": "Hansen Takes Breaststroke Final.mp4",
-        "true": "breaststroke",
-        "pred": "butterfly"
-      },
-      {
-        "video": "Rebecca Soni Breaks World Record - ",
-        "true": "breaststroke",
         "pred": "backstroke"
       },
       {
@@ -87,14 +97,9 @@
         "pred": "butterfly"
       },
       {
-        "video": "Unbelievable 100m Butterfly Showdow",
+        "video": "Michael Phelps wins 15th Gold - Men",
         "true": "butterfly",
         "pred": "butterfly"
-      },
-      {
-        "video": "Slow Motion 100M Freestyle Start.mp",
-        "true": "freestyle",
-        "pred": "backstroke"
       },
       {
         "video": "3 Exercises for backstroke to breas",
@@ -102,14 +107,9 @@
         "pred": "backstroke"
       },
       {
-        "video": "How To Pull In Butterfly.mp4",
-        "true": "butterfly",
-        "pred": "butterfly"
-      },
-      {
-        "video": "Improve your Backstroke Swimming te",
-        "true": "backstroke",
-        "pred": "backstroke"
+        "video": "Freestyle Swimming Technique ｜ Stro",
+        "true": "freestyle",
+        "pred": "freestyle"
       }
     ]
   },
@@ -118,52 +118,52 @@
       "status": "ok",
       "model_type": "regressor",
       "n_samples": 34,
-      "mae": 0.0399,
-      "rmse": 0.1046,
+      "mae": 0.0648,
+      "rmse": 0.1446,
       "per_purpose_mean_score": {
-        "competition": 0.9376,
-        "health": 0.3062,
-        "hobby": 0.3094,
-        "technique": 0.307
+        "competition": 0.9173,
+        "health": 0.3072,
+        "hobby": 0.3113,
+        "technique": 0.3967
       }
     },
     "health": {
       "status": "ok",
       "model_type": "regressor",
       "n_samples": 34,
-      "mae": 0.004,
-      "rmse": 0.0056,
+      "mae": 0.003,
+      "rmse": 0.0042,
       "per_purpose_mean_score": {
-        "competition": 0.3007,
-        "health": 0.9936,
-        "hobby": 0.2968,
-        "technique": 0.2981
+        "competition": 0.3002,
+        "health": 0.9939,
+        "hobby": 0.299,
+        "technique": 0.2992
       }
     },
     "technique": {
       "status": "ok",
       "model_type": "regressor",
       "n_samples": 34,
-      "mae": 0.0371,
-      "rmse": 0.1006,
+      "mae": 0.0593,
+      "rmse": 0.1418,
       "per_purpose_mean_score": {
-        "competition": 0.3543,
+        "competition": 0.3737,
         "health": 0.3065,
-        "hobby": 0.3075,
-        "technique": 0.9892
+        "hobby": 0.3078,
+        "technique": 0.9023
       }
     },
     "hobby": {
       "status": "ok",
       "model_type": "regressor",
       "n_samples": 34,
-      "mae": 0.0029,
-      "rmse": 0.004,
+      "mae": 0.0032,
+      "rmse": 0.0039,
       "per_purpose_mean_score": {
-        "competition": 0.3016,
-        "health": 0.2999,
-        "hobby": 0.9975,
-        "technique": 0.3002
+        "competition": 0.3011,
+        "health": 0.2994,
+        "hobby": 0.9961,
+        "technique": 0.3
       }
     }
   }

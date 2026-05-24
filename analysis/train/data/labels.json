@@ -3228,5 +3228,85 @@
     "detection_rate": 0.962,
     "excluded": false,
     "auto_labeled": true
+  },
+  "Breaststroke Pullout Technique of World Class Swimmers Slow Motion.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "competition_breaststroke",
+    "stroke_confidence": 0.67,
+    "detection_rate": 0.818,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to Dive Off the Blocks FASTER ｜ Swimming Start Tips.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "start_technique",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.813,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How to do a fast flipturn in freestyle. Swimming technique.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "elite",
+    "purpose_tag": "competition",
+    "source": "turn_flip",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.677,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "20-Second Drop： Watch This Triathlete's Insane Swim Improvement!.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_backstroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.856,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "Breaststroke Timing Progression Drill in 5 Easy Steps!.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_breaststroke",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.827,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Swim Butterfly ｜ Technique For Butterfly Swimming.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_butterfly",
+    "stroke_confidence": 0.0,
+    "detection_rate": 0.447,
+    "excluded": true,
+    "auto_labeled": true
+  },
+  "3 Steps To Finding Rhythm In Your Freestyle.mp4": {
+    "stroke_type": "butterfly",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.65,
+    "detection_rate": 0.962,
+    "excluded": false,
+    "auto_labeled": true
+  },
+  "How To Use Your Core When Swimming.mp4": {
+    "stroke_type": "freestyle",
+    "skill_level": "intermediate",
+    "purpose_tag": "tutorial",
+    "source": "tutorial_freestyle",
+    "stroke_confidence": 0.69,
+    "detection_rate": 0.992,
+    "excluded": false,
+    "auto_labeled": true
   }
 }
