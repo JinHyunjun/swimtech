@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 릴리즈 노트</title>
+<style>
+  body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin-bottom: 24px; }
+  .version-block { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+  .version-title { font-size: 16px; font-weight: bold; color: #0077aa; }
+  .version-date { font-size: 12px; color: #888; margin-left: 8px; }
+  ul { margin: 10px 0 0 0; padding-left: 20px; }
+  li { font-size: 14px; margin-bottom: 4px; }
+  #status { color: #888; font-size: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h1>릴리즈 노트</h1>
+<div id="status">불러오는 중...</div>
+<div id="changelog-container"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[changelog] DOMContentLoaded 시작');
+
+  fetch('/api/changelog')
+    .then(function(res) {
+      console.log('[changelog] 응답 status:', res.status);
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      console.log('[changelog] 응답 데이터:', data);
+
+      var versions = data.versions || [];
+      console.log('[changelog] versions 개수:', versions.length);
+
+      var status = document.getElementById('status');
+      var container = document.getElementById('changelog-container');
+
+      if (versions.length === 0) {
+        status.textContent = '릴리즈 노트가 없습니다.';
+        return;
+      }
+
+      status.textContent = '';
+
+      versions.forEach(function(v, i) {
+        console.log('[changelog] 버전 ' + i + ':', v.version, v.date);
+
+        var block = document.createElement('div');
+        block.className = 'version-block';
+
+        var header = document.createElement('div');
+        var title = document.createElement('span');
+        title.className = 'version-title';
+        title.textContent = v.version || '(버전 없음)';
+        header.appendChild(title);
+
+        if (v.date) {
+          var date = document.createElement('span');
+          date.className = 'version-date';
+          date.textContent = v.date;
+          header.appendChild(date);
+        }
+        block.appendChild(header);
+
+        var changes = v.changes || [];
+        if (changes.length > 0) {
+          var ul = document.createElement('ul');
+          changes.forEach(function(c) {
+            var li = document.createElement('li');
+            li.textContent = typeof c === 'string' ? c : (c.text || JSON.stringify(c));
+            ul.appendChild(li);
+          });
+          block.appendChild(ul);
+        }
+
+        container.appendChild(block);
+      });
+
+      console.log('[changelog] 렌더링 완료');
+    })
+    .catch(function(err) {
+      console.error('[changelog] 오류:', err);
+      document.getElementById('status').textContent = '오류: ' + err.message;
+    });
+});
+</script>
+</body>
+</html>

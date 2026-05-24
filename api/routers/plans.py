@@ -1,0 +1,158 @@
+# -*- coding: utf-8 -*-
+import json
+import os
+from typing import Any, Dict
+
+import psycopg2
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+
+from routers.auth import verify_token
+
+router = APIRouter()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+
+def _get_db():
+    return psycopg2.connect(DATABASE_URL)
+
+
+def _ensure_table():
+    conn = _get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS custom_plans (
+            id               SERIAL PRIMARY KEY,
+            username         VARCHAR(100) NOT NULL DEFAULT 'guest',
+            plan_name        VARCHAR(200) NOT NULL,
+            goal             VARCHAR(50),
+            sessions_per_week INTEGER,
+            session_duration  INTEGER,
+            focus_stroke     VARCHAR(50),
+            level            VARCHAR(50),
+            plan_content     JSONB,
+            created_at       TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def _get_username(request: Request) -> str:
+    token = request.cookies.get("swimtech_token")
+    if not token:
+        return "guest"
+    return verify_token(token) or "guest"
+
+
+class PlanRequest(BaseModel):
+    plan_name: str
+    goal: str
+    sessions_per_week: int
+    session_duration: int
+    focus_stroke: str
+    level: str
+    plan_content: Dict[str, Any] = {}
+
+
+@router.get("")
+def list_plans(request: Request):
+    try:
+        _ensure_table()
+        username = _get_username(request)
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, plan_name, goal, sessions_per_week, session_duration,
+                   focus_stroke, level, plan_content, created_at
+            FROM custom_plans
+            WHERE username = %s
+            ORDER BY created_at DESC
+        """, (username,))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return {
+            "plans": [
+                {
+                    "id": r[0],
+                    "plan_name": r[1],
+                    "goal": r[2],
+                    "sessions_per_week": r[3],
+                    "session_duration": r[4],
+                    "focus_stroke": r[5],
+                    "level": r[6],
+                    "plan_content": r[7],
+                    "created_at": str(r[8]),
+                }
+                for r in rows
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.post("")
+def create_plan(req: PlanRequest, request: Request):
+    try:
+        _ensure_table()
+        username = _get_username(request)
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO custom_plans
+                (username, plan_name, goal, sessions_per_week, session_duration,
+                 focus_stroke, level, plan_content)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, created_at
+            """,
+            (
+                username,
+                req.plan_name,
+                req.goal,
+                req.sessions_per_week,
+                req.session_duration,
+                req.focus_stroke,
+                req.level,
+                json.dumps(req.plan_content, ensure_ascii=False),
+            ),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {
+            "id": row[0],
+            "plan_name": req.plan_name,
+            "plan_content": req.plan_content,
+            "created_at": str(row[1]),
+        }
+    except Exception as e:
+        raise HTTPException(500, f"DB 저장 오류: {e}")
+
+
+@router.delete("/{plan_id}")
+def delete_plan(plan_id: int, request: Request):
+    try:
+        _ensure_table()
+        username = _get_username(request)
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM custom_plans WHERE id = %s AND username = %s RETURNING id",
+            (plan_id, username),
+        )
+        deleted = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        if not deleted:
+            raise HTTPException(404, "플랜을 찾을 수 없습니다")
+        return {"deleted": True, "id": plan_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")

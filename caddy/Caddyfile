@@ -119,6 +119,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /changelog {
+    reverse_proxy swim-api:8000
+  }
+
   handle /badges {
     reverse_proxy swim-api:8000
   }

@@ -34,6 +34,10 @@ passlib[bcrypt]==1.7.4
 google-auth-oauthlib==1.2.0
 google-api-python-client==2.132.0
 
+# ── AI / Notion ──────────────────────────────────
+anthropic==0.49.0
+notion-client==2.2.1
+
 # ── Security ──────────────────────────────────────
 slowapi==0.1.9
 email-validator==2.1.0

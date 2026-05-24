@@ -103,6 +103,48 @@ C:\swim\
 
 ---
 
+## 모든 기능 추가/개선 시 필수 검증 절차
+
+### 1. 구현 완료 후 자동 검증 순서
+
+```powershell
+# 1) API·Worker 컨테이너 재생성 (새 코드 반영)
+docker compose up -d --force-recreate api worker
+
+# 2) 전체 테스트 실행 + HTML 리포트 생성
+pytest tests/test_swimtech.py --html=tests/report.html --self-contained-html
+
+# 3) 새 기능 스크린샷 저장 (Playwright가 자동 저장)
+#    경로: tests/screenshots/{페이지명}.png
+```
+
+> `tests/report.html`을 브라우저에서 열어 스크린샷과 실패 원인을 확인한다.
+
+### 2. 테스트 케이스 작성 규칙
+
+| 추가 항목 | 필수 테스트 | 최소 개수 |
+|---|---|---|
+| 새 페이지 (`/newpage`) | `test_{페이지명}_load` + `test_{페이지명}_ui` | 2개 |
+| 새 API 엔드포인트 | `test_{기능명}_api` | 1개 |
+| 모달 / 인터랙션 | `test_{기능명}_interaction` | 1개 |
+
+### 3. Caddyfile 라우트 확인
+
+- 새 페이지를 추가할 때마다 `caddy/Caddyfile`에 `handle` 블록을 추가한다.
+- 추가 후 반드시 아래 명령으로 Caddy를 재시작한다.
+
+```powershell
+docker compose restart caddy
+```
+
+### 4. 스크린샷 증적 규칙
+
+- 저장 위치: `tests/screenshots/`
+- 파일명 형식: `{기능명}_{YYYYMMDD}.png`
+- `shot(page, "NN_pagename_action")` 호출이 각 테스트의 마지막 줄이어야 한다.
+
+---
+
 ## Changelog Page (`/changelog`)
 
 - **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.

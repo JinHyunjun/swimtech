@@ -520,3 +520,170 @@ def test_changelog_footer_link(page: Page):
     link = page.locator("a[href='/changelog']")
     expect(link.first).to_be_visible()
     shot(page, "11_landing_changelog_link")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 12. /plan (강화된 훈련 플랜 페이지)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_plan_load(page: Page):
+    """훈련 플랜 페이지 로드 — 탭 바·플랜 카드 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    # 헤더
+    expect(page.locator(".plan-title")).to_be_visible()
+
+    # 탭 바 존재
+    expect(page.locator(".tab-bar")).to_be_visible()
+
+    # 기본 탭(기록 단축) 플랜 카드 렌더링
+    expect(page.locator(".plan-card").first).to_be_visible()
+
+    shot(page, "12_plan_load")
+
+
+def test_plan_tab_switching(page: Page):
+    """탭 전환 — 건강하게 오래 탭 클릭 시 카드 교체 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="health"]')
+    page.wait_for_timeout(400)
+
+    expect(page.locator("#tab-health")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#tab-health .plan-card")).to_be_visible()
+
+    shot(page, "12_plan_tab_health")
+
+
+def test_plan_week_selector(page: Page):
+    """주차 선택 버튼 클릭 — 2주차 세션 카드 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    # 2주차 버튼 클릭 (기록단축 탭)
+    week2_btn = page.locator('.week-sel-btn[data-week="1"]').first
+    expect(week2_btn).to_be_visible()
+    week2_btn.click()
+    page.wait_for_timeout(300)
+
+    # 세션 카드 최소 1개
+    cards = page.locator("#tab-speed .session-card")
+    assert cards.count() >= 1, f"세션 카드 없음: {cards.count()}"
+
+    shot(page, "12_plan_week_selector")
+
+
+def test_plan_session_detail_visible(page: Page):
+    """세션 카드에 웜업·메인셋·쿨다운·총 거리·코치 팁 포함 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    card = page.locator("#tab-speed .session-card").first
+    expect(card.locator(".session-total")).to_be_visible()
+    expect(card.locator(".coach-tip")).to_be_visible()
+    expect(card.locator(".mainset-items")).to_be_visible()
+
+    shot(page, "12_plan_session_detail")
+
+
+def test_plan_intensity_badge(page: Page):
+    """강도 뱃지(쉬움/보통/힘듦) 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    badges = page.locator(".intensity")
+    assert badges.count() >= 1, "intensity 뱃지 없음"
+
+    shot(page, "12_plan_intensity")
+
+
+def test_plan_create_btn_visible(page: Page):
+    """'내 플랜 만들기' 버튼 및 '내 플랜' 탭 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(500)
+
+    expect(page.locator("#open-modal-btn")).to_be_visible()
+    expect(page.locator('[data-tab="myplan"]')).to_be_visible()
+
+    shot(page, "12_plan_create_btn")
+
+
+def test_plan_random_tab_form(page: Page):
+    """'내 플랜 만들기' 버튼 → 랜덤 생성 탭 전환 및 폼 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(500)
+
+    # 버튼 클릭 → 랜덤 탭으로 전환
+    page.click("#open-modal-btn")
+    page.wait_for_timeout(300)
+
+    expect(page.locator("#tab-random")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#r-name")).to_be_visible()
+    expect(page.locator("#btn-gen-random")).to_be_visible()
+
+    shot(page, "12_plan_modal")
+
+
+def test_plan_builder_tab_load(page: Page):
+    """직접 구성 탭 로드 — 풀 목록·드롭존·주간 총합 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(600)
+
+    expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
+    # 풀 아이템 존재
+    assert page.locator("#pool-list .pool-item").count() >= 1, "풀 아이템 없음"
+    # 주간 총합 표시
+    expect(page.locator("#week-total-display")).to_be_visible()
+    # 드롭존 월요일 존재
+    expect(page.locator("#drop-월요일")).to_be_visible()
+
+    shot(page, "12_plan_builder_tab")
+
+
+def test_plan_builder_add_item(page: Page):
+    """직접 구성 탭 — 풀 아이템 클릭 시 월요일 칸에 카드 추가 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(600)
+
+    # 첫 번째 풀 아이템 클릭 → 월요일에 추가
+    page.locator("#pool-list .pool-item").first.click()
+    page.wait_for_timeout(300)
+
+    # 빌더 카드가 생성됐는지
+    assert page.locator(".builder-card").count() >= 1, "builder-card 생성 안 됨"
+    # 도구 토글 버튼 확인
+    expect(page.locator(".equip-btn").first).to_be_visible()
+    # 거리 입력 필드 확인
+    expect(page.locator(".card-num-input").first).to_be_visible()
+
+    shot(page, "12_plan_builder_add")
+
+
+def test_plan_api_get(page: Page):
+    """GET /api/plans — 200 응답 및 plans 키 포함 확인."""
+    resp = page.request.get("https://localhost/api/plans")
+    assert resp.status == 200, f"/api/plans 응답 코드 {resp.status}"
+    body = resp.json()
+    assert "plans" in body, f"plans 키 없음: {body}"
+
+
+def test_plan_myplan_tab(page: Page):
+    """'내 플랜' 탭 클릭 — 탭 전환 및 콘텐츠 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="myplan"]')
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#tab-myplan")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#myplan-content")).to_be_visible()
+
+    shot(page, "12_plan_myplan_tab")

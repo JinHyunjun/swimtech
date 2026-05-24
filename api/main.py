@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -71,6 +71,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보�
 app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
 app.include_router(badge.router,      prefix="/api/badges",     tags=["뱃지"])
 app.include_router(changelog.router,  prefix="/api/changelog",  tags=["변경 이력"])
+app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 플랜"])
 
 @app.get("/api/health")
 def health():

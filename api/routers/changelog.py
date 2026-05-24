@@ -50,16 +50,23 @@ def _fetch_blocks(block_id: str) -> list:
 def _parse_versions(blocks: list) -> list:
     versions: list[dict] = []
     cur: dict | None = None
+    cur_section: str | None = None
 
     for b in blocks:
         t = b.get("type", "")
 
-        if t in ("heading_1", "heading_2", "heading_3"):
+        # heading_1/2만 새 버전 시작, heading_3은 서브섹션 레이블
+        if t in ("heading_1", "heading_2"):
             text = _rich_text(b[t]["rich_text"]).strip()
             if not text:
                 continue
             cur = {"version": text, "date": None, "changes": []}
+            cur_section = None
             versions.append(cur)
+
+        elif t == "heading_3":
+            if cur is not None:
+                cur_section = _rich_text(b["heading_3"]["rich_text"]).strip() or None
 
         elif t == "paragraph" and cur is not None:
             text = _rich_text(b["paragraph"]["rich_text"]).strip()
@@ -68,25 +75,35 @@ def _parse_versions(blocks: list) -> list:
             if cur["date"] is None and _DATE_RE.search(text) and len(text) < 40:
                 cur["date"] = text
             else:
-                cur["changes"].append({"type": "text", "text": text})
+                cur["changes"].append({"type": "text", "text": text, "section": cur_section})
 
         elif t == "bulleted_list_item" and cur is not None:
             text = _rich_text(b["bulleted_list_item"]["rich_text"]).strip()
             if text:
-                cur["changes"].append({"type": "bullet", "text": text})
+                cur["changes"].append({"type": "bullet", "text": text, "section": cur_section})
 
         elif t == "numbered_list_item" and cur is not None:
             text = _rich_text(b["numbered_list_item"]["rich_text"]).strip()
             if text:
-                cur["changes"].append({"type": "numbered", "text": text})
+                cur["changes"].append({"type": "numbered", "text": text, "section": cur_section})
 
         elif t == "callout" and cur is not None:
             text = _rich_text(b["callout"]["rich_text"]).strip()
             if text:
-                cur["changes"].append({"type": "callout", "text": text})
+                cur["changes"].append({"type": "callout", "text": text, "section": cur_section})
+
+        elif t == "toggle" and cur is not None:
+            text = _rich_text(b["toggle"]["rich_text"]).strip()
+            if text:
+                cur["changes"].append({"type": "toggle", "text": text, "section": cur_section})
+
+        elif t == "code" and cur is not None:
+            text = _rich_text(b["code"]["rich_text"]).strip()
+            if text and cur["date"] is None and _DATE_RE.search(text) and len(text) < 40:
+                cur["date"] = text
 
         elif t == "divider":
-            cur = None  # 구분선은 섹션 종료
+            cur_section = None
 
     return versions
 
