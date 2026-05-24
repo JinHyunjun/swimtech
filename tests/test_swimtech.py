@@ -10,6 +10,23 @@ Run:
 
     # headed mode (browser visible):
     pytest tests/test_swimtech.py -v --headed --html=tests/report.html --self-contained-html
+
+--------------------------------------------------------------------------------
+GUIDE FOR CONTRIBUTORS
+When adding a new page or feature, add the corresponding test case(s) to this
+file, then run `tests/run_tests.bat` from the project root to verify immediately.
+
+Test naming convention:
+    test_<page>_<what_is_verified>(page: Page)
+
+Each new route (e.g. /settings, /profile) should have at minimum:
+    1. A "load" test — confirms the page renders key elements
+    2. Interaction tests — covers primary user actions on that page
+
+After adding tests, run:
+    cd C:\swim
+    tests\run_tests.bat
+--------------------------------------------------------------------------------
 """
 
 import re
