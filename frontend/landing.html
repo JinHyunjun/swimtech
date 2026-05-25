@@ -146,6 +146,17 @@
   background: rgba(72,202,228,.08);
 }
 @media (min-width: 501px) {
+  .choice-card.ai {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    padding: 28px 40px;
+    gap: 24px;
+  }
+  .choice-card.ai .choice-icon { font-size: 44px; }
+  .choice-card.ai .choice-desc { text-align: left; }
+  .choice-card.ai .choice-btn { margin-top: 0; white-space: nowrap; }
+}
+@media (min-width: 501px) {
   .choice-card.pool {
     grid-column: 1 / -1;
     flex-direction: row;
@@ -213,7 +224,7 @@
 
       <div class="choice-grid">
 
-        <a href="/meta" class="choice-card analysis">
+        <a href="/meta" class="choice-card analysis" style="display:none">
           <div class="choice-icon">🎬</div>
           <div class="choice-title">영상 분석</div>
           <div class="choice-desc">
@@ -226,13 +237,15 @@
 
         <a href="/chat" class="choice-card ai">
           <div class="choice-icon">🤖</div>
-          <div class="choice-title">AI 코치</div>
-          <div class="choice-desc">
-            수영에 관한 궁금한 점을<br>
-            AI 코치에게 자유롭게<br>
-            질문해보세요
+          <div>
+            <div class="choice-title">AI 코치</div>
+            <div class="choice-desc">
+              수영에 관한 궁금한 점을<br>
+              AI 코치에게 자유롭게<br>
+              질문해보세요
+            </div>
           </div>
-          <button class="choice-btn">대화 시작하기</button>
+          <button class="choice-btn" style="background:#a78bfa;color:#0a1628;">대화 시작하기</button>
         </a>
 
         <a href="/pool" class="choice-card pool">

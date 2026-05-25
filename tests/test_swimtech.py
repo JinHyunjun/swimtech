@@ -66,7 +66,7 @@ def logged_in_state(browser, browser_context_args):
     page.fill("#password", TEST_PASS)
     page.click("#login-btn")
     # 로그인 성공 → /landing 또는 /onboarding 으로 리디렉트
-    page.wait_for_url(re.compile(r"/(landing|onboarding|$)"), timeout=10_000)
+    page.wait_for_url(re.compile(r"/(landing|onboarding|nickname|$)"), timeout=10_000)
 
     if "/onboarding" in page.url:
         page.evaluate("localStorage.setItem('swimtech_onboarded', 'true')")
@@ -120,8 +120,9 @@ def test_landing_load(page: Page):
 
     # 핵심 CTA 버튼 텍스트 확인
     btn_texts = page.locator(".choice-btn").all_text_contents()
-    assert any("분석" in t for t in btn_texts), "분석 버튼 없음"
+    # 영상 분석 카드는 숨김 처리됨 — AI 코치/수영장 버튼은 활성화
     assert any("대화" in t for t in btn_texts), "AI코치 버튼 없음"
+    assert any("보기" in t or "찾기" in t for t in btn_texts), "수영장/드릴 버튼 없음"
 
     shot(page, "01_landing")
 
@@ -185,6 +186,7 @@ def test_login_wrong_password(browser, browser_context_args):
 # 3. /upload
 # ══════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
 def test_upload_ui(page: Page):
     page.evaluate("""() => {
         sessionStorage.setItem('swimtech_stroke', 'freestyle');
@@ -200,6 +202,7 @@ def test_upload_ui(page: Page):
     shot(page, "03_upload")
 
 
+@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
 def test_upload_zone_drag_style(page: Page):
     """드래그 존 호버 시 drag-over 클래스 진입 여부."""
     page.evaluate("""() => {
@@ -214,35 +217,82 @@ def test_upload_zone_drag_style(page: Page):
     shot(page, "03_upload_dragenter")
 
 
+def test_upload_redirects_non_admin(browser, browser_context_args):
+    """비관리자 사용자의 /upload 접근 → /landing 리다이렉트 확인.
+
+    비관리자 계정을 등록하고(이미 존재하면 무시),
+    로그인 후 /upload 접근 시 /landing 리다이렉트를 검증합니다.
+    """
+    import json as _json
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        # 비관리자 테스트 계정 준비 (이미 존재해도 무시)
+        ctx.request.post(
+            f"{BASE_URL}/auth/register",
+            data=_json.dumps({
+                "name": "NoAdmin Test",
+                "email": "nonadmin01@example.com",
+                "username": "nonadmin01",
+                "password": "Nonadmin1",
+            }),
+            headers={"Content-Type": "application/json"},
+        )
+
+        # 로그인
+        page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
+        page.fill("#username", "nonadmin01")
+        page.fill("#password", "Nonadmin1")
+        page.click("#login-btn")
+        page.wait_for_url(re.compile(r"/(landing|onboarding|$)"), timeout=10_000)
+
+        # /upload 접근 → /landing 리다이렉트 확인
+        page.goto(f"{BASE_URL}/upload", wait_until="domcontentloaded")
+        assert "/landing" in page.url, (
+            f"/upload는 /landing으로 리다이렉트되어야 함, 현재 URL: {page.url}"
+        )
+        shot(page, "03_upload_redirect_nonadmin")
+    finally:
+        page.close()
+        ctx.close()
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # 4. /dashboard
 # ══════════════════════════════════════════════════════════════════════════
 
 def test_dashboard_cards(page: Page):
+    """AI 분析 섹션은 숨겨지고 뱃지 섹션과 준비 중 안내는 표시 확인."""
     goto(page, "/dashboard")
-    page.wait_for_timeout(1500)  # API 응답 대기
+    page.wait_for_timeout(1000)
 
-    for card_id in ["#card-total", "#card-avg-score", "#card-max-score", "#card-total-kicks"]:
-        expect(page.locator(card_id)).to_be_visible()
+    # 뱃지 섹션은 표시
+    expect(page.locator(".mini-badge-row")).to_be_visible()
+    # 준비 중 안내 표시
+    expect(page.locator("#analysis-coming-soon")).to_be_visible()
+    # 분析 카드 섹션은 숨김
+    expect(page.locator(".summary-cards")).to_be_hidden()
 
     shot(page, "04_dashboard_cards")
 
 
 def test_dashboard_charts(page: Page):
-    """Chart.js canvas 4개 존재 확인."""
+    """차트 섹션 숨김 확인."""
     goto(page, "/dashboard")
-    page.wait_for_timeout(2000)
 
-    for chart_id in ["#chart-score", "#chart-elbow", "#chart-kick", "#chart-sym"]:
-        expect(page.locator(chart_id)).to_be_visible()
+    expect(page.locator(".charts-grid")).to_be_hidden()
 
     shot(page, "04_dashboard_charts")
 
 
 def test_dashboard_history(page: Page):
+    """분析 히스토리 섹션 숨김, 대시보드 기본 구조 확인."""
     goto(page, "/dashboard")
-    page.wait_for_timeout(1500)
-    expect(page.locator("#table-wrap")).to_be_visible()
+    page.wait_for_timeout(500)
+    # 분析 테이블 숨김
+    expect(page.locator(".table-card")).to_be_hidden()
+    # 페이지 구조 유지
+    expect(page.locator(".dash-page")).to_be_visible()
     shot(page, "04_dashboard_history")
 
 
@@ -373,15 +423,14 @@ def test_faq_load(page: Page):
 
 
 def test_faq_accordion(page: Page):
-    """첫 번째 질문 클릭 → 답변 펼쳐짐 확인."""
+    """첫 번째 표시된 질문 클릭 → 답변 펼쳐짐 확인."""
     goto(page, "/faq")
 
-    first_q = page.locator(".faq-q").first
-    first_q.click()
+    first_item = page.locator(".faq-item:visible").first
+    first_item.locator(".faq-q").click()
     page.wait_for_timeout(400)
 
-    # faq-a 가 display:none 에서 벗어나야 함
-    first_a = page.locator(".faq-a").first
+    first_a = first_item.locator(".faq-a")
     expect(first_a).not_to_have_css("display", "none")
 
     shot(page, "08_faq_accordion_open")

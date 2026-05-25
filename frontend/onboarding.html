@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SwimTech">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<script>/* AI 분석 완료 후 재활성화 예정 — 현재는 /landing 으로 즉시 이동 */window.location.replace('/landing');</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -351,18 +352,18 @@ body::after {
     <div class="slide-card">
       <span class="slide-icon">🏊</span>
       <div class="slide-title">안녕하세요!<br>SwimTech에 오신 걸 환영해요</div>
-      <div class="slide-sub">AI가 수영 영상을 분석해서<br>맞춤 피드백을 드려요</div>
+      <div class="slide-sub" style="display:none">AI가 수영 영상을 분석해서<br>맞춤 피드백을 드려요</div>
       <ul class="check-list">
-        <li class="ok"><span class="icon">✅</span><span>팔꿈치·발차기·대칭성 자동 분석</span></li>
-        <li class="ok"><span class="icon">✅</span><span>목적별 맞춤 피드백 제공</span></li>
+        <li class="ok" style="display:none"><span class="icon">✅</span><span>팔꿈치·발차기·대칭성 자동 분석</span></li>
+        <li class="ok" style="display:none"><span class="icon">✅</span><span>목적별 맞춤 피드백 제공</span></li>
         <li class="ok"><span class="icon">✅</span><span>YouTube 드릴 영상 추천</span></li>
         <li class="ok"><span class="icon">✅</span><span>대시보드에서 성장 추이 확인</span></li>
       </ul>
     </div>
   </div>
 
-  <!-- 슬라이드 2: 촬영 가이드 -->
-  <div class="slide" id="slide-1">
+  <!-- 슬라이드 2: 촬영 가이드 (AI 분석 완료 후 재활성화 예정) -->
+  <div class="slide" id="slide-1" style="display:none">
     <div class="slide-card">
       <span class="slide-icon">📸</span>
       <div class="slide-title">이렇게 촬영하면<br>더 정확해요!</div>
@@ -380,8 +381,8 @@ body::after {
     </div>
   </div>
 
-  <!-- 슬라이드 3: 분석 방법 -->
-  <div class="slide" id="slide-2">
+  <!-- 슬라이드 3: 분석 방법 (AI 분석 완료 후 재활성화 예정) -->
+  <div class="slide" id="slide-2" style="display:none">
     <div class="slide-card">
       <span class="slide-icon">🎬</span>
       <div class="slide-title">영법 → 환경 → 목적 선택 후<br>영상 업로드</div>
@@ -426,8 +427,8 @@ body::after {
     </div>
   </div>
 
-  <!-- 슬라이드 4: 피드백 읽는 법 -->
-  <div class="slide" id="slide-3">
+  <!-- 슬라이드 4: 피드백 읽는 법 (AI 분석 완료 후 재활성화 예정) -->
+  <div class="slide" id="slide-3" style="display:none">
     <div class="slide-card">
       <span class="slide-icon">📊</span>
       <div class="slide-title">피드백 읽는 법</div>
@@ -457,9 +458,9 @@ body::after {
   <div class="slide" id="slide-4">
     <div class="slide-card">
       <span class="slide-icon">🏁</span>
-      <div class="slide-title">이제 첫 분석을<br>시작해볼까요?</div>
-      <div class="slide-sub">수영 영상을 업로드하고<br>AI 코치의 맞춤 피드백을 받아보세요</div>
-      <a href="/" class="cta-btn" onclick="finish()">🏊 분석 시작하기</a>
+      <div class="slide-title">SwimTech를<br>시작해볼까요?</div>
+      <div class="slide-sub">AI 코치·수영장 찾기·드릴 가이드 등<br>다양한 기능을 바로 이용해보세요</div>
+      <a href="/landing" class="cta-btn" onclick="finish()">🏊 시작하기</a>
       <a href="#" class="cta-skip" onclick="finish(); return false;">나중에 시작하기</a>
     </div>
   </div>
@@ -525,6 +526,7 @@ function prevSlide() {
 
 function finish() {
   localStorage.setItem('onboarding_done', '1');
+  window.location.href = '/landing';
 }
 
 buildDots();
