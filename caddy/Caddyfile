@@ -6,6 +6,15 @@
 # localhost HTTPS (로컬 자체 서명 인증서 자동 생성)
 localhost {
 
+  # 분석 관련 라우트 — 외부 접근 차단 (private 네트워크 + 로컬만 허용)
+  @analysis_restricted {
+    path /upload /viewer /meta /stream/*
+    not {
+      remote_ip private_ranges
+    }
+  }
+  redir @analysis_restricted /landing 302
+
   # SwimTech 메인 앱
   handle / {
     reverse_proxy swim-api:8000

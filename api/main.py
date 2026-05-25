@@ -174,6 +174,14 @@ def _auth_redirect(request: Request):
         return RedirectResponse(url="/login")
     return None
 
+def _is_admin(request: Request) -> bool:
+    """관리자 계정 여부 확인."""
+    token = request.cookies.get("swimtech_token")
+    if not token:
+        return False
+    username = verify_token(token)
+    return username == os.getenv("ADMIN_ID", "admin")
+
 def _serve(filename: str):
     path = os.path.join(FRONTEND_DIR, filename)
     if os.path.exists(path):
@@ -189,23 +197,29 @@ def serve_home(request: Request):
 
 # 영상 분석 메타 선택 페이지
 @app.get("/meta")
-def serve_meta(request: Request):
+def serve_meta(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("meta.html")
 
 # 업로드 페이지
 @app.get("/upload")
-def serve_upload(request: Request):
+def serve_upload(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("upload.html")
 
 # 분석 뷰어 페이지
 @app.get("/viewer")
-def serve_viewer(request: Request):
+def serve_viewer(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("viewer.html")
 
 # 대시보드 페이지

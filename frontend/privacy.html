@@ -170,18 +170,27 @@ td { color: #aaccd8; }
     <div class="sub-title">서비스 이용 시 자동 수집</div>
     <table>
       <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
-      <tr><td>업로드한 수영 영상</td><td><span class="badge badge-auto">자동</span></td><td>AI 영법 분석</td></tr>
-      <tr><td>분석 결과 데이터</td><td><span class="badge badge-auto">자동</span></td><td>개인 대시보드, 성장 추이 분석</td></tr>
+      <!-- [영상분석_준비중] 업로드한 수영 영상 행 -->
+      <tr style="display:none"><td>업로드한 수영 영상</td><td><span class="badge badge-auto">자동</span></td><td>AI 영법 분석</td></tr>
+      <!-- [/영상분석_준비중] -->
+      <!-- [영상분석_준비중] 분석 결과 데이터 행 -->
+      <tr style="display:none"><td>분석 결과 데이터</td><td><span class="badge badge-auto">자동</span></td><td>개인 대시보드, 성장 추이 분석</td></tr>
+      <!-- [/영상분석_준비중] -->
       <tr><td>접속 IP, 브라우저 정보</td><td><span class="badge badge-auto">자동</span></td><td>보안 및 서비스 안정성</td></tr>
       <tr><td>서비스 이용 기록</td><td><span class="badge badge-auto">자동</span></td><td>서비스 개선</td></tr>
     </table>
 
+    
+    <!-- [영상분석_준비중] Google Sheets 연동 소절 -->
+    <div style="display:none">
     <div class="sub-title">Google Sheets 연동 시 <span style="font-weight:400;color:#6fa8c0">(선택)</span></div>
     <table>
       <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
       <tr><td>Google OAuth 토큰</td><td><span class="badge badge-opt">선택</span></td><td>Google Sheets 자동 저장</td></tr>
       <tr><td>Google Sheets ID</td><td><span class="badge badge-opt">선택</span></td><td>분석 결과 저장 대상 시트 식별</td></tr>
     </table>
+    </div>
+    <!-- [/영상분석_준비중] -->
   </div>
 
   <!-- 2. 이용 목적 -->
@@ -189,8 +198,13 @@ td { color: #aaccd8; }
     <div class="section-title">2. 개인정보 수집 및 이용 목적</div>
     <ul>
       <li><strong>회원 관리:</strong> 회원 가입, 본인 확인, 로그인, 탈퇴 처리</li>
-      <li><strong>서비스 제공:</strong> 수영 영상 AI 분석, 맞춤 피드백, 개인 대시보드</li>
-      <li><strong>데이터 연동:</strong> Google Sheets 자동 저장 (동의한 경우)</li>
+      <!-- [영상분析_준비중] 서비스 제공 항목 -->
+      <li style="display:none"><strong>서비스 제공:</strong> 수영 영상 AI 분析, 맞춤 피드백, 개인 대시보드</li>
+      <!-- [/영상分析_준비중] -->
+      <li><strong>서비스 제공:</strong> AI 코치, 수영장 찾기, 드릴 가이드, 훈련 플랜 등<!-- [영상분析_준비중] <span style="color:#6fa8c0;font-size:11px">(영상 AI 분析 기능 준비 중)</span> [/영상분析_준비중] --></li>
+      <!-- [영상分析_준비중] 데이터 연동 항목 -->
+      <li style="display:none"><strong>데이터 연동:</strong> Google Sheets 자동 저장 (동의한 경우)</li>
+      <!-- [/영상分析_준비중] -->
       <li><strong>보안 및 안전:</strong> 부정 이용 방지, 로그인 시도 제한</li>
       <li><strong>서비스 개선:</strong> 분석 모델 고도화, 신규 기능 개발</li>
     </ul>
@@ -202,8 +216,12 @@ td { color: #aaccd8; }
     <table>
       <tr><th>항목</th><th>보유 기간</th></tr>
       <tr><td>회원 정보 (이메일, 닉네임)</td><td>회원 탈퇴 시까지</td></tr>
-      <tr><td>수영 영상 파일</td><td>분석 완료 후 즉시 삭제</td></tr>
-      <tr><td>분석 결과 데이터</td><td>회원 탈퇴 시까지</td></tr>
+      <!-- [영상分析_준비중] 영상 파일 보유 행 -->
+      <tr style="display:none"><td>수영 영상 파일</td><td>분析 완료 후 즉시 삭제</td></tr>
+      <!-- [/영상分析_준비중] -->
+      <!-- [영상分析_준비중] 분析결과 보유 행 -->
+      <tr style="display:none"><td>분析 결과 데이터</td><td>회원 탈퇴 시까지</td></tr>
+      <!-- [/영상分析_준비중] -->
       <tr><td>Google OAuth 토큰</td><td>연동 해제 시까지</td></tr>
       <tr><td>접속 로그</td><td>3개월</td></tr>
     </table>
@@ -222,7 +240,9 @@ td { color: #aaccd8; }
       <tr><th>서비스</th><th>제공 항목</th><th>목적</th></tr>
       <tr><td>Google (소셜 로그인)</td><td>이메일, 소셜 ID</td><td>소셜 로그인 인증</td></tr>
       <tr><td>카카오 (소셜 로그인)</td><td>이메일, 소셜 ID</td><td>소셜 로그인 인증</td></tr>
-      <tr><td>Google Sheets <span style="color:#6fa8c0;font-size:11px">(선택)</span></td><td>OAuth 토큰</td><td>분석 결과 시트 저장</td></tr>
+      <!-- [영상分析_준비중] Google Sheets 제3자 제공 행 -->
+      <tr style="display:none"><td>Google Sheets <span style="color:#6fa8c0;font-size:11px">(선택)</span></td><td>OAuth 토큰</td><td>분析 결과 시트 저장</td></tr>
+      <!-- [/영상分析_준비중] -->
     </table>
   </div>
 

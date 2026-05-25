@@ -10,7 +10,7 @@ from typing import Any
 
 router = APIRouter()
 
-_NOTION_PAGE_ID = "362cb889-5490-81a7-bc1f-e15501550f60"
+_NOTION_PAGE_ID = "36bcb889-5490-81f3-b3c4-dff4dbba018f"
 _API_VER = "2022-06-28"
 _CACHE_TTL = 300  # 5분
 
