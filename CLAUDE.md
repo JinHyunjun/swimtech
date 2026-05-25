@@ -145,6 +145,42 @@ docker compose restart caddy
 
 ---
 
+## Branch Strategy
+
+### 브랜치 구조
+
+| 브랜치 | 용도 | 규칙 |
+|---|---|---|
+| `main` | 프로덕션 배포 | 항상 배포 가능한 상태 유지 |
+| `dev` | 기능 개발·실험 | 모든 신규 기능은 여기서 시작 |
+
+### 개발 규칙
+
+1. **신규 기능 개발은 반드시 `dev` 브랜치에서 작업**
+   ```powershell
+   git checkout dev
+   git pull origin dev
+   # ... 작업 후 dev에 커밋
+   git push origin dev
+   ```
+
+2. **`main` merge 조건** — 아래를 모두 충족할 때만 허용
+   - 전체 테스트 통과 (`pytest tests/test_swimtech.py`)
+   - 기능이 프로덕션 준비 완료 상태
+   - 관련 UI 숨김/노출 처리 확인
+
+3. **AI 분석 관련 작업은 `dev` 브랜치에서만**
+   - 현재 `main`에는 AI 분석 UI가 **숨김 처리**된 상태
+   - AI 분석 기능 완성 후 `dev → main` PR로 통합
+   - 숨김 처리된 항목: `onboarding` 슬라이드, `faq` 촬영·분석 탭, `injury` CTA, `landing` 영상 분석 카드
+
+### 현재 상태 (2026-05-25 기준)
+
+- `main` : v2.3.9 — AI 분석 UI 숨김, 서비스 배포 중
+- `dev`  : main 기준으로 분기, AI 분석 개발 진행 예정
+
+---
+
 ## Changelog Page (`/changelog`)
 
 - **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.
