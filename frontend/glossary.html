@@ -274,7 +274,9 @@
         <div class="tab"        data-cat="basic"   onclick="setTab(this)">영법 기초</div>
         <div class="tab"        data-cat="technique" onclick="setTab(this)">자세/기술</div>
         <div class="tab"        data-cat="training" onclick="setTab(this)">훈련 용어</div>
-        <div class="tab"        data-cat="swimtech" onclick="setTab(this)">SwimTech 분석</div>
+        <!-- [영상분析_준비중] -->
+        <div class="tab"        data-cat="swimtech" onclick="setTab(this)" style="display:none">SwimTech 분석</div>
+        <!-- [/영상분析_준비중] -->
       </div>
 
       <!-- 용어 목록 -->
@@ -335,7 +337,8 @@ const TERMS = [
   { name: "인터벌 (Interval)", cat: "training",
     body: "일정 거리를 반복하며 휴식 시간을 조절하는 훈련 방식. 지구력과 속도를 동시에 향상시켜요." },
 
-  // ── SwimTech 분석 용어 ──
+  // ── SwimTech 분석 용어 ── [영상분析_준비중]
+  /* [영상분析_준비중]
   { name: "종합점수", cat: "swimtech",
     body: "팔꿈치 자세, 발차기, 좌우 대칭, 머리 자세를 종합한 점수 (0~100). 높을수록 좋은 영법이에요." },
   { name: "좌우 대칭", cat: "swimtech",
@@ -348,6 +351,7 @@ const TERMS = [
     body: "팔꿈치가 손보다 높게 유지되는 비율 (%). SwimTech 분석의 핵심 지표예요." },
   { name: "머리 회전 점수", cat: "swimtech",
     body: "숨 쉴 때 머리가 과도하게 돌아가지 않는 정도를 평가한 점수. 높을수록 물 저항이 적어요." },
+  [/영상분析_준비중] */
 ];
 
 const CAT_LABELS = {
@@ -395,6 +399,7 @@ function renderCards() {
   const empty = document.getElementById('empty-state');
 
   const filtered = TERMS.filter(t => {
+    if (t.cat === 'swimtech') return false; // [영상분析_준비중]
     const catOk = activeTab === 'all' || t.cat === activeTab;
     const q = searchQuery;
     const textOk = !q ||
@@ -420,7 +425,7 @@ function renderCards() {
     groups[t.cat].push(t);
   });
 
-  const catOrder = ['basic','technique','training','swimtech'];
+  const catOrder = ['basic','technique','training']; // [영상분析_준비중] 'swimtech' 제거
   let html = '';
   catOrder.forEach(cat => {
     if (!groups[cat]) return;
