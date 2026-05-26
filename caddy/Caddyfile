@@ -185,7 +185,7 @@ localhost {
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
     X-XSS-Protection "1; mode=block"
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.kakaocdn.net https://t1.daumcdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com https://dapi.kakao.com https://*.daumcdn.net https://*.kakao.com http://localhost:43000; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https:; font-src 'self' data:; media-src 'self' blob:;"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.kakaocdn.net https://t1.daumcdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com https://dapi.kakao.com https://*.daumcdn.net https://*.kakao.com http://localhost:43000 https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https:; font-src 'self' data:; media-src 'self' blob:;"
     -Server
   }
 

@@ -103,6 +103,8 @@ def apply_migrations():
         logging.info("v2.4.1 DB 마이그레이션 완료")
     except Exception as e:
         logging.warning(f"마이그레이션 실패 (무시): {e}")
+    community.init_db()
+    training_log.init_db()
 
 
 @app.exception_handler(StarletteHTTPException)

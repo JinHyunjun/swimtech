@@ -24,6 +24,39 @@ def _db():
     return psycopg2.connect(DATABASE_URL)
 
 
+def init_db() -> None:
+    if not DATABASE_URL:
+        return
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS training_logs (
+                id               SERIAL PRIMARY KEY,
+                customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                log_date         DATE NOT NULL,
+                stroke_type      VARCHAR(20) NOT NULL,
+                total_distance   INTEGER NOT NULL,
+                duration_minutes INTEGER NOT NULL,
+                pool_length      SMALLINT NOT NULL DEFAULT 25,
+                intensity        VARCHAR(10) NOT NULL,
+                memo             TEXT,
+                mood             VARCHAR(10),
+                created_at       TIMESTAMP DEFAULT NOW(),
+                updated_at       TIMESTAMP DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_training_logs_customer
+                ON training_logs(customer_id);
+            CREATE INDEX IF NOT EXISTS idx_training_logs_date
+                ON training_logs(customer_id, log_date DESC);
+        """)
+        conn.commit()
+        cur.close(); conn.close()
+        logger.info("training_logs 테이블 초기화 완료")
+    except Exception:
+        logger.warning("training_log init_db 실패", exc_info=True)
+
+
 def _require_login(token: Optional[str]) -> dict:
     if not token:
         raise HTTPException(401, "로그인이 필요합니다.")
