@@ -10,7 +10,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, community
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -68,7 +68,8 @@ app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
 app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분석"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
 app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
-app.include_router(badge.router,    prefix="/api/badges",    tags=["뱃지"])
+app.include_router(badge.router,      prefix="/api/badges",     tags=["뱃지"])
+app.include_router(community.router,  prefix="/api/community",  tags=["커뮤니티"])
 
 @app.get("/api/health")
 def health():
@@ -140,6 +141,11 @@ def drill_page():
 @app.get("/faq")
 def faq_page():
     return _serve("faq.html")
+
+# 커뮤니티 (로그인 불필요 — 글쓰기는 프론트에서 제한)
+@app.get("/community")
+def community_page():
+    return _serve("community.html")
 
 # 부상 예방 가이드 (로그인 불필요)
 @app.get("/injury")

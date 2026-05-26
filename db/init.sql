@@ -139,3 +139,47 @@ ON CONFLICT (email) DO NOTHING;
 -- ── 공유 링크 기능 ──────────────────────────────────
 ALTER TABLE analysis_results ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_analysis_share_token ON analysis_results(share_token);
+
+-- ── 커뮤니티: 게시글 ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS posts (
+    id          SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    category    VARCHAR(20) NOT NULL DEFAULT '자유',  -- 자유/질문/훈련후기/공지
+    title       VARCHAR(200) NOT NULL,
+    content     TEXT NOT NULL,
+    likes       INTEGER NOT NULL DEFAULT 0,
+    views       INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    updated_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- ── 커뮤니티: 댓글 ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS comments (
+    id          SERIAL PRIMARY KEY,
+    post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    parent_id   INTEGER REFERENCES comments(id) ON DELETE CASCADE,  -- NULL = 최상위 댓글
+    content     TEXT NOT NULL,
+    likes       INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- ── 커뮤니티: 게시글 좋아요 (중복 방지) ──────────────
+CREATE TABLE IF NOT EXISTS post_likes (
+    post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    PRIMARY KEY (post_id, customer_id)
+);
+
+-- ── 커뮤니티: 댓글 좋아요 (중복 방지) ──────────────
+CREATE TABLE IF NOT EXISTS comment_likes (
+    comment_id  INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    PRIMARY KEY (comment_id, customer_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_customer   ON posts(customer_id);
+CREATE INDEX IF NOT EXISTS idx_posts_category   ON posts(category);
+CREATE INDEX IF NOT EXISTS idx_posts_created    ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_comments_post    ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent  ON comments(parent_id);

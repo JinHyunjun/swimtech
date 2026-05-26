@@ -111,6 +111,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /community {
+    reverse_proxy swim-api:8000
+  }
+
   handle /injury {
     reverse_proxy swim-api:8000
   }

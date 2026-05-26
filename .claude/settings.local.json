@@ -30,7 +30,8 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(python *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Skill(update-config)"
     ]
   }
 }
