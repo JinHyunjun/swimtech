@@ -11,10 +11,54 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
+
+_MIGRATION_SQL = """
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS reports (
+    id          SERIAL PRIMARY KEY,
+    reporter_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    target_type VARCHAR(10) NOT NULL CHECK (target_type IN ('post','comment')),
+    target_id   INTEGER NOT NULL,
+    reason      VARCHAR(50) NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE (reporter_id, target_type, target_id)
+);
+CREATE TABLE IF NOT EXISTS post_images (
+    id         SERIAL PRIMARY KEY,
+    post_id    INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    minio_key  VARCHAR(500) NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS notifications (
+    id          SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    type        VARCHAR(30) NOT NULL,
+    message     TEXT NOT NULL,
+    target_id   INTEGER,
+    is_read     BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS bookmarks (
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (customer_id, post_id)
+);
+CREATE TABLE IF NOT EXISTS post_tags (
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    tag     VARCHAR(50) NOT NULL,
+    PRIMARY KEY (post_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_reports_target    ON reports(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_cid ON notifications(customer_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_cid     ON bookmarks(customer_id);
+CREATE INDEX IF NOT EXISTS idx_post_tags_tag     ON post_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_post_images_post  ON post_images(post_id);
+"""
 
 app = FastAPI(
     title="SwimTech API",
@@ -27,6 +71,22 @@ _API_PREFIXES = ("/api/", "/auth/", "/videos/", "/analysis/", "/stream/", "/cust
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+
+@app.on_event("startup")
+def apply_migrations():
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
+    if not DATABASE_URL:
+        return
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute(_MIGRATION_SQL)
+        conn.commit()
+        cur.close(); conn.close()
+        logging.info("v2.4.1 DB 마이그레이션 완료")
+    except Exception as e:
+        logging.warning(f"마이그레이션 실패 (무시): {e}")
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -72,7 +132,8 @@ app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
 app.include_router(badge.router,      prefix="/api/badges",     tags=["뱃지"])
 app.include_router(changelog.router,  prefix="/api/changelog",  tags=["변경 이력"])
 app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 플랜"])
-app.include_router(community.router,  prefix="/api/community",  tags=["커뮤니티"])
+app.include_router(community.router,      prefix="/api/community",      tags=["커뮤니티"])
+app.include_router(notifications.router,  prefix="/api/notifications",  tags=["알림"])
 
 @app.get("/api/health")
 def health():

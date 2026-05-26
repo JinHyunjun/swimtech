@@ -183,3 +183,53 @@ CREATE INDEX IF NOT EXISTS idx_posts_category   ON posts(category);
 CREATE INDEX IF NOT EXISTS idx_posts_created    ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_comments_post    ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent  ON comments(parent_id);
+
+-- ── 커뮤니티 v2.4.1: 추가 기능 ─────────────────────────────────────────────
+
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS reports (
+    id          SERIAL PRIMARY KEY,
+    reporter_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    target_type VARCHAR(10) NOT NULL CHECK (target_type IN ('post', 'comment')),
+    target_id   INTEGER NOT NULL,
+    reason      VARCHAR(50) NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE (reporter_id, target_type, target_id)
+);
+
+CREATE TABLE IF NOT EXISTS post_images (
+    id         SERIAL PRIMARY KEY,
+    post_id    INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    minio_key  VARCHAR(500) NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id          SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    type        VARCHAR(30) NOT NULL,
+    message     TEXT NOT NULL,
+    target_id   INTEGER,
+    is_read     BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS bookmarks (
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (customer_id, post_id)
+);
+
+CREATE TABLE IF NOT EXISTS post_tags (
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    tag     VARCHAR(50) NOT NULL,
+    PRIMARY KEY (post_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reports_target    ON reports(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_cid ON notifications(customer_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_cid     ON bookmarks(customer_id);
+CREATE INDEX IF NOT EXISTS idx_post_tags_tag     ON post_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_post_images_post  ON post_images(post_id);

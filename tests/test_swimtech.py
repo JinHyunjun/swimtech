@@ -857,3 +857,74 @@ def test_pwa_install_btn(page: Page):
     assert not errors, f"클릭 시 JS 오류 발생: {errors}"
 
     shot(page, "13_pwa_install_btn")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 14. 커뮤니티 v2.4.1 — 신고/북마크/알림/태그/정렬
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_community_sort(page: Page):
+    """/community — 정렬 버튼(최신/인기/조회순) 표시 및 클릭 후 active 전환 확인."""
+    goto(page, "/community")
+    page.wait_for_timeout(1500)
+
+    expect(page.locator('.sort-btn[data-sort="latest"]')).to_be_visible()
+    expect(page.locator('.sort-btn[data-sort="popular"]')).to_be_visible()
+    expect(page.locator('.sort-btn[data-sort="views"]')).to_be_visible()
+
+    page.click('.sort-btn[data-sort="popular"]')
+    page.wait_for_timeout(500)
+    expect(page.locator('.sort-btn[data-sort="popular"]')).to_have_class(re.compile(r"\bactive\b"))
+
+    shot(page, "14_community_sort")
+
+
+def test_community_report_api(page: Page):
+    """POST /api/community/report — 잘못된 사유로 400/422 응답 확인."""
+    resp = page.request.post(
+        "https://localhost/api/community/report",
+        data='{"target_type":"post","target_id":9999,"reason":"잘못된사유"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status in (400, 401, 409, 422), (
+        f"/api/community/report 예상 외 응답: {resp.status}"
+    )
+    shot(page, "14_community_report_api")
+
+
+def test_community_bookmark_api(page: Page):
+    """GET /api/community/bookmarks — 200 응답 및 posts 키 포함 확인."""
+    resp = page.request.get("https://localhost/api/community/bookmarks")
+    assert resp.status == 200, f"/api/community/bookmarks 응답 코드: {resp.status}"
+    body = resp.json()
+    assert "posts" in body, f"posts 키 없음: {body}"
+    shot(page, "14_community_bookmark_api")
+
+
+def test_community_notifications_api(page: Page):
+    """GET /api/notifications — 200 응답 및 notifications 키 포함 확인."""
+    resp = page.request.get("https://localhost/api/notifications")
+    assert resp.status == 200, f"/api/notifications 응답 코드: {resp.status}"
+    body = resp.json()
+    assert "notifications" in body, f"notifications 키 없음: {body}"
+    shot(page, "14_community_notifications_api")
+
+
+def test_community_tags_api(page: Page):
+    """GET /api/community/tags — 200 응답 및 tags 키 포함 확인."""
+    resp = page.request.get("https://localhost/api/community/tags")
+    assert resp.status == 200, f"/api/community/tags 응답 코드: {resp.status}"
+    body = resp.json()
+    assert "tags" in body, f"tags 키 없음: {body}"
+    shot(page, "14_community_tags_api")
+
+
+def test_community_notifications_ui(page: Page):
+    """/community — 알림 벨 버튼(#notif-bell) 및 정렬 버튼 UI 확인."""
+    goto(page, "/community")
+    page.wait_for_timeout(1500)
+
+    expect(page.locator("#notif-bell")).to_be_visible()
+    expect(page.locator(".sort-row")).to_be_visible()
+
+    shot(page, "14_community_notif_ui")
