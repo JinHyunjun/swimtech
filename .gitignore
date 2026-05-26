@@ -37,6 +37,11 @@ uploads/
 analysis/tmp/
 analysis/output/
 
+# ML 학습 데이터 및 모델
+analysis/train/data/*.csv
+analysis/train/data/*.json
+analysis/train/data/models/
+
 # IDE
 .vscode/
 .idea/

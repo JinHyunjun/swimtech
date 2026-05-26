@@ -1,107 +1,197 @@
-# SwimTech — CLAUDE.md
+# SwimTech — Claude Code Guide
 
-수영 영법 AI 분석 플랫폼. FastAPI + PostgreSQL + MinIO + Celery + Caddy 스택.
+## Project Overview
 
-## 아키텍처 요약
+SwimTech is a swimming technique analysis web app. It uses AI/ML to analyze swimmer video, provides coaching via chat, and helps users find nearby pools.
 
-```
-caddy (443) → swim-api (FastAPI 8000)
-                ├── routers/auth.py       /auth/*
-                ├── routers/videos.py     /videos/*
-                ├── routers/customers.py  /customers/*
-                ├── routers/analysis.py   /analysis/*
-                ├── routers/stream.py     /stream/*
-                ├── routers/dashboard.py  /api/dashboard/*
-                ├── routers/sheets.py     /api/sheets/*
-                ├── routers/badge.py      /api/badges/*
-                └── routers/community.py  /api/community/*
+**Stack**: Python (FastAPI backend), HTML/CSS/JS frontend (multi-page), pytest-playwright for E2E tests.
 
-swim-worker (Celery) — 영상 분석 비동기 처리
-swim-postgres (PostgreSQL 15)
-swim-redis (Redis 7)
-swim-minio (S3 오브젝트 스토리지)
-swim-flowise (AI 챗봇, /flowise/*)
-swim-flower (Celery 모니터링, dev profile)
-```
+---
 
-## 자주 쓰는 명령
+## Mandatory Rule: Tests Must Accompany New Features
 
-```bash
-docker compose up -d              # 전체 서비스 시작
-docker compose logs -f api        # API 로그 실시간 확인
-docker compose exec postgres psql -U swim -d swimdb   # DB 접속
-pytest tests/test_swimtech.py -v  # 테스트 실행 (서비스 실행 중 필요)
-```
+> **Every new page or API endpoint requires test coverage.**
 
-## 환경 변수 (docker-compose.yml)
+When you add or modify any of the following, you **must** also add test cases to `tests/test_swimtech.py`:
 
-| 변수 | 설명 |
+| What you add | What to test |
 |---|---|
-| `DATABASE_URL` | PostgreSQL 연결 문자열 |
-| `REDIS_URL` | Redis 연결 URL |
-| `SECRET_KEY` | JWT 서명 키 |
-| `ADMIN_ID` / `ADMIN_PW` | 관리자 계정 |
-| `ANTHROPIC_API_KEY` | Claude API 키 |
-| `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | 카카오 OAuth |
+| New frontend page (`/newpage`) | Load test + primary interactions |
+| New API route (`/api/v1/...`) | Response status + payload shape |
+| New UI component (modal, tab, card) | Visibility + interaction |
+| Modified selector or element ID | Update existing tests to match |
 
-## DB 스키마 요약
+---
 
-- **customers** — 사용자 (로컬/소셜 로그인)
-- **sessions** — 분석 세션
-- **videos** — 업로드 영상 (MinIO 경로 포함)
-- **analysis_results** — AI 분석 결과 (점수, 피드백, 공유 토큰)
-- **frame_metrics** — 프레임별 자세 데이터
-- **posts** — 커뮤니티 게시글 (category: 자유/질문/훈련후기/공지)
-- **comments** — 댓글 (parent_id로 대댓글 지원)
-- **post_likes** / **comment_likes** — 좋아요 중복 방지 (복합 PK)
+## Verification Workflow
 
-마이그레이션은 `db/init.sql` 한 파일에 `IF NOT EXISTS` / `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 패턴으로 관리.
+After every feature change, run the test suite from the project root:
 
-## 라우터 추가 시 체크리스트
-
-1. `api/routers/<name>.py` 생성
-2. `api/main.py` — import + `app.include_router(...)` 추가
-3. `api/main.py` — 페이지 라우트 추가 (`@app.get("/path")`)
-4. `caddy/Caddyfile` — `handle /path { reverse_proxy swim-api:8000 }` 추가
-5. `frontend/landing.html` — 카드 추가 (필요 시)
-6. `db/init.sql` — 테이블 추가 (필요 시)
-7. `tests/test_swimtech.py` — 테스트 추가
-
-## 인증 패턴
-
-- JWT는 `swimtech_token` HttpOnly 쿠키로 전달
-- `routers/auth.py`의 `decode_token(token)` → payload dict 반환
-- `verify_token(token)` → username 문자열 반환 (실패 시 None)
-- 관리자: `ADMIN_ID` 환경변수 (DB에 없는 특수 계정)
-- 소셜 로그인 사용자는 `customer_id`가 payload에 있음; admin은 없음
-
-## 커뮤니티 기능 (v2.3.0)
-
-- `GET  /api/community` — 목록 (category, page, search 쿼리 파라미터)
-- `POST /api/community` — 작성 (로그인 + customer_id 필요)
-- `GET  /api/community/{id}` — 상세 + 댓글 목록 (조회수 자동 증가)
-- `PUT  /api/community/{id}` — 수정 (본인만)
-- `DELETE /api/community/{id}` — 삭제 (본인 또는 admin)
-- `POST /api/community/{id}/like` — 게시글 좋아요 토글
-- `POST /api/community/{id}/comments` — 댓글 작성 (parent_id로 대댓글)
-- `POST /api/community/comments/{id}/like` — 댓글 좋아요 토글
-- `DELETE /api/community/comments/{id}` — 댓글 삭제 (본인 또는 admin)
-
-> 라우터 정의 순서 주의: `/comments/{id}` 관련 라우트는 반드시 `/{post_id}` 앞에 정의해야 FastAPI 라우팅이 올바르게 동작함.
-
-## 프론트엔드 구조
-
-- `frontend/style.css` — 공통 다크 테마 CSS 변수 (`--text`, `--muted`, `--surface`, `--border`, `--blue`, `--purple`, `--cyan`)
-- 각 페이지는 독립 HTML. SPA가 아닌 MPA 구조.
-- 인증은 페이지 로드 시 `fetch('/auth/me')` 로 확인.
-- 커뮤니티는 로그인 없이 열람 가능. 글쓰기/댓글/좋아요는 로그인 필요.
-
-## 테스트
-
-```bash
-# 기본 실행 (서비스가 https://localhost 에서 실행 중이어야 함)
-pytest tests/test_swimtech.py -v
-
-# 다른 URL 지정 시
-TEST_BASE_URL=http://localhost:8000 VERIFY_SSL=false pytest tests/test_swimtech.py -v
+```bat
+tests\run_tests.bat
 ```
+
+This will:
+1. Run `pytest tests/test_swimtech.py`
+2. Save a full HTML report to `tests/report.html`
+3. Print a summary of any failed tests to the console
+
+Open `tests/report.html` in a browser for screenshots and detailed failure output.
+
+---
+
+## Adding Tests — Quick Reference
+
+Test file: `tests/test_swimtech.py`
+
+```python
+# Minimum test for a new page /example
+def test_example_load(page: Page):
+    goto(page, "/example")
+    expect(page.locator("#main-element")).to_be_visible()
+    shot(page, "XX_example_load")
+
+def test_example_interaction(page: Page):
+    goto(page, "/example")
+    page.click("#action-btn")
+    page.wait_for_timeout(500)
+    expect(page.locator("#result")).to_be_visible()
+    shot(page, "XX_example_action")
+```
+
+Screenshots are saved to `tests/screenshots/` automatically.
+
+---
+
+## Project Structure
+
+```
+C:\swim\
+├── api/                  # FastAPI backend
+│   ├── worker.py         # Main app entry + ML inference
+│   └── routers/
+│       └── customers.py  # User/auth routes
+├── analysis/             # ML model training & inference
+│   └── train/
+├── tests/
+│   ├── test_swimtech.py  # E2E test suite (ADD TESTS HERE)
+│   ├── run_tests.bat     # One-command test runner
+│   ├── conftest.py       # pytest fixtures
+│   ├── pytest.ini        # pytest config
+│   ├── report.html       # Last test run report
+│   └── screenshots/      # Auto-captured test screenshots
+├── video/                # Sample swimmer videos
+├── CLAUDE.md             # This file
+└── README.md
+```
+
+---
+
+## Key Conventions
+
+- **Base URL**: `https://localhost` (SSL cert errors are suppressed in tests)
+- **Test credentials**: `admin` / `swimtech1234`
+- **Selectors**: Use `#id` selectors where possible for stability
+- **Screenshots**: Call `shot(page, "NN_pagename_action")` at end of each test
+- **Waits**: Use `page.wait_for_timeout(ms)` only when waiting for animations or async API calls; prefer `expect(...).to_be_visible()` otherwise
+
+## ML Model Notes
+
+- Model file: `analysis/pose_landmarker.task`
+- Classifies 4 strokes: freestyle, backstroke, breaststroke, butterfly
+- Retraining pipeline: see recent commits for automated ML retraining setup
+
+---
+
+## 모든 기능 추가/개선 시 필수 검증 절차
+
+### 1. 구현 완료 후 자동 검증 순서
+
+```powershell
+# 1) API·Worker 컨테이너 재생성 (새 코드 반영)
+docker compose up -d --force-recreate api worker
+
+# 2) 전체 테스트 실행 + HTML 리포트 생성
+pytest tests/test_swimtech.py --html=tests/report.html --self-contained-html
+
+# 3) 새 기능 스크린샷 저장 (Playwright가 자동 저장)
+#    경로: tests/screenshots/{페이지명}.png
+```
+
+> `tests/report.html`을 브라우저에서 열어 스크린샷과 실패 원인을 확인한다.
+
+### 2. 테스트 케이스 작성 규칙
+
+| 추가 항목 | 필수 테스트 | 최소 개수 |
+|---|---|---|
+| 새 페이지 (`/newpage`) | `test_{페이지명}_load` + `test_{페이지명}_ui` | 2개 |
+| 새 API 엔드포인트 | `test_{기능명}_api` | 1개 |
+| 모달 / 인터랙션 | `test_{기능명}_interaction` | 1개 |
+
+### 3. Caddyfile 라우트 확인
+
+- 새 페이지를 추가할 때마다 `caddy/Caddyfile`에 `handle` 블록을 추가한다.
+- 추가 후 반드시 아래 명령으로 Caddy를 재시작한다.
+
+```powershell
+docker compose restart caddy
+```
+
+### 4. 스크린샷 증적 규칙
+
+- 저장 위치: `tests/screenshots/`
+- 파일명 형식: `{기능명}_{YYYYMMDD}.png`
+- `shot(page, "NN_pagename_action")` 호출이 각 테스트의 마지막 줄이어야 한다.
+
+---
+
+## Branch Strategy
+
+### 브랜치 구조
+
+| 브랜치 | 용도 | 규칙 |
+|---|---|---|
+| `main` | 프로덕션 배포 | 항상 배포 가능한 상태 유지 |
+| `dev` | 기능 개발·실험 | 모든 신규 기능은 여기서 시작 |
+
+### 개발 규칙
+
+1. **신규 기능 개발은 반드시 `dev` 브랜치에서 작업**
+   ```powershell
+   git checkout dev
+   git pull origin dev
+   # ... 작업 후 dev에 커밋
+   git push origin dev
+   ```
+
+2. **`main` merge 조건** — 아래를 모두 충족할 때만 허용
+   - 전체 테스트 통과 (`pytest tests/test_swimtech.py`)
+   - 기능이 프로덕션 준비 완료 상태
+   - 관련 UI 숨김/노출 처리 확인
+
+3. **AI 분석 관련 작업은 `dev` 브랜치에서만**
+   - 현재 `main`에는 AI 분석 UI가 **숨김 처리**된 상태
+   - AI 분석 기능 완성 후 `dev → main` PR로 통합
+   - 숨김 처리된 항목: `onboarding` 슬라이드, `faq` 촬영·분석 탭, `injury` CTA, `landing` 영상 분석 카드
+
+### 현재 상태 (2026-05-25 기준)
+
+- `main` : v2.3.9 — AI 분석 UI 숨김, 서비스 배포 중
+- `dev`  : main 기준으로 분기, AI 분석 개발 진행 예정
+
+---
+
+## Changelog Page (`/changelog`)
+
+- **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.
+  - Without it, `GET /api/changelog` returns `503` (expected — tests accept 200 or 503).
+- **Notion release notes page ID**: `362cb889-5490-81a7-bc1f-e15501550f60`
+- **Auto-reflection**: When a new version is released, update the Notion page and the web changelog updates automatically on next fetch (no redeploy needed).
+- **Router**: `api/routers/changelog.py`
+- **Frontend**: `frontend/changelog.html`
+- **Tests** (section 11 in `tests/test_swimtech.py`):
+  | Test | What it checks |
+  |---|---|
+  | `test_changelog_load` | Page renders header + one of loading/timeline/error |
+  | `test_changelog_api_responds` | `/api/changelog` returns 200 or 503, never 404/500 |
+  | `test_changelog_footer_link` | Landing page footer has a `/changelog` link |

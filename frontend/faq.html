@@ -233,7 +233,8 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">자주 묻는 질문</span>
     </div>
   </header>
@@ -257,8 +258,8 @@
       <!-- 카테고리 탭 -->
       <div class="tabs">
         <button class="tab-pill active" data-cat="all" onclick="switchCat(this)">전체</button>
-        <button class="tab-pill" data-cat="shoot" onclick="switchCat(this)">📹 촬영</button>
-        <button class="tab-pill" data-cat="ai" onclick="switchCat(this)">🤖 분석</button>
+        <button class="tab-pill" data-cat="shoot" onclick="switchCat(this)" style="display:none">📹 촬영</button>
+        <button class="tab-pill" data-cat="ai" onclick="switchCat(this)" style="display:none">🤖 분석</button>
         <button class="tab-pill" data-cat="account" onclick="switchCat(this)">👤 계정</button>
         <button class="tab-pill" data-cat="feature" onclick="switchCat(this)">🏊 기능</button>
       </div>
@@ -266,8 +267,8 @@
       <!-- FAQ 목록 -->
       <div class="faq-list" id="faq-list">
 
-        <!-- 촬영 -->
-        <div class="faq-item" data-cat="shoot" data-q="어떻게 촬영해야 분석이 잘 되나요">
+        <!-- 촬영 (AI 분석 완료 후 재활성화 예정) -->
+        <div class="faq-item" data-cat="shoot" data-q="어떻게 촬영해야 분석이 잘 되나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-shoot">📹 촬영</span>
             <span class="faq-q-text">어떻게 촬영해야 분석이 잘 되나요?</span>
@@ -280,7 +281,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="shoot" data-q="영상 길이는 얼마나 되어야 하나요">
+        <div class="faq-item" data-cat="shoot" data-q="영상 길이는 얼마나 되어야 하나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-shoot">📹 촬영</span>
             <span class="faq-q-text">영상 길이는 얼마나 되어야 하나요?</span>
@@ -292,7 +293,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="shoot" data-q="역광이나 어두운 환경에서 촬영해도 되나요">
+        <div class="faq-item" data-cat="shoot" data-q="역광이나 어두운 환경에서 촬영해도 되나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-shoot">📹 촬영</span>
             <span class="faq-q-text">역광이나 어두운 환경에서 촬영해도 되나요?</span>
@@ -304,7 +305,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="shoot" data-q="어떤 파일 형식을 지원하나요">
+        <div class="faq-item" data-cat="shoot" data-q="어떤 파일 형식을 지원하나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-shoot">📹 촬영</span>
             <span class="faq-q-text">어떤 파일 형식을 지원하나요?</span>
@@ -316,8 +317,8 @@
           </div>
         </div>
 
-        <!-- 분석 -->
-        <div class="faq-item" data-cat="ai" data-q="분석 정확도는 얼마나 되나요">
+        <!-- 분석 (AI 분석 완료 후 재활성화 예정) -->
+        <div class="faq-item" data-cat="ai" data-q="분석 정확도는 얼마나 되나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-ai">🤖 분석</span>
             <span class="faq-q-text">분석 정확도는 얼마나 되나요?</span>
@@ -330,7 +331,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="ai" data-q="분석 시간이 얼마나 걸리나요">
+        <div class="faq-item" data-cat="ai" data-q="분석 시간이 얼마나 걸리나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-ai">🤖 분석</span>
             <span class="faq-q-text">분석 시간이 얼마나 걸리나요?</span>
@@ -342,7 +343,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="ai" data-q="어떤 영법을 분석할 수 있나요">
+        <div class="faq-item" data-cat="ai" data-q="어떤 영법을 분석할 수 있나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-ai">🤖 분석</span>
             <span class="faq-q-text">어떤 영법을 분석할 수 있나요?</span>
@@ -354,7 +355,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="ai" data-q="점수는 어떻게 계산되나요">
+        <div class="faq-item" data-cat="ai" data-q="점수는 어떻게 계산되나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-ai">🤖 분석</span>
             <span class="faq-q-text">점수는 어떻게 계산되나요?</span>
@@ -379,7 +380,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="account" data-q="분석 결과는 어디서 확인하나요">
+        <div class="faq-item" data-cat="account" data-q="분석 결과는 어디서 확인하나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-account">👤 계정</span>
             <span class="faq-q-text">분석 결과는 어디서 확인하나요?</span>
@@ -391,7 +392,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="account" data-q="Google Sheets 연동은 어떻게 하나요">
+        <div class="faq-item" data-cat="account" data-q="Google Sheets 연동은 어떻게 하나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-account">👤 계정</span>
             <span class="faq-q-text">Google Sheets 연동은 어떻게 하나요?</span>
@@ -416,7 +417,7 @@
           </div>
         </div>
 
-        <div class="faq-item" data-cat="feature" data-q="분석 결과를 다른 사람과 공유할 수 있나요">
+        <div class="faq-item" data-cat="feature" data-q="분석 결과를 다른 사람과 공유할 수 있나요" data-hidden="true" style="display:none">
           <button class="faq-q" onclick="toggleFaq(this)">
             <span class="faq-cat-badge cat-feature">🏊 기능</span>
             <span class="faq-q-text">분석 결과를 다른 사람과 공유할 수 있나요?</span>
@@ -473,6 +474,7 @@ function filterFaq() {
   const items = document.querySelectorAll('.faq-item');
   let visible = 0;
   items.forEach(item => {
+    if (item.dataset.hidden === 'true') { item.classList.add('hidden'); return; }
     const catMatch = currentCat === 'all' || item.dataset.cat === currentCat;
     const textMatch = !q || item.dataset.q.includes(q) ||
       item.querySelector('.faq-a').textContent.toLowerCase().includes(q);

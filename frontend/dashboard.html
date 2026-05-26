@@ -362,7 +362,8 @@
 
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">대시보드</span>
     </div>
     <div class="header-right">
@@ -372,12 +373,12 @@
 
   <div class="dash-page">
     <div class="dash-topbar">
-      <a href="/" class="back-btn">← 분석하러 가기</a>
-      <div class="dash-title">분석 현황 대시보드</div>
+      <a href="/" class="back-btn">← 홈으로</a>
+      <div class="dash-title">내 현황</div>
     </div>
 
     <!-- 주간 목표 -->
-    <div class="weekly-card">
+    <div class="weekly-card" style="display:none">
       <div class="weekly-header">
         <span class="weekly-title">📅 이번 주 목표</span>
         <span class="weekly-stats" id="weekly-stats">— / — 회 달성</span>
@@ -406,8 +407,16 @@
       <a href="/badges" class="mini-badge-link">전체 보기 →</a>
     </div>
 
+    <!-- AI 분석 기능 준비 중 안내 -->
+    <div id="analysis-coming-soon" style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:32px 20px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:32px;margin-bottom:12px;">&#x1F6A7;</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">AI 분석 기능 준비 중</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">수영 영상 분석 및 자세 분석 기능이 곧 제공될 예정입니다.<br>업데이트 소식은 릴리즈 노트에서 확인하세요.</div>
+      <a href="/changelog" style="display:inline-block;margin-top:16px;padding:8px 20px;background:var(--blue);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">릴리즈 노트 보기</a>
+    </div>
+
     <!-- 숫자 카드 -->
-    <div class="summary-cards">
+    <div class="summary-cards" style="display:none">
       <div class="summary-card">
         <div class="summary-card-label">총 분석 횟수</div>
         <div class="summary-card-value blue" id="card-total">—</div>
@@ -431,7 +440,7 @@
     </div>
 
     <!-- 차트 2×2 -->
-    <div class="charts-grid">
+    <div class="charts-grid" style="display:none">
       <div class="chart-card">
         <div class="chart-card-title">회차별 종합점수 추이</div>
         <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
@@ -451,7 +460,7 @@
     </div>
 
     <!-- 최근 분석 목록 테이블 -->
-    <div class="table-card">
+    <div class="table-card" style="display:none">
       <div class="table-card-title">최근 분석 목록</div>
       <div id="table-wrap">
         <div class="loading-overlay">데이터 불러오는 중...</div>
@@ -459,7 +468,7 @@
     </div>
 
     <!-- 분석 히스토리 타임라인 -->
-    <div class="history-section">
+    <div class="history-section" style="display:none">
       <div class="history-header">📅 분석 히스토리</div>
       <div id="history-list" class="history-list">
         <div class="loading-overlay">히스토리 불러오는 중...</div>

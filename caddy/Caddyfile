@@ -6,6 +6,15 @@
 # localhost HTTPS (로컬 자체 서명 인증서 자동 생성)
 localhost {
 
+  # 분석 관련 라우트 — 외부 접근 차단 (private 네트워크 + 로컬만 허용)
+  @analysis_restricted {
+    path /upload /viewer /meta /stream/*
+    not {
+      remote_ip private_ranges
+    }
+  }
+  redir @analysis_restricted /landing 302
+
   # SwimTech 메인 앱
   handle / {
     reverse_proxy swim-api:8000
@@ -123,6 +132,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /changelog {
+    reverse_proxy swim-api:8000
+  }
+
   handle /badges {
     reverse_proxy swim-api:8000
   }
@@ -168,7 +181,7 @@ localhost {
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
     X-XSS-Protection "1; mode=block"
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.kakaocdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com https://dapi.kakao.com http://localhost:43000; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' blob:;"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.kakaocdn.net https://t1.daumcdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com https://dapi.kakao.com https://*.daumcdn.net https://*.kakao.com http://localhost:43000; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https:; font-src 'self' data:; media-src 'self' blob:;"
     -Server
   }
 

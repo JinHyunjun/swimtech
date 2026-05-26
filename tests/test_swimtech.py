@@ -1,155 +1,859 @@
 """
-SwimTech — 통합 테스트
-커뮤니티 페이지/API 테스트 포함
+SwimTech E2E Test Suite — pytest-playwright
 
-실행: pytest tests/test_swimtech.py -v
-환경변수: TEST_BASE_URL (기본값: https://localhost)
-         VERIFY_SSL    (기본값: false)
+Setup:
+    pip install pytest playwright pytest-playwright pytest-html
+    playwright install chromium
+
+Run:
+    pytest tests/test_swimtech.py -v --html=tests/report.html --self-contained-html
+
+    # headed mode (browser visible):
+    pytest tests/test_swimtech.py -v --headed --html=tests/report.html --self-contained-html
+
+--------------------------------------------------------------------------------
+GUIDE FOR CONTRIBUTORS
+When adding a new page or feature, add the corresponding test case(s) to this
+file, then run `tests/run_tests.bat` from the project root to verify immediately.
+
+Test naming convention:
+    test_<page>_<what_is_verified>(page: Page)
+
+Each new route (e.g. /settings, /profile) should have at minimum:
+    1. A "load" test — confirms the page renders key elements
+    2. Interaction tests — covers primary user actions on that page
+
+After adding tests, run:
+    cd C:\swim
+    tests\run_tests.bat
+--------------------------------------------------------------------------------
 """
-import os
+
+import re
 import pytest
-import httpx
+from datetime import date
+from pathlib import Path
+from playwright.sync_api import Page, BrowserContext, expect
 
-BASE_URL   = os.getenv("TEST_BASE_URL", "https://localhost")
-VERIFY_SSL = os.getenv("VERIFY_SSL", "false").lower() != "false"
+# ── constants ──────────────────────────────────────────────────────────────
+BASE_URL    = "https://localhost"
+TEST_USER   = "admin"
+TEST_PASS   = "swimtech1234"
+SHOT_DIR    = Path(__file__).parent / "screenshots" / date.today().strftime("%Y%m%d")
+SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── 픽스처 ────────────────────────────────────────────────────────────────────
+
+# ── fixtures ───────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
-def client():
-    """세션 공유 httpx 클라이언트 (쿠키 유지)"""
-    with httpx.Client(base_url=BASE_URL, verify=VERIFY_SSL, timeout=10, follow_redirects=True) as c:
-        yield c
+def browser_context_args(browser_context_args):
+    """SSL 인증서 무시, 뷰포트 설정."""
+    return {
+        **browser_context_args,
+        "ignore_https_errors": True,
+        "viewport": {"width": 1280, "height": 800},
+    }
 
 
 @pytest.fixture(scope="session")
-def auth_client():
-    """로그인된 클라이언트 (admin 계정 사용)"""
-    admin_id = os.getenv("ADMIN_ID", "admin")
-    admin_pw = os.getenv("ADMIN_PW", "swimtech1234")
-    with httpx.Client(base_url=BASE_URL, verify=VERIFY_SSL, timeout=10, follow_redirects=True) as c:
-        res = c.post("/auth/login", json={"username": admin_id, "password": admin_pw})
-        # admin은 customers 테이블에 없어 customer_id가 없을 수 있으므로 체크만
-        yield c
+def logged_in_state(browser, browser_context_args):
+    """세션 단위 로그인 — 쿠키/스토리지를 재사용해 매 테스트 로그인 비용 제거."""
+    ctx: BrowserContext = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+
+    page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
+    page.fill("#username", TEST_USER)
+    page.fill("#password", TEST_PASS)
+    page.click("#login-btn")
+    # 로그인 성공 → /landing 또는 /onboarding 으로 리디렉트
+    page.wait_for_url(re.compile(r"/(landing|onboarding|nickname|$)"), timeout=10_000)
+
+    if "/onboarding" in page.url:
+        page.evaluate("localStorage.setItem('swimtech_onboarded', 'true')")
+        page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
+
+    state = ctx.storage_state()
+    page.close()
+    ctx.close()
+    return state
 
 
-# ── 헬스 체크 ─────────────────────────────────────────────────────────────────
-
-def test_health(client):
-    res = client.get("/api/health")
-    assert res.status_code == 200
-    assert res.json()["status"] == "healthy"
-
-
-# ── 커뮤니티 페이지 로드 ──────────────────────────────────────────────────────
-
-def test_community_load(client):
-    """커뮤니티 페이지가 200 OK로 로드되어야 한다."""
-    res = client.get("/community")
-    assert res.status_code == 200, f"Expected 200, got {res.status_code}"
-    # SwimTech 공통 헤더/요소 확인
-    assert "SwimTech" in res.text
-    assert "커뮤니티" in res.text
+@pytest.fixture()
+def page(browser, browser_context_args, logged_in_state) -> Page:
+    """각 테스트에 로그인된 신규 탭 제공."""
+    ctx: BrowserContext = browser.new_context(
+        **browser_context_args,
+        storage_state=logged_in_state,
+    )
+    p = ctx.new_page()
+    p.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
+    yield p
+    p.close()
+    ctx.close()
 
 
-def test_community_load_has_categories(client):
-    """카테고리 탭(자유/질문/훈련후기/공지)이 HTML에 포함되어야 한다."""
-    res = client.get("/community")
-    assert res.status_code == 200
-    for cat in ["자유", "질문", "훈련후기", "공지"]:
-        assert cat in res.text, f"카테고리 '{cat}'가 페이지에 없음"
+def shot(page: Page, name: str):
+    path = SHOT_DIR / f"{name}.png"
+    page.screenshot(path=str(path), full_page=True)
+    return path
 
 
-def test_community_write_btn(client):
-    """글쓰기 버튼 요소(write-btn)가 HTML에 존재해야 한다."""
-    res = client.get("/community")
-    assert res.status_code == 200
-    assert "write-btn" in res.text, "글쓰기 버튼 id='write-btn'이 없음"
-    # 비로그인 시 display:none 으로 숨겨져야 함
-    assert "display: none" in res.text or "display:none" in res.text, \
-        "비로그인 시 글쓰기 버튼이 숨겨져 있어야 함"
+# ── helpers ────────────────────────────────────────────────────────────────
+
+def goto(page: Page, path: str):
+    page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded")
 
 
-# ── 커뮤니티 API ──────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════
+# 1. /landing
+# ══════════════════════════════════════════════════════════════════════════
 
-def test_community_api_list(client):
-    """게시글 목록 API가 올바른 구조를 반환해야 한다."""
-    res = client.get("/api/community")
-    assert res.status_code == 200
-    data = res.json()
-    assert "posts" in data
-    assert "total" in data
-    assert "page" in data
-    assert "limit" in data
-    assert isinstance(data["posts"], list)
-    assert data["page"] == 1
+def test_landing_load(page: Page):
+    goto(page, "/landing")
 
+    # 헤더 로고
+    expect(page.locator(".logo").first).to_be_visible()
 
-def test_community_api_list_category(client):
-    """카테고리 필터가 동작해야 한다."""
-    for cat in ["자유", "질문", "훈련후기", "공지"]:
-        res = client.get("/api/community", params={"category": cat})
-        assert res.status_code == 200, f"category={cat} 실패"
-        data = res.json()
-        assert "posts" in data
-        # 필터된 게시글은 모두 해당 카테고리여야 함
-        for post in data["posts"]:
-            assert post["category"] == cat
+    # 주요 카드 버튼 6개 이상
+    cards = page.locator(".choice-card")
+    assert cards.count() >= 6, f"choice-card count: {cards.count()}"
+
+    # 핵심 CTA 버튼 텍스트 확인
+    btn_texts = page.locator(".choice-btn").all_text_contents()
+    # 영상 분석 카드는 숨김 처리됨 — AI 코치/수영장 버튼은 활성화
+    assert any("대화" in t for t in btn_texts), "AI코치 버튼 없음"
+    assert any("보기" in t or "찾기" in t for t in btn_texts), "수영장/드릴 버튼 없음"
+
+    shot(page, "01_landing")
 
 
-def test_community_api_list_search(client):
-    """검색 파라미터가 동작해야 한다."""
-    res = client.get("/api/community", params={"search": "테스트검색어_없음"})
-    assert res.status_code == 200
-    data = res.json()
-    assert data["posts"] == []
-    assert data["total"] == 0
+# ══════════════════════════════════════════════════════════════════════════
+# 2. /login
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_login_form_visible(browser, browser_context_args):
+    """비로그인 상태에서 폼 요소 확인."""
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        goto(page, "/login")
+        expect(page.locator("#username")).to_be_visible()
+        expect(page.locator("#password")).to_be_visible()
+        expect(page.locator("#login-btn")).to_be_visible()
+        shot(page, "02_login_form")
+    finally:
+        page.close()
+        ctx.close()
 
 
-def test_community_api_write_requires_login(client):
-    """비로그인 상태에서 게시글 작성은 401을 반환해야 한다."""
-    res = client.post("/api/community", json={
-        "category": "자유",
-        "title": "테스트 제목",
-        "content": "테스트 내용입니다.",
-    })
-    assert res.status_code == 401, f"Expected 401, got {res.status_code}"
+def test_login_success(browser, browser_context_args):
+    """실제 로그인 후 /landing 리디렉트 확인."""
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        goto(page, "/login")
+        page.fill("#username", TEST_USER)
+        page.fill("#password", TEST_PASS)
+        page.click("#login-btn")
+        page.wait_for_url(re.compile(r"/(landing|onboarding|$)"), timeout=10_000)
+        shot(page, "02_login_success")
+        assert "/login" not in page.url, f"로그인 후 /login 잔류: {page.url}"
+    finally:
+        page.close()
+        ctx.close()
 
 
-def test_community_api_post_not_found(client):
-    """존재하지 않는 게시글 상세 조회는 404를 반환해야 한다."""
-    res = client.get("/api/community/99999999")
-    assert res.status_code == 404
+def test_login_wrong_password(browser, browser_context_args):
+    """잘못된 비밀번호 → 에러 메시지 표시."""
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        goto(page, "/login")
+        page.fill("#username", TEST_USER)
+        page.fill("#password", "wrong_password_xyz")
+        page.click("#login-btn")
+        page.wait_for_timeout(1500)
+        error = page.locator("#error-msg")
+        expect(error).to_be_visible()
+        assert error.inner_text().strip() != "", "에러 메시지가 비어있음"
+        shot(page, "02_login_error")
+    finally:
+        page.close()
+        ctx.close()
 
 
-def test_community_api_like_requires_login(client):
-    """비로그인 좋아요는 401을 반환해야 한다."""
-    res = client.post("/api/community/1/like")
-    assert res.status_code == 401
+# ══════════════════════════════════════════════════════════════════════════
+# 3. /upload
+# ══════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
+def test_upload_ui(page: Page):
+    page.evaluate("""() => {
+        sessionStorage.setItem('swimtech_stroke', 'freestyle');
+        sessionStorage.setItem('swimtech_context', 'free_swim');
+        sessionStorage.setItem('swimtech_purpose', 'health');
+    }""")
+    page.goto("https://localhost/upload")
+
+    expect(page.locator("#upload-zone")).to_be_visible()
+    # 파일 input은 hidden이지만 DOM에 존재해야 함
+    expect(page.locator("#file-input")).to_have_count(1)
+
+    shot(page, "03_upload")
 
 
-def test_community_api_comment_requires_login(client):
-    """비로그인 댓글 작성은 401을 반환해야 한다."""
-    res = client.post("/api/community/1/comments", json={"content": "댓글"})
-    assert res.status_code == 401
+@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
+def test_upload_zone_drag_style(page: Page):
+    """드래그 존 호버 시 drag-over 클래스 진입 여부."""
+    page.evaluate("""() => {
+        sessionStorage.setItem('swimtech_stroke', 'freestyle');
+        sessionStorage.setItem('swimtech_context', 'free_swim');
+        sessionStorage.setItem('swimtech_purpose', 'health');
+    }""")
+    page.goto("https://localhost/upload")
+    zone = page.locator("#upload-zone")
+    zone.dispatch_event("dragenter")
+    page.wait_for_timeout(300)
+    shot(page, "03_upload_dragenter")
 
 
-def test_community_api_delete_requires_login(client):
-    """비로그인 게시글 삭제는 401을 반환해야 한다."""
-    res = client.delete("/api/community/1")
-    assert res.status_code == 401
+def test_upload_redirects_non_admin(browser, browser_context_args):
+    """비관리자 사용자의 /upload 접근 → /landing 리다이렉트 확인.
+
+    비관리자 계정을 등록하고(이미 존재하면 무시),
+    로그인 후 /upload 접근 시 /landing 리다이렉트를 검증합니다.
+    """
+    import json as _json
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        # 비관리자 테스트 계정 준비 (이미 존재해도 무시)
+        ctx.request.post(
+            f"{BASE_URL}/auth/register",
+            data=_json.dumps({
+                "name": "NoAdmin Test",
+                "email": "nonadmin01@example.com",
+                "username": "nonadmin01",
+                "password": "Nonadmin1",
+            }),
+            headers={"Content-Type": "application/json"},
+        )
+
+        # 로그인
+        page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
+        page.fill("#username", "nonadmin01")
+        page.fill("#password", "Nonadmin1")
+        page.click("#login-btn")
+        page.wait_for_url(re.compile(r"/(landing|onboarding|$)"), timeout=10_000)
+
+        # /upload 접근 → /landing 리다이렉트 확인
+        page.goto(f"{BASE_URL}/upload", wait_until="domcontentloaded")
+        assert "/landing" in page.url, (
+            f"/upload는 /landing으로 리다이렉트되어야 함, 현재 URL: {page.url}"
+        )
+        shot(page, "03_upload_redirect_nonadmin")
+    finally:
+        page.close()
+        ctx.close()
 
 
-def test_community_api_pagination(client):
-    """페이지 파라미터가 동작해야 한다."""
-    res = client.get("/api/community", params={"page": 2})
-    assert res.status_code == 200
-    data = res.json()
-    assert data["page"] == 2
-    assert "posts" in data
+# ══════════════════════════════════════════════════════════════════════════
+# 4. /dashboard
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_dashboard_cards(page: Page):
+    """AI 분析 섹션은 숨겨지고 뱃지 섹션과 준비 중 안내는 표시 확인."""
+    goto(page, "/dashboard")
+    page.wait_for_timeout(1000)
+
+    # 뱃지 섹션은 표시
+    expect(page.locator(".mini-badge-row")).to_be_visible()
+    # 준비 중 안내 표시
+    expect(page.locator("#analysis-coming-soon")).to_be_visible()
+    # 분析 카드 섹션은 숨김
+    expect(page.locator(".summary-cards")).to_be_hidden()
+
+    shot(page, "04_dashboard_cards")
 
 
-def test_community_api_invalid_page(client):
-    """page < 1은 422 Unprocessable Entity를 반환해야 한다."""
-    res = client.get("/api/community", params={"page": 0})
-    assert res.status_code == 422
+def test_dashboard_charts(page: Page):
+    """차트 섹션 숨김 확인."""
+    goto(page, "/dashboard")
+
+    expect(page.locator(".charts-grid")).to_be_hidden()
+
+    shot(page, "04_dashboard_charts")
+
+
+def test_dashboard_history(page: Page):
+    """분析 히스토리 섹션 숨김, 대시보드 기본 구조 확인."""
+    goto(page, "/dashboard")
+    page.wait_for_timeout(500)
+    # 분析 테이블 숨김
+    expect(page.locator(".table-card")).to_be_hidden()
+    # 페이지 구조 유지
+    expect(page.locator(".dash-page")).to_be_visible()
+    shot(page, "04_dashboard_history")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 5. /chat
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_chat_load(page: Page):
+    goto(page, "/chat")
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#chat-input")).to_be_visible()
+    expect(page.locator("#send-btn")).to_be_visible()
+
+    shot(page, "05_chat_load")
+
+
+def test_chat_sample_cards(page: Page):
+    """예시 질문 카드 1개 이상 존재 확인."""
+    goto(page, "/chat")
+    page.wait_for_timeout(1000)
+
+    samples = page.locator(".sample-card")
+    assert samples.count() >= 1, f"sample-card count: {samples.count()}"
+
+    shot(page, "05_chat_samples")
+
+
+def test_chat_send_message(page: Page):
+    """입력창에 메시지 입력 후 전송 버튼 클릭."""
+    goto(page, "/chat")
+    page.wait_for_timeout(1000)
+
+    page.fill("#chat-input", "자유형 팔동작 교정 방법 알려줘")
+    page.click("#send-btn")
+    page.wait_for_timeout(1000)
+
+    shot(page, "05_chat_send")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 6. /pool
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_pool_map_container(page: Page):
+    """카카오맵 컨테이너 렌더링 확인."""
+    goto(page, "/pool")
+    page.wait_for_timeout(2000)
+
+    expect(page.locator("#map")).to_be_visible()
+
+    shot(page, "06_pool_map")
+
+
+def test_pool_search_ui(page: Page):
+    """검색 입력창과 버튼 존재 확인."""
+    goto(page, "/pool")
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#search-input")).to_be_visible()
+    expect(page.locator(".search-btn").first).to_be_visible()
+
+    shot(page, "06_pool_search")
+
+
+# 헤드리스 브라우저 환경에서는 카카오맵이 canvas를 생성하지 않음
+# (외부 지도 SDK가 GPU/렌더링 컨텍스트 없이 동작하지 않는 환경 이슈)
+@pytest.mark.skip(reason="헤드리스 브라우저에서 카카오맵 canvas 미렌더링 — 환경 이슈로 스킵")
+def test_pool_map_canvas_rendered(page: Page):
+    """카카오맵 canvas 태그 생성 여부 (스크립트 로드 결과)."""
+    goto(page, "/pool")
+    page.wait_for_timeout(3000)
+
+    canvas_count = page.locator("#map canvas").count()
+    assert canvas_count >= 1, (
+        f"카카오맵 canvas 미생성 (count={canvas_count}). "
+        "KAKAO_JS_KEY 또는 네트워크 확인 필요."
+    )
+    shot(page, "06_pool_map_canvas")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 7. /drill
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_drill_tabs_visible(page: Page):
+    goto(page, "/drill")
+    tabs = page.locator(".tab-btn")
+    assert tabs.count() == 4, f"tab-btn count: {tabs.count()}"
+
+    for label in ["자유형", "배영", "평영", "접영"]:
+        expect(page.get_by_role("button", name=re.compile(label))).to_be_visible()
+
+    shot(page, "07_drill_tabs")
+
+
+def test_drill_tab_switch(page: Page):
+    """탭 클릭 → active 클래스 이동 확인."""
+    goto(page, "/drill")
+
+    backstroke_tab = page.locator(".tab-btn[data-tab='backstroke']")
+    backstroke_tab.click()
+    page.wait_for_timeout(400)
+
+    expect(backstroke_tab).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator(".tab-btn[data-tab='freestyle']")).not_to_have_class(re.compile(r"\bactive\b"))
+
+    shot(page, "07_drill_tab_switch")
+
+
+def test_drill_cards_visible(page: Page):
+    goto(page, "/drill")
+    page.wait_for_timeout(500)
+    cards = page.locator(".drill-card")
+    assert cards.count() >= 1, "드릴 카드 없음"
+    shot(page, "07_drill_cards")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 8. /faq
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_faq_load(page: Page):
+    goto(page, "/faq")
+    expect(page.locator("#faq-list")).to_be_visible()
+    assert page.locator(".faq-item").count() >= 1
+    shot(page, "08_faq_load")
+
+
+def test_faq_accordion(page: Page):
+    """첫 번째 표시된 질문 클릭 → 답변 펼쳐짐 확인."""
+    goto(page, "/faq")
+
+    first_item = page.locator(".faq-item:visible").first
+    first_item.locator(".faq-q").click()
+    page.wait_for_timeout(400)
+
+    first_a = first_item.locator(".faq-a")
+    expect(first_a).not_to_have_css("display", "none")
+
+    shot(page, "08_faq_accordion_open")
+
+
+def test_faq_search(page: Page):
+    """검색어 입력 → 관련 항목만 필터링."""
+    goto(page, "/faq")
+
+    page.fill("#search", "촬영")
+    page.wait_for_timeout(400)
+
+    visible_items = [
+        item for item in page.locator(".faq-item").all()
+        if item.is_visible()
+    ]
+    assert len(visible_items) >= 1, "검색 후 표시 항목 없음"
+
+    shot(page, "08_faq_search")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 9. /glossary
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_glossary_load(page: Page):
+    goto(page, "/glossary")
+    page.wait_for_timeout(500)
+    expect(page.locator("#cards-container")).to_be_visible()
+    shot(page, "09_glossary_load")
+
+
+def test_glossary_search(page: Page):
+    """검색어 입력 → 카드 필터링."""
+    goto(page, "/glossary")
+    page.wait_for_timeout(500)
+
+    page.fill("#search-input", "자유형")
+    page.wait_for_timeout(400)
+
+    cards = page.locator(".term-card")
+    visible = [c for c in cards.all() if c.is_visible()]
+    assert len(visible) >= 1, "검색 후 term-card 없음"
+
+    # 빈 상태 메시지가 숨겨져 있어야 함
+    expect(page.locator("#empty-state")).to_have_class(re.compile(r"\bhidden\b"))
+
+    shot(page, "09_glossary_search")
+
+
+def test_glossary_no_result(page: Page):
+    """결과 없는 검색 → empty-state 노출."""
+    goto(page, "/glossary")
+    page.wait_for_timeout(500)
+
+    page.fill("#search-input", "xyzqwerty12345")
+    page.wait_for_timeout(400)
+
+    expect(page.locator("#empty-state")).not_to_have_class(re.compile(r"\bhidden\b"))
+
+    shot(page, "09_glossary_no_result")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 10. /badges
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_badges_load(page: Page):
+    goto(page, "/badges")
+    page.wait_for_timeout(1500)
+
+    expect(page.locator("#earned-grid")).to_be_visible()
+    expect(page.locator("#locked-grid")).to_be_visible()
+
+    shot(page, "10_badges_load")
+
+
+def test_badges_progress_bar(page: Page):
+    """획득 진행 바 및 카운트 렌더링 확인."""
+    goto(page, "/badges")
+    page.wait_for_timeout(1500)
+
+    expect(page.locator("#prog-bar")).to_be_visible()
+    expect(page.locator("#prog-earned")).to_be_visible()
+    expect(page.locator("#prog-total")).to_be_visible()
+
+    shot(page, "10_badges_progress")
+
+
+def test_badges_cards_exist(page: Page):
+    """뱃지 카드 1개 이상 렌더링 확인."""
+    goto(page, "/badges")
+    page.wait_for_timeout(1500)
+
+    cards = page.locator(".badge-card")
+    assert cards.count() >= 1, f"badge-card count: {cards.count()}"
+
+    shot(page, "10_badges_cards")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 11. /changelog
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_changelog_load(page: Page):
+    """릴리즈 노트 페이지 로드 — 헤더 및 컨테이너 렌더링 확인."""
+    goto(page, "/changelog")
+
+    expect(page.locator(".cl-header h1")).to_be_visible()
+    # 로딩·타임라인·에러 중 하나 이상 노출
+    loading  = page.locator("#cl-loading")
+    timeline = page.locator("#cl-timeline")
+    error    = page.locator("#cl-error")
+    page.wait_for_timeout(3000)
+
+    visible = (
+        timeline.is_visible()
+        or error.is_visible()
+        or loading.is_visible()
+    )
+    assert visible, "changelog: 로딩/타임라인/에러 중 하나도 표시되지 않음"
+
+    shot(page, "11_changelog_load")
+
+
+def test_changelog_api_responds(page: Page):
+    """GET /api/changelog — 200 또는 503(토큰 미설정) 응답 확인, 500/404 아님."""
+    resp = page.request.get("https://localhost/api/changelog")
+    assert resp.status in (200, 503), (
+        f"/api/changelog 응답 코드 {resp.status} — 200(정상) 또는 503(NOTION_TOKEN 미설정) 예상"
+    )
+
+
+def test_changelog_footer_link(page: Page):
+    """landing.html 푸터에 릴리즈 노트 링크 존재 확인."""
+    goto(page, "/landing")
+    link = page.locator("a[href='/changelog']")
+    expect(link.first).to_be_visible()
+    shot(page, "11_landing_changelog_link")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 12. /plan (강화된 훈련 플랜 페이지)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_plan_load(page: Page):
+    """훈련 플랜 페이지 로드 — 탭 바·플랜 카드 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    # 헤더
+    expect(page.locator(".plan-title")).to_be_visible()
+
+    # 탭 바 존재
+    expect(page.locator(".tab-bar")).to_be_visible()
+
+    # 기본 탭(기록 단축) 플랜 카드 렌더링
+    expect(page.locator(".plan-card").first).to_be_visible()
+
+    shot(page, "12_plan_load")
+
+
+def test_plan_tab_switching(page: Page):
+    """탭 전환 — 건강하게 오래 탭 클릭 시 카드 교체 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="health"]')
+    page.wait_for_timeout(400)
+
+    expect(page.locator("#tab-health")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#tab-health .plan-card")).to_be_visible()
+
+    shot(page, "12_plan_tab_health")
+
+
+def test_plan_week_selector(page: Page):
+    """주차 선택 버튼 클릭 — 2주차 세션 카드 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    # 2주차 버튼 클릭 (기록단축 탭)
+    week2_btn = page.locator('.week-sel-btn[data-week="1"]').first
+    expect(week2_btn).to_be_visible()
+    week2_btn.click()
+    page.wait_for_timeout(300)
+
+    # 세션 카드 최소 1개
+    cards = page.locator("#tab-speed .session-card")
+    assert cards.count() >= 1, f"세션 카드 없음: {cards.count()}"
+
+    shot(page, "12_plan_week_selector")
+
+
+def test_plan_session_detail_visible(page: Page):
+    """세션 카드에 웜업·메인셋·쿨다운·총 거리·코치 팁 포함 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    card = page.locator("#tab-speed .session-card").first
+    expect(card.locator(".session-total")).to_be_visible()
+    expect(card.locator(".coach-tip")).to_be_visible()
+    expect(card.locator(".mainset-items")).to_be_visible()
+
+    shot(page, "12_plan_session_detail")
+
+
+def test_plan_intensity_badge(page: Page):
+    """강도 뱃지(쉬움/보통/힘듦) 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    badges = page.locator(".intensity")
+    assert badges.count() >= 1, "intensity 뱃지 없음"
+
+    shot(page, "12_plan_intensity")
+
+
+def test_plan_create_btn_visible(page: Page):
+    """'내 플랜 만들기' 버튼 및 '내 플랜' 탭 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(500)
+
+    expect(page.locator("#open-modal-btn")).to_be_visible()
+    expect(page.locator('[data-tab="myplan"]')).to_be_visible()
+
+    shot(page, "12_plan_create_btn")
+
+
+def test_plan_random_tab_form(page: Page):
+    """'내 플랜 만들기' 버튼 → 랜덤 생성 탭 전환 및 폼 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(500)
+
+    # 버튼 클릭 → 랜덤 탭으로 전환
+    page.click("#open-modal-btn")
+    page.wait_for_timeout(300)
+
+    expect(page.locator("#tab-random")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#r-name")).to_be_visible()
+    expect(page.locator("#btn-gen-random")).to_be_visible()
+
+    shot(page, "12_plan_modal")
+
+
+def test_plan_builder_tab_load(page: Page):
+    """직접 구성 탭 로드 — 풀 목록·드롭존·주간 총합 표시 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(600)
+
+    expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
+    # 풀 아이템 존재
+    assert page.locator("#pool-list .pool-item").count() >= 1, "풀 아이템 없음"
+    # 주간 총합 표시
+    expect(page.locator("#week-total-display")).to_be_visible()
+    # 드롭존 월요일 존재
+    expect(page.locator("#drop-월요일")).to_be_visible()
+
+    shot(page, "12_plan_builder_tab")
+
+
+def test_plan_builder_add_item(page: Page):
+    """직접 구성 탭 — 풀 아이템 클릭 시 월요일 칸에 카드 추가 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(600)
+
+    # 첫 번째 풀 아이템 클릭 → 월요일에 추가
+    page.locator("#pool-list .pool-item").first.click()
+    page.wait_for_timeout(300)
+
+    # 빌더 카드가 생성됐는지
+    assert page.locator(".builder-card").count() >= 1, "builder-card 생성 안 됨"
+    # 도구 토글 버튼 확인
+    expect(page.locator(".equip-btn").first).to_be_visible()
+    # 거리 입력 필드 확인
+    expect(page.locator(".card-num-input").first).to_be_visible()
+
+    shot(page, "12_plan_builder_add")
+
+
+def test_plan_api_get(page: Page):
+    """GET /api/plans — 200 응답 및 plans 키 포함 확인."""
+    resp = page.request.get("https://localhost/api/plans")
+    assert resp.status == 200, f"/api/plans 응답 코드 {resp.status}"
+    body = resp.json()
+    assert "plans" in body, f"plans 키 없음: {body}"
+
+
+def test_plan_myplan_tab(page: Page):
+    """'내 플랜' 탭 클릭 — 탭 전환 및 콘텐츠 렌더링 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(800)
+
+    page.click('[data-tab="myplan"]')
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#tab-myplan")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#myplan-content")).to_be_visible()
+
+    shot(page, "12_plan_myplan_tab")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 13. 오늘 추가된 기능 통합 확인 (2026-05-24)
+#     changelog 캐시 TTL 단축 / 플랜 랜덤·빌더 탭 / 검색·드래그 / PWA 버튼
+#     ※ test_changelog_load 는 섹션 11에 이미 존재하므로 여기서는 생략
+# ══════════════════════════════════════════════════════════════════════════
+
+
+def test_changelog_page_renders(page: Page):
+    """/changelog 페이지 로드 — 헤더·콘텐츠 영역 렌더링 확인 (캐시 TTL 5분)."""
+    goto(page, "/changelog")
+    page.wait_for_timeout(3000)
+
+    expect(page.locator(".cl-header h1")).to_be_visible()
+    visible = (
+        page.locator("#cl-timeline").is_visible()
+        or page.locator("#cl-error").is_visible()
+        or page.locator("#cl-loading").is_visible()
+    )
+    assert visible, "changelog: 로딩/타임라인/에러 중 하나도 표시되지 않음"
+
+    shot(page, "13_changelog_load")
+
+
+def test_plan_random_tab(page: Page):
+    """/plan — 랜덤 생성 탭(data-tab='random') 탭 버튼 및 콘텐츠 영역 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+
+    expect(page.locator('[data-tab="random"]')).to_be_visible()
+
+    page.click('[data-tab="random"]')
+    page.wait_for_timeout(400)
+    expect(page.locator("#tab-random")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#r-name")).to_be_visible()
+
+    shot(page, "13_plan_random_tab")
+
+
+def test_plan_builder_tab(page: Page):
+    """/plan — 직접 구성 탭(data-tab='builder') 탭 버튼 및 에디터 로드 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+
+    expect(page.locator('[data-tab="builder"]')).to_be_visible()
+
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#builder-editor-body")).to_be_visible()
+
+    shot(page, "13_plan_builder_tab")
+
+
+def test_plan_builder_search(page: Page):
+    """직접 구성 탭 — #pool-search 검색창 존재 및 실시간 필터링 동작 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    search = page.locator("#pool-search")
+    expect(search).to_be_visible()
+
+    count_before = page.locator("#pool-list .pool-item").count()
+    assert count_before >= 1, "검색 전 풀 아이템 없음"
+
+    search.fill("캐치업")
+    page.wait_for_timeout(300)
+    count_after = page.locator("#pool-list .pool-item").count()
+    assert count_after < count_before, (
+        f"검색 후 필터링 안 됨: {count_before}개 → {count_after}개"
+    )
+
+    shot(page, "13_plan_builder_search")
+
+
+def test_plan_builder_drag(page: Page):
+    """직접 구성 탭 — 풀 아이템 draggable 속성 및 고정 기타 카드 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+    page.click('[data-tab="builder"]')
+    page.wait_for_timeout(500)
+
+    items = page.locator("#pool-list .pool-item")
+    assert items.count() >= 1, "풀 아이템 없음"
+
+    draggable = items.first.get_attribute("draggable")
+    assert draggable == "true", f"풀 아이템에 draggable='true' 없음: {draggable}"
+
+    # 고정 기타 카드 (#pool-custom-pin) 존재 및 draggable
+    pin = page.locator("#pool-custom-pin")
+    expect(pin).to_be_visible()
+    assert pin.get_attribute("draggable") == "true", "기타 카드 draggable 없음"
+
+    shot(page, "13_plan_builder_drag")
+
+
+def test_pwa_install_btn(page: Page):
+    """landing.html — #pwa-install-btn DOM 존재 및 클릭 핸들러 오류 없음 확인."""
+    goto(page, "/landing")
+    page.wait_for_timeout(500)
+
+    btn = page.locator("#pwa-install-btn")
+    assert btn.count() == 1, "#pwa-install-btn 엘리먼트 없음"
+
+    # 버튼을 강제로 visible 상태로 만들어 클릭해도 JS 오류가 없는지 확인
+    page.evaluate("document.getElementById('pwa-install-btn').style.display = 'block'")
+    expect(btn).to_be_visible()
+
+    # deferredPrompt 없는 상태 클릭 — 오류 없이 조기 반환 확인
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    btn.click()
+    page.wait_for_timeout(300)
+    assert not errors, f"클릭 시 JS 오류 발생: {errors}"
+
+    shot(page, "13_pwa_install_btn")

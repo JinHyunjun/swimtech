@@ -31,7 +31,15 @@
       "Bash(git push *)",
       "Bash(python *)",
       "Bash(git commit *)",
-      "Skill(update-config)"
+      "PowerShell(Set-Location \"C:\\\\swim\\\\analysis\\\\train\"; foreach \\($f in @\\(\"02_extract_features.py\",\"03_train_model.py\",\"04_evaluate_model.py\",\"05_auto_label.py\",\"06_validate_data.py\"\\)\\) { $r = python $f --help 2>&1 | Select-Object -First 1; Write-Host \"${f}: $r\" })",
+      "PowerShell(head *)",
+      "PowerShell(Get-ChildItem -Path C:\\\\swim -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object {$_.Name -match \"\\(frontend|src|pages|components|public|analysis\\)\" -and $_.FullName -notmatch \"node_modules\"} | Select-Object -First 50 -ExpandProperty FullName)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "PowerShell(Start-Sleep -Seconds 3; python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -x -q --tb=short -k \"plan\" 2>&1 | Select-Object -Last 30)",
+      "PowerShell(docker restart swim-api *)",
+      "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short -k \"plan_api_get\" 2>&1 | Select-Object -Last 15)",
+      "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short -k \"plan\" 2>&1 | Select-Object -Last 20)",
+      "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short 2>&1 | Select-Object -Last 20)"
     ]
   }
 }

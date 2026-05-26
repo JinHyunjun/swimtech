@@ -409,7 +409,7 @@ function renderMessages() {
         <p class="welcome-desc">수영 기술, 훈련 방법, 지상운동, 스트레칭,<br>대회 정보, 용품 추천 등 수영과 관련된 모든 것을 물어보세요!</p>
         <div class="sample-grid">
           ${SAMPLES.map(q =>
-            `<div class="sample-card" onclick="sendSample(${JSON.stringify(q)})">${esc(q)}</div>`
+            `<div class="sample-card" onclick="sendSample(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</div>`
           ).join('')}
         </div>
       </div>`;

@@ -52,6 +52,9 @@ services:
       - HOST_IP=${HOST_IP}
       - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
       - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - KAKAO_JS_KEY=${KAKAO_JS_KEY}
+      - NOTION_TOKEN=${NOTION_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis

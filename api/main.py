@@ -5,12 +5,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, community
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -69,7 +70,8 @@ app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분�
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
 app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
 app.include_router(badge.router,      prefix="/api/badges",     tags=["뱃지"])
-app.include_router(community.router,  prefix="/api/community",  tags=["커뮤니티"])
+app.include_router(changelog.router,  prefix="/api/changelog",  tags=["변경 이력"])
+app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 플랜"])
 
 @app.get("/api/health")
 def health():
@@ -91,6 +93,7 @@ def open_folder():
         return {"status": "fallback"}
 
 FRONTEND_DIR = "/app/frontend"
+templates = Jinja2Templates(directory=FRONTEND_DIR)
 
 # 로그인 페이지
 @app.get("/login")
@@ -142,11 +145,6 @@ def drill_page():
 def faq_page():
     return _serve("faq.html")
 
-# 커뮤니티 (로그인 불필요 — 글쓰기는 프론트에서 제한)
-@app.get("/community")
-def community_page():
-    return _serve("community.html")
-
 # 부상 예방 가이드 (로그인 불필요)
 @app.get("/injury")
 def injury_page():
@@ -176,6 +174,14 @@ def _auth_redirect(request: Request):
         return RedirectResponse(url="/login")
     return None
 
+def _is_admin(request: Request) -> bool:
+    """관리자 계정 여부 확인."""
+    token = request.cookies.get("swimtech_token")
+    if not token:
+        return False
+    username = verify_token(token)
+    return username == os.getenv("ADMIN_ID", "admin")
+
 def _serve(filename: str):
     path = os.path.join(FRONTEND_DIR, filename)
     if os.path.exists(path):
@@ -191,23 +197,29 @@ def serve_home(request: Request):
 
 # 영상 분석 메타 선택 페이지
 @app.get("/meta")
-def serve_meta(request: Request):
+def serve_meta(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("meta.html")
 
 # 업로드 페이지
 @app.get("/upload")
-def serve_upload(request: Request):
+def serve_upload(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("upload.html")
 
 # 분석 뷰어 페이지
 @app.get("/viewer")
-def serve_viewer(request: Request):
+def serve_viewer(request: Request):  # admin-only
     redir = _auth_redirect(request)
     if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
     return _serve("viewer.html")
 
 # 대시보드 페이지
@@ -229,7 +241,10 @@ def serve_chat(request: Request):
 def serve_pool(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
-    return _serve("pool.html")
+    return templates.TemplateResponse("pool.html", {
+        "request": request,
+        "kakao_js_key": os.getenv("KAKAO_JS_KEY", ""),
+    })
 
 # 온보딩 튜토리얼 페이지
 @app.get("/onboarding")
@@ -244,6 +259,11 @@ def serve_glossary(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("glossary.html")
+
+# 릴리즈 노트 (로그인 불필요)
+@app.get("/changelog")
+def changelog_page():
+    return _serve("changelog.html")
 
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")

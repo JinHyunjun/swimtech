@@ -1,14 +1,17 @@
 """
-SwimTech — 포즈 분석 핵심 모듈
+SwimTech 포즈 분석 핵심 모듈 (v2 - 전처리 강화 + 랜드마크 보간)
 MediaPipe Tasks API (0.10.x 이상 / Python 3.12 호환) 기준
-랜드마크 추출 → 팔 각도 / 머리 각도 / 발차기 횟수 계산
+감지율 개선:
+  1. CLAHE 대비 강화 — 수중/흐린 환경 개선
+  2. 칼만 필터 기반 랜드마크 보간 — 감지 실패 프레임 보완
+  3. 촬영 환경별 전처리 파라미터 분기 (수중/수면/실내)
 """
 import cv2
 import numpy as np
 import urllib.request
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
@@ -39,10 +42,166 @@ MODEL_URL  = (
 
 def _ensure_model():
     if not os.path.exists(MODEL_PATH):
-        print("[SwimTech] MediaPipe 모델 다운로드 중... (최초 1회, 약 5MB)")
+        print("[SwimTech] MediaPipe 모델 다운로드 중... (최대 1분, 약 5MB)")
         urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
         print(f"[SwimTech] 모델 저장 완료: {MODEL_PATH}")
 
+
+# ── 전처리 ────────────────────────────────────────────────────────────────────
+
+# 촬영 환경별 CLAHE 파라미터
+_PREPROCESS_PARAMS = {
+    "underwater": {"clip_limit": 4.0, "tile_grid": (4, 4), "denoise": True,  "upscale": 1.5},
+    "surface":    {"clip_limit": 2.5, "tile_grid": (8, 8), "denoise": True,  "upscale": 1.0},
+    "indoor":     {"clip_limit": 1.5, "tile_grid": (8, 8), "denoise": False, "upscale": 1.0},
+    "outdoor":    {"clip_limit": 2.0, "tile_grid": (8, 8), "denoise": False, "upscale": 1.0},
+    "default":    {"clip_limit": 2.0, "tile_grid": (8, 8), "denoise": True,  "upscale": 1.0},
+}
+
+# SwimTech 촬영환경 선택값 → 전처리 파라미터 매핑
+_ENV_MAP = {
+    "수중":   "underwater",
+    "수면위": "surface",
+    "실내":   "indoor",
+    "실외":   "outdoor",
+}
+
+
+def preprocess_frame(frame: np.ndarray, env: str = "default") -> np.ndarray:
+    """
+    촬영 환경에 맞는 전처리 적용
+    - CLAHE: 대비 강화 (수중 흐림, 역광 개선)
+    - 노이즈 제거: 수중 영상 노이즈 감소
+    - 업스케일: 원거리 촬영 해상도 보정
+
+    Args:
+        frame: BGR 프레임
+        env: 촬영 환경 ('수중', '수면위', '실내', '실외', 'default')
+    Returns:
+        전처리된 BGR 프레임
+    """
+    key = _ENV_MAP.get(env, env if env in _PREPROCESS_PARAMS else "default")
+    p = _PREPROCESS_PARAMS[key]
+
+    # 1. 업스케일 (수중 영상 원거리 보정)
+    if p["upscale"] != 1.0:
+        h, w = frame.shape[:2]
+        frame = cv2.resize(
+            frame,
+            (int(w * p["upscale"]), int(h * p["upscale"])),
+            interpolation=cv2.INTER_CUBIC
+        )
+
+    # 2. 노이즈 제거 (수중 영상)
+    if p["denoise"]:
+        frame = cv2.fastNlMeansDenoisingColored(frame, None, 6, 6, 7, 21)
+
+    # 3. CLAHE 대비 강화 (LAB 색공간 L채널에만 적용)
+    lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(
+        clipLimit=p["clip_limit"],
+        tileGridSize=p["tile_grid"]
+    )
+    l = clahe.apply(l)
+    lab = cv2.merge([l, a, b])
+    frame = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+    return frame
+
+
+# ── 랜드마크 보간 (칼만 필터) ──────────────────────────────────────────────────
+
+class LandmarkInterpolator:
+    """
+    칼만 필터 기반 랜드마크 보간기.
+    MediaPipe 감지 실패 프레임에서 이전/예측값으로 좌표를 보완.
+
+    - 연속 max_missing_frames 이상 감지 실패 시 보간 포기 (None 반환)
+    - 감지 성공 시 칼만 필터 업데이트
+    - 감지 실패 시 칼만 예측값 반환
+    """
+
+    MAX_MISSING = 10  # 연속 감지 실패 허용 최대 프레임 수
+
+    def __init__(self, n_landmarks: int = 33):
+        self.n = n_landmarks
+        # 각 랜드마크별 (x, y) 칼만 필터
+        self._filters: List[Optional[cv2.KalmanFilter]] = [None] * n_landmarks
+        self._missing_count = 0
+        self._last_landmarks = None
+
+    def _make_kalman(self) -> cv2.KalmanFilter:
+        """2D 등속도 모델 칼만 필터 생성 (state: x, y, vx, vy)"""
+        kf = cv2.KalmanFilter(4, 2)
+        kf.measurementMatrix = np.array(
+            [[1, 0, 0, 0],
+             [0, 1, 0, 0]], np.float32
+        )
+        kf.transitionMatrix = np.array(
+            [[1, 0, 1, 0],
+             [0, 1, 0, 1],
+             [0, 0, 1, 0],
+             [0, 0, 0, 1]], np.float32
+        )
+        kf.processNoiseCov    = np.eye(4, dtype=np.float32) * 1e-3
+        kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1e-2
+        kf.errorCovPost       = np.eye(4, dtype=np.float32)
+        return kf
+
+    def update(self, landmarks):
+        """
+        landmarks: MediaPipe pose_landmarks[0] 또는 None (감지 실패)
+        returns: 보간된 landmarks 유사 구조 (list of SimpleNamespace) 또는 None
+        """
+        if landmarks is not None:
+            self._missing_count = 0
+            self._last_landmarks = landmarks
+
+            # 칼만 필터 업데이트
+            for i, lm in enumerate(landmarks):
+                if self._filters[i] is None:
+                    self._filters[i] = self._make_kalman()
+                    # 초기 상태 설정
+                    self._filters[i].statePre = np.array(
+                        [[lm.x], [lm.y], [0.0], [0.0]], np.float32
+                    )
+                    self._filters[i].statePost = self._filters[i].statePre.copy()
+
+                meas = np.array([[lm.x], [lm.y]], np.float32)
+                self._filters[i].predict()
+                self._filters[i].correct(meas)
+
+            return landmarks
+
+        else:
+            # 감지 실패
+            self._missing_count += 1
+
+            if self._missing_count > self.MAX_MISSING or self._last_landmarks is None:
+                return None  # 보간 포기
+
+            # 칼만 예측값으로 보간
+            interpolated = []
+            for i, kf in enumerate(self._filters):
+                if kf is None:
+                    interpolated.append(self._last_landmarks[i])
+                    continue
+                pred = kf.predict()
+                # SimpleNamespace로 x, y 속성 모방
+                from types import SimpleNamespace
+                lm_interp = SimpleNamespace(
+                    x=float(pred[0]),
+                    y=float(pred[1]),
+                    z=self._last_landmarks[i].z,
+                    visibility=self._last_landmarks[i].visibility * 0.8  # 보간 신뢰도 감소
+                )
+                interpolated.append(lm_interp)
+
+            return interpolated
+
+
+# ── 기존 코드 (변경 없음) ────────────────────────────────────────────────────
 
 @dataclass
 class FrameMetric:
@@ -56,12 +215,14 @@ class FrameMetric:
     body_roll: Optional[float] = None
     kick_detected: bool = False
     landmarks_visible: bool = False
+    interpolated: bool = False  # 보간 프레임 여부 추가
 
 
 @dataclass
 class AnalysisSummary:
     total_frames: int = 0
     analyzed_frames: int = 0
+    interpolated_frames: int = 0  # 보간으로 복구된 프레임 수 추가
     duration_sec: float = 0.0
     left_arm_angle_avg: float = 0.0
     right_arm_angle_avg: float = 0.0
@@ -88,17 +249,16 @@ def lm_xy(landmarks, idx) -> list:
 
 class KickDetector:
     """
-    영법별 발차기 감지기 — 캘리브레이션 없이 rolling std 기반 실시간 적응 threshold.
-
-    최근 60프레임 발목 Y 표준편차 * 0.5 를 threshold로 사용해
-    촬영 환경에 자동 적응. 각 발 독립 쿨다운으로 교대 킥 정확 감지.
+    영법별 발차기 감지기 — 캘리브레이션 없이 rolling std 기반 동적 threshold.
+    최근 60프레임 발목 Y 표준편차 * 0.5 를 threshold로 사용함.
+    수영 환경에 자동 적응. 각 발 독립 쿨다운 5프레임.
 
     - freestyle / backstroke / unknown : 각 발 독립 감지 (쿨다운 5프레임)
     - butterfly                        : 양발 평균 Y, 아래→위 전환 (쿨다운 8프레임)
-    - breaststroke                     : 양발 평균 Y, 위→아래 전환 (쿨다운 12프레임)
+    - breaststroke                     : 양발 평균 Y, 모임→벌어진 패턴 (쿨다운 12프레임)
     """
 
-    _WINDOW = 60  # rolling std 계산에 사용할 최근 프레임 수 (양발 × 2)
+    _WINDOW = 60
 
     _COOLDOWN = {
         "freestyle":    5,
@@ -111,17 +271,15 @@ class KickDetector:
     def __init__(self, stroke_type: str = "unknown"):
         self.stroke_type = stroke_type
         self.kick_count  = 0
-        self._y_buf: list = []          # 양발 Y값 rolling 버퍼
+        self._y_buf: list = []
 
-        # 교대 킥 상태 (freestyle / backstroke / unknown)
         self._prev_l: Optional[float] = None
         self._prev_r: Optional[float] = None
-        self._dir_l:  int = 0           # +1=내려가는중, -1=올라가는중
+        self._dir_l:  int = 0
         self._dir_r:  int = 0
-        self._cool_l: int = 0           # 발별 독립 쿨다운
+        self._cool_l: int = 0
         self._cool_r: int = 0
 
-        # 동기 킥 상태 (butterfly / breaststroke)
         self._prev_avg: Optional[float] = None
         self._dir_avg:  int = 0
         self._cool_avg: int = 0
@@ -129,14 +287,12 @@ class KickDetector:
         self._base_cd = self._COOLDOWN.get(stroke_type, 5)
 
     def _threshold(self) -> float:
-        """최근 60프레임 발목 Y 표준편차의 0.5배 (최소 0.008, 최대 0.04)."""
         if len(self._y_buf) < 10:
             return 0.015
         std = float(np.std(self._y_buf[-self._WINDOW:]))
         return float(np.clip(std * 0.5, 0.008, 0.04))
 
     def update(self, l_y: float, r_y: float) -> bool:
-        # rolling 버퍼 유지 (오래된 데이터 제거)
         self._y_buf.append(l_y)
         self._y_buf.append(r_y)
         if len(self._y_buf) > self._WINDOW * 4:
@@ -146,7 +302,6 @@ class KickDetector:
         kicked = False
 
         if self.stroke_type == "butterfly":
-            # 양발 평균 Y: 아래(+)→위(-) 전환 시 1카운트
             if self._cool_avg > 0:
                 self._cool_avg -= 1
             avg = (l_y + r_y) / 2
@@ -163,7 +318,6 @@ class KickDetector:
             self._prev_avg = avg
 
         elif self.stroke_type == "breaststroke":
-            # 양발 평균 Y: 위(-)→아래(+) 전환 시 1카운트 (모였다 벌어지는 패턴)
             if self._cool_avg > 0:
                 self._cool_avg -= 1
             avg = (l_y + r_y) / 2
@@ -179,8 +333,7 @@ class KickDetector:
                     self._dir_avg = 1
             self._prev_avg = avg
 
-        else:  # freestyle, backstroke, unknown — 각 발 독립 감지
-            # 왼발: 아래(+)→위(-) 전환 시 1카운트
+        else:
             if self._cool_l > 0:
                 self._cool_l -= 1
             if self._prev_l is not None:
@@ -195,7 +348,6 @@ class KickDetector:
                     self._dir_l = -1
             self._prev_l = l_y
 
-            # 오른발: 독립 쿨다운
             if self._cool_r > 0:
                 self._cool_r -= 1
             if self._prev_r is not None:
@@ -226,6 +378,8 @@ def _draw_overlay(frame, metric: FrameMetric, width: int, height: int):
         put(f"R Elbow: {metric.right_elbow_angle:.1f}deg", 85,
             good if 80 <= metric.right_elbow_angle <= 120 else bad)
         put(f"Head  : {metric.head_angle:.1f}deg", 110, (200,200,0))
+    if metric.interpolated:
+        cv2.putText(frame, "INTERP", (w-160, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100,200,255), 2)
     if metric.kick_detected:
         cv2.putText(frame, "KICK!", (w-120, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,255,255), 3)
 
@@ -251,7 +405,21 @@ KEY_POINTS = [
 ]
 
 
-def analyze_video(video_path: str, output_path: Optional[str] = None) -> AnalysisSummary:
+def analyze_video(
+    video_path: str,
+    output_path: Optional[str] = None,
+    env: str = "default",
+    stroke_type: str = "freestyle"
+) -> AnalysisSummary:
+    """
+    수영 영상 분석 메인 함수
+
+    Args:
+        video_path:  입력 영상 경로
+        output_path: 오버레이 영상 저장 경로 (None이면 저장 안 함)
+        env:         촬영 환경 ('수중', '수면위', '실내', '실외', 'default')
+        stroke_type: 영법 ('freestyle', 'backstroke', 'breaststroke', 'butterfly')
+    """
     _ensure_model()
 
     cap = cv2.VideoCapture(video_path)
@@ -270,7 +438,8 @@ def analyze_video(video_path: str, output_path: Optional[str] = None) -> Analysi
             os.makedirs(out_dir, exist_ok=True)
         writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
 
-    kick_detector = KickDetector(stroke_type="freestyle")
+    kick_detector = KickDetector(stroke_type=stroke_type)
+    interpolator  = LandmarkInterpolator(n_landmarks=33)
     summary = AnalysisSummary(total_frames=total_frames, duration_sec=total_frames / fps)
     l_elbows, r_elbows, l_shoulders, r_shoulders, head_angles = [], [], [], [], []
 
@@ -291,16 +460,32 @@ def analyze_video(video_path: str, output_path: Optional[str] = None) -> Analysi
                 break
 
             timestamp_ms = int(frame_num / fps * 1000)
-            rgb      = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # ── 전처리 적용 ──
+            processed = preprocess_frame(frame, env=env)
+
+            rgb      = cv2.cvtColor(processed, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result   = landmarker.detect_for_video(mp_image, timestamp_ms)
 
-            metric = FrameMetric(frame_number=frame_num, timestamp_sec=round(frame_num/fps, 3))
+            # ── 랜드마크 보간 ──
+            raw_lms = result.pose_landmarks[0] if (
+                result.pose_landmarks and len(result.pose_landmarks) > 0
+            ) else None
+            lms = interpolator.update(raw_lms)
+            is_interpolated = (raw_lms is None and lms is not None)
 
-            if result.pose_landmarks and len(result.pose_landmarks) > 0:
-                lms = result.pose_landmarks[0]
+            metric = FrameMetric(
+                frame_number=frame_num,
+                timestamp_sec=round(frame_num / fps, 3),
+                interpolated=is_interpolated
+            )
+
+            if lms is not None:
                 metric.landmarks_visible = True
                 summary.analyzed_frames += 1
+                if is_interpolated:
+                    summary.interpolated_frames += 1
 
                 l_elbow    = calc_angle(lm_xy(lms,LM.LEFT_SHOULDER), lm_xy(lms,LM.LEFT_ELBOW),    lm_xy(lms,LM.LEFT_WRIST))
                 r_elbow    = calc_angle(lm_xy(lms,LM.RIGHT_SHOULDER),lm_xy(lms,LM.RIGHT_ELBOW),   lm_xy(lms,LM.RIGHT_WRIST))
@@ -318,27 +503,33 @@ def analyze_video(video_path: str, output_path: Optional[str] = None) -> Analysi
                 dx = lms[LM.LEFT_SHOULDER].x - lms[LM.RIGHT_SHOULDER].x
                 metric.body_roll = round(float(np.degrees(np.arctan2(dy, dx))), 2)
 
-                l_elbows.append(l_elbow);   r_elbows.append(r_elbow)
+                l_elbows.append(l_elbow);    r_elbows.append(r_elbow)
                 l_shoulders.append(l_shoulder); r_shoulders.append(r_shoulder)
                 head_angles.append(head_angle)
 
-                metric.kick_detected = kick_detector.update(lms[LM.LEFT_ANKLE].y, lms[LM.RIGHT_ANKLE].y)
+                metric.kick_detected = kick_detector.update(
+                    lms[LM.LEFT_ANKLE].y, lms[LM.RIGHT_ANKLE].y
+                )
 
                 if writer:
+                    draw_frame = frame.copy()
                     for c in SKELETON_CONNECTIONS:
                         p1, p2 = lms[c[0]], lms[c[1]]
-                        cv2.line(frame,
+                        color = (100, 200, 255) if is_interpolated else (0, 255, 0)
+                        cv2.line(draw_frame,
                                  (int(p1.x*width), int(p1.y*height)),
                                  (int(p2.x*width), int(p2.y*height)),
-                                 (0,255,0), 2)
+                                 color, 2)
                     for idx in KEY_POINTS:
                         p = lms[idx]
-                        cv2.circle(frame, (int(p.x*width), int(p.y*height)), 5, (255,0,0), -1)
-                    _draw_overlay(frame, metric, width, height)
+                        cv2.circle(draw_frame, (int(p.x*width), int(p.y*height)), 5, (255,0,0), -1)
+                    _draw_overlay(draw_frame, metric, width, height)
+                    writer.write(draw_frame)
+            else:
+                if writer:
+                    writer.write(frame)
 
             summary.frame_metrics.append(metric)
-            if writer:
-                writer.write(frame)
             frame_num += 1
 
     cap.release()

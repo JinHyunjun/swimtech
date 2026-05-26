@@ -240,7 +240,10 @@ body {
 <body>
 
 <div class="header">
-  <div class="logo">🏊 SwimTech</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;">← 뒤로</button>
+    <a href="/" style="text-decoration:none;color:inherit;"><div class="logo">🏊 SwimTech</div></a>
+  </div>
   <div class="header-sub">분석 결과 공유</div>
 </div>
 
@@ -433,7 +436,7 @@ async function copyLink() {
 
 async function shareKakao() {
   // Kakao SDK share
-  if (window.Kakao && Kakao.isInitialized()) {
+  if (window.Kakao && Kakao.isInitialized() && Kakao.Share) {
     try {
       Kakao.Share.sendDefault({
         objectType: 'feed',

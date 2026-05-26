@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
 <script type="text/javascript"
-  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3d51b20b04a33ad0448c941c1268146e&libraries=services&autoload=false">
+  src="//dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=services&autoload=false">
 </script>
 <style>
 .pool-layout {
@@ -177,7 +177,8 @@
 
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">🏊 수영장 찾기</span>
     </div>
     <div class="header-right">
@@ -235,6 +236,7 @@ let map, ps, infowindow, myMarker;
 let markers = [];
 let poolData = [];
 let myLat = 37.5665, myLng = 126.9780;
+let _accumPages = [], _searchId = 0;
 
 function initMap(lat, lng) {
   const container = document.getElementById('map');
@@ -252,35 +254,55 @@ function initMap(lat, lng) {
     zIndex: 5
   });
 
-  searchPools(lat, lng);
+  kakao.maps.event.addListener(map, 'dragend', function() {
+    const center = map.getCenter();
+    searchPoolsByLocation(center.getLat(), center.getLng());
+  });
+
+  searchPoolsByLocation(lat, lng);
 }
 
-function searchPools(lat, lng) {
+function searchPoolsByLocation(lat, lng) {
   document.getElementById('pool-list-body').innerHTML = '<div class="pool-loading">🔍 수영장 검색 중...</div>';
   document.getElementById('pool-count').textContent = '';
   clearMarkers();
-  infowindow.close();
+  if (infowindow) infowindow.close();
 
-  ps.keywordSearch('수영장', onSearchDone, {
+  _accumPages = [];
+  const sid = ++_searchId;
+
+  ps.keywordSearch('수영장', function(data, status, pagination) {
+    if (sid !== _searchId) return;
+    if (status === kakao.maps.services.Status.OK) {
+      _accumPages = _accumPages.concat(data);
+      if (pagination.hasNextPage && pagination.current < 3) {
+        pagination.nextPage();
+        return;
+      }
+      poolData = _accumPages;
+      displayMarkers(poolData);
+      renderList(poolData);
+      document.getElementById('pool-count').textContent = `${poolData.length}개 발견`;
+    } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
+      if (_accumPages.length > 0) {
+        poolData = _accumPages;
+        displayMarkers(poolData);
+        renderList(poolData);
+        document.getElementById('pool-count').textContent = `${poolData.length}개 발견`;
+      } else {
+        document.getElementById('pool-list-body').innerHTML =
+          '<div class="pool-empty">주변 5km 이내<br>수영장을 찾을 수 없습니다.</div>';
+      }
+    } else {
+      document.getElementById('pool-list-body').innerHTML =
+        '<div class="pool-empty">검색 중 오류가 발생했습니다.</div>';
+    }
+  }, {
     location: new kakao.maps.LatLng(lat, lng),
     radius: 5000,
-    sort: kakao.maps.services.SortBy.DISTANCE
+    sort: kakao.maps.services.SortBy.DISTANCE,
+    size: 15
   });
-}
-
-function onSearchDone(data, status) {
-  if (status === kakao.maps.services.Status.OK) {
-    poolData = data;
-    displayMarkers(data);
-    renderList(data);
-    document.getElementById('pool-count').textContent = `${data.length}개 발견`;
-  } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
-    document.getElementById('pool-list-body').innerHTML =
-      '<div class="pool-empty">주변 5km 이내<br>수영장을 찾을 수 없습니다.</div>';
-  } else {
-    document.getElementById('pool-list-body').innerHTML =
-      '<div class="pool-empty">검색 중 오류가 발생했습니다.</div>';
-  }
 }
 
 function clearMarkers() {
@@ -374,8 +396,9 @@ function setActiveItem(idx) {
 }
 
 function searchByKeyword() {
+  if (!map || !ps) return;
   const query = document.getElementById('search-input').value.trim();
-  if (!query) { searchPools(myLat, myLng); return; }
+  if (!query) { searchPoolsByLocation(myLat, myLng); return; }
 
   ps.keywordSearch(`${query} 수영장`, (data, status) => {
     if (status === kakao.maps.services.Status.OK) {
@@ -384,7 +407,7 @@ function searchByKeyword() {
       myLat = lat; myLng = lng;
       map.setCenter(new kakao.maps.LatLng(lat, lng));
       map.setLevel(5);
-      searchPools(lat, lng);
+      searchPoolsByLocation(lat, lng);
     } else {
       // 지역명으로만 재검색
       ps.keywordSearch(query, (data2, status2) => {
@@ -394,7 +417,7 @@ function searchByKeyword() {
           myLat = lat; myLng = lng;
           map.setCenter(new kakao.maps.LatLng(lat, lng));
           map.setLevel(5);
-          searchPools(lat, lng);
+          searchPoolsByLocation(lat, lng);
         } else {
           alert('검색 결과를 찾을 수 없습니다.');
         }
@@ -404,6 +427,10 @@ function searchByKeyword() {
 }
 
 function moveToMyLocation() {
+  if (!map) {
+    alert('지도를 로드하는 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
   if (!navigator.geolocation) {
     alert('이 브라우저는 위치 서비스를 지원하지 않습니다.');
     return;
@@ -415,7 +442,7 @@ function moveToMyLocation() {
     map.setCenter(latlng);
     map.setLevel(5);
     myMarker.setPosition(latlng);
-    searchPools(myLat, myLng);
+    searchPoolsByLocation(myLat, myLng);
   }, () => {
     alert('위치 정보를 가져올 수 없습니다.\n브라우저의 위치 권한을 확인해주세요.');
   }, { timeout: 8000 });
@@ -425,20 +452,25 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') searchByKeyword();
 });
 
-// 초기화: SDK가 완전히 로드된 뒤 geolocation 시작
-kakao.maps.load(function () {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      myLat = pos.coords.latitude;
-      myLng = pos.coords.longitude;
+// 초기화: SDK 로드 확인 후 geolocation 시작
+if (typeof kakao === 'undefined') {
+  document.getElementById('pool-list-body').innerHTML =
+    '<div class="pool-empty">카카오맵 SDK를 불러오지 못했습니다.<br>페이지를 새로고침해 주세요.</div>';
+} else {
+  kakao.maps.load(function () {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        initMap(myLat, myLng);
+      }, () => {
+        initMap(myLat, myLng);
+      }, { timeout: 6000 });
+    } else {
       initMap(myLat, myLng);
-    }, () => {
-      initMap(myLat, myLng);
-    }, { timeout: 6000 });
-  } else {
-    initMap(myLat, myLng);
-  }
-});
+    }
+  });
+}
 </script>
 </body>
 </html>

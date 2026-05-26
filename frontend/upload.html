@@ -97,7 +97,8 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">수영 영법 분석 플랫폼</span>
     </div>
     <div class="header-right">
@@ -224,8 +225,48 @@ function handleFile(file) {
   }
 }
 
-function goToViewer() {
+async function goToViewer() {
   if (!selectedFile) return;
+
+  const btn = document.getElementById('proceed-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 업로드 중...';
+
+  try {
+    // 고객 ID 조회
+    const meRes = await fetch('/auth/me', { credentials: 'include' });
+    if (!meRes.ok) { window.location.href = '/login'; return; }
+    const me = await meRes.json();
+    const customerId = me.customer_id;
+
+    // sessionStorage에서 메타 정보 읽기
+    const strokeType = sessionStorage.getItem('swimtech_stroke')  || 'freestyle';
+    const env        = sessionStorage.getItem('swimtech_context') || 'default';
+    const purpose    = sessionStorage.getItem('swimtech_purpose') || '';
+
+    // 업로드 API 호출 (stroke_type, env, purpose 전달)
+    const params = new URLSearchParams({ customer_id: customerId, stroke_type: strokeType, env, purpose });
+    const form   = new FormData();
+    form.append('file', selectedFile);
+
+    const res = await fetch(`/videos/upload?${params}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      sessionStorage.setItem('swimtech_task_id',  data.task_id);
+      sessionStorage.setItem('swimtech_video_id', String(data.video_id));
+    } else {
+      const err = await res.json().catch(() => ({}));
+      console.warn('업로드 API 오류:', err.detail || res.status);
+    }
+  } catch (e) {
+    console.warn('업로드 API 호출 실패 (분석은 계속 진행):', e.message);
+  }
+
   sessionStorage.setItem('swimtech_filename', selectedFile.name);
   window.location.href = '/viewer';
 }

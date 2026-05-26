@@ -8,175 +8,240 @@
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
 <style>
-.plan-page {
-  padding: 24px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.plan-topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.back-btn {
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 12px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all .2s;
-}
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
-
+.plan-page { padding: 24px; max-width: 960px; margin: 0 auto; }
+.plan-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+.plan-topbar-title { flex: 1; min-width: 0; }
 .plan-title { font-size: 20px; font-weight: 600; color: var(--text); }
 .plan-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.back-btn { background: none; border: 0.5px solid var(--border); color: var(--muted); border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; text-decoration: none; transition: all .2s; white-space: nowrap; }
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+.btn-create-plan { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; cursor: pointer; transition: opacity .2s, transform .15s; white-space: nowrap; }
+.btn-create-plan:hover { opacity: .88; transform: translateY(-1px); }
 
-/* 탭 */
-.tab-bar {
-  display: flex;
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 28px;
-  overflow-x: auto;
-  gap: 0;
-}
-
-.tab-btn {
-  flex: 1;
-  min-width: 100px;
-  padding: 10px 14px;
-  background: none;
-  border: none;
-  border-radius: 7px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background .2s, color .2s;
-  white-space: nowrap;
-}
+.tab-bar { display: flex; background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 28px; overflow-x: auto; gap: 0; }
+.tab-btn { flex: 1; min-width: 80px; padding: 9px 10px; background: none; border: none; border-radius: 7px; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: background .2s, color .2s; white-space: nowrap; }
 .tab-btn:hover { color: var(--text); }
-.tab-btn.active {
-  background: linear-gradient(135deg, rgba(0,180,216,.18), rgba(72,202,228,.12));
-  color: var(--blue);
-  border: 0.5px solid rgba(0,180,216,.25);
-}
-
+.tab-btn.active { background: linear-gradient(135deg, rgba(0,180,216,.18), rgba(72,202,228,.12)); color: var(--blue); border: 0.5px solid rgba(0,180,216,.25); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* 플랜 카드 */
-.plan-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.plan-card-header {
-  padding: 20px 24px 14px;
-  border-bottom: 0.5px solid var(--border);
-}
-.plan-card-icon { font-size: 28px; margin-bottom: 6px; }
+.plan-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px; overflow: hidden; }
+.plan-card-header { padding: 20px 24px 16px; border-bottom: 0.5px solid var(--border); }
+.plan-card-icon  { font-size: 28px; margin-bottom: 6px; }
 .plan-card-title { font-size: 17px; font-weight: 700; color: var(--text); }
 .plan-card-desc  { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
 
-/* 플랜 테이블 */
-.plan-table-wrap { overflow-x: auto; padding: 0; }
-.plan-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.plan-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.3px;
-  background: rgba(0,0,0,.15);
-  border-bottom: 0.5px solid var(--border);
-  white-space: nowrap;
-}
-.plan-table td {
-  padding: 12px 16px;
-  color: var(--text);
-  border-bottom: 0.5px solid var(--border);
-  line-height: 1.5;
-  vertical-align: top;
-}
-.plan-table tr:last-child td { border-bottom: none; }
-.plan-table tr:hover td { background: rgba(0,180,216,.03); }
+.week-selector { display: flex; gap: 8px; padding: 16px 24px; border-bottom: 0.5px solid var(--border); overflow-x: auto; }
+.week-sel-btn { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 0.5px solid var(--border); background: none; color: var(--muted); transition: all .2s; white-space: nowrap; }
+.week-sel-btn.active { color: var(--blue); border-color: rgba(0,180,216,.4); background: rgba(0,180,216,.08); }
+.week-sel-btn:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
 
-.week-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.week-1 { background: rgba(0,180,216,.12);  color: var(--blue);   border: 0.5px solid rgba(0,180,216,.3);  }
-.week-2 { background: rgba(74,222,128,.1);  color: var(--green);  border: 0.5px solid rgba(74,222,128,.3); }
-.week-3 { background: rgba(245,158,11,.1);  color: var(--amber);  border: 0.5px solid rgba(245,158,11,.3); }
-.week-4 { background: rgba(167,139,250,.1); color: var(--purple); border: 0.5px solid rgba(167,139,250,.3);}
+.week-panels { padding: 20px 24px; }
+.week-panel  { display: none; }
+.week-panel.active { display: block; }
+.week-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.week-theme { font-size: 14px; font-weight: 600; color: var(--text); }
+.intensity { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+.intensity-easy   { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
+.intensity-medium { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
+.intensity-hard   { background: rgba(248,113,113,.12); color: #f87171; border: 0.5px solid rgba(248,113,113,.3); }
 
-.analysis-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  padding: 2px 8px;
-  background: rgba(167,139,250,.1);
-  border: 0.5px solid rgba(167,139,250,.25);
-  border-radius: 4px;
-  color: var(--purple);
-  white-space: nowrap;
-}
+.sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.session-card { background: rgba(0,0,0,.12); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.session-day-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: rgba(0,180,216,.06); }
+.session-day { font-size: 13px; font-weight: 700; color: var(--blue); }
+.session-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.session-part { font-size: 12px; }
+.part-label { font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+.part-info { color: var(--text); }
+.part-dist { font-weight: 700; color: var(--cyan); margin-right: 6px; }
+.mainset-items { display: flex; flex-direction: column; gap: 5px; }
+.mainset-row { display: flex; align-items: flex-start; gap: 6px; padding: 5px 8px; background: rgba(0,0,0,.1); border-radius: 6px; }
+.ms-dist { font-size: 11px; font-weight: 700; color: var(--amber); min-width: 42px; }
+.ms-info { flex: 1; }
+.ms-drill   { font-size: 12px; font-weight: 600; color: var(--text); display: block; }
+.ms-purpose { font-size: 11px; color: var(--muted); }
+.session-total { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(0,180,216,.06); border-radius: 6px; font-size: 12px; color: var(--muted); }
+.session-total strong { color: var(--blue); font-size: 13px; }
+.coach-tip { font-size: 11px; color: var(--muted); line-height: 1.6; padding: 7px 10px; border-left: 2px solid rgba(0,180,216,.3); background: rgba(0,180,216,.04); border-radius: 0 6px 6px 0; }
 
-/* 하단 버튼 */
-.plan-card-footer {
-  padding: 16px 24px;
-  border-top: 0.5px solid var(--border);
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.plan-btn {
-  padding: 9px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: transform .15s, opacity .2s;
-}
+.plan-card-footer { padding: 16px 24px; border-top: 0.5px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.plan-btn { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: transform .15s, opacity .2s; }
 .plan-btn:hover { transform: translateY(-1px); opacity: .9; }
 .plan-btn-primary   { background: var(--blue); color: #fff; border: none; }
 .plan-btn-secondary { background: none; color: var(--cyan); border: 1px solid var(--cyan); }
-.plan-hint {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap;
-}
+.plan-hint { margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ── 내 플랜 ── */
+.myplan-empty { text-align: center; padding: 60px 24px; color: var(--muted); }
+.myplan-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.myplan-empty h3   { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.myplan-empty p    { font-size: 13px; line-height: 1.7; }
+.myplan-list { display: flex; flex-direction: column; gap: 14px; padding: 4px 0; }
+.myplan-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+.myplan-card-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; transition: background .15s; }
+.myplan-card-header:hover { background: rgba(0,180,216,.04); }
+.myplan-card-info { flex: 1; min-width: 0; }
+.myplan-card-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.myplan-card-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.myplan-card-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.myplan-card-toggle { font-size: 14px; color: var(--muted); transition: transform .2s; }
+.myplan-card.open .myplan-card-toggle { transform: rotate(180deg); }
+.myplan-card-body { display: none; border-top: 0.5px solid var(--border); padding: 16px 20px; }
+.myplan-card.open .myplan-card-body { display: block; }
+.myplan-week-header { font-size: 12px; font-weight: 700; color: var(--blue); margin: 12px 0 8px; display: flex; align-items: center; gap: 8px; }
+.myplan-week-header:first-child { margin-top: 0; }
+.myplan-session { margin-bottom: 10px; }
+.myplan-session-day { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.btn-del-plan { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: none; border: 0.5px solid rgba(248,113,113,.4); color: #f87171; cursor: pointer; transition: background .15s; }
+.btn-del-plan:hover { background: rgba(248,113,113,.08); }
+.myplan-source-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+.badge-local { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
+.badge-cloud { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
+
+/* ── 랜덤 생성 탭 ── */
+.random-panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px; overflow: hidden; }
+.random-panel-header { padding: 20px 24px 16px; border-bottom: 0.5px solid var(--border); }
+.form-section { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.form-input { background: rgba(0,0,0,.15); border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text); outline: none; transition: border-color .2s; font-family: inherit; width: 100%; box-sizing: border-box; }
+.form-input:focus { border-color: var(--blue); }
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 0.5px solid var(--border); background: none; color: var(--muted); cursor: pointer; transition: all .15s; }
+.chip:hover  { border-color: var(--blue); color: var(--blue); }
+.chip.selected { background: rgba(0,180,216,.15); border-color: rgba(0,180,216,.5); color: var(--blue); font-weight: 700; }
+
+.btn-gen-random { padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity .2s; }
+.btn-gen-random:hover   { opacity: .88; }
+.btn-gen-random:disabled { opacity: .4; cursor: not-allowed; }
+
+.plan-preview-box { margin: 0 24px 20px; border: 0.5px solid rgba(0,180,216,.3); border-radius: 10px; overflow: hidden; display: none; }
+.plan-preview-box.visible { display: block; }
+.preview-header { background: rgba(0,180,216,.08); padding: 12px 16px; border-bottom: 0.5px solid rgba(0,180,216,.2); font-size: 13px; font-weight: 700; color: var(--blue); }
+.preview-body { padding: 0; max-height: 420px; overflow-y: auto; }
+
+.gen-msg { margin: 0 24px 12px; padding: 10px 14px; border-radius: 8px; font-size: 12px; display: none; }
+.gen-msg.error   { background: rgba(248,113,113,.1); border: 0.5px solid rgba(248,113,113,.3); color: #f87171; display: block; }
+.gen-msg.success { background: rgba(74,222,128,.08); border: 0.5px solid rgba(74,222,128,.3); color: #4ade80; display: block; }
+
+.random-footer { padding: 16px 24px; border-top: 0.5px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+.btn-save-plan { padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--blue); color: #fff; border: none; cursor: pointer; transition: opacity .2s; display: none; }
+.btn-save-plan.visible { display: inline-flex; align-items: center; gap: 6px; }
+.btn-save-plan:hover { opacity: .88; }
+
+/* ── 직접 구성 탭 ── */
+.builder-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
+@media (max-width: 700px) { .builder-layout { grid-template-columns: 1fr; } }
+
+.pool-panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+.pool-panel-header { padding: 14px 16px; border-bottom: 0.5px solid var(--border); }
+.pool-panel-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.pool-search-wrap { position: relative; margin-bottom: 10px; }
+.pool-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; }
+.pool-search { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.15); border: 0.5px solid var(--border); border-radius: 8px; padding: 8px 12px 8px 32px; font-size: 12px; color: var(--text); outline: none; font-family: inherit; transition: border-color .2s; }
+.pool-search:focus { border-color: var(--blue); }
+.pool-search::placeholder { color: var(--muted); }
+.pool-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.pool-filter-btn { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 0.5px solid var(--border); background: none; color: var(--muted); cursor: pointer; transition: all .15s; }
+.pool-filter-btn.active { background: rgba(0,180,216,.12); border-color: rgba(0,180,216,.4); color: var(--blue); }
+
+/* 고정 기타 카드 */
+.pool-custom-pin { margin: 0 8px 6px; padding: 12px 16px; border-radius: 10px; border: 1.5px dashed rgba(0,180,216,.45); background: linear-gradient(135deg, rgba(0,180,216,.07), rgba(72,202,228,.04)); cursor: grab; display: flex; align-items: center; gap: 12px; transition: background .2s, border-color .2s; }
+.pool-custom-pin:hover { background: linear-gradient(135deg, rgba(0,180,216,.15), rgba(72,202,228,.10)); border-color: var(--blue); }
+.pool-custom-pin:active { cursor: grabbing; opacity: .85; }
+.pool-custom-pin.dragging { opacity: .4; cursor: grabbing; }
+.pool-custom-icon { font-size: 26px; font-weight: 300; color: var(--blue); line-height: 1; flex-shrink: 0; }
+.pool-custom-body { flex: 1; min-width: 0; }
+.pool-custom-title { font-size: 13px; font-weight: 700; color: var(--blue); }
+.pool-custom-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.pool-list { max-height: 480px; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.pool-item { padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,.1); border: 0.5px solid var(--border); cursor: pointer; transition: border-color .15s, background .15s; }
+.pool-item:hover { border-color: var(--blue); background: rgba(0,180,216,.06); }
+.pool-item-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.pool-item-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.pool-item-type { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
+.type-warmup   { background: rgba(72,202,228,.12); color: var(--cyan); }
+.type-drill    { background: rgba(0,180,216,.12); color: var(--blue); }
+.type-mainset  { background: rgba(251,191,36,.12); color: #fbbf24; }
+.type-cooldown { background: rgba(74,222,128,.12); color: #4ade80; }
+
+.builder-editor { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+.editor-header { padding: 14px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.editor-title { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; }
+.editor-body { padding: 12px 16px; min-height: 200px; }
+
+.builder-day-slot { margin-bottom: 14px; border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+.day-slot-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0,180,216,.06); border-bottom: 0.5px solid var(--border); }
+.day-slot-label { font-size: 13px; font-weight: 700; color: var(--blue); flex: 1; }
+.btn-clear-day { padding: 3px 8px; border-radius: 5px; font-size: 10px; border: 0.5px solid rgba(248,113,113,.4); color: #f87171; background: none; cursor: pointer; }
+.day-slot-items { padding: 8px 12px; min-height: 40px; display: flex; flex-direction: column; gap: 6px; }
+.day-slot-empty { font-size: 11px; color: var(--muted); font-style: italic; padding: 6px 0; }
+
+.slot-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: rgba(0,0,0,.1); border-radius: 6px; border: 0.5px solid var(--border); }
+.slot-item-name { font-size: 12px; color: var(--text); flex: 1; }
+.btn-remove-slot { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1; }
+.btn-remove-slot:hover { color: #f87171; }
+
+.editor-footer { padding: 12px 16px; border-top: 0.5px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.builder-name-input { flex: 1; min-width: 150px; background: rgba(0,0,0,.15); border: 0.5px solid var(--border); border-radius: 7px; padding: 8px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; }
+.builder-name-input:focus { border-color: var(--blue); }
+.btn-save-builder { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--blue); color: #fff; border: none; cursor: pointer; transition: opacity .2s; }
+.btn-save-builder:hover { opacity: .88; }
+
+/* ── 드래그 앤 드롭 ── */
+.pool-item { cursor: grab; user-select: none; }
+.pool-item.dragging { opacity: 0.4; cursor: grabbing; }
+.day-drop-zone { min-height: 52px; border-radius: 6px; transition: background .15s, border .15s; }
+.day-drop-zone.drag-over { background: rgba(0,180,216,.1) !important; outline: 2px dashed var(--blue); outline-offset: -2px; }
+.drop-hint { font-size: 11px; color: var(--muted); font-style: italic; padding: 12px 8px; text-align: center; }
+
+/* ── 빌더 세션 카드 ── */
+.builder-card { background: rgba(0,0,0,.15); border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.builder-card-header { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-bottom: 0.5px solid var(--border); }
+.builder-card-title { flex: 1; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-rm-card { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; }
+.btn-rm-card:hover { color: #f87171; }
+.builder-card-inputs { display: flex; align-items: center; gap: 6px; padding: 7px 10px; flex-wrap: wrap; }
+.card-input-group { display: flex; align-items: center; gap: 4px; }
+.card-input-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+.card-num-input { background: rgba(0,0,0,.2); border: 0.5px solid var(--border); border-radius: 5px; padding: 4px 6px; font-size: 12px; color: var(--text); width: 58px; text-align: right; outline: none; font-family: inherit; }
+.card-num-input:focus { border-color: var(--blue); }
+.card-input-unit { font-size: 11px; color: var(--muted); }
+.card-subtotal { font-size: 11px; font-weight: 700; color: var(--blue); }
+
+/* ── 도구 토글 ── */
+.builder-card-equip { padding: 6px 10px 7px; display: flex; flex-wrap: wrap; gap: 4px; border-top: 0.5px solid var(--border); }
+.equip-btn { padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 0.5px solid var(--border); background: none; color: var(--muted); cursor: pointer; transition: all .15s; }
+.equip-btn:hover { border-color: var(--blue); color: var(--blue); }
+.equip-btn.active { background: rgba(0,180,216,.15); border-color: rgba(0,180,216,.5); color: var(--blue); }
+
+/* ── 주간 총합 ── */
+.week-total-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 8px; border-bottom: 0.5px solid var(--border); flex-wrap: wrap; gap: 8px; }
+.week-total-right { font-size: 13px; color: var(--muted); }
+.week-total-value { font-size: 15px; font-weight: 700; color: var(--blue); }
+.day-total-label { font-size: 10px; font-weight: 700; color: var(--blue); margin-left: auto; }
+
+/* ── 기타 입력 모달 ── */
+.cm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.cm-overlay.open { opacity: 1; pointer-events: all; }
+.cm-modal { background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px; width: 100%; max-width: 400px; transform: translateY(10px); transition: transform .2s; overflow: hidden; }
+.cm-overlay.open .cm-modal { transform: translateY(0); }
+.cm-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 0.5px solid var(--border); }
+.cm-modal-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.cm-modal-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
+.cm-modal-close:hover { color: var(--text); }
+.cm-modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 13px; }
+.cm-modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 0.5px solid var(--border); }
 
 @media (max-width: 600px) {
   .plan-page { padding: 16px; }
   .plan-hint { display: none; }
+  .sessions-grid { grid-template-columns: 1fr; }
+  .week-panels { padding: 16px; }
+  .plan-card-header { padding: 16px; }
+  .form-section { padding: 16px; }
 }
 </style>
 </head>
@@ -185,7 +250,8 @@
 
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">훈련 플랜</span>
     </div>
   </header>
@@ -193,240 +259,1290 @@
   <div class="plan-page">
     <div class="plan-topbar">
       <a href="/" class="back-btn">← 홈으로</a>
-      <div>
+      <div class="plan-topbar-title">
         <div class="plan-title">📅 수영 훈련 플랜</div>
         <div class="plan-sub">목적에 맞는 4주 플랜으로 체계적으로 성장하세요</div>
       </div>
+      <button class="btn-create-plan" id="open-modal-btn">🎲 내 플랜 만들기</button>
     </div>
 
-    <!-- 탭 -->
-    <div class="tab-bar">
+    <div class="tab-bar" id="tab-bar">
       <button class="tab-btn active" data-tab="speed">🏅 기록 단축</button>
       <button class="tab-btn" data-tab="health">💪 건강하게 오래</button>
       <button class="tab-btn" data-tab="form">🎯 영법 교정</button>
       <button class="tab-btn" data-tab="hobby">😊 취미/건강유지</button>
+      <button class="tab-btn" data-tab="random">🎲 랜덤 생성</button>
+      <button class="tab-btn" data-tab="builder">🛠 직접 구성</button>
+      <button class="tab-btn" data-tab="myplan">✨ 내 플랜</button>
     </div>
 
-    <!-- 기록 단축 -->
-    <div id="tab-speed" class="tab-content active">
-      <div class="plan-card">
-        <div class="plan-card-header">
-          <div class="plan-card-icon">🏅</div>
-          <div class="plan-card-title">기록 단축 4주 플랜</div>
-          <div class="plan-card-desc">스피드와 효율을 함께 높이는 집중 훈련. 분석을 통해 매주 개선 포인트를 확인합니다.</div>
+    <div id="tab-speed"   class="tab-content active"></div>
+    <div id="tab-health"  class="tab-content"></div>
+    <div id="tab-form"    class="tab-content"></div>
+    <div id="tab-hobby"   class="tab-content"></div>
+
+    <!-- 🎲 랜덤 생성 -->
+    <div id="tab-random" class="tab-content">
+      <div class="random-panel">
+        <div class="random-panel-header">
+          <div class="plan-card-icon">🎲</div>
+          <div class="plan-card-title">랜덤 플랜 자동 생성</div>
+          <div class="plan-card-desc">목표·영법·실력을 선택하면 4주 훈련 플랜을 자동으로 만들어드립니다.</div>
         </div>
-        <div class="plan-table-wrap">
-          <table class="plan-table">
-            <thead>
-              <tr>
-                <th>주차</th>
-                <th>월</th>
-                <th>수</th>
-                <th>금</th>
-                <th>주말</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="week-badge week-1">1주</span></td>
-                <td>6비트킥 드릴 30분</td>
-                <td>단팔 자유형 30분</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-                <td>자유수영 45분</td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-2">2주</span></td>
-                <td>스피드 인터벌</td>
-                <td>턴 연습</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-                <td>장거리 60분</td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-3">3주</span></td>
-                <td>스타트 연습</td>
-                <td>페이스 조절</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-                <td>레이스 시뮬레이션</td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-4">4주</span></td>
-                <td>컨디션 조절</td>
-                <td>가벼운 수영</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-                <td>🎯 목표 기록 도전</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="form-section">
+          <div class="form-group">
+            <div class="form-label">플랜 이름</div>
+            <input type="text" class="form-input" id="r-name" placeholder="예: 여름 자유형 집중 플랜" maxlength="50">
+          </div>
+          <div class="form-group">
+            <div class="form-label">목표</div>
+            <div class="chip-group" id="r-chips-goal">
+              <button class="chip" data-val="기록단축">🏅 기록단축</button>
+              <button class="chip" data-val="건강">💪 건강</button>
+              <button class="chip" data-val="영법교정">🎯 영법교정</button>
+              <button class="chip" data-val="취미">😊 취미</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">주 훈련 횟수</div>
+            <div class="chip-group" id="r-chips-sessions">
+              <button class="chip" data-val="2">주 2회</button>
+              <button class="chip" data-val="3">주 3회</button>
+              <button class="chip" data-val="4">주 4회</button>
+              <button class="chip" data-val="5">주 5회</button>
+              <button class="chip" data-val="6">주 6회</button>
+              <button class="chip" data-val="7">주 7회</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">회당 훈련 시간</div>
+            <div class="chip-group" id="r-chips-duration">
+              <button class="chip" data-val="30">30분</button>
+              <button class="chip" data-val="45">45분</button>
+              <button class="chip" data-val="60">60분</button>
+              <button class="chip" data-val="90">90분</button>
+              <button class="chip" data-val="120">120분</button>
+              <button class="chip" data-val="150">120분+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">중점 영법</div>
+            <div class="chip-group" id="r-chips-stroke">
+              <button class="chip" data-val="자유형">자유형</button>
+              <button class="chip" data-val="배영">배영</button>
+              <button class="chip" data-val="평영">평영</button>
+              <button class="chip" data-val="접영">접영</button>
+              <button class="chip" data-val="전체">전체</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">현재 실력</div>
+            <div class="chip-group" id="r-chips-level">
+              <button class="chip" data-val="입문">입문 (처음)</button>
+              <button class="chip" data-val="초급">초급 (~1km)</button>
+              <button class="chip" data-val="중급">중급 (~2km)</button>
+              <button class="chip" data-val="고급">고급 (2km+)</button>
+            </div>
+          </div>
+          <button class="btn-gen-random" id="btn-gen-random" disabled>🎲 플랜 생성</button>
         </div>
-        <div class="plan-card-footer">
-          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
-          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
-          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        <div class="gen-msg" id="gen-msg"></div>
+        <div class="plan-preview-box" id="r-preview">
+          <div class="preview-header" id="r-preview-header"></div>
+          <div class="preview-body" id="r-preview-body"></div>
+        </div>
+        <div class="random-footer">
+          <button class="btn-save-plan" id="btn-save-random">💾 저장하기</button>
         </div>
       </div>
     </div>
 
-    <!-- 건강하게 오래 -->
-    <div id="tab-health" class="tab-content">
-      <div class="plan-card">
-        <div class="plan-card-header">
-          <div class="plan-card-icon">💪</div>
-          <div class="plan-card-title">건강하게 오래 4주 플랜</div>
-          <div class="plan-card-desc">무리 없이 꾸준히 수영하는 습관을 만듭니다. 주 2~3회, 천천히 볼륨을 늘려갑니다.</div>
+    <!-- 🛠 직접 구성 -->
+    <div id="tab-builder" class="tab-content">
+      <div class="builder-layout">
+        <div class="pool-panel">
+          <div class="pool-panel-header">
+            <div class="pool-panel-title">세션 풀</div>
+            <div class="pool-search-wrap">
+              <span class="pool-search-icon">🔍</span>
+              <input type="text" class="pool-search" id="pool-search" placeholder="드릴명 · 목적 · 영법 검색...">
+            </div>
+            <div class="pool-filters" id="pool-filters">
+              <button class="pool-filter-btn active" data-filter="전체">전체</button>
+              <button class="pool-filter-btn" data-filter="자유형">자유형</button>
+              <button class="pool-filter-btn" data-filter="배영">배영</button>
+              <button class="pool-filter-btn" data-filter="평영">평영</button>
+              <button class="pool-filter-btn" data-filter="접영">접영</button>
+            </div>
+          </div>
+          <div class="pool-custom-pin" id="pool-custom-pin" draggable="true"
+            ondragstart="onCustomDragStart(event)"
+            ondragend="this.classList.remove('dragging')"
+            onclick="openCustomModal_direct()">
+            <span class="pool-custom-icon">＋</span>
+            <div class="pool-custom-body">
+              <div class="pool-custom-title">직접 입력</div>
+              <div class="pool-custom-sub">드래그하거나 클릭해서 훈련 추가</div>
+            </div>
+          </div>
+          <div class="pool-list" id="pool-list"></div>
         </div>
-        <div class="plan-table-wrap">
-          <table class="plan-table">
-            <thead>
-              <tr>
-                <th>주차</th>
-                <th>화</th>
-                <th>목</th>
-                <th>주말</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="week-badge week-1">1주</span></td>
-                <td>자유수영 20분 (천천히)</td>
-                <td>킥보드 + 자유영</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-2">2주</span></td>
-                <td>자유수영 25분</td>
-                <td>배영 교대</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-3">3주</span></td>
-                <td>자유수영 30분</td>
-                <td>2영법 교대</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-4">4주</span></td>
-                <td>자유수영 35분</td>
-                <td>자유롭게</td>
-                <td><span class="analysis-tag">📊 분석 + 피드백</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="plan-card-footer">
-          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
-          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
-          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        <div class="builder-editor">
+          <div class="week-total-bar">
+            <select id="builder-weeks" style="background:rgba(0,0,0,.2);border:0.5px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600;">
+              <option value="1">1주차</option>
+              <option value="2">2주차</option>
+              <option value="3">3주차</option>
+              <option value="4">4주차</option>
+            </select>
+            <span class="week-total-right">주간 총 거리 <span class="week-total-value" id="week-total-display">0m</span></span>
+          </div>
+          <div class="editor-body" id="builder-editor-body"></div>
+          <div class="editor-footer">
+            <input type="text" class="builder-name-input" id="builder-name" placeholder="플랜 이름 입력..." maxlength="50">
+            <button class="btn-save-builder" id="btn-save-builder">💾 저장</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 영법 교정 -->
-    <div id="tab-form" class="tab-content">
+    <!-- ✨ 내 플랜 -->
+    <div id="tab-myplan" class="tab-content">
       <div class="plan-card">
         <div class="plan-card-header">
-          <div class="plan-card-icon">🎯</div>
-          <div class="plan-card-title">영법 교정 4주 플랜</div>
-          <div class="plan-card-desc">매주 한 가지 포인트에 집중해 자세를 체계적으로 교정합니다. SwimTech 분석으로 진행 상황을 확인하세요.</div>
+          <div class="plan-card-icon">✨</div>
+          <div class="plan-card-title">내 맞춤 플랜</div>
+          <div class="plan-card-desc">저장된 나만의 플랜을 확인하고 관리합니다.</div>
         </div>
-        <div class="plan-table-wrap">
-          <table class="plan-table">
-            <thead>
-              <tr>
-                <th>주차</th>
-                <th>집중 드릴</th>
-                <th>확인 방법</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="week-badge week-1">1주</span></td>
-                <td>핑거드래그 + 캐치업 드릴</td>
-                <td><span class="analysis-tag">📊 분석으로 팔꿈치 확인</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-2">2주</span></td>
-                <td>6비트킥 + 발목 유연성</td>
-                <td><span class="analysis-tag">📊 분석으로 발차기 확인</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-3">3주</span></td>
-                <td>바디롤 + 호흡 타이밍</td>
-                <td><span class="analysis-tag">📊 분석으로 머리 자세 확인</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-4">4주</span></td>
-                <td>전체 통합 수영</td>
-                <td><span class="analysis-tag">📊 종합 분석 + 1주 대비</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="plan-card-footer">
-          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
-          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
-          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+        <div style="padding: 20px 24px;">
+          <div id="myplan-content"></div>
         </div>
       </div>
     </div>
 
-    <!-- 취미/건강유지 -->
-    <div id="tab-hobby" class="tab-content">
-      <div class="plan-card">
-        <div class="plan-card-header">
-          <div class="plan-card-icon">😊</div>
-          <div class="plan-card-title">취미/건강유지 4주 플랜</div>
-          <div class="plan-card-desc">부담 없이 즐기면서도 조금씩 성장하는 플랜. 좋아하는 것에서 시작하세요.</div>
-        </div>
-        <div class="plan-table-wrap">
-          <table class="plan-table">
-            <thead>
-              <tr>
-                <th>주차</th>
-                <th>주간 내용</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="week-badge week-1">1주</span></td>
-                <td>좋아하는 영법 위주로 자유롭게 수영 &nbsp;·&nbsp; <span class="analysis-tag">📊 분석 1회</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-2">2주</span></td>
-                <td>새로운 영법 하나 도전해보기 &nbsp;·&nbsp; <span class="analysis-tag">📊 분석 1회</span></td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-3">3주</span></td>
-                <td>드릴 가이드에서 드릴 1~2개 따라하기 &nbsp;·&nbsp; 가볍게 즐기기</td>
-              </tr>
-              <tr>
-                <td><span class="week-badge week-4">4주</span></td>
-                <td>자유롭게 수영 &nbsp;·&nbsp; <span class="analysis-tag">📊 4주 전과 비교 분석</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="plan-card-footer">
-          <a href="/upload" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
-          <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
-          <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+  </div>
+</div>
+
+<!-- 기타 훈련 직접 입력 모달 -->
+<div class="cm-overlay" id="cm-overlay">
+  <div class="cm-modal" role="dialog" aria-modal="true">
+    <div class="cm-modal-header">
+      <span class="cm-modal-title">✏️ 훈련 직접 입력</span>
+      <button class="cm-modal-close" id="cm-close">✕</button>
+    </div>
+    <div class="cm-modal-body">
+      <div class="form-group">
+        <div class="form-label">훈련 내용 *</div>
+        <input type="text" class="form-input" id="cm-name" placeholder="예: 자유영법 풀 스윔" maxlength="50">
+      </div>
+      <div class="form-group">
+        <div class="form-label">영법</div>
+        <div class="chip-group" id="cm-stroke-group">
+          <button class="chip" data-val="자유형">자유형</button>
+          <button class="chip" data-val="배영">배영</button>
+          <button class="chip" data-val="평영">평영</button>
+          <button class="chip" data-val="접영">접영</button>
+          <button class="chip" data-val="기타">기타</button>
         </div>
       </div>
+      <div style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <div class="form-label">반복 횟수</div>
+          <input type="number" class="form-input" id="cm-reps" value="1" min="1" max="30">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <div class="form-label">거리 (m)</div>
+          <input type="number" class="form-input" id="cm-dist" value="100" min="25" step="25">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">목적 (선택)</div>
+        <input type="text" class="form-input" id="cm-purpose" placeholder="예: 팔 당김 감각 향상" maxlength="60">
+      </div>
+      <div id="cm-target-day-display" style="font-size:12px;color:var(--blue);font-weight:600;"></div>
     </div>
-
-  </div><!-- .plan-page -->
+    <div class="cm-modal-footer">
+      <button class="btn-cancel" id="cm-cancel">취소</button>
+      <button class="btn-generate" id="cm-confirm" style="padding:10px 22px;">추가하기</button>
+    </div>
+  </div>
 </div>
 
 <script>
 "use strict";
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
+
+/* ══════════════════════════════════════════════
+   세션 풀 데이터
+══════════════════════════════════════════════ */
+const SESSION_POOL = {
+  자유형: {
+    stroke: '자유형',
+    warmup: [
+      { dist: '200m', note: '자유형 천천히 2회 왕복' },
+      { dist: '400m', note: '킥판 킥 2회 + 자유형 2회' },
+      { dist: '300m', note: '풀부이 팔동작 200m + 자유형 100m' },
+      { dist: '400m', note: '자유형 400m 점진적 가속' },
+      { dist: '200m', note: '자유형 편안하게' },
+    ],
+    drills: [
+      { dist: '6×50m', drill: '캐치업 드릴', purpose: '양팔 교대 타이밍 최적화', tip: '한쪽 팔이 완전히 앞에 뻗은 후 반대 팔을 시작합니다' },
+      { dist: '6×50m', drill: '하이엘보우 드릴', purpose: 'catch 시 팔꿈치 높이 유지', tip: '팔꿈치를 수면 가까이 유지하며 손만 아래로 향합니다' },
+      { dist: '8×50m', drill: '사이드킥 드릴', purpose: '바디롤 감각 훈련', tip: '몸 옆으로 누운 자세로 킥하며 바디롤 느낌을 익힙니다' },
+      { dist: '6×50m', drill: '핑거드래그 드릴', purpose: '팔 회복 경로 교정', tip: '손가락을 수면에 끌며 팔을 앞으로 회복합니다' },
+      { dist: '4×100m', drill: '6-1-6 드릴', purpose: '롤과 스트로크 연결', tip: '6번 킥 → 1번 스트로크 → 6번 킥 리듬으로 진행합니다' },
+      { dist: '6×50m', drill: '단팔 자유형', purpose: '한 팔 당김 감각 강화', tip: '한 팔을 몸에 붙이고 반대 팔만으로 수영합니다' },
+      { dist: '8×25m', drill: '6비트킥 드릴', purpose: '킥 리듬·발목 유연성', tip: '발목을 부드럽게 유지하고 고관절에서 킥을 시작합니다' },
+      { dist: '4×100m', drill: '풀부이 자유형', purpose: '팔 동작 집중 훈련', tip: '킥 없이 팔 당김만으로 전진하며 팔 효율을 높입니다' },
+    ],
+    mainset: [
+      { dist: '10×100m', drill: '인터벌 100m @1:50', purpose: '유산소 한계 자극', tip: '후반 25m를 조금 더 올리는 네거티브 스플릿을 연습합니다' },
+      { dist: '5×200m', drill: '피라미드 세트', purpose: '지구력·페이스 조절', tip: '1→2→3→2→1 강도로 피라미드 인터벌을 진행합니다' },
+      { dist: '4×400m', drill: '네거티브 스플릿', purpose: '후반부 가속 훈련', tip: '전반 200m보다 후반 200m를 빠르게 수영합니다' },
+      { dist: '12×50m', drill: '스프린트 세트', purpose: '최대 속도·근신경 자극', tip: '50m 전구간을 최대 강도로, 충분한 휴식 후 반복합니다' },
+      { dist: '3×800m', drill: '지구력 세트', purpose: '유산소 체력 강화', tip: '일정한 페이스를 유지하며 편안한 호흡 리듬을 찾습니다' },
+    ],
+    cooldown: [
+      { dist: '200m', note: '자유형 천천히' },
+      { dist: '200m', note: '배영 천천히' },
+      { dist: '300m', note: '킥보드 가볍게' },
+      { dist: '200m', note: '풀부이 편안하게' },
+      { dist: '100m', note: '선택 영법 천천히' },
+    ],
+  },
+  배영: {
+    stroke: '배영',
+    warmup: [
+      { dist: '200m', note: '배영 천천히' },
+      { dist: '400m', note: '배영 200m + 자유형 200m' },
+      { dist: '300m', note: '킥판 배영킥 200m + 배영 100m' },
+      { dist: '400m', note: '배영 점진적 가속' },
+      { dist: '200m', note: '배영 편안하게' },
+    ],
+    drills: [
+      { dist: '6×50m', drill: '배영 단팔 드릴', purpose: '한 팔 당김 감각 강화', tip: '한 팔을 허벅지에 붙이고 반대 팔만으로 수영합니다' },
+      { dist: '8×50m', drill: '배영 엄지손가락 드릴', purpose: '팔 입수 자세 교정', tip: '새끼손가락이 먼저 입수되도록 의식합니다' },
+      { dist: '6×50m', drill: '배영 킥보드 드릴', purpose: '균등한 킥 훈련', tip: '두 팔을 위로 뻗고 킥만으로 전진합니다' },
+      { dist: '4×100m', drill: '배영 풀부이', purpose: '팔 동작 집중', tip: '킥 없이 팔 당김만으로 수영하며 팔 효율을 높입니다' },
+      { dist: '6×50m', drill: '교호 배영 드릴', purpose: '바디롤 연습', tip: '스트로크마다 몸을 충분히 회전시킵니다' },
+      { dist: '8×25m', drill: '배영 스타트 드릴', purpose: '벽 차기 후 스트림라인', tip: '벽을 차고 나온 후 최대한 길게 뻗어 글라이드합니다' },
+      { dist: '4×100m', drill: '배영 호흡 리듬 드릴', purpose: '일정한 호흡 패턴 유지', tip: '팔 동작에 맞춰 규칙적으로 호흡합니다' },
+      { dist: '6×50m', drill: '배영 플러터킥 드릴', purpose: '킥 진폭 최적화', tip: '발목을 유연하게 유지하고 무릎 굽힘을 최소화합니다' },
+    ],
+    mainset: [
+      { dist: '8×100m', drill: '배영 인터벌', purpose: '배영 체력 강화', tip: '일정한 페이스로 반복하며 후반부에도 폼을 유지합니다' },
+      { dist: '4×200m', drill: '배영 지구력 세트', purpose: '연속 배영 적응', tip: '300m 이상 배영을 편안하게 수영하는 것이 목표입니다' },
+      { dist: '10×50m', drill: '배영 스피드 세트', purpose: '배영 속도 향상', tip: '최대 강도로 50m를 완영 후 충분히 휴식합니다' },
+      { dist: '3×400m', drill: '배영 페이스 훈련', purpose: '일정 페이스 유지', tip: '3번 모두 같은 페이스로 수영합니다' },
+      { dist: '5×200m', drill: '배영 피라미드', purpose: '배영 인터벌 변화', tip: '강도를 점점 올렸다 내리는 피라미드 방식으로 진행합니다' },
+    ],
+    cooldown: [
+      { dist: '200m', note: '배영 천천히' },
+      { dist: '200m', note: '자유형 천천히' },
+      { dist: '300m', note: '킥보드 가볍게' },
+      { dist: '200m', note: '배영·자유형 교대' },
+      { dist: '100m', note: '편안하게 마무리' },
+    ],
+  },
+  평영: {
+    stroke: '평영',
+    warmup: [
+      { dist: '200m', note: '평영 천천히' },
+      { dist: '400m', note: '평영 200m + 자유형 200m' },
+      { dist: '300m', note: '킥판 평영킥 200m + 평영 100m' },
+      { dist: '400m', note: '평영 점진적 가속' },
+      { dist: '200m', note: '평영 편안하게' },
+    ],
+    drills: [
+      { dist: '6×50m', drill: '평영 2킥1팔 드릴', purpose: '킥과 팔 타이밍 분리', tip: '킥 2번 후 팔 1번 풀로 킥과 팔 타이밍을 천천히 익힙니다' },
+      { dist: '8×50m', drill: '평영 킥보드 드릴', purpose: '개구리킥 자세 교정', tip: '두 무릎을 모으고 발꿈치를 엉덩이 쪽으로 당겨 차줍니다' },
+      { dist: '6×50m', drill: '평영 팔만 드릴', purpose: '팔 동작 집중 훈련', tip: '발을 뒤로 뻗은 채 팔 동작만 연습합니다' },
+      { dist: '4×100m', drill: '평영 글라이드 드릴', purpose: '뻗기 동작 강화', tip: '팔을 앞으로 뻗은 후 2-3초 글라이드 자세를 유지합니다' },
+      { dist: '6×50m', drill: '평영 스컬링', purpose: '손 입수 감각 훈련', tip: '손바닥으로 8자를 그리듯 물을 느끼며 앞으로 나아갑니다' },
+      { dist: '8×25m', drill: '평영 헤드업 드릴', purpose: '호흡 타이밍 교정', tip: '팔 동작 시작과 동시에 머리를 들어 호흡합니다' },
+      { dist: '4×100m', drill: '평영 리듬 드릴', purpose: '전체 동작 리듬 통합', tip: '킥-뻗기-팔-호흡의 리듬을 일정하게 유지합니다' },
+      { dist: '6×50m', drill: '평영 언더워터킥', purpose: '잠수 킥 연습', tip: '출발 후 최대한 길게 잠수 킥으로 글라이드합니다' },
+    ],
+    mainset: [
+      { dist: '8×100m', drill: '평영 인터벌', purpose: '평영 체력 강화', tip: '킥 타이밍과 글라이드를 의식하며 반복합니다' },
+      { dist: '4×200m', drill: '평영 지구력 세트', purpose: '연속 평영 적응', tip: '지치더라도 글라이드 자세를 포기하지 마세요' },
+      { dist: '10×50m', drill: '평영 스피드 세트', purpose: '평영 속도 향상', tip: '킥 파워를 최대로 발휘하며 50m를 완영합니다' },
+      { dist: '3×400m', drill: '평영 페이스 훈련', purpose: '일정 페이스 유지', tip: '편안한 페이스로 일정하게 3번 반복합니다' },
+      { dist: '5×(100m평영+100m자유형)', drill: '혼합 인터벌', purpose: '영법 전환 적응', tip: '영법 전환 시 페이스를 급히 바꾸지 않습니다' },
+    ],
+    cooldown: [
+      { dist: '200m', note: '평영 천천히' },
+      { dist: '200m', note: '자유형 천천히' },
+      { dist: '300m', note: '킥보드 가볍게' },
+      { dist: '200m', note: '배영 편안하게' },
+      { dist: '100m', note: '편안하게 마무리' },
+    ],
+  },
+  접영: {
+    stroke: '접영',
+    warmup: [
+      { dist: '200m', note: '자유형 + 접영 동작 의식하며' },
+      { dist: '400m', note: '자유형 300m + 접영 100m' },
+      { dist: '300m', note: '킥판 돌핀킥 200m + 접영 100m' },
+      { dist: '400m', note: '접영 50m×4 + 자유형 200m' },
+      { dist: '200m', note: '접영 편안하게' },
+    ],
+    drills: [
+      { dist: '8×25m', drill: '돌핀킥 드릴', purpose: '파형 동작 습득', tip: '온몸으로 물결을 만드는 느낌으로 킥합니다' },
+      { dist: '6×50m', drill: '접영 단팔 드릴', purpose: '한 팔 당김 감각', tip: '한 팔을 옆에 붙이고 반대 팔만으로 접영합니다' },
+      { dist: '8×25m', drill: '접영 킥보드', purpose: '돌핀킥 강화', tip: '킥보드를 앞에 두고 돌핀킥으로 25m 전진합니다' },
+      { dist: '4×50m', drill: '접영 입수 드릴', purpose: '팔 입수 각도 교정', tip: '어깨 너비로 두 팔을 앞에 뻗어 입수합니다' },
+      { dist: '6×50m', drill: '접영 1-2-3 드릴', purpose: '리듬 분리 연습', tip: '1회 킥-2회 킥-팔 동작을 분리해 리듬을 익힙니다' },
+      { dist: '8×25m', drill: '수면 아래 접영', purpose: '잠수 돌핀킥', tip: '수면 바로 아래서 부드럽게 돌핀킥합니다' },
+      { dist: '4×50m', drill: '접영 호흡 드릴', purpose: '호흡 타이밍 교정', tip: '2스트로크마다 1회 호흡하는 리듬을 연습합니다' },
+      { dist: '6×25m', drill: '접영 가속 드릴', purpose: '파워 킥 연습', tip: '25m 전반부를 2킥으로 폭발적으로 시작합니다' },
+    ],
+    mainset: [
+      { dist: '8×50m', drill: '접영 인터벌', purpose: '접영 지구력 강화', tip: '충분한 휴식(1분+) 후 매번 동일한 폼으로 수영합니다' },
+      { dist: '4×100m', drill: '접영 지구력 세트', purpose: '100m 접영 적응', tip: '페이스를 너무 빠르게 시작하지 않도록 주의합니다' },
+      { dist: '10×25m', drill: '접영 스프린트', purpose: '최대 출력 훈련', tip: '25m 전구간을 최대 파워로 수영합니다' },
+      { dist: '5×(50m접영+50m자유형)', drill: '접영/자유형 혼합', purpose: '영법 전환 체력', tip: '접영 후 자유형으로 전환 시 호흡을 정돈합니다' },
+      { dist: '6×50m', drill: '접영 페이스 세트', purpose: '일정 페이스 접영', tip: '6번 모두 같은 페이스로 수영합니다' },
+    ],
+    cooldown: [
+      { dist: '200m', note: '자유형 천천히' },
+      { dist: '200m', note: '배영 편안하게' },
+      { dist: '300m', note: '킥보드 가볍게' },
+      { dist: '200m', note: '접영·자유형 교대' },
+      { dist: '100m', note: '편안하게 마무리' },
+    ],
+  },
+};
+
+/* ══════════════════════════════════════════════
+   기존 프리셋 플랜 데이터
+══════════════════════════════════════════════ */
+const PLANS = {
+  speed: {
+    icon: "🏅", title: "기록 단축 4주 플랜",
+    desc: "스피드와 효율을 함께 높이는 집중 훈련. SwimTech 분석으로 매주 개선 포인트를 확인합니다.",
+    weeks: [
+      { num:1, theme:"기초 체력 + 드릴 적응", intensity:"easy", sessions:[
+        { day:"월요일", warmup:{dist:"400m",note:"자유형 천천히 4회 왕복"}, mainset:[{dist:"400m",drill:"6비트킥 드릴",purpose:"킥 리듬·발목 유연성 강화"},{dist:"400m",drill:"단팔 자유형",purpose:"팔 당김 타이밍과 catch 감각"}], cooldown:{dist:"200m",note:"배영 천천히"}, total:"1,400m", tip:"발목을 부드럽게 유지하고, 킥은 무릎이 아닌 고관절에서 시작합니다"},
+        { day:"수요일", warmup:{dist:"600m",note:"자유형 400m + 킥보드 200m"}, mainset:[{dist:"600m",drill:"풀부이 자유형",purpose:"팔 동작만 집중, 킥 배제"},{dist:"200m",drill:"스피드업 4×50m",purpose:"출력 감각 유지"}], cooldown:{dist:"200m",note:"부이+킥 교대"}, total:"1,600m", tip:"풀부이로 킥 없이 팔 동작에만 집중해보세요"},
+        { day:"금요일", warmup:{dist:"400m",note:"자유형"}, mainset:[{dist:"300m",drill:"분석용 영상 촬영",purpose:"현재 폼 기록"},{dist:"200m",drill:"교정 연습 4×50m",purpose:"피드백 즉시 적용"}], cooldown:{dist:"200m",note:"자유수영"}, total:"1,100m", tip:"영상을 보며 팔 입수 위치와 팔꿈치 방향을 확인하세요"},
+        { day:"토요일", warmup:{dist:"400m",note:"자유형"}, mainset:[{dist:"1,200m",drill:"연속 자유수영",purpose:"유산소 기초 체력 향상"}], cooldown:{dist:"200m",note:"풀부이 천천히"}, total:"1,800m", tip:"편안한 페이스를 유지하며 호흡 리듬을 찾아보세요"}
+      ]},
+      { num:2, theme:"스피드 인터벌 시작", intensity:"medium", sessions:[
+        { day:"월요일", warmup:{dist:"600m",note:"자유형 400m + 점가속 4×50m"}, mainset:[{dist:"1,000m",drill:"10×100m @1:50",purpose:"80% 강도 인터벌, 유산소 한계 자극"}], cooldown:{dist:"300m",note:"천천히 쿨다운"}, total:"1,900m", tip:"각 100m의 후반 25m를 조금 더 올리는 네거티브 스플릿을 연습합니다"},
+        { day:"수요일", warmup:{dist:"600m",note:"자유형 400m + 터치앤턴 4×50m"}, mainset:[{dist:"600m",drill:"6×100m 턴 집중",purpose:"플립턴/터치턴 기술 향상"},{dist:"200m",drill:"4×50m 스프린트",purpose:"최대 속도 자극"}], cooldown:{dist:"200m",note:"천천히"}, total:"1,600m", tip:"벽에 닿기 5m 전부터 속도를 줄이지 마세요"},
+        { day:"금요일", warmup:{dist:"400m",note:"자유형"}, mainset:[{dist:"400m",drill:"영상 촬영 + 1주차 비교",purpose:"개선 포인트 확인"},{dist:"200m",drill:"4×50m 교정 적용",purpose:"피드백 반영"}], cooldown:{dist:"200m",note:"자유수영"}, total:"1,200m", tip:"이번 주 교정 포인트가 개선됐는지 1주차 영상과 비교해보세요"},
+        { day:"토요일", warmup:{dist:"800m",note:"자유형 400m + 4×100m 점가속"}, mainset:[{dist:"1,600m",drill:"2×800m @레이스 페이스",purpose:"페이스 안정성 훈련"}], cooldown:{dist:"300m",note:"천천히 쿨다운"}, total:"2,700m", tip:"800m 2개를 같은 페이스로 수영하는 페이스 안정성이 핵심입니다"}
+      ]},
+      { num:3, theme:"레이스 준비 + 시뮬레이션", intensity:"hard", sessions:[
+        { day:"월요일", warmup:{dist:"650m",note:"자유형 500m + 폭발 가속 6×25m"}, mainset:[{dist:"600m",drill:"12×50m 스프린트 @1:15",purpose:"최대 속도·근신경 자극"},{dist:"400m",drill:"4×100m @1:40",purpose:"레이스 페이스 유지력"}], cooldown:{dist:"300m",note:"천천히 쿨다운"}, total:"1,950m", tip:"50m 스프린트는 출발 후 3스트로크까지 폭발적으로"},
+        { day:"수요일", warmup:{dist:"800m",note:"자유형 400m + 4×100m 점층 가속"}, mainset:[{dist:"1,200m",drill:"3×400m @목표 레이스 페이스",purpose:"레이스 페이스 고정"}], cooldown:{dist:"300m",note:"천천히 쿨다운"}, total:"2,300m", tip:"400m 3개를 동일한 페이스로 수영하는 것이 오늘의 목표입니다"},
+        { day:"금요일", warmup:{dist:"700m",note:"레이스 루틴 웜업 400m + 점가속 4×50m"}, mainset:[{dist:"varies",drill:"레이스 시뮬레이션 ×1",purpose:"실전 경험 + 분석 촬영"}], cooldown:{dist:"300m",note:"천천히 쿨다운"}, total:"~1,500m", tip:"레이스 당일과 동일한 루틴으로 웜업하고 전략대로 수영해보세요"},
+        { day:"토요일", warmup:{dist:"900m",note:"자유형 600m + 점가속 6×50m"}, mainset:[{dist:"varies",drill:"레이스 거리 시뮬 ×2",purpose:"레이스 컨디션 최종 점검"}], cooldown:{dist:"400m",note:"충분한 쿨다운"}, total:"~2,800m", tip:"두 번째 시뮬레이션이 첫 번째보다 빠르면 컨디션이 좋다는 신호입니다"}
+      ]},
+      { num:4, theme:"테이퍼 + 최종 도전", intensity:"easy", sessions:[
+        { day:"월요일", warmup:{dist:"400m",note:"자유형 천천히"}, mainset:[{dist:"600m",drill:"6×100m @편안한 페이스",purpose:"몸 활성화, 과부하 금지"},{dist:"200m",drill:"4×50m 가벼운 스프린트",purpose:"속도 감각 유지"}], cooldown:{dist:"200m",note:"천천히 자유수영"}, total:"1,400m", tip:"이번 주는 훈련량을 줄이고 체력 회복에 집중합니다"},
+        { day:"수요일", warmup:{dist:"400m",note:"자유형"}, mainset:[{dist:"800m",drill:"연속 자유수영",purpose:"근육 이완·혈액순환"},{dist:"200m",drill:"핑거드래그 드릴 4×50m",purpose:"폼 유지"}], cooldown:{dist:"200m",note:"배영 천천히"}, total:"1,600m", tip:"폼은 신경 쓰되 강도는 낮게"},
+        { day:"금요일", warmup:{dist:"400m",note:"자유형"}, mainset:[{dist:"300m",drill:"종합 분석 촬영",purpose:"1주차 대비 개선 확인"},{dist:"300m",drill:"3×100m @레이스 페이스",purpose:"속도 감각 점검"}], cooldown:{dist:"200m",note:"천천히 자유수영"}, total:"1,200m", tip:"1주차 영상과 비교해 개선된 점을 확인하고 자신감을 쌓으세요"},
+        { day:"토요일 🎯", warmup:{dist:"800m",note:"자유형 600m + 점가속 4×50m"}, mainset:[{dist:"목표 기록",drill:"최종 목표 기록 도전!",purpose:"4주간의 훈련 결실"}], cooldown:{dist:"400m",note:"충분한 쿨다운으로 마무리"}, total:"varies", tip:"4주간 쌓아온 훈련을 믿으세요 💪"}
+      ]}
+    ]
+  },
+  health: {
+    icon:"💪", title:"건강하게 오래 4주 플랜",
+    desc:"무리 없이 꾸준히 수영하는 습관을 만듭니다. 주 3회, 천천히 볼륨을 늘려갑니다.",
+    weeks:[
+      {num:1,theme:"적응 + 기초 체력",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"200m",note:"자유형 천천히"},mainset:[{dist:"300m",drill:"4×50m 자유형",purpose:"숨이 차지 않는 페이스 찾기"},{dist:"300m",drill:"킥보드 킥",purpose:"하체 근력·발목 유연성"}],cooldown:{dist:"100m",note:"천천히"},total:"900m",tip:"숨이 차지 않는 페이스를 찾는 것이 오늘의 목표입니다"},
+        {day:"목요일",warmup:{dist:"200m",note:"자유형"},mainset:[{dist:"400m",drill:"자유형 연속",purpose:"연속 수영 적응"},{dist:"200m",drill:"킥보드 킥",purpose:"하체 강화"},{dist:"200m",drill:"배영 4×50m",purpose:"자세 교대·근육 균형"}],cooldown:{dist:"100m",note:"천천히"},total:"1,100m",tip:"배영은 자유형과 다른 근육을 사용해 균형 있는 발달을 돕습니다"},
+        {day:"토요일",warmup:{dist:"200m",note:"자유형"},mainset:[{dist:"800m",drill:"자유수영",purpose:"편안한 페이스로 지속 수영"}],cooldown:{dist:"100m",note:"천천히"},total:"1,100m",tip:"분석 1회! 현재 자신의 영법을 객관적으로 파악해보세요"}
+      ]},
+      {num:2,theme:"볼륨 증가",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"600m",drill:"6×100m 자유형",purpose:"지구력 향상"},{dist:"200m",drill:"킥보드 4×50m",purpose:"하체 강화"}],cooldown:{dist:"200m",note:"천천히 자유수영"},total:"1,300m",tip:"지난 주보다 더 수영했음을 느끼면서 성취감을 가져보세요"},
+        {day:"목요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"600m",drill:"자유형 + 배영 교대",purpose:"2영법 교대로 근육 균형"},{dist:"200m",drill:"4×50m 자유형",purpose:"마무리 속도 유지"}],cooldown:{dist:"200m",note:"킥보드 천천히"},total:"1,300m",tip:"배영과 자유형을 교대하면 특정 근육의 과부하를 줄여줍니다"},
+        {day:"토요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"1,000m",drill:"연속 자유수영",purpose:"체력 향상 확인"}],cooldown:{dist:"200m",note:"천천히"},total:"1,500m",tip:"1주차보다 편안해진 것을 느낀다면 체력이 늘고 있는 겁니다!"}
+      ]},
+      {num:3,theme:"2영법 교대 본격화",intensity:"medium",sessions:[
+        {day:"화요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"800m",drill:"8×100m (자유형/배영 교대)",purpose:"2영법 전환 리듬 익히기"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,300m",tip:"영법 전환 시 속도 조절이 필요합니다"},
+        {day:"목요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,200m",drill:"3×(200m 자유형 + 200m 배영)",purpose:"2영법 볼륨 증가"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,800m",tip:"오늘은 거리가 늘었습니다. 지치면 속도를 줄이고 거리를 지키세요"},
+        {day:"토요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,200m",drill:"연속 자유수영",purpose:"지구력 기록"}],cooldown:{dist:"200m",note:"천천히"},total:"1,800m",tip:"3주째 꾸준히 오신 것만으로도 훌륭합니다!"}
+      ]},
+      {num:4,theme:"자유롭게 즐기기",intensity:"medium",sessions:[
+        {day:"화요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,000m",drill:"10×100m 자유형",purpose:"1,000m+ 수영 자신감"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,600m",tip:"이제는 1,000m 이상 무리 없이 수영할 수 있게 됐을 겁니다"},
+        {day:"목요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"600m",drill:"자유형",purpose:"체력 유지"},{dist:"600m",drill:"좋아하는 영법",purpose:"즐기면서 볼륨 유지"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,800m",tip:"좋아하는 영법으로 즐겁게 수영하면 지속 가능한 습관이 됩니다"},
+        {day:"토요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,500m",drill:"연속 자유수영",purpose:"4주 성장 확인"}],cooldown:{dist:"200m",note:"천천히"},total:"2,100m",tip:"4주 전과 비교 분석으로 얼마나 성장했는지 확인해보세요!"}
+      ]}
+    ]
+  },
+  form: {
+    icon:"🎯", title:"영법 교정 4주 플랜",
+    desc:"매주 한 가지 포인트에 집중해 자세를 체계적으로 교정합니다.",
+    weeks:[
+      {num:1,theme:"팔 동작 + 캐치 교정",intensity:"easy",sessions:[
+        {day:"월요일",warmup:{dist:"400m",note:"자유형 천천히"},mainset:[{dist:"300m",drill:"핑거드래그 드릴 6×50m",purpose:"high-elbow catch 습득"},{dist:"400m",drill:"캐치업 드릴 4×100m",purpose:"양팔 교대 타이밍 최적화"}],cooldown:{dist:"200m",note:"배영 천천히"},total:"1,300m",tip:"핑거드래그는 팔꿈치를 높이 유지하는 high-elbow catch를 만들어줍니다"},
+        {day:"수요일",warmup:{dist:"600m",note:"자유형 400m + 킥보드 200m"},mainset:[{dist:"400m",drill:"단팔 자유형 8×50m",purpose:"한 팔씩 당김 느낌 강화"},{dist:"400m",drill:"자유형 전체 4×100m",purpose:"드릴 동작 실제 수영에 통합"}],cooldown:{dist:"200m",note:"부이+킥"},total:"1,600m",tip:"팔 한쪽씩 당기는 느낌을 충분히 익힌 후 양팔을 조합하세요"},
+        {day:"금요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"300m",drill:"분석 촬영",purpose:"팔꿈치 입수 각도 기록"},{dist:"300m",drill:"교정 연습",purpose:"팔꿈치 방향 집중"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,200m",tip:"영상을 보며 팔 입수 위치와 팔꿈치 방향을 확인하세요"}
+      ]},
+      {num:2,theme:"킥 + 발목 유연성",intensity:"easy",sessions:[
+        {day:"월요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"400m",drill:"킥보드 킥 (발목 플렉스)",purpose:"발목 유연성 강화"},{dist:"300m",drill:"6비트킥 6×50m",purpose:"킥 리듬 습득"},{dist:"200m",drill:"2비트킥 4×50m",purpose:"자유형 기본 킥 패턴"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,500m",tip:"2비트킥은 한쪽 팔이 뻗을 때 반대쪽 발이 한 번 차는 리듬입니다"},
+        {day:"수요일",warmup:{dist:"600m",note:"자유형 400m + 킥보드 200m"},mainset:[{dist:"400m",drill:"킥보드 4×100m",purpose:"발목 유연성 집중 훈련"},{dist:"300m",drill:"자유형 6×50m (킥 집중)",purpose:"킥을 의식한 전체 수영"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,500m",tip:"발목이 뻣뻣하면 킥 효율이 떨어집니다"},
+        {day:"금요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"300m",drill:"분석 촬영 (발차기 집중)",purpose:"킥 리듬·발목 자세 기록"},{dist:"300m",drill:"킥 교정 연습",purpose:"1주차 대비 개선 확인"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,200m",tip:"1주차 영상과 킥 리듬을 비교해보세요"}
+      ]},
+      {num:3,theme:"바디롤 + 호흡 타이밍",intensity:"medium",sessions:[
+        {day:"월요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"300m",drill:"사이드킥 드릴 6×50m",purpose:"바디롤 감각 훈련"},{dist:"400m",drill:"바디롤 집중 자유형 4×100m",purpose:"코어 회전과 스트로크 연결"}],cooldown:{dist:"200m",note:"배영"},total:"1,300m",tip:"바디롤은 어깨가 아닌 코어와 고관절 회전에서 옵니다"},
+        {day:"수요일",warmup:{dist:"600m",note:"자유형 400m + 호흡 연습 4×50m"},mainset:[{dist:"400m",drill:"3스트로크 호흡 8×50m",purpose:"일정한 호흡 리듬 습득"},{dist:"400m",drill:"호흡 타이밍 자유형 4×100m",purpose:"바디롤과 호흡 연동"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,600m",tip:"머리를 돌릴 때 한쪽 귀가 물속에 있어야 합니다"},
+        {day:"금요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"300m",drill:"분석 촬영 (머리 자세)",purpose:"호흡 시 머리 각도 기록"},{dist:"300m",drill:"교정 연습",purpose:"바디롤·호흡 연동 확인"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,200m",tip:"호흡 시 머리 각도와 바디롤이 연동되어 있는지 확인하세요"}
+      ]},
+      {num:4,theme:"전체 통합 + 종합 평가",intensity:"medium",sessions:[
+        {day:"월요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"400m",drill:"드릴 선택 4×(50m 드릴+50m 수영)",purpose:"드릴 동작 실전 통합"},{dist:"400m",drill:"통합 자유형 4×100m",purpose:"팔·킥·바디롤·호흡 전체 통합"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,400m",tip:"4주간 배운 모든 요소를 자연스럽게 통합하는 것이 오늘의 목표입니다"},
+        {day:"수요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"600m",drill:"자유형 전체 6×100m",purpose:"통합 폼으로 볼륨 증가"},{dist:"200m",drill:"스피드업 4×50m",purpose:"좋은 폼 유지한 채 속도 향상"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,400m",tip:"좋은 폼이 유지될 때 속도를 올려야 진짜 실력이 됩니다"},
+        {day:"금요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"300m",drill:"종합 분석 촬영",purpose:"1주차 vs 4주차 비교"},{dist:"300m",drill:"3×100m 최종 점검",purpose:"교정 완성도 확인"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,200m",tip:"1주차 영상과 오늘 영상을 비교하면 4주간의 성장이 보입니다!"}
+      ]}
+    ]
+  },
+  hobby: {
+    icon:"😊", title:"취미/건강유지 4주 플랜",
+    desc:"부담 없이 즐기면서도 조금씩 성장하는 플랜. 좋아하는 것에서 시작하세요.",
+    weeks:[
+      {num:1,theme:"즐기면서 시작",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"200m",note:"좋아하는 영법 천천히"},mainset:[{dist:"600m",drill:"좋아하는 영법 자유수영",purpose:"즐거운 수영 습관 형성"},{dist:"100m",drill:"드릴 1개 (자유 선택)",purpose:"기술에 대한 호기심 자극"}],cooldown:{dist:"100m",note:"천천히"},total:"1,000m",tip:"부담 없이 즐겁게. 오늘은 기록보다 즐거움이 목표입니다"},
+        {day:"금요일",warmup:{dist:"200m",note:"자유형"},mainset:[{dist:"800m",drill:"자유수영",purpose:"편안한 페이스로 즐기기"}],cooldown:{dist:"100m",note:"천천히"},total:"1,100m",tip:"분석 1회! 현재 자신의 영법을 객관적으로 파악해보세요"}
+      ]},
+      {num:2,theme:"새로운 영법 도전",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"300m",note:"기존 영법"},mainset:[{dist:"400m",drill:"기존 영법 자유수영",purpose:"편안함 유지"},{dist:"300m",drill:"새 영법 도전 (천천히)",purpose:"팔 동작부터 천천히 익히기"},{dist:"100m",drill:"새 영법 드릴 1개",purpose:"기초 드릴 경험"}],cooldown:{dist:"100m",note:"천천히"},total:"1,200m",tip:"새로운 영법은 처음엔 어색합니다. 천천히 팔 동작만 먼저 익혀보세요"},
+        {day:"금요일",warmup:{dist:"300m",note:"기존 영법"},mainset:[{dist:"500m",drill:"새로운 영법 집중 연습",purpose:"새 영법 비중 늘리기"},{dist:"300m",drill:"기존 영법 정리",purpose:"자신감 회복"}],cooldown:{dist:"100m",note:"천천히"},total:"1,200m",tip:"드릴 가이드에서 도전하는 영법 동영상을 참고하세요!"}
+      ]},
+      {num:3,theme:"드릴로 기술 맛보기",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"400m",drill:"드릴 가이드 드릴 2개 각 4×50m",purpose:"드릴 동작 경험"},{dist:"400m",drill:"자유수영",purpose:"드릴 느낌을 실제 수영에 적용"}],cooldown:{dist:"100m",note:"천천히"},total:"1,200m",tip:"드릴은 완벽하게 하려 하지 말고 동작의 느낌을 익히는 것이 중요합니다"},
+        {day:"금요일",warmup:{dist:"300m",note:"자유형"},mainset:[{dist:"600m",drill:"드릴 적용 자유형 6×100m",purpose:"드릴 동작을 자연스럽게 통합"}],cooldown:{dist:"200m",note:"자유수영"},total:"1,100m",tip:"드릴에서 배운 느낌을 일반 수영에 녹여보세요"}
+      ]},
+      {num:4,theme:"비교 분석 + 자유수영",intensity:"easy",sessions:[
+        {day:"화요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,000m",drill:"자유수영",purpose:"4주간 성장한 체력으로 즐기기"}],cooldown:{dist:"200m",note:"천천히"},total:"1,600m",tip:"4주 전보다 훨씬 편안해진 것을 느끼실 겁니다"},
+        {day:"금요일",warmup:{dist:"400m",note:"자유형"},mainset:[{dist:"1,000m",drill:"자유수영 + 분석 촬영",purpose:"1주차 대비 성장 확인"}],cooldown:{dist:"200m",note:"천천히"},total:"1,600m",tip:"비교 분석에서 개선된 점을 찾아보고 다음 달 목표를 세워보세요!"}
+      ]}
+    ]
+  }
+};
+
+/* ══════════════════════════════════════════════
+   렌더링 헬퍼
+══════════════════════════════════════════════ */
+const INTENSITY_MAP = {
+  easy:   '<span class="intensity intensity-easy">🟢 쉬움</span>',
+  medium: '<span class="intensity intensity-medium">🟡 보통</span>',
+  hard:   '<span class="intensity intensity-hard">🔴 힘듦</span>',
+};
+
+function renderSession(s) {
+  const mainsetHTML = s.mainset.map(m => `
+    <div class="mainset-row">
+      <span class="ms-dist">${m.dist}</span>
+      <span class="ms-info">
+        <span class="ms-drill">${m.drill}</span>
+        <span class="ms-purpose">${m.purpose}</span>
+      </span>
+    </div>`).join('');
+  return `
+  <div class="session-card">
+    <div class="session-day-header"><span class="session-day">${s.day}</span></div>
+    <div class="session-body">
+      <div class="session-part">
+        <div class="part-label">🌊 웜업</div>
+        <div class="part-info"><span class="part-dist">${s.warmup.dist}</span>${s.warmup.note}</div>
+      </div>
+      <div class="session-part">
+        <div class="part-label">💪 메인셋</div>
+        <div class="mainset-items">${mainsetHTML}</div>
+      </div>
+      <div class="session-part">
+        <div class="part-label">🧊 쿨다운</div>
+        <div class="part-info"><span class="part-dist">${s.cooldown.dist}</span>${s.cooldown.note}</div>
+      </div>
+      <div class="session-total">총 거리 <strong>${s.total}</strong></div>
+      <div class="coach-tip">💡 ${s.tip}</div>
+    </div>
+  </div>`;
+}
+
+function renderPlanTab(key, plan, containerId) {
+  const weekBtns = plan.weeks.map((w, i) =>
+    `<button class="week-sel-btn${i === 0 ? ' active' : ''}" data-plan="${key}" data-week="${i}">${w.num}주</button>`
+  ).join('');
+  const weekPanels = plan.weeks.map((w, i) => {
+    const sessions = w.sessions.map(renderSession).join('');
+    return `
+    <div class="week-panel${i === 0 ? ' active' : ''}" id="${key}-week-${i}">
+      <div class="week-meta">
+        <span class="week-theme">${w.num}주차 — ${w.theme}</span>
+        ${INTENSITY_MAP[w.intensity] || INTENSITY_MAP.easy}
+      </div>
+      <div class="sessions-grid">${sessions}</div>
+    </div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML = `
+  <div class="plan-card">
+    <div class="plan-card-header">
+      <div class="plan-card-icon">${plan.icon}</div>
+      <div class="plan-card-title">${plan.title}</div>
+      <div class="plan-card-desc">${plan.desc}</div>
+    </div>
+    <div class="week-selector">${weekBtns}</div>
+    <div class="week-panels">${weekPanels}</div>
+    <div class="plan-card-footer">
+      <a href="/upload" style="display:none" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
+      <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
+      <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   탭 전환
+══════════════════════════════════════════════ */
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const btn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('tab-' + tabName);
+  if (content) content.classList.add('active');
+  if (tabName === 'myplan') loadMyPlans();
+  if (tabName === 'builder') renderBuilderEditor();
+}
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.week-sel-btn');
+  if (!btn) return;
+  const plan = btn.dataset.plan;
+  const weekIdx = +btn.dataset.week;
+  document.querySelectorAll(`.week-sel-btn[data-plan="${plan}"]`).forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[id^="${plan}-week-"]`).forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`${plan}-week-${weekIdx}`).classList.add('active');
+});
+
+document.getElementById('open-modal-btn').addEventListener('click', () => switchTab('random'));
+
+/* ══════════════════════════════════════════════
+   랜덤 플랜 생성 로직
+══════════════════════════════════════════════ */
+const WEEK_DAYS = {
+  2: ['화', '금'],
+  3: ['월', '수', '금'],
+  4: ['월', '화', '목', '토'],
+  5: ['월', '화', '수', '목', '토'],
+  6: ['월', '화', '수', '목', '금', '토'],
+  7: ['월', '화', '수', '목', '금', '토', '일'],
+};
+const WEEK_THEMES = {
+  기록단축: ['기초 체력 + 드릴 적응', '스피드 인터벌 시작', '레이스 페이스 훈련', '테이퍼 + 최종 점검'],
+  건강:     ['적응 + 기초 체력', '볼륨 증가', '2영법 교대', '자유롭게 즐기기'],
+  영법교정: ['팔 동작 교정', '킥 + 발목 유연성', '바디롤 + 호흡', '전체 통합'],
+  취미:     ['즐기면서 시작', '새로운 영법 도전', '드릴 체험', '성장 확인'],
+};
+const WEEK_INTENSITIES = ['easy', 'medium', 'hard', 'easy'];
+const GOAL_MAINSET_COUNT = { 기록단축: 3, 건강: 2, 영법교정: 2, 취미: 1 };
+
+function pickRandom(arr, exclude) {
+  const pool = exclude ? arr.filter(x => x !== exclude) : arr;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function getStrokes(focusStroke) {
+  const all = ['자유형', '배영', '평영', '접영'];
+  if (focusStroke === '전체') return all;
+  return [focusStroke, ...all.filter(s => s !== focusStroke)];
+}
+
+function generatePlan(params) {
+  const { goal, sessions_per_week, session_duration, focus_stroke, level, plan_name } = params;
+  const strokes = getStrokes(focus_stroke);
+  const days = WEEK_DAYS[sessions_per_week] || WEEK_DAYS[3];
+  const themes = WEEK_THEMES[goal] || WEEK_THEMES['건강'];
+  const mainsetCount = GOAL_MAINSET_COUNT[goal] || 2;
+
+  const weeks = [1, 2, 3, 4].map((weekNum, wi) => {
+    const intensity = WEEK_INTENSITIES[wi];
+    const distMult = [0.8, 1.0, 1.2, 0.7][wi];
+    const sessions = days.map((day, di) => {
+      const strokeKey = strokes[di % strokes.length];
+      const pool = SESSION_POOL[strokeKey] || SESSION_POOL['자유형'];
+
+      const warmup = pickRandom(pool.warmup);
+      const drills = [];
+      const usedDrills = new Set();
+      for (let i = 0; i < mainsetCount; i++) {
+        const available = pool.drills.filter(d => !usedDrills.has(d.drill));
+        const picked = pickRandom(available.length ? available : pool.drills);
+        drills.push(picked);
+        usedDrills.add(picked.drill);
+      }
+      const cooldown = pickRandom(pool.cooldown);
+      const tip = drills[0]?.tip || '꾸준히 반복하면 폼이 좋아집니다';
+
+      return {
+        day: day + '요일',
+        warmup: { dist: warmup.dist, note: warmup.note },
+        mainset: drills.map(d => ({ dist: d.dist, drill: d.drill, purpose: d.purpose })),
+        cooldown: { dist: cooldown.dist, note: cooldown.note },
+        total: '측정 중',
+        tip,
+      };
+    });
+
+    return { week: weekNum, theme: themes[wi] || `${weekNum}주차`, intensity, sessions };
+  });
+
+  const summaryParts = [
+    `${goal} 목표`, `주 ${sessions_per_week}회`, `${session_duration}분`, `${focus_stroke} 위주`, level
+  ];
+
+  return {
+    summary: summaryParts.join(' · '),
+    weeks,
+  };
+}
+
+/* 랜덤 탭 칩 */
+function initChips() {
+  document.querySelectorAll('.chip-group').forEach(group => {
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        updateGenBtn();
+      });
+    });
+  });
+  document.getElementById('r-name').addEventListener('input', updateGenBtn);
+}
+
+function getRChip(groupId) {
+  const sel = document.querySelector(`#${groupId} .chip.selected`);
+  return sel ? sel.dataset.val : '';
+}
+
+function isRFormValid() {
+  return document.getElementById('r-name').value.trim() &&
+    getRChip('r-chips-goal') && getRChip('r-chips-sessions') &&
+    getRChip('r-chips-duration') && getRChip('r-chips-stroke') && getRChip('r-chips-level');
+}
+
+function updateGenBtn() {
+  document.getElementById('btn-gen-random').disabled = !isRFormValid();
+}
+
+let _generatedPlan = null;
+let _generatedParams = null;
+
+document.getElementById('btn-gen-random').addEventListener('click', () => {
+  if (!isRFormValid()) return;
+
+  const params = {
+    plan_name: document.getElementById('r-name').value.trim(),
+    goal: getRChip('r-chips-goal'),
+    sessions_per_week: +getRChip('r-chips-sessions'),
+    session_duration: +getRChip('r-chips-duration'),
+    focus_stroke: getRChip('r-chips-stroke'),
+    level: getRChip('r-chips-level'),
+  };
+
+  _generatedPlan = generatePlan(params);
+  _generatedParams = params;
+
+  const preview = document.getElementById('r-preview');
+  const previewBody = document.getElementById('r-preview-body');
+  document.getElementById('r-preview-header').textContent = `✅ "${params.plan_name}" 생성 완료!`;
+
+  previewBody.innerHTML = `
+    <div style="padding:12px 16px;border-bottom:0.5px solid rgba(0,180,216,.15);">
+      <span style="font-size:11px;color:var(--muted);">${_generatedPlan.summary}</span>
+    </div>` +
+    _generatedPlan.weeks.map(w => {
+      const sessHTML = w.sessions.map(s => renderSession(s)).join('');
+      return `
+      <div style="padding:14px 16px;border-bottom:0.5px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:13px;font-weight:700;color:var(--blue);">${w.week}주차 — ${w.theme}</span>
+          ${INTENSITY_MAP[w.intensity] || ''}
+        </div>
+        <div class="sessions-grid">${sessHTML}</div>
+      </div>`;
+    }).join('');
+
+  preview.classList.add('visible');
+  document.getElementById('gen-msg').className = 'gen-msg';
+
+  const saveBtn = document.getElementById('btn-save-random');
+  saveBtn.classList.add('visible');
+  saveBtn.textContent = '💾 저장하기';
+  saveBtn.disabled = false;
+});
+
+document.getElementById('btn-save-random').addEventListener('click', async () => {
+  if (!_generatedPlan || !_generatedParams) return;
+
+  const saveBtn = document.getElementById('btn-save-random');
+  const msgBox = document.getElementById('gen-msg');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '저장 중...';
+
+  const body = {
+    ..._generatedParams,
+    plan_content: _generatedPlan,
+  };
+
+  try {
+    const res = await fetch('/api/plans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      saveToLocalStorage(body);
+      msgBox.className = 'gen-msg success';
+      msgBox.textContent = '로컬에 저장됐습니다. 로그인하면 클라우드에 동기화할 수 있습니다.';
+    } else if (!res.ok) {
+      throw new Error((await res.json()).detail || res.status);
+    } else {
+      msgBox.className = 'gen-msg success';
+      msgBox.textContent = '플랜이 저장됐습니다! "내 플랜" 탭에서 확인하세요.';
+    }
+    saveBtn.textContent = '✅ 저장 완료';
+    setTimeout(() => switchTab('myplan'), 1800);
+  } catch (err) {
+    saveToLocalStorage(body);
+    msgBox.className = 'gen-msg success';
+    msgBox.textContent = '로컬에 저장됐습니다 (서버 연결 불가).';
+    saveBtn.textContent = '✅ 로컬 저장 완료';
+  }
+});
+
+function saveToLocalStorage(body) {
+  const plans = JSON.parse(localStorage.getItem('swimtech_plans') || '[]');
+  plans.unshift({
+    id: 'local_' + Date.now(),
+    plan_name: body.plan_name,
+    goal: body.goal,
+    focus_stroke: body.focus_stroke,
+    level: body.level,
+    plan_content: body.plan_content,
+    created_at: new Date().toISOString(),
+    _local: true,
+  });
+  localStorage.setItem('swimtech_plans', JSON.stringify(plans));
+}
+
+/* ══════════════════════════════════════════════
+   직접 구성 탭 — 드래그 앤 드롭 + 수치 입력 + 도구 토글
+══════════════════════════════════════════════ */
+const BUILDER_DAYS = ['월요일','화요일','수요일','목요일','금요일','토요일'];
+const EQUIPMENT_LIST = ['풀부이','킥판','오리발','패들','스노쿨'];
+const POOL_TYPE_LABEL = { warmup:'웜업', drills:'드릴', mainset:'메인셋', cooldown:'쿨다운', custom:'기타' };
+const POOL_TYPE_CLASS = { warmup:'type-warmup', drills:'type-drill', mainset:'type-mainset', cooldown:'type-cooldown', custom:'type-drill' };
+
+/* builderPlan[weekNum][dayName] = [{id, stroke, type, name, purpose, tip, distValue, reps, equipment}] */
+const builderPlan = {};
+for (let w = 1; w <= 4; w++) {
+  builderPlan[w] = {};
+  BUILDER_DAYS.forEach(d => builderPlan[w][d] = []);
+}
+let currentBuilderWeek = 1;
+let _draggedPoolItem = null;
+let _dragCustom = false;
+let _cmTargetDay = null;
+let _itemIdSeq = 0;
+let _currentFilter = '전체';
+let _currentQuery = '';
+
+function parseDistNum(distStr) {
+  if (!distStr) return 0;
+  const m = String(distStr).match(/(\d+)\s*[×x]\s*(\d+)/);
+  if (m) return parseInt(m[1]) * parseInt(m[2]);
+  const s = String(distStr).match(/(\d+)/);
+  return s ? parseInt(s[1]) : 0;
+}
+
+/* ── 풀 렌더링 (필터 + 검색 적용) ── */
+function renderPoolList(filter, query) {
+  if (filter !== undefined) _currentFilter = filter;
+  if (query !== undefined) _currentQuery = query;
+
+  const list = document.getElementById('pool-list');
+  const strokeKeys = _currentFilter === '전체' ? ['자유형','배영','평영','접영'] : [_currentFilter];
+  const allItems = [];
+  strokeKeys.forEach(sk => {
+    const pool = SESSION_POOL[sk];
+    if (!pool) return;
+    ['warmup','drills','mainset','cooldown'].forEach(type => {
+      (pool[type] || []).forEach(item => allItems.push({ ...item, stroke: sk, type }));
+    });
+  });
+
+  const q = _currentQuery.trim().toLowerCase();
+  const items = q ? allItems.filter(item =>
+    (item.drill || item.note || '').toLowerCase().includes(q) ||
+    (item.purpose || '').toLowerCase().includes(q) ||
+    item.stroke.toLowerCase().includes(q) ||
+    (POOL_TYPE_LABEL[item.type] || '').toLowerCase().includes(q)
+  ) : allItems;
+
+  window._poolItems = items;
+
+  if (items.length === 0) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">검색 결과가 없습니다</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map((item, idx) => `
+    <div class="pool-item" draggable="true"
+      ondragstart="onPoolDragStart(event,${idx})"
+      ondragend="this.classList.remove('dragging')"
+      onclick="clickAddPoolItem(${idx})">
+      <span class="pool-item-type ${POOL_TYPE_CLASS[item.type]}">${POOL_TYPE_LABEL[item.type]}</span>
+      <div class="pool-item-name">${item.drill || item.note || ''}</div>
+      <div class="pool-item-meta">${item.stroke} · ${item.dist}${item.purpose ? ' · '+item.purpose : ''}</div>
+    </div>`).join('');
+}
+
+/* ── 드래그 이벤트 ── */
+function onPoolDragStart(e, idx) {
+  _draggedPoolItem = window._poolItems[idx];
+  _dragCustom = false;
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', String(idx));
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+
+function onCustomDragStart(e) {
+  _draggedPoolItem = null;
+  _dragCustom = true;
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', 'custom');
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+
+function onDragOver(e, day) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  const zone = document.getElementById('drop-' + day);
+  if (zone) zone.classList.add('drag-over');
+}
+
+function onDragLeave(e, day) {
+  const zone = document.getElementById('drop-' + day);
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+}
+
+function onDrop(e, day) {
+  e.preventDefault();
+  const zone = document.getElementById('drop-' + day);
+  if (zone) zone.classList.remove('drag-over');
+  document.querySelectorAll('.pool-item.dragging').forEach(el => el.classList.remove('dragging'));
+  if (_dragCustom) {
+    _cmTargetDay = day;
+    openCustomModal();
+  } else if (_draggedPoolItem) {
+    addItemToDay(day, _draggedPoolItem);
+  }
+  _draggedPoolItem = null;
+  _dragCustom = false;
+}
+
+/* ── 클릭으로 추가 (첫 번째 날에 추가) ── */
+function clickAddPoolItem(idx) {
+  const item = window._poolItems[idx];
+  if (!item) return;
+  addItemToDay(BUILDER_DAYS[0], item);
+}
+
+function addItemToDay(day, itemData) {
+  builderPlan[currentBuilderWeek][day].push({
+    id: ++_itemIdSeq,
+    stroke: itemData.stroke || '자유형',
+    type: itemData.type || 'drills',
+    name: itemData.drill || itemData.note || '',
+    purpose: itemData.purpose || '',
+    tip: itemData.tip || '',
+    distValue: parseDistNum(itemData.dist) || 100,
+    reps: 1,
+    equipment: [],
+  });
+  renderBuilderEditor();
+}
+
+/* ── 직접 입력 모달 ── */
+function openCustomModal() {
+  const el = document.getElementById('cm-overlay');
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-reps').value = 1;
+  document.getElementById('cm-dist').value = 100;
+  document.getElementById('cm-purpose').value = '';
+  document.querySelectorAll('#cm-stroke-group .chip').forEach(c => c.classList.remove('selected'));
+  const disp = document.getElementById('cm-target-day-display');
+  if (disp) disp.textContent = _cmTargetDay ? `추가 위치: ${_cmTargetDay}` : '';
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('cm-name').focus(), 100);
+}
+
+function closeCustomModal() {
+  document.getElementById('cm-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _cmTargetDay = null;
+}
+
+function openCustomModal_direct() {
+  _cmTargetDay = BUILDER_DAYS[0];
+  openCustomModal();
+}
+
+document.getElementById('cm-close').addEventListener('click', closeCustomModal);
+document.getElementById('cm-cancel').addEventListener('click', closeCustomModal);
+document.getElementById('cm-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('cm-overlay')) closeCustomModal();
+});
+
+document.querySelectorAll('#cm-stroke-group .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#cm-stroke-group .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
   });
 });
+
+document.getElementById('cm-confirm').addEventListener('click', () => {
+  const name = document.getElementById('cm-name').value.trim();
+  if (!name) { document.getElementById('cm-name').focus(); return; }
+  const selChip = document.querySelector('#cm-stroke-group .chip.selected');
+  const stroke = selChip ? selChip.dataset.val : '기타';
+  const reps = Math.max(1, parseInt(document.getElementById('cm-reps').value) || 1);
+  const dist = Math.max(25, parseInt(document.getElementById('cm-dist').value) || 100);
+  const purpose = document.getElementById('cm-purpose').value.trim();
+  const day = _cmTargetDay || BUILDER_DAYS[0];
+
+  builderPlan[currentBuilderWeek][day].push({
+    id: ++_itemIdSeq, stroke, type: 'custom',
+    name, purpose, tip: '',
+    distValue: dist, reps,
+    equipment: [],
+  });
+  renderBuilderEditor();
+  closeCustomModal();
+});
+
+/* ── 에디터 렌더링 ── */
+function renderBuilderEditor() {
+  currentBuilderWeek = +document.getElementById('builder-weeks').value;
+  const body = document.getElementById('builder-editor-body');
+
+  body.innerHTML = BUILDER_DAYS.map(day => {
+    const items = builderPlan[currentBuilderWeek][day] || [];
+    const dayTotal = items.reduce((s, it) => s + it.distValue * it.reps, 0);
+    const cardsHTML = items.map(item => buildSessionCardHTML(day, item)).join('');
+
+    return `
+      <div class="builder-day-slot">
+        <div class="day-slot-header">
+          <span class="day-slot-label">${day}</span>
+          <span class="day-total-label" id="day-total-${day}">${dayTotal > 0 ? dayTotal + 'm' : ''}</span>
+        </div>
+        <div class="day-drop-zone" id="drop-${day}"
+          ondragover="onDragOver(event,'${day}')"
+          ondragleave="onDragLeave(event,'${day}')"
+          ondrop="onDrop(event,'${day}')">
+          ${cardsHTML || '<div class="drop-hint">여기에 드롭하세요</div>'}
+        </div>
+      </div>`;
+  }).join('');
+
+  updateWeekTotal();
+}
+
+function buildSessionCardHTML(day, item) {
+  const tc = POOL_TYPE_CLASS[item.type] || 'type-drill';
+  const tl = POOL_TYPE_LABEL[item.type] || item.type;
+  const equipHTML = EQUIPMENT_LIST.map(eq =>
+    `<button class="equip-btn${item.equipment.includes(eq) ? ' active' : ''}"
+      onclick="toggleEquip('${day}',${item.id},'${eq}')">${eq}</button>`
+  ).join('');
+
+  return `
+    <div class="builder-card" id="card-${item.id}">
+      <div class="builder-card-header">
+        <span class="pool-item-type ${tc}" style="font-size:10px;padding:2px 6px;border-radius:3px;flex-shrink:0;">${tl}</span>
+        <span class="builder-card-title">${item.name}</span>
+        <span style="font-size:10px;color:var(--muted);flex-shrink:0;">${item.stroke}</span>
+        <button class="btn-rm-card" onclick="removeCardFromDay('${day}',${item.id})">✕</button>
+      </div>
+      ${item.purpose ? `<div style="padding:3px 10px 0;font-size:11px;color:var(--muted);">${item.purpose}</div>` : ''}
+      <div class="builder-card-inputs">
+        <div class="card-input-group">
+          <span class="card-input-label">반복</span>
+          <input type="number" class="card-num-input" value="${item.reps}" min="1" max="30"
+            oninput="updateCardField('${day}',${item.id},'reps',+this.value)">
+          <span class="card-input-unit">회</span>
+        </div>
+        <span style="font-size:12px;color:var(--muted);padding:0 2px;">×</span>
+        <div class="card-input-group">
+          <input type="number" class="card-num-input" value="${item.distValue}" min="25" step="25"
+            oninput="updateCardField('${day}',${item.id},'distValue',+this.value)">
+          <span class="card-input-unit">m</span>
+        </div>
+        <span class="card-subtotal" id="sub-${item.id}">=&nbsp;${item.reps * item.distValue}m</span>
+      </div>
+      <div class="builder-card-equip">${equipHTML}</div>
+    </div>`;
+}
+
+function updateCardField(day, id, field, value) {
+  const items = builderPlan[currentBuilderWeek][day];
+  const item = items && items.find(it => it.id === id);
+  if (!item) return;
+  item[field] = Math.max(field === 'reps' ? 1 : 25, value || 0);
+  const sub = document.getElementById('sub-' + id);
+  if (sub) sub.textContent = `= ${item.reps * item.distValue}m`;
+  updateDayTotal(day);
+  updateWeekTotal();
+}
+
+function toggleEquip(day, id, eq) {
+  const items = builderPlan[currentBuilderWeek][day];
+  const item = items && items.find(it => it.id === id);
+  if (!item) return;
+  const idx = item.equipment.indexOf(eq);
+  if (idx >= 0) item.equipment.splice(idx, 1);
+  else item.equipment.push(eq);
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.querySelectorAll('.equip-btn').forEach(btn => {
+    btn.classList.toggle('active', item.equipment.includes(btn.textContent.trim()));
+  });
+}
+
+function removeCardFromDay(day, id) {
+  builderPlan[currentBuilderWeek][day] = (builderPlan[currentBuilderWeek][day] || []).filter(it => it.id !== id);
+  renderBuilderEditor();
+}
+
+function updateDayTotal(day) {
+  const items = builderPlan[currentBuilderWeek][day] || [];
+  const total = items.reduce((s, it) => s + it.distValue * it.reps, 0);
+  const el = document.getElementById('day-total-' + day);
+  if (el) el.textContent = total > 0 ? total + 'm' : '';
+}
+
+function updateWeekTotal() {
+  let total = 0;
+  BUILDER_DAYS.forEach(d => (builderPlan[currentBuilderWeek][d] || []).forEach(it => total += it.distValue * it.reps));
+  const el = document.getElementById('week-total-display');
+  if (el) el.textContent = total >= 1000 ? (total / 1000).toFixed(1) + 'km' : total + 'm';
+}
+
+document.getElementById('pool-filters').addEventListener('click', e => {
+  const btn = e.target.closest('.pool-filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.pool-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPoolList(btn.dataset.filter); // _currentQuery preserved
+});
+
+document.getElementById('pool-search').addEventListener('input', e => {
+  renderPoolList(undefined, e.target.value); // _currentFilter preserved
+});
+
+document.getElementById('builder-weeks').addEventListener('change', renderBuilderEditor);
+
+document.getElementById('btn-save-builder').addEventListener('click', async () => {
+  const name = document.getElementById('builder-name').value.trim();
+  if (!name) { alert('플랜 이름을 입력하세요.'); return; }
+
+  const weeks = [1,2,3,4].map(w => ({
+    week: w, theme: `${w}주차 직접 구성`,
+    intensity: WEEK_INTENSITIES[w-1],
+    sessions: BUILDER_DAYS.flatMap(day =>
+      (builderPlan[w][day] || []).map(it => ({
+        day,
+        warmup: { dist: `${it.reps}×${it.distValue}m`, note: it.name },
+        mainset: [{ dist: `${it.reps}×${it.distValue}m`, drill: it.name, purpose: it.purpose }],
+        cooldown: { dist: '100m', note: '정리 운동' },
+        total: `${it.reps * it.distValue}m`,
+        tip: it.equipment.length ? `도구: ${it.equipment.join(', ')}` : (it.tip || ''),
+      }))
+    ),
+  }));
+
+  let weekTotal = 0;
+  BUILDER_DAYS.forEach(d => (builderPlan[currentBuilderWeek][d] || []).forEach(it => weekTotal += it.distValue * it.reps));
+  const planContent = { summary: `직접 구성 · ${weekTotal}m/주`, weeks };
+  const body = {
+    plan_name: name, goal: '직접구성',
+    sessions_per_week: 3, session_duration: 60,
+    focus_stroke: '전체', level: '중급',
+    plan_content: planContent,
+  };
+
+  try {
+    const res = await fetch('/api/plans', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 401 || res.status === 403) { saveToLocalStorage(body); alert('로컬에 저장됐습니다.'); }
+    else if (!res.ok) throw new Error(res.status);
+    else alert('저장됐습니다!');
+    switchTab('myplan');
+  } catch {
+    saveToLocalStorage(body);
+    alert('로컬에 저장됐습니다.');
+    switchTab('myplan');
+  }
+});
+
+/* ══════════════════════════════════════════════
+   내 플랜 탭
+══════════════════════════════════════════════ */
+async function loadMyPlans() {
+  const container = document.getElementById('myplan-content');
+  container.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;">불러오는 중...</div>';
+
+  let cloudPlans = [];
+  let localPlans = [];
+
+  try {
+    const res = await fetch('/api/plans');
+    if (res.ok) {
+      const data = await res.json();
+      cloudPlans = (data.plans || []).map(p => ({ ...p, _local: false }));
+    }
+  } catch { /* 서버 연결 불가 */ }
+
+  try {
+    localPlans = JSON.parse(localStorage.getItem('swimtech_plans') || '[]');
+  } catch { /* ignore */ }
+
+  const allPlans = [...cloudPlans, ...localPlans];
+
+  if (allPlans.length === 0) {
+    container.innerHTML = `
+      <div class="myplan-empty">
+        <div class="myplan-empty-icon">🏊</div>
+        <h3>아직 저장된 플랜이 없습니다</h3>
+        <p>"랜덤 생성" 탭에서 나만의 플랜을 만들어보세요</p>
+        <button class="btn-create-plan" style="margin-top:16px;" onclick="switchTab('random')">🎲 지금 만들기</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="myplan-list" id="myplan-list"></div>`;
+  const list = document.getElementById('myplan-list');
+  allPlans.forEach(p => list.appendChild(buildMyPlanCard(p)));
+}
+
+function buildMyPlanCard(plan) {
+  const card = document.createElement('div');
+  card.className = 'myplan-card';
+  card.dataset.id = plan.id;
+
+  const dateStr = plan.created_at ? plan.created_at.split('T')[0].split(' ')[0] : '';
+  const metaParts = [plan.goal, plan.focus_stroke ? `${plan.focus_stroke} 위주` : '', plan.level].filter(Boolean);
+  const badge = plan._local
+    ? '<span class="myplan-source-badge badge-local">로컬</span>'
+    : '<span class="myplan-source-badge badge-cloud">클라우드</span>';
+
+  let weeksHTML = '';
+  if (plan.plan_content && plan.plan_content.weeks) {
+    plan.plan_content.weeks.forEach(w => {
+      const sessionsHTML = (w.sessions || []).map(s => `
+        <div class="myplan-session">
+          <div class="myplan-session-day">${s.day}</div>
+          <div style="font-size:11px;color:var(--muted);">
+            🌊 ${s.warmup?.dist || ''} · 💪 ${(s.mainset||[]).map(m=>m.drill).join(', ')} · 🧊 ${s.cooldown?.dist||''}
+          </div>
+          ${s.tip ? `<div class="coach-tip" style="margin-top:6px;">💡 ${s.tip}</div>` : ''}
+        </div>`).join('');
+      weeksHTML += `
+        <div class="myplan-week-header">
+          <span style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(0,180,216,.12);color:var(--blue);border:0.5px solid rgba(0,180,216,.3);">${w.week}주</span>
+          <span>${w.theme || ''}</span>
+          ${INTENSITY_MAP[w.intensity] || ''}
+        </div>
+        ${sessionsHTML}`;
+    });
+  }
+
+  const summaryText = plan.plan_content?.summary || '';
+
+  card.innerHTML = `
+    <div class="myplan-card-header">
+      <div class="myplan-card-info">
+        <div class="myplan-card-name">${plan.plan_name}${badge}</div>
+        <div class="myplan-card-meta">${metaParts.join(' · ')}${summaryText && summaryText !== plan.plan_name ? ' · ' + summaryText : ''}</div>
+      </div>
+      <div class="myplan-card-date">${dateStr}</div>
+      <span class="myplan-card-toggle">▾</span>
+    </div>
+    <div class="myplan-card-body">
+      ${weeksHTML || '<div style="color:var(--muted);font-size:12px;">플랜 내용이 없습니다</div>'}
+      <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+        <button class="btn-del-plan" data-id="${plan.id}" data-local="${plan._local ? '1' : '0'}">🗑 삭제</button>
+      </div>
+    </div>`;
+
+  card.querySelector('.myplan-card-header').addEventListener('click', () => card.classList.toggle('open'));
+  card.querySelector('.btn-del-plan').addEventListener('click', e => {
+    e.stopPropagation();
+    const isLocal = e.currentTarget.dataset.local === '1';
+    if (isLocal) deleteLocalPlan(plan.id, card);
+    else deletePlan(plan.id, card);
+  });
+  return card;
+}
+
+function deleteLocalPlan(id, card) {
+  if (!confirm('이 플랜을 삭제하시겠습니까?')) return;
+  const plans = JSON.parse(localStorage.getItem('swimtech_plans') || '[]');
+  localStorage.setItem('swimtech_plans', JSON.stringify(plans.filter(p => p.id !== id)));
+  card.style.transition = 'opacity .3s';
+  card.style.opacity = '0';
+  setTimeout(() => { card.remove(); checkEmptyList(); }, 300);
+}
+
+async function deletePlan(id, card) {
+  if (!confirm('이 플랜을 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch(`/api/plans/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      card.style.transition = 'opacity .3s';
+      card.style.opacity = '0';
+      setTimeout(() => { card.remove(); checkEmptyList(); }, 300);
+    } else {
+      alert('삭제에 실패했습니다.');
+    }
+  } catch {
+    alert('네트워크 오류가 발생했습니다.');
+  }
+}
+
+function checkEmptyList() {
+  const list = document.getElementById('myplan-list');
+  if (list && list.children.length === 0) loadMyPlans();
+}
+
+/* ══════════════════════════════════════════════
+   초기화
+══════════════════════════════════════════════ */
+renderPlanTab('speed',  PLANS.speed,  'tab-speed');
+renderPlanTab('health', PLANS.health, 'tab-health');
+renderPlanTab('form',   PLANS.form,   'tab-form');
+renderPlanTab('hobby',  PLANS.hobby,  'tab-hobby');
+initTabs();
+initChips();
+renderPoolList('전체');
 </script>
 </body>
 </html>
