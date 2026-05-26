@@ -148,6 +148,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /training-log {
+    reverse_proxy swim-api:8000
+  }
+
   handle /share/* {
     reverse_proxy swim-api:8000
   }

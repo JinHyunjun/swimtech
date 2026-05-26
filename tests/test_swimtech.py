@@ -931,3 +931,66 @@ def test_community_notifications_ui(page: Page):
     expect(page.locator(".sort-row")).to_be_visible()
 
     shot(page, "14_community_notif_ui")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 15. 훈련 일지 (v2.4.4)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_training_log_load(page: Page):
+    """/training-log 페이지 로드 — 통계 카드·캘린더·기록 목록 영역 렌더링 확인."""
+    goto(page, "/training-log")
+    page.wait_for_timeout(1500)
+
+    # 통계 카드 4개
+    expect(page.locator("#stat-count")).to_be_visible()
+    expect(page.locator("#stat-total")).to_be_visible()
+    expect(page.locator("#stat-avg")).to_be_visible()
+    expect(page.locator("#stat-streak")).to_be_visible()
+
+    # 캘린더 래퍼 (cal-body는 JS 실행 전 빈 grid)
+    expect(page.locator(".cal-wrap")).to_be_visible()
+
+    # 기록 추가 버튼
+    expect(page.locator("#btn-open-modal")).to_be_visible()
+
+    # 월 이동 버튼
+    expect(page.locator("#prev-month")).to_be_visible()
+    expect(page.locator("#next-month")).to_be_visible()
+
+    shot(page, "15_training_log_load")
+
+
+def test_training_log_api_requires_login(browser, browser_context_args):
+    """GET /api/training-log — 비로그인 요청은 401 응답."""
+    ctx = browser.new_context(**browser_context_args)
+    page = ctx.new_page()
+    try:
+        resp = page.request.get("https://localhost/api/training-log")
+        assert resp.status == 401, f"/api/training-log 비로그인 응답 코드: {resp.status}"
+        shot(page, "15_training_log_unauth")
+    finally:
+        page.close()
+        ctx.close()
+
+
+def test_training_log_stats_api(page: Page):
+    """GET /api/training-log/stats — 로그인 상태 200 또는 admin(customer_id 없음) 403 확인."""
+    resp = page.request.get("https://localhost/api/training-log/stats")
+    assert resp.status in (200, 403), f"/api/training-log/stats 응답 코드: {resp.status}"
+    if resp.status == 200:
+        body = resp.json()
+        for key in ("count", "total_distance", "avg_distance", "total_minutes"):
+            assert key in body, f"stats 응답에 '{key}' 키 없음: {body}"
+    shot(page, "15_training_log_stats_api")
+
+
+def test_training_log_streak_api(page: Page):
+    """GET /api/training-log/streak — 로그인 상태 200 또는 admin(customer_id 없음) 403 확인."""
+    resp = page.request.get("https://localhost/api/training-log/streak")
+    assert resp.status in (200, 403), f"/api/training-log/streak 응답 코드: {resp.status}"
+    if resp.status == 200:
+        body = resp.json()
+        assert "streak" in body, f"streak 응답에 'streak' 키 없음: {body}"
+        assert isinstance(body["streak"], int), f"streak 값이 정수가 아님: {body['streak']}"
+    shot(page, "15_training_log_streak_api")

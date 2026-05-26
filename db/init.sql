@@ -233,3 +233,22 @@ CREATE INDEX IF NOT EXISTS idx_notifications_cid ON notifications(customer_id, i
 CREATE INDEX IF NOT EXISTS idx_bookmarks_cid     ON bookmarks(customer_id);
 CREATE INDEX IF NOT EXISTS idx_post_tags_tag     ON post_tags(tag);
 CREATE INDEX IF NOT EXISTS idx_post_images_post  ON post_images(post_id);
+
+-- ── 훈련 일지 ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS training_logs (
+    id               SERIAL PRIMARY KEY,
+    customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    log_date         DATE NOT NULL,
+    stroke_type      VARCHAR(20) NOT NULL,   -- 자유형/배영/평영/접영/혼영/자유수영
+    total_distance   INTEGER NOT NULL,       -- 총 거리 (m)
+    duration_minutes INTEGER NOT NULL,       -- 훈련 시간 (분)
+    pool_length      SMALLINT NOT NULL DEFAULT 25,  -- 25 or 50 (m)
+    intensity        VARCHAR(10) NOT NULL,   -- 쉬움/보통/힘듦
+    memo             TEXT,
+    mood             VARCHAR(10),            -- 최고/좋음/보통/나쁨
+    created_at       TIMESTAMP DEFAULT NOW(),
+    updated_at       TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_training_logs_customer ON training_logs(customer_id);
+CREATE INDEX IF NOT EXISTS idx_training_logs_date     ON training_logs(customer_id, log_date DESC);
