@@ -39,7 +39,12 @@
       "PowerShell(docker restart swim-api *)",
       "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short -k \"plan_api_get\" 2>&1 | Select-Object -Last 15)",
       "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short -k \"plan\" 2>&1 | Select-Object -Last 20)",
-      "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short 2>&1 | Select-Object -Last 20)"
+      "PowerShell(python -m pytest C:\\\\swim\\\\tests\\\\test_swimtech.py -q --tb=short 2>&1 | Select-Object -Last 20)",
+      "PowerShell(docker compose up *)",
+      "PowerShell(cd C:\\\\swim; $env:PYTHONIOENCODING=\"utf-8\"; python tests/debug_community.py 2>&1)",
+      "PowerShell(cd C:\\\\swim; $r = Invoke-WebRequest -Uri \"https://localhost/community\" -SkipCertificateCheck -MaximumRedirection 0 2>&1; $r.StatusCode; $r.Headers; $r.Content.Length)",
+      "PowerShell(docker compose ps *)",
+      "PowerShell(docker compose restart *)"
     ]
   }
 }

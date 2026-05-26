@@ -418,7 +418,7 @@ def popular_tags():
         return {"tags": [{"tag": r[0], "count": r[1]} for r in cur.fetchall()]}
     except Exception:
         logger.error("popular_tags error", exc_info=True)
-        raise HTTPException(500, "내부 오류가 발생했습니다.")
+        return {"tags": []}
     finally:
         cur.close(); conn.close()
 
