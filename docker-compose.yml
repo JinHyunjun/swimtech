@@ -55,6 +55,8 @@ services:
       - KAKAO_JS_KEY=${KAKAO_JS_KEY}
       - NOTION_TOKEN=${NOTION_TOKEN}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SMTP_EMAIL=${SMTP_EMAIL}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis

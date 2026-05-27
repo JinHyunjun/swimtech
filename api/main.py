@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -163,6 +163,7 @@ app.include_router(notifications.router,  prefix="/api/notifications",  tags=["�
 app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련 일지"])
 app.include_router(report.router,         prefix="/api/report",          tags=["월간 리포트"])
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
+app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
 
 @app.get("/api/health")
 def health():
@@ -376,6 +377,11 @@ def challenge_page(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("challenge.html")
+
+# 피드백 페이지 (로그인 불필요)
+@app.get("/feedback")
+def feedback_page():
+    return _serve("feedback.html")
 
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")

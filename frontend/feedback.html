@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 개발자에게 한마디</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.feedback-wrap {
+  min-height: calc(100vh - 53px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px 60px;
+  background: linear-gradient(160deg, #0a1628 0%, #0d2137 50%, #0a1628 100%);
+}
+
+.feedback-card {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,180,216,0.2);
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.feedback-card h1 {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  letter-spacing: -0.5px;
+}
+
+.feedback-card .subtitle {
+  margin: 0 0 32px;
+  font-size: 0.9rem;
+  color: #7aafc2;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #93c5d8;
+  letter-spacing: 0.3px;
+}
+
+.form-group label .optional {
+  font-weight: 400;
+  color: #5a8a9f;
+  margin-left: 6px;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.type-btn {
+  padding: 12px 10px;
+  border: 1.5px solid rgba(0,180,216,0.25);
+  border-radius: 10px;
+  background: rgba(0,180,216,0.06);
+  color: #7aafc2;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+  user-select: none;
+}
+
+.type-btn:hover {
+  border-color: rgba(0,180,216,0.5);
+  background: rgba(0,180,216,0.12);
+  color: #e0f2fe;
+}
+
+.type-btn.selected {
+  border-color: #00b4d8;
+  background: rgba(0,180,216,0.2);
+  color: #00b4d8;
+  font-weight: 600;
+}
+
+select,
+input[type="text"],
+input[type="email"],
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(0,180,216,0.2);
+  border-radius: 10px;
+  color: #e0f2fe;
+  font-size: 0.93rem;
+  font-family: inherit;
+  transition: border-color 0.18s;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300b4d8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select option {
+  background: #0d2137;
+  color: #e0f2fe;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+select:focus,
+textarea:focus {
+  border-color: #00b4d8;
+  background: rgba(0,180,216,0.07);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.6;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #3d6a7e;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #0096c7, #00b4d8);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: opacity 0.18s, transform 0.1s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.alert {
+  display: none;
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.alert.success {
+  background: rgba(52,211,153,0.12);
+  border: 1px solid rgba(52,211,153,0.35);
+  color: #34d399;
+}
+
+.alert.error {
+  background: rgba(248,113,113,0.12);
+  border: 1px solid rgba(248,113,113,0.35);
+  color: #f87171;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 28px;
+  font-size: 0.85rem;
+  color: #7aafc2;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.back-link:hover { color: #00b4d8; }
+
+@media (max-width: 480px) {
+  .feedback-card { padding: 28px 20px; }
+  .feedback-card h1 { font-size: 1.35rem; }
+  .type-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="/landing" class="navbar-brand">🏊 SwimTech</a>
+  <div class="navbar-links">
+    <a href="/landing">홈</a>
+  </div>
+</nav>
+
+<div class="feedback-wrap">
+  <div class="feedback-card">
+    <a href="/landing" class="back-link">← 홈으로</a>
+    <h1>개발자에게 한마디</h1>
+    <p class="subtitle">불편한 점, 원하는 기능, 개선 아이디어를 알려주세요. 모든 의견을 소중히 읽겠습니다.</p>
+
+    <form id="feedback-form" novalidate>
+
+      <!-- 피드백 유형 -->
+      <div class="form-group">
+        <label>피드백 유형</label>
+        <div class="type-grid" id="type-grid">
+          <button type="button" class="type-btn" data-value="버그 신고">🐛 버그 신고</button>
+          <button type="button" class="type-btn" data-value="기능 요청">✨ 기능 요청</button>
+          <button type="button" class="type-btn" data-value="개선 제안">💡 개선 제안</button>
+          <button type="button" class="type-btn" data-value="기타">💬 기타</button>
+        </div>
+        <input type="hidden" id="feedback-type" required>
+      </div>
+
+      <!-- 페이지 선택 -->
+      <div class="form-group">
+        <label for="feedback-page">발생 페이지</label>
+        <select id="feedback-page" required>
+          <option value="" disabled selected>어느 페이지에서 발생했나요?</option>
+          <option value="홈 / 랜딩">홈 / 랜딩</option>
+          <option value="로그인 / 회원가입">로그인 / 회원가입</option>
+          <option value="대시보드">대시보드</option>
+          <option value="훈련 일지">훈련 일지</option>
+          <option value="훈련 플랜">훈련 플랜</option>
+          <option value="커뮤니티">커뮤니티</option>
+          <option value="수영 챌린지">수영 챌린지</option>
+          <option value="월간 리포트">월간 리포트</option>
+          <option value="AI 코치 챗봇">AI 코치 챗봇</option>
+          <option value="수영장 찾기">수영장 찾기</option>
+          <option value="드릴 가이드">드릴 가이드</option>
+          <option value="부상 예방">부상 예방</option>
+          <option value="용어 사전">용어 사전</option>
+          <option value="FAQ">FAQ</option>
+          <option value="릴리즈 노트">릴리즈 노트</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+
+      <!-- 제목 -->
+      <div class="form-group">
+        <label for="feedback-title">제목</label>
+        <input type="text" id="feedback-title" placeholder="한 줄로 요약해 주세요" maxlength="100" required>
+      </div>
+
+      <!-- 내용 -->
+      <div class="form-group">
+        <label for="feedback-content">내용</label>
+        <textarea id="feedback-content" placeholder="자세한 내용을 입력해 주세요. 재현 방법, 기대 동작, 실제 동작 등을 포함하면 더 빠르게 해결할 수 있습니다." maxlength="2000" required></textarea>
+      </div>
+
+      <!-- 이메일 (선택) -->
+      <div class="form-group">
+        <label for="feedback-email">이메일 <span class="optional">(선택 — 답장을 원하시면 입력해 주세요)</span></label>
+        <input type="email" id="feedback-email" placeholder="example@email.com">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">피드백 보내기</button>
+
+      <div class="alert success" id="alert-success">
+        ✅ 피드백이 전송되었습니다. 소중한 의견 감사합니다!
+      </div>
+      <div class="alert error" id="alert-error"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // 유형 버튼 선택
+  const typeGrid = document.getElementById('type-grid');
+  const typeInput = document.getElementById('feedback-type');
+  typeGrid.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      typeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      typeInput.value = btn.dataset.value;
+    });
+  });
+
+  // 폼 제출
+  document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const type = typeInput.value;
+    const page = document.getElementById('feedback-page').value;
+    const title = document.getElementById('feedback-title').value.trim();
+    const content = document.getElementById('feedback-content').value.trim();
+    const email = document.getElementById('feedback-email').value.trim();
+
+    const successEl = document.getElementById('alert-success');
+    const errorEl = document.getElementById('alert-error');
+    successEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    if (!type) { showError('피드백 유형을 선택해 주세요.'); return; }
+    if (!page) { showError('발생 페이지를 선택해 주세요.'); return; }
+    if (!title) { showError('제목을 입력해 주세요.'); return; }
+    if (!content) { showError('내용을 입력해 주세요.'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = '전송 중...';
+
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback_type: type, page, title, content, email: email || null })
+      });
+
+      if (res.ok) {
+        successEl.style.display = 'block';
+        document.getElementById('feedback-form').reset();
+        typeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+        typeInput.value = '';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showError(data.detail || '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } catch {
+      showError('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해 주세요.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '피드백 보내기';
+    }
+  });
+
+  function showError(msg) {
+    const el = document.getElementById('alert-error');
+    el.textContent = '⚠️ ' + msg;
+    el.style.display = 'block';
+  }
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>
