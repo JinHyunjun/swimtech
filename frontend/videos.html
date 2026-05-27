@@ -330,6 +330,17 @@
 <script>
 "use strict";
 
+function thumbErr(el) {
+  el.onerror = null;
+  el.src = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">' +
+    '<rect width="320" height="180" fill="#374151"/>' +
+    '<circle cx="160" cy="90" r="28" fill="#4b5563"/>' +
+    '<polygon points="153,78 153,102 177,90" fill="#9ca3af"/>' +
+    '</svg>'
+  );
+}
+
 const CAT_LABEL = {
   freestyle:    "자유형",
   backstroke:   "배영",
@@ -342,105 +353,161 @@ const CAT_LABEL = {
 const VIDEOS = [
   // ── 자유형 ──────────────────────────────────────────
   {
-    title:   "자유형 기초 자세 완벽 가이드",
+    title:   "자유형 완벽 가이드",
     channel: "Effortless Swimming",
     level:   "입문",
     cats:    ["freestyle"],
-    ytId:    "CDqtIaAMPuo",
-    ytUrl:   "https://www.youtube.com/watch?v=CDqtIaAMPuo",
+    ytId:    "DfSyGs6Ztsw",
+    ytUrl:   "https://www.youtube.com/watch?v=DfSyGs6Ztsw",
   },
   {
-    title:   "하이 엘보우 캐치 완전 정복",
+    title:   "자유형 테크닉 변환",
     channel: "Effortless Swimming",
     level:   "중급",
-    cats:    ["freestyle", "drill"],
-    ytId:    "pEyAuCkCXhs",
-    ytUrl:   "https://www.youtube.com/watch?v=pEyAuCkCXhs",
+    cats:    ["freestyle"],
+    ytId:    "ignysw4pFO0",
+    ytUrl:   "https://www.youtube.com/watch?v=ignysw4pFO0",
   },
   {
-    title:   "자유형 바디롤 교정 드릴",
-    channel: "Global Triathlon Network",
-    level:   "중급",
-    cats:    ["freestyle", "drill"],
-    ytId:    "O8HkMFqZqT0",
-    ytUrl:   "https://www.youtube.com/watch?v=O8HkMFqZqT0",
-  },
-  {
-    title:   "자유형 킥 개선 — 6비트킥 훈련",
-    channel: "Skills NT",
-    level:   "초급",
-    cats:    ["freestyle", "drill"],
-    ytId:    "Hzbs-VWDi60",
-    ytUrl:   "https://www.youtube.com/watch?v=Hzbs-VWDi60",
-  },
-  {
-    title:   "자유형 페이스 훈련 — 레이스 시뮬레이션",
-    channel: "Effortless Swimming",
+    title:   "올림픽 자유형 테크닉",
+    channel: "SWIMVICE",
     level:   "고급",
-    cats:    ["freestyle", "training"],
-    ytId:    "SHDliqnFDe4",
-    ytUrl:   "https://www.youtube.com/watch?v=SHDliqnFDe4",
+    cats:    ["freestyle"],
+    ytId:    "9yuKCKtUow0",
+    ytUrl:   "https://www.youtube.com/watch?v=9yuKCKtUow0",
+  },
+  {
+    title:   "자유형 배우기",
+    channel: "Global Triathlon",
+    level:   "입문",
+    cats:    ["freestyle"],
+    ytId:    "6_vXycbD2TM",
+    ytUrl:   "https://www.youtube.com/watch?v=6_vXycbD2TM",
   },
   // ── 배영 ─────────────────────────────────────────────
   {
-    title:   "배영 기초 — 완벽한 자세 만들기",
+    title:   "수영 4영법 기초",
     channel: "Effortless Swimming",
     level:   "입문",
     cats:    ["backstroke"],
-    ytId:    "Hzbs-VWDi60",
-    ytUrl:   "https://www.youtube.com/watch?v=Hzbs-VWDi60",
+    ytId:    "P3S4TCMEbn0",
+    ytUrl:   "https://www.youtube.com/watch?v=P3S4TCMEbn0",
   },
   {
-    title:   "배영 팔 동작 & 바디롤 드릴",
-    channel: "Skills NT",
+    title:   "수영 4영법 마스터",
+    channel: "Swimming Tutorial",
+    level:   "초급",
+    cats:    ["backstroke"],
+    ytId:    "um6lvksygb8",
+    ytUrl:   "https://www.youtube.com/watch?v=um6lvksygb8",
+  },
+  {
+    title:   "트라이애슬론 영법",
+    channel: "Global Triathlon",
     level:   "중급",
-    cats:    ["backstroke", "drill"],
-    ytId:    "3uBNQdBFdMo",
-    ytUrl:   "https://www.youtube.com/watch?v=3uBNQdBFdMo",
+    cats:    ["backstroke"],
+    ytId:    "lpCoh0PcP_w",
+    ytUrl:   "https://www.youtube.com/watch?v=lpCoh0PcP_w",
   },
   // ── 평영 ─────────────────────────────────────────────
   {
-    title:   "평영 킥 기초 — 개구리 킥 완전 분석",
-    channel: "Effortless Swimming",
+    title:   "평영 5분 배우기",
+    channel: "Learn to Swim",
     level:   "입문",
     cats:    ["breaststroke"],
-    ytId:    "oaJXSNYsQAA",
-    ytUrl:   "https://www.youtube.com/watch?v=oaJXSNYsQAA",
+    ytId:    "5a3WvaZqh1k",
+    ytUrl:   "https://www.youtube.com/watch?v=5a3WvaZqh1k",
   },
   {
-    title:   "평영 글라이드 타이밍 교정",
-    channel: "Swim with Multisport",
-    level:   "초급",
-    cats:    ["breaststroke", "drill"],
-    ytId:    "mzBgd3DCQP4",
-    ytUrl:   "https://www.youtube.com/watch?v=mzBgd3DCQP4",
+    title:   "평영 턴 마스터",
+    channel: "DanSwim",
+    level:   "중급",
+    cats:    ["breaststroke"],
+    ytId:    "pF0j2VG6ZZw",
+    ytUrl:   "https://www.youtube.com/watch?v=pF0j2VG6ZZw",
+  },
+  {
+    title:   "평영 킥 드릴",
+    channel: "Skills NT",
+    level:   "중급",
+    cats:    ["breaststroke"],
+    ytId:    "wQUO0ioI7HQ",
+    ytUrl:   "https://www.youtube.com/watch?v=wQUO0ioI7HQ",
   },
   // ── 접영 ─────────────────────────────────────────────
   {
-    title:   "접영 기초 — 돌핀킥 파동 훈련",
+    title:   "접영 최고/최악 드릴",
     channel: "Effortless Swimming",
+    level:   "중급",
+    cats:    ["butterfly"],
+    ytId:    "TlBV0ryoHn4",
+    ytUrl:   "https://www.youtube.com/watch?v=TlBV0ryoHn4",
+  },
+  {
+    title:   "접영 마스터",
+    channel: "Swimming Tutorial",
+    level:   "중급",
+    cats:    ["butterfly"],
+    ytId:    "8c_lt66Yvn4",
+    ytUrl:   "https://www.youtube.com/watch?v=8c_lt66Yvn4",
+  },
+  {
+    title:   "접영 배우기",
+    channel: "Learn to Swim",
     level:   "입문",
-    cats:    ["butterfly", "drill"],
-    ytId:    "NMUoQGXPCF4",
-    ytUrl:   "https://www.youtube.com/watch?v=NMUoQGXPCF4",
+    cats:    ["butterfly"],
+    ytId:    "g37PXosluMk",
+    ytUrl:   "https://www.youtube.com/watch?v=g37PXosluMk",
   },
   // ── 드릴 ─────────────────────────────────────────────
   {
-    title:   "핑거 드래그 드릴 — 하이 엘보우 습득",
-    channel: "Skills NT",
-    level:   "초급",
+    title:   "수영 드릴 기초",
+    channel: "Effortless Swimming",
+    level:   "중급",
     cats:    ["drill"],
-    ytId:    "_HELSBsFMGc",
-    ytUrl:   "https://www.youtube.com/watch?v=_HELSBsFMGc",
+    ytId:    "ERLy2vkkCHU",
+    ytUrl:   "https://www.youtube.com/watch?v=ERLy2vkkCHU",
+  },
+  {
+    title:   "평영 킥+접영 드릴",
+    channel: "Skills NT",
+    level:   "중급",
+    cats:    ["drill"],
+    ytId:    "wQUO0ioI7HQ",
+    ytUrl:   "https://www.youtube.com/watch?v=wQUO0ioI7HQ",
+  },
+  {
+    title:   "수영 안정성 드릴",
+    channel: "Professional Swim",
+    level:   "중급",
+    cats:    ["drill"],
+    ytId:    "1r3oPTURBtI",
+    ytUrl:   "https://www.youtube.com/watch?v=1r3oPTURBtI",
   },
   // ── 훈련 ─────────────────────────────────────────────
   {
-    title:   "마스터즈 수영 인터벌 훈련",
-    channel: "Swim with Multisport",
+    title:   "마라톤 수영 테크닉",
+    channel: "Effortless Swimming",
+    level:   "고급",
+    cats:    ["training"],
+    ytId:    "P1SSRBO_bYk",
+    ytUrl:   "https://www.youtube.com/watch?v=P1SSRBO_bYk",
+  },
+  {
+    title:   "자유형처럼 보이기",
+    channel: "Effortless Swimming",
     level:   "중급",
     cats:    ["training"],
-    ytId:    "xHlZFJKh_6o",
-    ytUrl:   "https://www.youtube.com/watch?v=xHlZFJKh_6o",
+    ytId:    "ixCh5YsJVDo",
+    ytUrl:   "https://www.youtube.com/watch?v=ixCh5YsJVDo",
+  },
+  {
+    title:   "4가지 영법 포인트",
+    channel: "Effortless Swimming",
+    level:   "입문",
+    cats:    ["training"],
+    ytId:    "P3S4TCMEbn0",
+    ytUrl:   "https://www.youtube.com/watch?v=P3S4TCMEbn0",
   },
 ];
 
@@ -460,7 +527,7 @@ function renderCard(v) {
     <a class="video-card" href="${v.ytUrl}" target="_blank" rel="noopener">
       <div class="thumb-wrap">
         <img src="${thumbUrl(v.ytId)}" alt="${v.title}" loading="lazy"
-             onerror="this.style.background='#1a3a5c';this.style.display='none'">
+             onerror="thumbErr(this)">
         <div class="play-overlay">
           <div class="play-btn">▶</div>
         </div>
