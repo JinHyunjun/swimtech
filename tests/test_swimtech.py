@@ -42,6 +42,8 @@ TEST_PASS   = "swimtech1234"
 SHOT_DIR    = Path(__file__).parent / "screenshots" / date.today().strftime("%Y%m%d")
 SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
+from conftest import COACH_ID, COACH_PW, STUDENT_ID, STUDENT_PW  # noqa: E402
+
 
 # ── fixtures ───────────────────────────────────────────────────────────────
 
@@ -1334,3 +1336,93 @@ def test_coach_feedback_api(page: Page):
         f"/api/coach/feedback 예상 외 응답: {resp.status}"
     )
     shot(page, "21_coach_feedback_api")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 22. /coach — 고정 테스트 계정 기반 E2E (coach_test / student_test)
+# ══════════════════════════════════════════════════════════════════════════
+
+def _login_as(page: Page, username: str, password: str) -> None:
+    """주어진 계정으로 로그인 후 쿠키(swimtech_token)를 현재 컨텍스트에 설정."""
+    resp = page.request.post(
+        f"{BASE_URL}/api/auth/login",
+        data=f'{{"username":"{username}","password":"{password}"}}',
+        headers={"Content-Type": "application/json"},
+    )
+    # 401 → 계정 미생성(test_accounts.sql 미실행) 으로 간주, 테스트를 스킵
+    if resp.status == 401:
+        pytest.skip(f"{username} 계정이 DB에 없습니다. db/test_accounts.sql 을 먼저 실행하세요.")
+    assert resp.status == 200, f"로그인 실패 ({username}): {resp.status}"
+
+
+def test_coach_page_load(page: Page):
+    """/coach 페이지 로드 — 탭 바 및 코치·수강생 탭 버튼 존재 확인."""
+    goto(page, "/coach")
+    page.wait_for_timeout(700)
+
+    expect(page.locator("#coach-tab-bar")).to_be_visible()
+    expect(page.locator("#tab-btn-coach")).to_be_visible()
+    expect(page.locator("#tab-btn-student")).to_be_visible()
+
+    shot(page, "22_coach_page_load")
+
+
+def test_coach_register_form(page: Page):
+    """코치 등록 폼 UI — specialty·career·intro 입력란 존재 확인."""
+    goto(page, "/coach")
+    page.wait_for_timeout(700)
+
+    # 코치 탭이 기본 선택
+    expect(page.locator("#tab-btn-coach")).to_be_visible()
+
+    # 입력 필드가 DOM 에 있는지 확인 (미등록 상태에서 보임)
+    expect(page.locator("#reg-specialty")).to_be_attached()
+    expect(page.locator("#reg-career")).to_be_attached()
+    expect(page.locator("#reg-intro")).to_be_attached()
+
+    shot(page, "22_coach_register_form")
+
+
+def test_coach_invite_code_api(page: Page):
+    """/api/coach/me — coach_test 로 로그인 후 invite_code 형식 확인."""
+    _login_as(page, COACH_ID, COACH_PW)
+
+    resp = page.request.get(f"{BASE_URL}/api/coach/me")
+    assert resp.status == 200, f"/api/coach/me 응답 오류: {resp.status}"
+
+    body = resp.json()
+    assert body.get("is_coach") is True, f"coach_test 가 코치로 등록되지 않음: {body}"
+    invite_code = body.get("invite_code", "")
+    assert invite_code.startswith("SWIM-"), (
+        f"invite_code 형식 이상: {invite_code!r} (SWIM-으로 시작해야 함)"
+    )
+
+    shot(page, "22_coach_invite_code_api")
+
+
+def test_student_join_ui(page: Page):
+    """수강생 탭 — 초대코드 입력란(#join-code) 존재 확인."""
+    goto(page, "/coach")
+    page.wait_for_timeout(500)
+
+    # 수강생 탭 전환
+    page.click("#tab-btn-student")
+    page.wait_for_timeout(500)
+
+    expect(page.locator("#join-code")).to_be_attached()
+
+    shot(page, "22_student_join_ui")
+
+
+def test_coach_api_unauthorized(page: Page):
+    """비로그인 상태에서 /api/coach/me 호출 → 401 또는 403 확인."""
+    # 쿠키 없이 별도 요청 컨텍스트 사용
+    resp = page.request.get(
+        f"{BASE_URL}/api/coach/me",
+        headers={"Cookie": ""},  # 쿠키 무효화
+    )
+    assert resp.status in (401, 403), (
+        f"비로그인 /api/coach/me 예상 외 응답: {resp.status}"
+    )
+
+    shot(page, "22_coach_api_unauthorized")
