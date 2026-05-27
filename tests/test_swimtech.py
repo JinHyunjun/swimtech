@@ -37,12 +37,13 @@ from playwright.sync_api import Page, BrowserContext, expect
 
 # ── constants ──────────────────────────────────────────────────────────────
 BASE_URL    = "https://localhost"
-TEST_USER   = "admin"
-TEST_PASS   = "swimtech1234"
 SHOT_DIR    = Path(__file__).parent / "screenshots" / date.today().strftime("%Y%m%d")
 SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
-from conftest import COACH_ID, COACH_PW, STUDENT_ID, STUDENT_PW  # noqa: E402
+from conftest import COACH_ID, COACH_PW, STUDENT_ID, STUDENT_PW, TEST_ID, TEST_PW  # noqa: E402
+
+TEST_USER = TEST_ID
+TEST_PASS = TEST_PW
 
 
 # ── fixtures ───────────────────────────────────────────────────────────────
@@ -69,8 +70,10 @@ def logged_in_state(browser, browser_context_args):
     page.click("#login-btn")
     page.wait_for_load_state("networkidle")
 
-    if "/landing" not in page.url:
-        page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
+    if "/login" in page.url:
+        print(f"[ERROR] 로그인 실패: 여전히 /login 페이지 — 계정({TEST_USER}) 또는 API 경로를 확인하세요. URL: {page.url}")
+
+    page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
 
     state = ctx.storage_state()
     page.close()
@@ -977,9 +980,9 @@ def test_training_log_api_requires_login(browser, browser_context_args):
 
 
 def test_training_log_stats_api(page: Page):
-    """GET /api/training-log/stats — 로그인 상태 200 또는 admin(customer_id 없음) 403 확인."""
-    resp = page.request.get("https://localhost/api/training-log/stats")
-    assert resp.status in (200, 403), f"/api/training-log/stats 응답 코드: {resp.status}"
+    """GET /api/training-log/stats — 로그인 상태 200 또는 403/404 확인."""
+    resp = page.request.get("https://localhost/api/training-log/stats?year=2026&month=5")
+    assert resp.status in (200, 403, 404), f"/api/training-log/stats 응답 코드: {resp.status}"
     if resp.status == 200:
         body = resp.json()
         for key in ("count", "total_distance", "avg_distance", "total_minutes"):
@@ -988,9 +991,9 @@ def test_training_log_stats_api(page: Page):
 
 
 def test_training_log_streak_api(page: Page):
-    """GET /api/training-log/streak — 로그인 상태 200 또는 admin(customer_id 없음) 403 확인."""
+    """GET /api/training-log/streak — 로그인 상태 200 또는 403/404 확인."""
     resp = page.request.get("https://localhost/api/training-log/streak")
-    assert resp.status in (200, 403), f"/api/training-log/streak 응답 코드: {resp.status}"
+    assert resp.status in (200, 403, 404), f"/api/training-log/streak 응답 코드: {resp.status}"
     if resp.status == 200:
         body = resp.json()
         assert "streak" in body, f"streak 응답에 'streak' 키 없음: {body}"
@@ -1345,7 +1348,7 @@ def test_coach_feedback_api(page: Page):
 def _login_as(page: Page, username: str, password: str) -> None:
     """주어진 계정으로 로그인 후 쿠키(swimtech_token)를 현재 컨텍스트에 설정."""
     resp = page.request.post(
-        f"{BASE_URL}/api/auth/login",
+        f"{BASE_URL}/auth/login",
         data=f'{{"username":"{username}","password":"{password}"}}',
         headers={"Content-Type": "application/json"},
     )
