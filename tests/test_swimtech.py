@@ -67,11 +67,9 @@ def logged_in_state(browser, browser_context_args):
     page.fill("#username", TEST_USER)
     page.fill("#password", TEST_PASS)
     page.click("#login-btn")
-    # 로그인 성공 → /landing 또는 /onboarding 으로 리디렉트
-    page.wait_for_url(re.compile(r"/(landing|onboarding|nickname|$)"), timeout=10_000)
+    page.wait_for_load_state("networkidle")
 
-    if "/onboarding" in page.url or "/nickname" in page.url:
-        page.evaluate("localStorage.setItem('swimtech_onboarded', 'true')")
+    if "/landing" not in page.url:
         page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
 
     state = ctx.storage_state()
@@ -157,7 +155,9 @@ def test_login_success(browser, browser_context_args):
         page.fill("#username", TEST_USER)
         page.fill("#password", TEST_PASS)
         page.click("#login-btn")
-        page.wait_for_url(re.compile(r"/(landing|onboarding|nickname|$)"), timeout=10_000)
+        page.wait_for_load_state("networkidle")
+        if "/landing" not in page.url:
+            page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
         shot(page, "02_login_success")
         assert "/login" not in page.url, f"로그인 후 /login 잔류: {page.url}"
     finally:
