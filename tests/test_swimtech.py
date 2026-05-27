@@ -1109,3 +1109,56 @@ def test_challenge_my_tab(page: Page):
     expect(page.locator("#panel-my")).to_be_visible()
 
     shot(page, "17_challenge_my_tab")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 18. /feedback (개발자에게 한마디, v2.4.8)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_feedback_load(page: Page):
+    """/feedback 페이지 로드 — 헤더·폼 영역 렌더링 확인."""
+    goto(page, "/feedback")
+    page.wait_for_timeout(500)
+
+    expect(page.locator(".feedback-card h1")).to_be_visible()
+    expect(page.locator("#feedback-form")).to_be_visible()
+    expect(page.locator("#submit-btn")).to_be_visible()
+
+    shot(page, "18_feedback_load")
+
+
+def test_feedback_form(page: Page):
+    """/feedback — 유형 버튼·제목·내용 입력 요소 존재 확인."""
+    goto(page, "/feedback")
+    page.wait_for_timeout(500)
+
+    # 유형 버튼 4개 (버그 신고 / 기능 요청 / 개선 제안 / 기타)
+    type_btns = page.locator(".type-btn")
+    assert type_btns.count() == 4, f"type-btn 개수 불일치: {type_btns.count()}"
+    expect(type_btns.first).to_be_visible()
+
+    # 제목 입력
+    expect(page.locator("#feedback-title")).to_be_visible()
+
+    # 내용 입력
+    expect(page.locator("#feedback-content")).to_be_visible()
+
+    # 유형 버튼 클릭 시 selected 클래스 전환
+    first_btn = page.locator(".type-btn").first
+    first_btn.click()
+    expect(first_btn).to_have_class(re.compile(r"\bselected\b"))
+
+    shot(page, "18_feedback_form")
+
+
+def test_feedback_api(page: Page):
+    """POST /api/feedback — 200(SMTP 설정 시) 또는 500(SMTP 미설정) 응답 확인."""
+    resp = page.request.post(
+        "https://localhost/api/feedback",
+        data='{"feedback_type":"버그 신고","page":"홈 / 랜딩","title":"테스트","content":"자동화 테스트 피드백입니다."}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status in (200, 500), (
+        f"/api/feedback 예상 외 응답: {resp.status}"
+    )
+    shot(page, "18_feedback_api")
