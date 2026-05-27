@@ -121,13 +121,13 @@ def test_landing_load(page: Page):
     # 헤더 로고
     expect(page.locator(".logo").first).to_be_visible()
 
-    # 주요 카드 버튼 6개 이상
-    cards = page.locator(".choice-card")
-    assert cards.count() >= 6, f"choice-card count: {cards.count()}"
+    # 주요 카드 버튼 14개 이상
+    cards = page.locator(".menu-card")
+    assert cards.count() >= 14, f"menu-card count: {cards.count()}"
 
     # 핵심 CTA 버튼 텍스트 확인
-    btn_texts = page.locator(".choice-btn").all_text_contents()
-    # 영상 분석 카드는 숨김 처리됨 — AI 코치/수영장 버튼은 활성화
+    btn_texts = page.locator(".hero-btn, .menu-btn").all_text_contents()
+    # AI 코치 hero-btn + 메뉴 카드 menu-btn
     assert any("대화" in t for t in btn_texts), "AI코치 버튼 없음"
     assert any("보기" in t or "찾기" in t for t in btn_texts), "수영장/드릴 버튼 없음"
 

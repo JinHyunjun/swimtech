@@ -162,8 +162,22 @@ def get_monthly_report(
         return stats
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"리포트 생성 오류: {e}")
+    except Exception:
+        return {
+            "year": year,
+            "month": month,
+            "total_distance": 0,
+            "total_count": 0,
+            "total_minutes": 0,
+            "estimated_calories": 0,
+            "stroke_dist": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
+            "weekday_freq": [0] * 7,
+            "weekly_dist": [0] * 5,
+            "prev_distance": 0,
+            "growth_rate": 0.0,
+            "max_streak": 0,
+            "share_token": _make_share_token(username, year, month),
+        }
 
 
 @router.get("/share/{token}")
