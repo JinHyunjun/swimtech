@@ -176,6 +176,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /coach {
+    reverse_proxy swim-api:8000
+  }
+
   handle /share/* {
     reverse_proxy swim-api:8000
   }

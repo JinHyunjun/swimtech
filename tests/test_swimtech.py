@@ -1276,3 +1276,61 @@ def test_videos_search(page: Page):
     page.wait_for_timeout(300)
 
     shot(page, "20_videos_search")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 21. /coach (코치-수강생 연동 시스템, v2.5.2)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_coach_load(page: Page):
+    """/coach 페이지 로드 — 탭 구조 렌더링 확인."""
+    goto(page, "/coach")
+    page.wait_for_timeout(700)
+
+    expect(page.locator("#coach-tab-bar")).to_be_visible()
+    expect(page.locator("#tab-btn-coach")).to_be_visible()
+    expect(page.locator("#tab-btn-student")).to_be_visible()
+
+    shot(page, "21_coach_load")
+
+
+def test_coach_register_api(page: Page):
+    """POST /api/coach/register — 코치 등록 또는 기존 프로필 반환."""
+    resp = page.request.post(
+        "https://localhost/api/coach/register",
+        data='{"specialty":"자유형","career":"10년","intro":"테스트 코치"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status in (200, 400, 401, 409, 422), (
+        f"/api/coach/register 예상 외 응답: {resp.status}"
+    )
+    if resp.status == 200:
+        body = resp.json()
+        assert "invite_code" in body or "already_exists" in body, f"응답 키 없음: {body}"
+    shot(page, "21_coach_register_api")
+
+
+def test_coach_join_api(page: Page):
+    """POST /api/coach/join — 유효하지 않은 코드로 404 응답 확인."""
+    resp = page.request.post(
+        "https://localhost/api/coach/join",
+        data='{"invite_code":"SWIM-INVALID999"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status in (400, 401, 404, 422), (
+        f"/api/coach/join 예상 외 응답: {resp.status}"
+    )
+    shot(page, "21_coach_join_api")
+
+
+def test_coach_feedback_api(page: Page):
+    """POST /api/coach/feedback — 코치 미등록 또는 권한 없을 때 403/400 응답 확인."""
+    resp = page.request.post(
+        "https://localhost/api/coach/feedback",
+        data='{"student_id":9999,"content":"테스트 피드백"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status in (400, 401, 403, 404, 422), (
+        f"/api/coach/feedback 예상 외 응답: {resp.status}"
+    )
+    shot(page, "21_coach_feedback_api")

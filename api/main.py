@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -78,6 +78,39 @@ CREATE TABLE IF NOT EXISTS challenge_participants (
 );
 CREATE INDEX IF NOT EXISTS idx_chall_part_cid  ON challenge_participants(challenge_id);
 CREATE INDEX IF NOT EXISTS idx_chall_part_user ON challenge_participants(username);
+CREATE TABLE IF NOT EXISTS coaches (
+    id          SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE UNIQUE,
+    specialty   VARCHAR(100),
+    career      TEXT,
+    intro       TEXT,
+    invite_code VARCHAR(20) UNIQUE NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS coach_students (
+    id          SERIAL PRIMARY KEY,
+    coach_id    INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    student_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    status      VARCHAR(10) NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending','active')),
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE (coach_id, student_id)
+);
+CREATE TABLE IF NOT EXISTS coach_feedbacks (
+    id              SERIAL PRIMARY KEY,
+    coach_id        INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    student_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    training_log_id INTEGER REFERENCES training_logs(id) ON DELETE SET NULL,
+    content         TEXT NOT NULL,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS coach_plans (
+    id          SERIAL PRIMARY KEY,
+    coach_id    INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    student_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    content     TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
 INSERT INTO challenges (title, description, goal_distance, challenge_type, start_date, end_date)
 VALUES
   ('5월 100km 챌린지', '5월 한 달 동안 총 100km를 달성하세요! 매일 꾸준히 수영하면 충분히 달성할 수 있습니다.', 100000, 'distance', '2026-05-01', '2026-05-31'),
@@ -164,6 +197,7 @@ app.include_router(training_log.router,   prefix="/api/training-log",   tags=["�
 app.include_router(report.router,         prefix="/api/report",          tags=["월간 리포트"])
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
 app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
+app.include_router(coach.router,          prefix="/api/coach",           tags=["코치"])
 
 @app.get("/api/health")
 def health():
@@ -387,6 +421,13 @@ def equipment_page():
 @app.get("/feedback")
 def feedback_page():
     return _serve("feedback.html")
+
+# 코치 연동 페이지 (로그인 필요)
+@app.get("/coach")
+def coach_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("coach.html")
 
 # 수영 영상 큐레이션 (로그인 필요)
 @app.get("/videos")

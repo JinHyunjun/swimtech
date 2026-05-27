@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 코치 연동</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.coach-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+
+.coach-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.back-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  text-decoration: none; transition: all .2s; white-space: nowrap;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+.coach-title { font-size: 20px; font-weight: 700; color: var(--text); }
+.coach-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ── 탭 ── */
+.coach-tabs {
+  display: flex; gap: 0; margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+.coach-tab {
+  padding: 10px 24px; font-size: 13px; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .2s; margin-bottom: -1px;
+}
+.coach-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ── 카드 공통 ── */
+.c-card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 14px; padding: 22px;
+  transition: border-color .2s, box-shadow .2s; margin-bottom: 16px;
+}
+.c-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(0,180,216,.08); }
+.c-card-title {
+  font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── 폼 ── */
+.c-field { margin-bottom: 14px; }
+.c-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+.c-input, .c-textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg); border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  color: var(--text); outline: none; transition: border-color .2s;
+  font-family: inherit;
+}
+.c-input:focus, .c-textarea:focus { border-color: var(--blue); }
+.c-textarea { min-height: 80px; resize: vertical; }
+
+.c-btn {
+  padding: 11px 24px; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.c-btn-primary { background: var(--blue); color: #0a1628; }
+.c-btn-primary:hover { opacity: .85; }
+.c-btn-danger  { background: rgba(248,113,113,.15); color: #f87171; border: 0.5px solid #f87171; }
+.c-btn-danger:hover { background: rgba(248,113,113,.25); }
+.c-btn-ghost   { background: none; color: var(--muted); border: 0.5px solid var(--border); }
+.c-btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── 초대코드 박스 ── */
+.invite-box {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(0,180,216,.08); border: 1px dashed rgba(0,180,216,.4);
+  border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+}
+.invite-code {
+  font-size: 22px; font-weight: 800; color: var(--blue);
+  letter-spacing: 2px; font-family: monospace;
+}
+.invite-copy-btn {
+  padding: 7px 16px; background: rgba(0,180,216,.15); color: var(--blue);
+  border: 0.5px solid rgba(0,180,216,.3); border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.invite-copy-btn:hover { background: rgba(0,180,216,.25); }
+
+/* ── 수강생 카드 ── */
+.student-card {
+  background: var(--bg); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+}
+.student-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,180,216,.3), rgba(72,202,228,.2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.student-info { flex: 1; min-width: 0; }
+.student-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.student-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.student-actions { display: flex; gap: 8px; }
+.s-btn {
+  padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: none; transition: all .2s;
+}
+.s-btn-log  { background: rgba(0,180,216,.15); color: var(--blue); }
+.s-btn-log:hover  { background: rgba(0,180,216,.25); }
+.s-btn-fb   { background: rgba(74,222,128,.15); color: #4ade80; }
+.s-btn-fb:hover   { background: rgba(74,222,128,.25); }
+.s-btn-plan { background: rgba(250,204,21,.15); color: #facc15; }
+.s-btn-plan:hover { background: rgba(250,204,21,.25); }
+.s-btn-del  { background: rgba(248,113,113,.1); color: #f87171; }
+.s-btn-del:hover  { background: rgba(248,113,113,.2); }
+
+/* ── 피드백 아이템 ── */
+.fb-item {
+  background: var(--bg); border-left: 3px solid var(--blue);
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px;
+}
+.fb-content { font-size: 13px; color: var(--text); line-height: 1.6; }
+.fb-meta    { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* ── 코치 프로필 카드 ── */
+.coach-profile {
+  display: flex; gap: 18px; align-items: flex-start; margin-bottom: 6px;
+}
+.coach-avatar-lg {
+  width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(0,180,216,.3), rgba(72,202,228,.2));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.coach-info-lg .coach-name  { font-size: 17px; font-weight: 700; color: var(--text); }
+.coach-info-lg .coach-spec  { font-size: 12px; color: var(--blue); margin-top: 3px; }
+.coach-info-lg .coach-career { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.coach-intro { font-size: 13px; color: var(--text); line-height: 1.6; margin-top: 12px; }
+
+/* ── 플랜 아이템 ── */
+.plan-item {
+  background: var(--bg); border-left: 3px solid #facc15;
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px;
+}
+.plan-content { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.plan-meta    { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* ── 상태 배지 ── */
+.badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.badge-pending { background: rgba(250,204,21,.15); color: #facc15; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+
+/* ── 빈 상태 / 로딩 ── */
+.c-empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+.c-empty-icon { font-size: 44px; margin-bottom: 12px; }
+.c-empty-text { font-size: 13px; line-height: 1.6; }
+.c-loading { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+
+/* ── 로그 목록 ── */
+.log-item {
+  background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
+  transition: border-color .2s;
+}
+.log-item:hover { border-color: var(--blue); }
+.log-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.log-item-meta  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.log-item.selected { border-color: var(--blue); background: rgba(0,180,216,.05); }
+
+/* ── 모달 ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.modal-box {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 16px; padding: 28px; max-width: 520px; width: 100%;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+.modal-close {
+  float: right; background: none; border: none; color: var(--muted);
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #0d2137; border: 0.5px solid var(--blue); border-radius: 10px;
+  padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 9999;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+@media (max-width: 500px) {
+  .student-actions { flex-wrap: wrap; gap: 6px; }
+  .coach-profile { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
+           style="height:32px;width:auto;display:block;"
+           onerror="this.style.display='none';document.getElementById('logo-fb').style.display='inline';">
+      <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
+        border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="coach-page">
+    <div class="coach-topbar">
+      <a href="/landing" class="back-btn">← 돌아가기</a>
+      <div>
+        <div class="coach-title">🤝 코치 연동</div>
+        <div class="coach-sub">코치와 수강생을 연결해 훈련을 함께 관리하세요</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="coach-tabs" id="coach-tab-bar">
+      <button class="coach-tab active" id="tab-btn-coach" onclick="switchTab('coach')">👨‍🏫 코치</button>
+      <button class="coach-tab" id="tab-btn-student" onclick="switchTab('student')">🏊 수강생</button>
+    </div>
+
+    <!-- ────────────────────── 코치 탭 ────────────────────── -->
+    <div id="tab-coach">
+      <div id="coach-loading" class="c-loading">불러오는 중...</div>
+
+      <!-- 코치 미등록 상태 -->
+      <div id="coach-unregistered" style="display:none">
+        <div class="c-card">
+          <div class="c-card-title">👨‍🏫 코치로 등록하기</div>
+          <div class="c-field">
+            <div class="c-label">전문 분야</div>
+            <input id="reg-specialty" class="c-input" placeholder="예: 자유형·접영" maxlength="100">
+          </div>
+          <div class="c-field">
+            <div class="c-label">경력</div>
+            <input id="reg-career" class="c-input" placeholder="예: 15년 경력 수영 강사" maxlength="200">
+          </div>
+          <div class="c-field">
+            <div class="c-label">소개</div>
+            <textarea id="reg-intro" class="c-textarea" placeholder="수강생에게 전달할 자기 소개를 입력하세요." maxlength="500"></textarea>
+          </div>
+          <button class="c-btn c-btn-primary" onclick="registerCoach()">코치 등록하기</button>
+        </div>
+      </div>
+
+      <!-- 코치 등록 완료 대시보드 -->
+      <div id="coach-dashboard" style="display:none">
+        <!-- 초대코드 -->
+        <div class="c-card">
+          <div class="c-card-title">🔑 초대코드</div>
+          <div class="invite-box">
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">수강생에게 아래 코드를 공유하세요</div>
+              <div class="invite-code" id="my-invite-code">—</div>
+            </div>
+            <button class="invite-copy-btn" onclick="copyInviteCode()">복사</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">수강생이 <strong>수강생 탭</strong>에서 이 코드를 입력하면 연동됩니다.</div>
+        </div>
+
+        <!-- 수강생 목록 -->
+        <div class="c-card">
+          <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size:11px;color:var(--muted);font-weight:400;"></span></div>
+          <div id="student-list"><div class="c-loading">불러오는 중...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────── 수강생 탭 ────────────────────── -->
+    <div id="tab-student" style="display:none">
+      <div id="student-loading" class="c-loading">불러오는 중...</div>
+
+      <!-- 코치 미연동 상태 -->
+      <div id="student-no-coach" style="display:none">
+        <div class="c-card">
+          <div class="c-card-title">🔗 코치 연동하기</div>
+          <div class="c-field">
+            <div class="c-label">초대코드 입력</div>
+            <input id="join-code" class="c-input" placeholder="SWIM-XXXX" maxlength="20"
+                   style="font-family:monospace;font-size:16px;letter-spacing:1px;"
+                   oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <button class="c-btn c-btn-primary" onclick="joinCoach()">연동 요청</button>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">코치에게 초대코드를 받아 입력하세요.</div>
+        </div>
+      </div>
+
+      <!-- 코치 연동 완료 -->
+      <div id="student-has-coach" style="display:none">
+        <!-- 코치 프로필 -->
+        <div class="c-card" id="my-coach-card">
+          <div class="c-card-title">👨‍🏫 내 코치</div>
+          <div class="coach-profile">
+            <div class="coach-avatar-lg">🏊</div>
+            <div class="coach-info-lg">
+              <div class="coach-name" id="sc-name">—</div>
+              <div class="coach-spec" id="sc-spec"></div>
+              <div class="coach-career" id="sc-career"></div>
+            </div>
+          </div>
+          <div class="coach-intro" id="sc-intro"></div>
+        </div>
+
+        <!-- 코치 피드백 -->
+        <div class="c-card">
+          <div class="c-card-title">💬 코치 피드백</div>
+          <div id="feedback-list"><div class="c-loading">불러오는 중...</div></div>
+        </div>
+
+        <!-- 코치가 보낸 플랜 -->
+        <div class="c-card">
+          <div class="c-card-title">📋 코치 훈련 플랜</div>
+          <div id="plan-list"><div class="c-loading">불러오는 중...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 피드백 작성 모달 -->
+<div id="modal-feedback" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-feedback')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('modal-feedback')">✕</button>
+    <div class="modal-title">💬 피드백 작성</div>
+    <input type="hidden" id="fb-student-id">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="fb-student-name"></strong></div>
+
+    <div class="c-field">
+      <div class="c-label">훈련 일지 선택 (선택사항)</div>
+      <div id="modal-log-list" style="max-height:180px;overflow-y:auto;"></div>
+    </div>
+    <div class="c-field">
+      <div class="c-label">피드백 내용</div>
+      <textarea id="fb-content" class="c-textarea" placeholder="수강생에게 전달할 피드백을 작성하세요." style="min-height:100px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="c-btn c-btn-ghost" onclick="closeModal('modal-feedback')">취소</button>
+      <button class="c-btn c-btn-primary" onclick="submitFeedback()">피드백 제출</button>
+    </div>
+  </div>
+</div>
+
+<!-- 플랜 전달 모달 -->
+<div id="modal-plan" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-plan')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('modal-plan')">✕</button>
+    <div class="modal-title">📋 훈련 플랜 전달</div>
+    <input type="hidden" id="plan-student-id">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="plan-student-name"></strong></div>
+    <div class="c-field">
+      <div class="c-label">플랜 내용</div>
+      <textarea id="plan-content" class="c-textarea" placeholder="수강생에게 전달할 훈련 플랜을 작성하세요." style="min-height:120px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="c-btn c-btn-ghost" onclick="closeModal('modal-plan')">취소</button>
+      <button class="c-btn c-btn-primary" onclick="submitPlan()">플랜 전달</button>
+    </div>
+  </div>
+</div>
+
+<!-- 수강생 훈련일지 모달 -->
+<div id="modal-logs" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-logs')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('modal-logs')">✕</button>
+    <div class="modal-title">📓 훈련 일지</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="logs-student-name"></strong></div>
+    <div id="modal-logs-content"><div class="c-loading">불러오는 중...</div></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API = "https://localhost";
+let _currentTab = "coach";
+let _selectedLogId = null;
+
+function logout() {
+  document.cookie = "swimtech_token=; Max-Age=0; path=/";
+  location.href = "/login";
+}
+
+function toast(msg, ok = true) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.style.borderColor = ok ? "var(--blue)" : "#f87171";
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+function switchTab(tab) {
+  _currentTab = tab;
+  document.getElementById("tab-coach").style.display   = tab === "coach"   ? "" : "none";
+  document.getElementById("tab-student").style.display = tab === "student" ? "" : "none";
+  document.getElementById("tab-btn-coach").classList.toggle("active",   tab === "coach");
+  document.getElementById("tab-btn-student").classList.toggle("active", tab === "student");
+
+  if (tab === "coach")   loadCoachTab();
+  if (tab === "student") loadStudentTab();
+}
+
+// ──────────────── 코치 탭 ────────────────
+
+async function loadCoachTab() {
+  document.getElementById("coach-loading").style.display = "";
+  document.getElementById("coach-unregistered").style.display = "none";
+  document.getElementById("coach-dashboard").style.display = "none";
+  try {
+    const r = await fetch(`${API}/api/coach/me`, { credentials: "include" });
+    const data = await r.json();
+    document.getElementById("coach-loading").style.display = "none";
+    if (data.is_coach) {
+      document.getElementById("coach-dashboard").style.display = "";
+      document.getElementById("my-invite-code").textContent = data.invite_code || "—";
+      renderStudentList(data.students || []);
+    } else {
+      document.getElementById("coach-unregistered").style.display = "";
+    }
+  } catch {
+    document.getElementById("coach-loading").textContent = "불러오기 실패";
+  }
+}
+
+function renderStudentList(students) {
+  const el = document.getElementById("student-list");
+  document.getElementById("student-count").textContent = `(${students.length}명)`;
+  if (!students.length) {
+    el.innerHTML = `<div class="c-empty"><div class="c-empty-icon">🏊</div><div class="c-empty-text">아직 연동된 수강생이 없습니다.<br>초대코드를 공유하세요!</div></div>`;
+    return;
+  }
+  el.innerHTML = students.map(s => `
+    <div class="student-card">
+      <div class="student-avatar">🏊</div>
+      <div class="student-info">
+        <div class="student-name">${esc(s.name || s.username)}</div>
+        <div class="student-meta">
+          <span class="badge-${s.status}">${s.status === 'active' ? '연동중' : '대기중'}</span>
+          &nbsp;${s.joined_at ? s.joined_at.slice(0,10) : ''}
+        </div>
+      </div>
+      <div class="student-actions">
+        <button class="s-btn s-btn-log" onclick="openLogs(${s.student_id}, '${esc(s.name || s.username)}')">일지</button>
+        <button class="s-btn s-btn-fb"  onclick="openFeedback(${s.student_id}, '${esc(s.name || s.username)}')">피드백</button>
+        <button class="s-btn s-btn-plan" onclick="openPlan(${s.student_id}, '${esc(s.name || s.username)}')">플랜</button>
+        <button class="s-btn s-btn-del" onclick="removeStudent(${s.student_id}, '${esc(s.name || s.username)}')">해제</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function registerCoach() {
+  const specialty = document.getElementById("reg-specialty").value.trim();
+  const career    = document.getElementById("reg-career").value.trim();
+  const intro     = document.getElementById("reg-intro").value.trim();
+  try {
+    const r = await fetch(`${API}/api/coach/register`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ specialty, career, intro }),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      toast("코치 등록 완료! 초대코드가 발급됐습니다.");
+      loadCoachTab();
+    } else {
+      toast(data.detail || "등록 실패", false);
+    }
+  } catch { toast("네트워크 오류", false); }
+}
+
+function copyInviteCode() {
+  const code = document.getElementById("my-invite-code").textContent;
+  navigator.clipboard.writeText(code).then(() => toast("초대코드 복사됨: " + code));
+}
+
+// ── 수강생 훈련일지 열람 ──
+
+async function openLogs(studentId, name) {
+  document.getElementById("logs-student-name").textContent = name;
+  document.getElementById("modal-logs-content").innerHTML = `<div class="c-loading">불러오는 중...</div>`;
+  openModal("modal-logs");
+  try {
+    const r = await fetch(`${API}/api/coach/students/${studentId}/logs`, { credentials: "include" });
+    const data = await r.json();
+    const el = document.getElementById("modal-logs-content");
+    if (!data.logs || !data.logs.length) {
+      el.innerHTML = `<div class="c-empty"><div class="c-empty-icon">📓</div><div class="c-empty-text">훈련 일지가 없습니다.</div></div>`;
+      return;
+    }
+    el.innerHTML = data.logs.map(l => `
+      <div class="log-item">
+        <div class="log-item-title">${esc(l.plan_name || '(제목 없음)')}</div>
+        <div class="log-item-meta">${l.log_date || ''} &nbsp;|&nbsp; ${esc(l.notes || '')}</div>
+      </div>
+    `).join("");
+  } catch {
+    document.getElementById("modal-logs-content").innerHTML = `<div class="c-empty"><div class="c-empty-text">불러오기 실패</div></div>`;
+  }
+}
+
+// ── 피드백 ──
+
+function openFeedback(studentId, name) {
+  document.getElementById("fb-student-id").value = studentId;
+  document.getElementById("fb-student-name").textContent = name;
+  document.getElementById("fb-content").value = "";
+  _selectedLogId = null;
+  document.getElementById("modal-log-list").innerHTML = `<div style="font-size:12px;color:var(--muted)">일지를 선택하지 않으면 일반 피드백으로 저장됩니다.</div>`;
+  openModal("modal-feedback");
+  loadLogsForFeedback(studentId);
+}
+
+async function loadLogsForFeedback(studentId) {
+  try {
+    const r = await fetch(`${API}/api/coach/students/${studentId}/logs`, { credentials: "include" });
+    const data = await r.json();
+    const el = document.getElementById("modal-log-list");
+    if (!data.logs || !data.logs.length) return;
+    el.innerHTML = data.logs.slice(0, 8).map(l => `
+      <div class="log-item" id="log-sel-${l.id}" onclick="selectLog(${l.id})">
+        <div class="log-item-title">${esc(l.plan_name || '(제목 없음)')}</div>
+        <div class="log-item-meta">${l.log_date || ''}</div>
+      </div>
+    `).join("");
+  } catch { /* ignore */ }
+}
+
+function selectLog(id) {
+  document.querySelectorAll(".log-item").forEach(el => el.classList.remove("selected"));
+  const el = document.getElementById("log-sel-" + id);
+  if (el) { el.classList.add("selected"); _selectedLogId = id; }
+}
+
+async function submitFeedback() {
+  const studentId = parseInt(document.getElementById("fb-student-id").value);
+  const content   = document.getElementById("fb-content").value.trim();
+  if (!content) { toast("피드백 내용을 입력해주세요.", false); return; }
+  try {
+    const r = await fetch(`${API}/api/coach/feedback`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_id: studentId, content, training_log_id: _selectedLogId }),
+    });
+    const data = await r.json();
+    if (r.ok) { toast("피드백 전송 완료!"); closeModal("modal-feedback"); }
+    else { toast(data.detail || "전송 실패", false); }
+  } catch { toast("네트워크 오류", false); }
+}
+
+// ── 플랜 전달 ──
+
+function openPlan(studentId, name) {
+  document.getElementById("plan-student-id").value = studentId;
+  document.getElementById("plan-student-name").textContent = name;
+  document.getElementById("plan-content").value = "";
+  openModal("modal-plan");
+}
+
+async function submitPlan() {
+  const studentId = parseInt(document.getElementById("plan-student-id").value);
+  const content   = document.getElementById("plan-content").value.trim();
+  if (!content) { toast("플랜 내용을 입력해주세요.", false); return; }
+  try {
+    const r = await fetch(`${API}/api/coach/plan`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_id: studentId, content }),
+    });
+    const data = await r.json();
+    if (r.ok) { toast("플랜 전달 완료!"); closeModal("modal-plan"); }
+    else { toast(data.detail || "전달 실패", false); }
+  } catch { toast("네트워크 오류", false); }
+}
+
+// ── 수강생 해제 ──
+
+async function removeStudent(studentId, name) {
+  if (!confirm(`${name} 수강생 연동을 해제하시겠습니까?`)) return;
+  try {
+    const r = await fetch(`${API}/api/coach/students/${studentId}`, {
+      method: "DELETE", credentials: "include",
+    });
+    if (r.ok) { toast("연동 해제됨"); loadCoachTab(); }
+    else { const d = await r.json(); toast(d.detail || "해제 실패", false); }
+  } catch { toast("네트워크 오류", false); }
+}
+
+// ──────────────── 수강생 탭 ────────────────
+
+async function loadStudentTab() {
+  document.getElementById("student-loading").style.display = "";
+  document.getElementById("student-no-coach").style.display = "none";
+  document.getElementById("student-has-coach").style.display = "none";
+  try {
+    const r = await fetch(`${API}/api/coach/my-coach`, { credentials: "include" });
+    const data = await r.json();
+    document.getElementById("student-loading").style.display = "none";
+    if (data.has_coach) {
+      document.getElementById("student-has-coach").style.display = "";
+      document.getElementById("sc-name").textContent   = data.coach_name || data.coach_username || "—";
+      document.getElementById("sc-spec").textContent   = data.specialty || "";
+      document.getElementById("sc-career").textContent = data.career || "";
+      document.getElementById("sc-intro").textContent  = data.intro || "";
+      renderFeedbacks(data.feedbacks || []);
+      loadMyPlans();
+    } else {
+      document.getElementById("student-no-coach").style.display = "";
+    }
+  } catch {
+    document.getElementById("student-loading").textContent = "불러오기 실패";
+  }
+}
+
+function renderFeedbacks(feedbacks) {
+  const el = document.getElementById("feedback-list");
+  if (!feedbacks.length) {
+    el.innerHTML = `<div class="c-empty"><div class="c-empty-icon">💬</div><div class="c-empty-text">아직 피드백이 없습니다.</div></div>`;
+    return;
+  }
+  el.innerHTML = feedbacks.map(f => `
+    <div class="fb-item">
+      <div class="fb-content">${esc(f.content)}</div>
+      <div class="fb-meta">${f.created_at ? f.created_at.slice(0,16) : ''}</div>
+    </div>
+  `).join("");
+}
+
+async function loadMyPlans() {
+  const el = document.getElementById("plan-list");
+  try {
+    const r = await fetch(`${API}/api/coach/plan`, { credentials: "include" });
+    const data = await r.json();
+    if (!data.plans || !data.plans.length) {
+      el.innerHTML = `<div class="c-empty"><div class="c-empty-icon">📋</div><div class="c-empty-text">아직 전달받은 플랜이 없습니다.</div></div>`;
+      return;
+    }
+    el.innerHTML = data.plans.map(p => `
+      <div class="plan-item">
+        <div class="plan-content">${esc(p.content)}</div>
+        <div class="plan-meta">${esc(p.coach_name || '')} · ${p.created_at ? p.created_at.slice(0,10) : ''}</div>
+      </div>
+    `).join("");
+  } catch {
+    el.innerHTML = `<div class="c-empty"><div class="c-empty-text">불러오기 실패</div></div>`;
+  }
+}
+
+async function joinCoach() {
+  const code = document.getElementById("join-code").value.trim().toUpperCase();
+  if (!code) { toast("초대코드를 입력해주세요.", false); return; }
+  try {
+    const r = await fetch(`${API}/api/coach/join`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invite_code: code }),
+    });
+    const data = await r.json();
+    if (r.ok) { toast("코치 연동 완료!"); loadStudentTab(); }
+    else { toast(data.detail || "연동 실패", false); }
+  } catch { toast("네트워크 오류", false); }
+}
+
+// ── 모달 ──
+
+function openModal(id) { document.getElementById(id).style.display = "flex"; }
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+function closeModalIf(e, id) { if (e.target.id === id) closeModal(id); }
+
+// ── 유틸 ──
+
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── 초기 로드 ──
+document.addEventListener("DOMContentLoaded", () => loadCoachTab());
+</script>
+</body>
+</html>
