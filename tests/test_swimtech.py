@@ -1231,3 +1231,48 @@ def test_equipment_landing_card(page: Page):
     expect(card).to_be_visible()
 
     shot(page, "19_equipment_landing_card")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 20. /videos (수영 영상 큐레이션, v2.5.1)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_videos_load(page: Page):
+    """/videos 페이지 로드 — 카테고리 탭·영상 그리드 렌더링 확인."""
+    goto(page, "/videos")
+    page.wait_for_timeout(600)
+
+    expect(page.locator("#cat-tab-bar")).to_be_visible()
+    expect(page.locator("#video-grid")).to_be_visible()
+
+    shot(page, "20_videos_load")
+
+
+def test_videos_filter(page: Page):
+    """/videos — 카테고리 탭 클릭 시 active 클래스 전환 확인."""
+    goto(page, "/videos")
+    page.wait_for_timeout(600)
+
+    tabs = page.locator("#cat-tab-bar .tab-btn")
+    assert tabs.count() > 1, f"탭 개수 부족: {tabs.count()}"
+
+    second_tab = tabs.nth(1)
+    second_tab.click()
+    page.wait_for_timeout(400)
+
+    expect(second_tab).to_have_class(re.compile(r"\bactive\b"))
+
+    shot(page, "20_videos_filter")
+
+
+def test_videos_search(page: Page):
+    """/videos — 검색창 존재 및 입력 가능 확인."""
+    goto(page, "/videos")
+    page.wait_for_timeout(600)
+
+    search = page.locator("#search-input")
+    expect(search).to_be_visible()
+    search.fill("자유형")
+    page.wait_for_timeout(300)
+
+    shot(page, "20_videos_search")

@@ -32,6 +32,10 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /videos {
+    reverse_proxy swim-api:8000
+  }
+
   handle /videos/* {
     reverse_proxy swim-api:8000
   }

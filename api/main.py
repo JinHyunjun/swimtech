@@ -388,6 +388,13 @@ def equipment_page():
 def feedback_page():
     return _serve("feedback.html")
 
+# 수영 영상 큐레이션 (로그인 필요)
+@app.get("/videos")
+def videos_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("videos.html")
+
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")
 def share_page(token: str):
