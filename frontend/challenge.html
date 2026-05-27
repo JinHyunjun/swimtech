@@ -80,6 +80,21 @@
 .rank-medal-2 { color: #d1d5db; }
 .rank-medal-3 { color: #c07850; }
 
+/* ── 포기하기 버튼 ── */
+.ch-leave-btn {
+  padding: 10px 18px;
+  border: 0.5px solid rgba(248,113,113,.4);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(248,113,113,.08);
+  color: #f87171;
+  cursor: pointer;
+  transition: all .2s;
+  min-height: 44px;
+}
+.ch-leave-btn:hover { background: rgba(248,113,113,.18); border-color: rgba(248,113,113,.65); }
+
 /* ── 빈 상태 ── */
 .ch-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
 .ch-empty-icon { font-size: 48px; margin-bottom: 12px; }
@@ -227,7 +242,8 @@ function buildCard(ch, isMy) {
     </div>` : ''}
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       ${isMy || ch.joined
-        ? `<button class="ch-join-btn joined">✅ 참여 중</button>`
+        ? `<button class="ch-join-btn joined">✅ 참여 중</button>
+           <button class="ch-leave-btn" onclick="leaveChallenge(${ch.id})">🚪 포기하기</button>`
         : `<button class="ch-join-btn joinable" onclick="joinChallenge(${ch.id})">참여하기</button>`
       }
       <button style="background:none;border:0.5px solid var(--border);color:var(--muted);border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;" onclick="toggleRanking(${ch.id})">랭킹 보기</button>
@@ -246,6 +262,20 @@ async function joinChallenge(id) {
       return;
     }
     await loadAll();
+  } catch { alert('오류가 발생했습니다'); }
+}
+
+async function leaveChallenge(id) {
+  if (!confirm('정말로 이 챌린지를 포기하시겠습니까?\n현재까지의 기록이 삭제됩니다.')) return;
+  try {
+    const res = await fetch(`/api/challenge/${id}/leave`, { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.detail || '포기 처리에 실패했습니다');
+      return;
+    }
+    await loadAll();
+    if (document.getElementById('panel-my').style.display !== 'none') loadMy();
   } catch { alert('오류가 발생했습니다'); }
 }
 

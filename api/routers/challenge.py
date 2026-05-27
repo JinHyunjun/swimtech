@@ -251,6 +251,32 @@ def get_ranking(challenge_id: int):
         raise HTTPException(500, f"랭킹 조회 오류: {e}")
 
 
+@router.delete("/{challenge_id}/leave")
+def leave_challenge(challenge_id: int, request: Request):
+    username = _get_username(request)
+    if not username:
+        raise HTTPException(401, "로그인이 필요합니다")
+    try:
+        _ensure_tables()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM challenge_participants WHERE challenge_id = %s AND username = %s",
+            (challenge_id, username),
+        )
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
+        if deleted == 0:
+            raise HTTPException(404, "참여 기록을 찾을 수 없습니다")
+        return {"status": "left"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"포기 처리 오류: {e}")
+
+
 def update_challenge_progress(username: str, distance_m: int):
     """훈련 일지 저장 시 참여 중인 distance형 챌린지 거리 자동 반영."""
     if not username or username == "guest" or distance_m <= 0:
