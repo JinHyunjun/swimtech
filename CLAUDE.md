@@ -181,6 +181,31 @@ docker compose restart caddy
 
 ---
 
+## 작업 완료 후 필수 Git 절차
+
+모든 기능 구현/수정 완료 후 반드시 아래 순서로 자동 실행한다.
+
+### 1. dev 브랜치에 커밋 및 푸시
+
+```powershell
+git add .
+git commit -m "feat/fix: 작업 내용 (버전)"
+git push origin dev
+```
+
+### 2. main 브랜치에 자동 머지
+
+```powershell
+git checkout main
+git merge dev
+git push origin main
+git checkout dev
+```
+
+> **충돌(conflict) 발생 시**: 머지를 중단하고 사용자에게 알림. 자동으로 강제 진행하지 않는다.
+
+---
+
 ## Changelog Page (`/changelog`)
 
 - **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.
