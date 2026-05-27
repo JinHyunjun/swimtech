@@ -18,22 +18,6 @@ logging.basicConfig(level=logging.INFO)
 
 _MIGRATION_SQL = """
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
-CREATE TABLE IF NOT EXISTS training_logs (
-    id               SERIAL PRIMARY KEY,
-    customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-    log_date         DATE NOT NULL,
-    stroke_type      VARCHAR(20) NOT NULL,
-    total_distance   INTEGER NOT NULL,
-    duration_minutes INTEGER NOT NULL,
-    pool_length      SMALLINT NOT NULL DEFAULT 25,
-    intensity        VARCHAR(10) NOT NULL,
-    memo             TEXT,
-    mood             VARCHAR(10),
-    created_at       TIMESTAMP DEFAULT NOW(),
-    updated_at       TIMESTAMP DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_training_logs_customer ON training_logs(customer_id);
-CREATE INDEX IF NOT EXISTS idx_training_logs_date     ON training_logs(customer_id, log_date DESC);
 CREATE TABLE IF NOT EXISTS reports (
     id          SERIAL PRIMARY KEY,
     reporter_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -103,8 +87,6 @@ def apply_migrations():
         logging.info("v2.4.1 DB 마이그레이션 완료")
     except Exception as e:
         logging.warning(f"마이그레이션 실패 (무시): {e}")
-    community.init_db()
-    training_log.init_db()
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -152,7 +134,7 @@ app.include_router(changelog.router,  prefix="/api/changelog",  tags=["변경 �
 app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 플랜"])
 app.include_router(community.router,      prefix="/api/community",      tags=["커뮤니티"])
 app.include_router(notifications.router,  prefix="/api/notifications",  tags=["알림"])
-app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련일지"])
+app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련 일지"])
 
 @app.get("/api/health")
 def health():
@@ -352,13 +334,6 @@ def serve_community(request: Request):
 @app.get("/changelog")
 def changelog_page():
     return _serve("changelog.html")
-
-# 훈련 일지 (로그인 필요)
-@app.get("/training-log")
-def serve_training_log(request: Request):
-    redir = _auth_redirect(request)
-    if redir: return redir
-    return _serve("training_log.html")
 
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")
