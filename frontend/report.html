@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 월간 성장 리포트</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+.rp-page { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+
+.rp-topbar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.rp-back {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  text-decoration: none; transition: all .2s;
+}
+.rp-back:hover { border-color: var(--blue); color: var(--blue); }
+.rp-title { font-size: 20px; font-weight: 700; color: var(--text); }
+
+.rp-month-nav {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+}
+.rp-month-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 5px 12px; font-size: 16px; cursor: pointer; transition: all .2s;
+}
+.rp-month-btn:hover { border-color: var(--blue); color: var(--blue); }
+.rp-month-label {
+  font-size: 15px; font-weight: 700; color: var(--text); min-width: 90px; text-align: center;
+}
+
+/* ── 통계 카드 ── */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+}
+@media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat-card {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px;
+  padding: 18px 14px; text-align: center;
+}
+.stat-icon { font-size: 24px; margin-bottom: 6px; }
+.stat-value { font-size: 24px; font-weight: 700; color: var(--blue); line-height: 1.2; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── 성장률 배너 ── */
+.growth-banner {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px;
+  padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;
+}
+.growth-arrow { font-size: 36px; line-height: 1; }
+.growth-info { flex: 1; }
+.growth-rate { font-size: 28px; font-weight: 700; }
+.growth-rate.up   { color: #4ade80; }
+.growth-rate.down { color: #f87171; }
+.growth-rate.flat { color: var(--muted); }
+.growth-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.growth-streak { margin-left: auto; text-align: center; }
+.growth-streak-num { font-size: 22px; font-weight: 700; color: #f59e0b; }
+.growth-streak-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── 차트 섹션 ── */
+.chart-section {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px;
+  padding: 20px; margin-bottom: 20px;
+}
+.chart-title {
+  font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px;
+}
+.chart-wrap { position: relative; }
+.chart-wrap canvas { max-height: 240px; }
+
+/* ── 히트맵 ── */
+.heatmap-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px;
+}
+.heatmap-day-label {
+  text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 4px;
+}
+.heatmap-cell {
+  aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 600;
+  background: var(--border); color: var(--muted); transition: all .2s;
+}
+.heatmap-cell.lv1 { background: rgba(0,180,216,.25); color: #00b4d8; }
+.heatmap-cell.lv2 { background: rgba(0,180,216,.5);  color: #fff; }
+.heatmap-cell.lv3 { background: rgba(0,180,216,.8);  color: #fff; }
+
+/* ── 공유 버튼 ── */
+.share-bar {
+  display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap;
+}
+.share-btn {
+  padding: 10px 20px; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.share-btn:hover { opacity: .85; }
+.share-btn.kakao { background: #FEE500; color: #191919; }
+.share-btn.link  { background: var(--surface); border: 0.5px solid var(--border); color: var(--text); }
+
+/* ── 빈 상태 ── */
+.rp-empty {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.rp-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.rp-empty-text { font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
+           style="height:32px;width:auto;display:block;" onerror="this.style.display='none';document.getElementById('logo-fb').style.display='inline';">
+      <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
+        border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;min-height:44px;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="rp-page">
+    <div class="rp-topbar">
+      <a href="/landing" class="rp-back">← 홈</a>
+      <h1 class="rp-title" id="rp-title">월간 성장 리포트</h1>
+      <div class="rp-month-nav">
+        <button class="rp-month-btn" id="prev-month" onclick="shiftMonth(-1)">&#8249;</button>
+        <span class="rp-month-label" id="month-label">—</span>
+        <button class="rp-month-btn" id="next-month" onclick="shiftMonth(1)">&#8250;</button>
+      </div>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🏊</div>
+        <div class="stat-value" id="stat-distance">—</div>
+        <div class="stat-label">총 거리 (m)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value" id="stat-count">—</div>
+        <div class="stat-label">총 훈련 횟수</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value" id="stat-time">—</div>
+        <div class="stat-label">총 시간 (분)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-value" id="stat-cal">—</div>
+        <div class="stat-label">추정 칼로리 (kcal)</div>
+      </div>
+    </div>
+
+    <!-- 성장률 배너 -->
+    <div class="growth-banner" id="growth-banner">
+      <div class="growth-arrow" id="growth-arrow">—</div>
+      <div class="growth-info">
+        <div class="growth-rate" id="growth-rate">—</div>
+        <div class="growth-desc" id="growth-desc">전월 대비 성장률</div>
+      </div>
+      <div class="growth-streak">
+        <div class="growth-streak-num" id="growth-streak">—</div>
+        <div class="growth-streak-lbl">최장 연속 출석</div>
+      </div>
+    </div>
+
+    <!-- 차트: 영법별 도넛 -->
+    <div class="chart-section">
+      <div class="chart-title">영법별 거리 분포</div>
+      <div class="chart-wrap" style="max-width:300px;margin:0 auto;">
+        <canvas id="chart-stroke"></canvas>
+      </div>
+    </div>
+
+    <!-- 차트: 주차별 거리 막대 -->
+    <div class="chart-section">
+      <div class="chart-title">주차별 거리 추이 (m)</div>
+      <div class="chart-wrap">
+        <canvas id="chart-weekly"></canvas>
+      </div>
+    </div>
+
+    <!-- 차트: 요일별 히트맵 -->
+    <div class="chart-section">
+      <div class="chart-title">요일별 훈련 빈도</div>
+      <div class="heatmap-grid" id="heatmap"></div>
+    </div>
+
+    <!-- 공유 버튼 -->
+    <div class="share-bar">
+      <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()">🗨 카카오톡 공유</button>
+      <button class="share-btn link"  id="btn-link"  onclick="copyLink()">🔗 링크 복사</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+let curYear, curMonth;
+let strokeChart, weeklyChart;
+let shareToken = "";
+
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return; }
+  } catch { window.location.href = '/login'; return; }
+  const now = new Date();
+  curYear  = now.getFullYear();
+  curMonth = now.getMonth() + 1;
+  await loadReport();
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+function shiftMonth(delta) {
+  curMonth += delta;
+  if (curMonth < 1)  { curMonth = 12; curYear--; }
+  if (curMonth > 12) { curMonth = 1;  curYear++; }
+  loadReport();
+}
+
+async function loadReport() {
+  document.getElementById('month-label').textContent = `${curYear}년 ${curMonth}월`;
+  const url = `/api/report/monthly?year=${curYear}&month=${curMonth}`;
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) { showEmpty(); return; }
+    const d = await res.json();
+    shareToken = d.share_token || "";
+    render(d);
+  } catch { showEmpty(); }
+}
+
+function showEmpty() {
+  document.getElementById('stat-distance').textContent = '0';
+  document.getElementById('stat-count').textContent    = '0';
+  document.getElementById('stat-time').textContent     = '0';
+  document.getElementById('stat-cal').textContent      = '0';
+  document.getElementById('growth-arrow').textContent  = '—';
+  document.getElementById('growth-rate').textContent   = '0%';
+  document.getElementById('growth-rate').className     = 'growth-rate flat';
+  document.getElementById('growth-streak').textContent = '0일';
+  renderHeatmap([0,0,0,0,0,0,0]);
+  renderStrokeChart({freestyle:0,backstroke:0,breaststroke:0,butterfly:0,other:0});
+  renderWeeklyChart([0,0,0,0,0]);
+}
+
+function render(d) {
+  document.getElementById('stat-distance').textContent = d.total_distance.toLocaleString();
+  document.getElementById('stat-count').textContent    = d.total_count;
+  document.getElementById('stat-time').textContent     = d.total_minutes.toLocaleString();
+  document.getElementById('stat-cal').textContent      = d.estimated_calories.toLocaleString();
+
+  const gr = d.growth_rate;
+  const rateEl = document.getElementById('growth-rate');
+  const arrowEl = document.getElementById('growth-arrow');
+  if (gr > 0) {
+    rateEl.textContent = `+${gr}%`;
+    rateEl.className = 'growth-rate up';
+    arrowEl.textContent = '↑';
+  } else if (gr < 0) {
+    rateEl.textContent = `${gr}%`;
+    rateEl.className = 'growth-rate down';
+    arrowEl.textContent = '↓';
+  } else {
+    rateEl.textContent = '0%';
+    rateEl.className = 'growth-rate flat';
+    arrowEl.textContent = '—';
+  }
+  document.getElementById('growth-streak').textContent = `${d.max_streak}일`;
+
+  renderHeatmap(d.weekday_freq);
+  renderStrokeChart(d.stroke_dist);
+  renderWeeklyChart(d.weekly_dist);
+}
+
+function renderHeatmap(freq) {
+  const days = ['월','화','수','목','금','토','일'];
+  const maxFreq = Math.max(...freq, 1);
+  const grid = document.getElementById('heatmap');
+  grid.innerHTML = '';
+  days.forEach((lbl, i) => {
+    const col = document.createElement('div');
+    const label = document.createElement('div');
+    label.className = 'heatmap-day-label';
+    label.textContent = lbl;
+    const cell = document.createElement('div');
+    const ratio = freq[i] / maxFreq;
+    cell.className = 'heatmap-cell' + (ratio > .66 ? ' lv3' : ratio > .33 ? ' lv2' : ratio > 0 ? ' lv1' : '');
+    cell.textContent = freq[i];
+    col.appendChild(label);
+    col.appendChild(cell);
+    grid.appendChild(col);
+  });
+}
+
+function renderStrokeChart(strokes) {
+  const labels = ['자유형','배영','평영','접영','기타'];
+  const keys   = ['freestyle','backstroke','breaststroke','butterfly','other'];
+  const data   = keys.map(k => strokes[k] || 0);
+  const colors = ['#00b4d8','#48cae4','#a78bfa','#f59e0b','#6b7280'];
+
+  if (strokeChart) strokeChart.destroy();
+  const ctx = document.getElementById('chart-stroke').getContext('2d');
+  strokeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#90c4d4', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()}m` } },
+      },
+    },
+  });
+}
+
+function renderWeeklyChart(weekly) {
+  const labels = ['1주차','2주차','3주차','4주차','5주차'];
+  if (weeklyChart) weeklyChart.destroy();
+  const ctx = document.getElementById('chart-weekly').getContext('2d');
+  weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '거리 (m)',
+        data: weekly,
+        backgroundColor: 'rgba(0,180,216,.7)',
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()}m` } },
+      },
+      scales: {
+        x: { ticks: { color: '#90c4d4' }, grid: { display: false } },
+        y: { ticks: { color: '#90c4d4' }, grid: { color: 'rgba(255,255,255,.05)' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function getShareUrl() {
+  return shareToken ? `${location.origin}/report/share/${shareToken}` : location.href;
+}
+
+function shareKakao() {
+  const url = getShareUrl();
+  const kakaoKey = '';
+  if (kakaoKey && window.Kakao) {
+    Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `${curYear}년 ${curMonth}월 수영 리포트`,
+        description: `총 거리 ${document.getElementById('stat-distance').textContent}m 달성!`,
+        imageUrl: 'https://localhost/static/icons/icon-192.png',
+        link: { mobileWebUrl: url, webUrl: url },
+      },
+    });
+  } else {
+    copyLink();
+  }
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(getShareUrl());
+    const btn = document.getElementById('btn-link');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ 복사됨';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  } catch { alert('링크: ' + getShareUrl()); }
+}
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

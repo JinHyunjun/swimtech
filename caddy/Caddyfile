@@ -152,6 +152,18 @@ localhost {
     reverse_proxy swim-api:8000
   }
 
+  handle /report {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /report/share/* {
+    reverse_proxy swim-api:8000
+  }
+
+  handle /challenge {
+    reverse_proxy swim-api:8000
+  }
+
   handle /share/* {
     reverse_proxy swim-api:8000
   }

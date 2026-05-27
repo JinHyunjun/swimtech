@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 수영 챌린지</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.ch-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+
+.ch-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.ch-back {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  text-decoration: none; transition: all .2s;
+}
+.ch-back:hover { border-color: var(--blue); color: var(--blue); }
+.ch-title { font-size: 20px; font-weight: 700; color: var(--text); }
+
+/* ── 탭 ── */
+.ch-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.ch-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .2s; margin-bottom: -1px;
+}
+.ch-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ── 챌린지 카드 ── */
+.ch-list { display: flex; flex-direction: column; gap: 16px; }
+.ch-card {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px;
+  padding: 20px; transition: border-color .2s, box-shadow .2s;
+}
+.ch-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(0,180,216,.1); }
+.ch-card-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.ch-card-icon { font-size: 36px; line-height: 1; flex-shrink: 0; }
+.ch-card-info { flex: 1; }
+.ch-card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.ch-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ch-card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.ch-badge {
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  background: rgba(0,180,216,.15); color: var(--blue);
+}
+.ch-badge.red   { background: rgba(248,113,113,.15); color: #f87171; }
+.ch-badge.green { background: rgba(74,222,128,.15);  color: #4ade80; }
+
+/* ── 진행률 바 ── */
+.prog-wrap { margin-bottom: 14px; }
+.prog-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.prog-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, #00b4d8, #48cae4); border-radius: 4px; transition: width .6s ease; }
+
+/* ── 참여 버튼 ── */
+.ch-join-btn {
+  padding: 10px 24px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.ch-join-btn.joinable { background: var(--blue); color: #fff; }
+.ch-join-btn.joinable:hover { opacity: .85; }
+.ch-join-btn.joined { background: rgba(74,222,128,.15); color: #4ade80; border: 0.5px solid #4ade80; cursor: default; }
+
+/* ── 랭킹 ── */
+.ranking-wrap { margin-top: 14px; border-top: 0.5px solid var(--border); padding-top: 14px; }
+.ranking-title { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.ranking-table { width: 100%; border-collapse: collapse; }
+.ranking-table th,
+.ranking-table td { padding: 7px 10px; text-align: left; font-size: 12px; }
+.ranking-table th { color: var(--muted); font-weight: 600; border-bottom: 0.5px solid var(--border); }
+.ranking-table td { color: var(--text); border-bottom: 0.5px solid rgba(255,255,255,.04); }
+.ranking-table tr.me td { color: var(--blue); font-weight: 700; }
+.rank-medal-1 { color: #fbbf24; }
+.rank-medal-2 { color: #d1d5db; }
+.rank-medal-3 { color: #c07850; }
+
+/* ── 빈 상태 ── */
+.ch-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.ch-empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ── 로딩 ── */
+.ch-loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
+           style="height:32px;width:auto;display:block;" onerror="this.style.display='none';document.getElementById('logo-fb').style.display='inline';">
+      <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
+        border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;min-height:44px;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="ch-page">
+    <div class="ch-topbar">
+      <a href="/landing" class="ch-back">← 홈</a>
+      <h1 class="ch-title">수영 챌린지</h1>
+    </div>
+
+    <div class="ch-tabs">
+      <button class="ch-tab active" id="tab-all" onclick="switchTab('all')">진행 중인 챌린지</button>
+      <button class="ch-tab"        id="tab-my"  onclick="switchTab('my')">내 챌린지</button>
+    </div>
+
+    <div id="panel-all" class="ch-list">
+      <div class="ch-loading">챌린지를 불러오는 중...</div>
+    </div>
+    <div id="panel-my" class="ch-list" style="display:none;">
+      <div class="ch-loading">내 챌린지를 불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+let myUsername = "";
+let allChallenges = [];
+
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const data = await res.json();
+    myUsername = data.username || data.name || "";
+  } catch { window.location.href = '/login'; return; }
+  await loadAll();
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('tab-my').classList.toggle('active', tab === 'my');
+  document.getElementById('panel-all').style.display = tab === 'all' ? 'flex' : 'none';
+  document.getElementById('panel-my').style.display  = tab === 'my'  ? 'flex' : 'none';
+  if (tab === 'my') loadMy();
+}
+
+async function loadAll() {
+  const panel = document.getElementById('panel-all');
+  try {
+    const res = await fetch('/api/challenge', { credentials: 'include' });
+    const d = await res.json();
+    allChallenges = d.challenges || [];
+    if (!allChallenges.length) {
+      panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🏆</div><div>진행 중인 챌린지가 없습니다</div></div>';
+      return;
+    }
+    panel.innerHTML = '';
+    for (const ch of allChallenges) {
+      panel.appendChild(buildCard(ch));
+    }
+  } catch (e) {
+    panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">⚠️</div><div>챌린지를 불러오지 못했습니다</div></div>';
+  }
+}
+
+async function loadMy() {
+  const panel = document.getElementById('panel-my');
+  panel.innerHTML = '<div class="ch-loading">내 챌린지를 불러오는 중...</div>';
+  try {
+    const res = await fetch('/api/challenge/my', { credentials: 'include' });
+    if (!res.ok) { panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🔒</div><div>로그인 후 확인할 수 있습니다</div></div>'; return; }
+    const d = await res.json();
+    const list = d.challenges || [];
+    if (!list.length) {
+      panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🏊</div><div>아직 참여한 챌린지가 없습니다<br><br><a href="#" onclick="switchTab(\'all\');return false;" style="color:var(--blue);">챌린지 둘러보기</a></div></div>';
+      return;
+    }
+    panel.innerHTML = '';
+    for (const ch of list) panel.appendChild(buildCard(ch, true));
+  } catch {
+    panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">⚠️</div><div>불러오지 못했습니다</div></div>';
+  }
+}
+
+function buildCard(ch, isMy) {
+  const card = document.createElement('div');
+  card.className = 'ch-card';
+  card.id = `ch-card-${ch.id}`;
+
+  const icon = ch.challenge_type === 'streak' ? '🔥' : ch.goal_distance >= 100000 ? '🏆' : '🎯';
+  const goalText = ch.challenge_type === 'streak'
+    ? `목표: ${ch.goal_distance}일 연속`
+    : `목표: ${(ch.goal_distance / 1000).toFixed(0)}km`;
+  const dday = ch.days_left > 0 ? `D-${ch.days_left}` : '오늘 종료';
+  const pct = ch.achievement_pct || 0;
+  const distText = ch.challenge_type === 'streak'
+    ? `${ch.my_distance || 0}일 / ${ch.goal_distance}일`
+    : `${((ch.my_distance || 0) / 1000).toFixed(2)}km / ${(ch.goal_distance / 1000).toFixed(0)}km`;
+
+  card.innerHTML = `
+    <div class="ch-card-head">
+      <div class="ch-card-icon">${icon}</div>
+      <div class="ch-card-info">
+        <div class="ch-card-title">${ch.title}</div>
+        <div class="ch-card-desc">${ch.description}</div>
+      </div>
+    </div>
+    <div class="ch-card-badges">
+      <span class="ch-badge">${goalText}</span>
+      <span class="ch-badge ${ch.days_left <= 7 ? 'red' : 'green'}">${dday}</span>
+      <span class="ch-badge">👥 ${ch.participant_count}명 참여</span>
+    </div>
+    ${ch.joined || isMy ? `
+    <div class="prog-wrap">
+      <div class="prog-label">
+        <span>${distText}</span>
+        <span>${pct.toFixed(1)}%</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.min(100,pct)}%"></div></div>
+    </div>` : ''}
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      ${isMy || ch.joined
+        ? `<button class="ch-join-btn joined">✅ 참여 중</button>`
+        : `<button class="ch-join-btn joinable" onclick="joinChallenge(${ch.id})">참여하기</button>`
+      }
+      <button style="background:none;border:0.5px solid var(--border);color:var(--muted);border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;" onclick="toggleRanking(${ch.id})">랭킹 보기</button>
+    </div>
+    <div id="ranking-${ch.id}" style="display:none;"></div>
+  `;
+  return card;
+}
+
+async function joinChallenge(id) {
+  try {
+    const res = await fetch(`/api/challenge/${id}/join`, { method: 'POST', credentials: 'include' });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.detail || '참여 처리에 실패했습니다');
+      return;
+    }
+    await loadAll();
+  } catch { alert('오류가 발생했습니다'); }
+}
+
+async function toggleRanking(id) {
+  const el = document.getElementById(`ranking-${id}`);
+  if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px;">랭킹 로드 중...</div>';
+  try {
+    const res = await fetch(`/api/challenge/${id}/ranking`, { credentials: 'include' });
+    const d = await res.json();
+    const rows = d.ranking || [];
+    if (!rows.length) {
+      el.innerHTML = '<div class="ranking-wrap"><div style="font-size:12px;color:var(--muted);">아직 참여자가 없습니다</div></div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    const tableRows = rows.map((r, i) => {
+      const medal = i < 3 ? medals[i] : r.rank;
+      const isMe = r.username === myUsername;
+      const distLabel = d.goal_distance <= 100
+        ? `${r.distance}일`
+        : `${(r.distance / 1000).toFixed(2)}km`;
+      return `<tr class="${isMe ? 'me' : ''}">
+        <td>${medal}</td>
+        <td>${isMe ? '나 (' + r.username + ')' : r.username}</td>
+        <td>${distLabel}</td>
+        <td>${r.achievement_pct.toFixed(1)}%</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="ranking-wrap">
+        <div class="ranking-title">TOP ${rows.length} 랭킹</div>
+        <table class="ranking-table">
+          <thead><tr><th>순위</th><th>닉네임</th><th>달성 거리</th><th>달성률</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  } catch {
+    el.innerHTML = '<div class="ranking-wrap" style="color:var(--muted);font-size:12px;">랭킹을 불러오지 못했습니다</div>';
+  }
+}
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

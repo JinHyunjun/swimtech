@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +58,32 @@ CREATE INDEX IF NOT EXISTS idx_notifications_cid ON notifications(customer_id, i
 CREATE INDEX IF NOT EXISTS idx_bookmarks_cid     ON bookmarks(customer_id);
 CREATE INDEX IF NOT EXISTS idx_post_tags_tag     ON post_tags(tag);
 CREATE INDEX IF NOT EXISTS idx_post_images_post  ON post_images(post_id);
+CREATE TABLE IF NOT EXISTS challenges (
+    id             SERIAL PRIMARY KEY,
+    title          VARCHAR(200) NOT NULL UNIQUE,
+    description    TEXT,
+    goal_distance  INTEGER NOT NULL DEFAULT 0,
+    challenge_type VARCHAR(20) NOT NULL DEFAULT 'distance',
+    start_date     DATE NOT NULL,
+    end_date       DATE NOT NULL,
+    created_at     TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS challenge_participants (
+    id               SERIAL PRIMARY KEY,
+    challenge_id     INTEGER NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
+    username         VARCHAR(100) NOT NULL,
+    current_distance INTEGER NOT NULL DEFAULT 0,
+    joined_at        TIMESTAMP DEFAULT NOW(),
+    UNIQUE (challenge_id, username)
+);
+CREATE INDEX IF NOT EXISTS idx_chall_part_cid  ON challenge_participants(challenge_id);
+CREATE INDEX IF NOT EXISTS idx_chall_part_user ON challenge_participants(username);
+INSERT INTO challenges (title, description, goal_distance, challenge_type, start_date, end_date)
+VALUES
+  ('5월 100km 챌린지', '5월 한 달 동안 총 100km를 달성하세요! 매일 꾸준히 수영하면 충분히 달성할 수 있습니다.', 100000, 'distance', '2026-05-01', '2026-05-31'),
+  ('영법 마스터 챌린지', '자유형·배영·평영·접영 4가지 영법을 각 10km씩, 총 40km를 완주하세요!', 40000, 'distance', '2026-05-01', '2026-06-30'),
+  ('30일 연속 수영 챌린지', '30일 동안 하루도 빠지지 않고 수영하세요. 꾸준함이 실력을 만들어 줍니다!', 30, 'streak', '2026-05-01', '2026-06-30')
+ON CONFLICT (title) DO NOTHING;
 """
 
 app = FastAPI(
@@ -135,6 +161,8 @@ app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 �
 app.include_router(community.router,      prefix="/api/community",      tags=["커뮤니티"])
 app.include_router(notifications.router,  prefix="/api/notifications",  tags=["알림"])
 app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련 일지"])
+app.include_router(report.router,         prefix="/api/report",          tags=["월간 리포트"])
+app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
 
 @app.get("/api/health")
 def health():
@@ -334,6 +362,20 @@ def serve_community(request: Request):
 @app.get("/changelog")
 def changelog_page():
     return _serve("changelog.html")
+
+# 월간 성장 리포트 (로그인 필요)
+@app.get("/report")
+def report_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("report.html")
+
+# 수영 챌린지 (로그인 필요)
+@app.get("/challenge")
+def challenge_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("challenge.html")
 
 # 공유 결과 페이지 (로그인 불필요)
 @app.get("/share/{token}")

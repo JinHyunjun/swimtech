@@ -994,3 +994,118 @@ def test_training_log_streak_api(page: Page):
         assert "streak" in body, f"streak 응답에 'streak' 키 없음: {body}"
         assert isinstance(body["streak"], int), f"streak 값이 정수가 아님: {body['streak']}"
     shot(page, "15_training_log_streak_api")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 16. /report (월간 성장 리포트)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_report_load(page: Page):
+    """/report 페이지 로드 — 월 선택 네비게이션·통계 카드 렌더링 확인."""
+    goto(page, "/report")
+    page.wait_for_timeout(1500)
+
+    # 월 이동 버튼
+    expect(page.locator("#prev-month")).to_be_visible()
+    expect(page.locator("#next-month")).to_be_visible()
+    expect(page.locator("#month-label")).to_be_visible()
+
+    # 통계 카드 4개
+    expect(page.locator("#stat-distance")).to_be_visible()
+    expect(page.locator("#stat-count")).to_be_visible()
+    expect(page.locator("#stat-time")).to_be_visible()
+    expect(page.locator("#stat-cal")).to_be_visible()
+
+    # 성장률 배너
+    expect(page.locator("#growth-rate")).to_be_visible()
+    expect(page.locator("#growth-streak")).to_be_visible()
+
+    # 공유 버튼
+    expect(page.locator("#btn-link")).to_be_visible()
+
+    shot(page, "16_report_load")
+
+
+def test_report_api(page: Page):
+    """GET /api/report/monthly — 200 응답 및 필수 키 확인."""
+    now = date.today()
+    resp = page.request.get(
+        f"https://localhost/api/report/monthly?year={now.year}&month={now.month}",
+    )
+    assert resp.status == 200, f"/api/report/monthly 응답 코드: {resp.status}"
+    body = resp.json()
+    for key in ("total_distance", "total_count", "total_minutes", "growth_rate",
+                "stroke_dist", "weekday_freq", "weekly_dist", "max_streak", "share_token"):
+        assert key in body, f"'{key}' 키 없음: {list(body.keys())}"
+    assert len(body["weekday_freq"]) == 7, "weekday_freq 길이 != 7"
+    assert len(body["weekly_dist"]) == 5, "weekly_dist 길이 != 5"
+    shot(page, "16_report_api")
+
+
+def test_report_month_nav(page: Page):
+    """/report — 이전 달 화살표 클릭 시 월 레이블 변경 확인."""
+    goto(page, "/report")
+    page.wait_for_timeout(1000)
+
+    initial = page.locator("#month-label").inner_text()
+    page.click("#prev-month")
+    page.wait_for_timeout(800)
+    after = page.locator("#month-label").inner_text()
+
+    assert initial != after, f"월 레이블이 변경되지 않음: {initial}"
+    shot(page, "16_report_month_nav")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 17. /challenge (수영 챌린지)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_challenge_load(page: Page):
+    """/challenge 페이지 로드 — 탭·챌린지 카드 렌더링 확인."""
+    goto(page, "/challenge")
+    page.wait_for_timeout(2000)
+
+    # 탭 버튼
+    expect(page.locator("#tab-all")).to_be_visible()
+    expect(page.locator("#tab-my")).to_be_visible()
+
+    # 챌린지 카드 최소 1개 또는 빈 상태 메시지
+    cards = page.locator(".ch-card")
+    empty = page.locator(".ch-empty")
+    assert cards.count() >= 1 or empty.count() >= 1, "ch-card 또는 ch-empty 없음"
+
+    shot(page, "17_challenge_load")
+
+
+def test_challenge_api(page: Page):
+    """GET /api/challenge — 200 응답 및 challenges 키 확인."""
+    resp = page.request.get("https://localhost/api/challenge")
+    assert resp.status == 200, f"/api/challenge 응답 코드: {resp.status}"
+    body = resp.json()
+    assert "challenges" in body, f"challenges 키 없음: {body}"
+    assert isinstance(body["challenges"], list), "challenges가 리스트가 아님"
+    shot(page, "17_challenge_api")
+
+
+def test_challenge_ranking_api(page: Page):
+    """GET /api/challenge/1/ranking — 200 응답 및 ranking 키 확인."""
+    resp = page.request.get("https://localhost/api/challenge/1/ranking")
+    assert resp.status in (200, 404), f"/api/challenge/1/ranking 응답 코드: {resp.status}"
+    if resp.status == 200:
+        body = resp.json()
+        assert "ranking" in body, f"ranking 키 없음: {body}"
+    shot(page, "17_challenge_ranking_api")
+
+
+def test_challenge_my_tab(page: Page):
+    """/challenge — '내 챌린지' 탭 전환 확인."""
+    goto(page, "/challenge")
+    page.wait_for_timeout(1000)
+
+    page.click("#tab-my")
+    page.wait_for_timeout(1500)
+
+    expect(page.locator("#tab-my")).to_have_class(re.compile(r"\bactive\b"))
+    expect(page.locator("#panel-my")).to_be_visible()
+
+    shot(page, "17_challenge_my_tab")

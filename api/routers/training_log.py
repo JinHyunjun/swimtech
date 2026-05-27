@@ -78,6 +78,15 @@ def create_log_from_plan(req: FromPlanRequest, request: Request):
         conn.commit()
         cur.close()
         conn.close()
+
+        # 참여 중인 챌린지에 거리 자동 반영
+        try:
+            from routers.challenge import update_challenge_progress
+            dist = int(req.plan_data.get("total_distance") or req.plan_data.get("distance") or 0)
+            update_challenge_progress(username, dist)
+        except Exception:
+            pass
+
         return {
             "id": row[0],
             "plan_name": req.plan_name,
