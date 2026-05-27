@@ -1,1 +1,141 @@
-﻿
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 영법 선택</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.meta-page {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 53px); padding: 32px 24px;
+}
+.meta-panel-wrap {
+  width: 100%; max-width: 700px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">SwimTech</span>
+      <span class="logo-sub">수영 영법 분석 플랫폼</span>
+    </div>
+    <div class="header-right">
+      <a href="/" style="color:var(--muted,#90c4d4);text-decoration:none;font-size:12px;
+                         padding:4px 10px;border:0.5px solid #1e4d6b;border-radius:6px;margin-right:6px;">
+        ← 홈
+      </a>
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="meta-page">
+    <div class="meta-panel-wrap">
+      <div class="meta-panel">
+        <div class="meta-title">📋 영상 정보를 먼저 선택해주세요</div>
+
+        <div class="meta-row">
+          <div class="meta-group">
+            <div class="meta-label">🏊 영법 선택 <span class="required">*</span></div>
+            <div class="meta-options" id="stroke-options">
+              <button class="meta-btn" data-value="freestyle"   onclick="selectMeta('stroke', this)">자유형</button>
+              <button class="meta-btn" data-value="backstroke"  onclick="selectMeta('stroke', this)">배영</button>
+              <button class="meta-btn" data-value="breaststroke" onclick="selectMeta('stroke', this)">평영</button>
+              <button class="meta-btn" data-value="butterfly"   onclick="selectMeta('stroke', this)">접영</button>
+              <button class="meta-btn" data-value="unknown"     onclick="selectMeta('stroke', this)">모름</button>
+              <button class="meta-btn" data-value="start"       onclick="selectMeta('stroke', this)">🏁 스타트</button>
+              <button class="meta-btn" data-value="flip_turn"   onclick="selectMeta('stroke', this)">🔄 플립턴</button>
+              <button class="meta-btn" data-value="touch_turn"  onclick="selectMeta('stroke', this)">🤲 터치턴</button>
+            </div>
+          </div>
+
+          <div class="meta-group">
+            <div class="meta-label">📍 촬영 환경 <span class="required">*</span></div>
+            <div class="meta-options" id="context-options">
+              <button class="meta-btn" data-value="free_swim"   onclick="selectMeta('context', this)">자유수영</button>
+              <button class="meta-btn" data-value="lesson"      onclick="selectMeta('context', this)">강습 후</button>
+              <button class="meta-btn" data-value="competition" onclick="selectMeta('context', this)">대회</button>
+              <button class="meta-btn" data-value="training"    onclick="selectMeta('context', this)">훈련</button>
+              <button class="meta-btn" data-value="drill"       onclick="selectMeta('context', this)">드릴 연습</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-group">
+          <div class="meta-label">🎯 수영 목적 <span class="required">*</span></div>
+          <div class="meta-options" id="purpose-options">
+            <button class="meta-btn" data-value="record"      onclick="selectMeta('purpose', this)">🏅 기록 단축</button>
+            <button class="meta-btn" data-value="health"      onclick="selectMeta('purpose', this)">💪 건강하게 오래</button>
+            <button class="meta-btn" data-value="technique"   onclick="selectMeta('purpose', this)">🎯 영법 교정</button>
+            <button class="meta-btn" data-value="competition" onclick="selectMeta('purpose', this)">🏆 대회 준비</button>
+            <button class="meta-btn" data-value="hobby"       onclick="selectMeta('purpose', this)">😊 취미/건강유지</button>
+          </div>
+        </div>
+
+        <div class="meta-next-wrap">
+          <button class="meta-next-btn" id="meta-next-btn" onclick="proceedToUpload()" disabled>
+            다음 — 영상 선택 →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+"use strict";
+
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) window.location.href = '/login';
+  } catch { window.location.href = '/login'; }
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+const state = { stroke: null, context: null, purpose: null };
+
+const GROUP_ID = { stroke: 'stroke-options', context: 'context-options', purpose: 'purpose-options' };
+
+function selectMeta(type, btn) {
+  document.querySelectorAll(`#${GROUP_ID[type]} .meta-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state[type] = btn.dataset.value;
+  document.getElementById('meta-next-btn').disabled = !(state.stroke && state.context && state.purpose);
+}
+
+function proceedToUpload() {
+  if (!state.stroke || !state.context || !state.purpose) return;
+  sessionStorage.setItem('swimtech_stroke',  state.stroke);
+  sessionStorage.setItem('swimtech_context', state.context);
+  sessionStorage.setItem('swimtech_purpose', state.purpose);
+  sessionStorage.removeItem('swimtech_filename');
+  window.location.href = '/upload';
+}
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('SW registered'); })
+        .catch(function(err) { console.log('SW registration skipped:', err.message); });
+    });
+  }
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

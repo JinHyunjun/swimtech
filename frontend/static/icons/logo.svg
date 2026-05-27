@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80">
+  <defs>
+    <linearGradient id="logoSwG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#48cae4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Symbol mark background square -->
+  <rect x="2" y="8" width="64" height="64" rx="14" fill="#0a1628"/>
+  <rect x="2" y="8" width="64" height="64" rx="14" fill="none" stroke="#00b4d8" stroke-width="1" opacity="0.35"/>
+
+  <!-- Swimmer in symbol (64×64 canvas, origin at x=2,y=8) -->
+  <!-- Head -->
+  <circle cx="50" cy="29" r="7" fill="url(#logoSwG)"/>
+  <!-- Forward arm -->
+  <line x1="48" y1="23.5" x2="60" y2="18" stroke="#00b4d8" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Body -->
+  <path d="M45 35 C37 38.5 29 43 21 47"
+        stroke="url(#logoSwG)" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+  <!-- Back arm -->
+  <path d="M35 40 C33 46 32 52 31 57"
+        stroke="#48cae4" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <!-- Kick up -->
+  <path d="M21 47 C14 43.5 9 40 6 38"
+        stroke="url(#logoSwG)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <!-- Kick down -->
+  <path d="M21 47 C16 52 12 55.5 8 57"
+        stroke="#48cae4" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.85"/>
+  <!-- Water wave in symbol -->
+  <path d="M6 66 C14 63 22 67 30 65 C38 63 46 67 60 65"
+        stroke="#48cae4" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Brand name -->
+  <text x="80" y="39"
+        font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="27" font-weight="700" fill="#00b4d8" letter-spacing="-0.5">SwimTech</text>
+  <!-- Sub-label -->
+  <text x="81" y="59"
+        font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif"
+        font-size="13" fill="#90c4d4" letter-spacing="0.4">수영 영법 분석 플랫폼</text>
+</svg>

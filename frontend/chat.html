@@ -1,1 +1,518 @@
-﻿
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — AI 코치</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+/* ── 레이아웃 ───────────────────────────────── */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: calc(100vh - 53px);
+  overflow: hidden;
+}
+
+/* ── 사이드바 ──────────────────────────────── */
+.chat-sidebar {
+  background: var(--surface);
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-top {
+  padding: 12px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.btn-new {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-new:hover { opacity: .84; }
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  transition: background .15s, color .15s;
+}
+.chat-item:hover { background: var(--surface2); color: var(--text); }
+.chat-item.active { background: rgba(59,130,246,.15); color: var(--text); }
+.chat-item-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-item-del {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.chat-item:hover .chat-item-del { display: block; }
+.chat-item-del:hover { color: var(--red); background: rgba(248,113,113,.1); }
+
+/* ── 메인 영역 ─────────────────────────────── */
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+/* ── 웰컴 화면 ─────────────────────────────── */
+.chat-welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+.welcome-icon  { font-size: 52px; margin-bottom: 14px; line-height: 1; }
+.welcome-title { font-size: 22px; font-weight: 700; color: var(--blue); margin-bottom: 8px; }
+.welcome-desc  { font-size: 13px; color: var(--muted); line-height: 1.75; margin-bottom: 28px; }
+.sample-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 540px;
+  width: 100%;
+}
+.sample-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 15px;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  line-height: 1.5;
+}
+.sample-card:hover { border-color: var(--blue); background: rgba(59,130,246,.06); }
+.sample-card::before { content: "💬"; display: block; font-size: 15px; margin-bottom: 5px; }
+
+/* ── 말풍선 ────────────────────────────────── */
+.msg-row { display: flex; flex-direction: column; gap: 3px; }
+.msg-row.user { align-items: flex-end; }
+.msg-row.bot  { align-items: flex-start; }
+.msg-bubble {
+  max-width: 70%;
+  padding: 11px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+.msg-row.user .msg-bubble {
+  background: #0096c7;
+  color: #fff;
+  border-bottom-right-radius: 3px;
+}
+.msg-row.bot .msg-bubble {
+  background: #1a3a5c;
+  color: #e8f4f8;
+  border-bottom-left-radius: 3px;
+}
+.msg-bubble p { margin: 0 0 8px; }
+.msg-bubble p:last-child { margin-bottom: 0; }
+.msg-bubble code {
+  background: rgba(255,255,255,.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+.msg-bubble pre {
+  background: rgba(0,0,0,.35);
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.msg-bubble pre code { background: none; padding: 0; }
+.msg-bubble ul, .msg-bubble ol { padding-left: 18px; margin: 6px 0; }
+.msg-bubble li { margin-bottom: 3px; }
+.msg-bubble strong { color: #fff; }
+.msg-bubble h1,.msg-bubble h2,.msg-bubble h3 {
+  margin: 10px 0 6px;
+  font-size: 14px;
+  color: var(--cyan);
+}
+
+/* ── 로딩 점 ───────────────────────────────── */
+.loading-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 14px 18px;
+  background: #1a3a5c;
+  border-radius: 14px;
+  border-bottom-left-radius: 3px;
+}
+.loading-dots span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #888;
+  animation: dot-pop .9s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: .18s; }
+.loading-dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes dot-pop {
+  0%,80%,100% { transform: translateY(0); opacity: .35; }
+  40%          { transform: translateY(-7px); opacity: 1; }
+}
+
+/* ── 입력창 ────────────────────────────────── */
+.chat-input-area {
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: border-color .2s;
+}
+.input-wrap:focus-within { border-color: var(--blue); }
+#chat-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  max-height: 120px;
+  line-height: 1.55;
+}
+#chat-input::placeholder { color: var(--muted); }
+#send-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 36px; height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .2s;
+}
+#send-btn:disabled { opacity: .35; cursor: not-allowed; }
+#send-btn:not(:disabled):hover { opacity: .82; }
+.input-hint { font-size: 11px; color: var(--muted); margin-top: 6px; padding-left: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <a href="/"
+         style="color:var(--muted);text-decoration:none;font-size:13px;margin-right:14px;
+                padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;transition:color .2s;"
+         onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
+        ← 돌아가기
+      </a>
+      <span class="logo">SwimTech AI 코치</span>
+      <span class="logo-sub">수영 전문 챗봇</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()"
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
+                     padding:4px 12px;font-size:11px;cursor:pointer;">
+        로그아웃
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-layout">
+
+    <!-- ── 사이드바 ── -->
+    <aside class="chat-sidebar">
+      <div class="sidebar-top">
+        <button class="btn-new" onclick="newChat()">+ 새 채팅</button>
+      </div>
+      <div class="chat-list" id="chat-list"></div>
+    </aside>
+
+    <!-- ── 메인 ── -->
+    <main class="chat-main">
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-area">
+        <div class="input-wrap">
+          <textarea id="chat-input" rows="1"
+            placeholder="수영에 대해 무엇이든 물어보세요..."></textarea>
+          <button id="send-btn" onclick="sendMessage()" title="전송 (Enter)">↑</button>
+        </div>
+        <div class="input-hint">Enter 전송 · Shift+Enter 줄바꿈</div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const API_URL = 'http://localhost:43000/api/v1/prediction/f8c0ea24-0015-4bd7-a984-d24b1d9df206';
+const SAMPLES = [
+  '자유형 팔꿈치 각도를 어떻게 교정하나요?',
+  '수영 전 스트레칭 루틴 알려줘',
+  '접영 돌핀킥 연습 방법은?',
+  '수영 후 근육 회복 방법은?'
+];
+
+let sessions = {};
+let activeId  = null;
+
+// ── 인증 ──────────────────────────────────────────────
+(async () => {
+  try {
+    const r = await fetch('/auth/me', { credentials: 'include' });
+    if (!r.ok) { location.href = '/login'; return; }
+  } catch { location.href = '/login'; return; }
+
+  loadStorage();
+  const ids = Object.keys(sessions);
+  if (ids.length === 0) newChat();
+  else activateChat(ids[ids.length - 1]);
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  location.href = '/login';
+}
+
+// ── UUID ──────────────────────────────────────────────
+function uuid() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+// ── 스토리지 ──────────────────────────────────────────
+function loadStorage() {
+  try { sessions = JSON.parse(localStorage.getItem('swimtech_sessions') || '{}'); }
+  catch { sessions = {}; }
+}
+function saveStorage() {
+  localStorage.setItem('swimtech_sessions', JSON.stringify(sessions));
+}
+
+// ── 채팅 관리 ─────────────────────────────────────────
+function newChat() {
+  const id = uuid();
+  sessions[id] = { id, sessionId: uuid(), title: '새 채팅', messages: [] };
+  saveStorage();
+  activateChat(id);
+}
+
+function activateChat(id) {
+  activeId = id;
+  renderSidebar();
+  renderMessages();
+}
+
+function deleteChat(id, e) {
+  e.stopPropagation();
+  delete sessions[id];
+  saveStorage();
+  const ids = Object.keys(sessions);
+  if (activeId === id) {
+    if (ids.length > 0) activateChat(ids[ids.length - 1]);
+    else newChat();
+  } else {
+    renderSidebar();
+  }
+}
+
+// ── 사이드바 렌더링 ───────────────────────────────────
+function renderSidebar() {
+  const ids = Object.keys(sessions).reverse();
+  document.getElementById('chat-list').innerHTML = ids.map(id => {
+    const s = sessions[id];
+    return `<div class="chat-item${id === activeId ? ' active' : ''}" onclick="activateChat('${id}')">
+      <span class="chat-item-title">${esc(s.title)}</span>
+      <button class="chat-item-del" onclick="deleteChat('${id}',event)" title="삭제">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── 메시지 렌더링 ─────────────────────────────────────
+function renderMessages() {
+  const box = document.getElementById('chat-messages');
+  const s   = sessions[activeId];
+
+  if (!s || s.messages.length === 0) {
+    box.innerHTML = `
+      <div class="chat-welcome">
+        <div class="welcome-icon">🤖</div>
+        <div class="welcome-title">SwimTech AI 코치</div>
+        <p class="welcome-desc">수영 기술, 훈련 방법, 지상운동, 스트레칭,<br>대회 정보, 용품 추천 등 수영과 관련된 모든 것을 물어보세요!</p>
+        <div class="sample-grid">
+          ${SAMPLES.map(q =>
+            `<div class="sample-card" onclick="sendSample(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</div>`
+          ).join('')}
+        </div>
+      </div>`;
+    return;
+  }
+
+  box.innerHTML = s.messages.map(m => bubbleHTML(m.role, m.content)).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function bubbleHTML(role, content) {
+  const inner = role === 'bot'
+    ? marked.parse(content)
+    : `<p>${esc(content).replace(/\n/g, '<br>')}</p>`;
+  return `<div class="msg-row ${role}"><div class="msg-bubble">${inner}</div></div>`;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── 전송 ──────────────────────────────────────────────
+function sendSample(q) {
+  document.getElementById('chat-input').value = q;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input    = document.getElementById('chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  const s = sessions[activeId];
+  input.value = '';
+  autoResize(input);
+
+  if (s.messages.length === 0) {
+    s.title = question.length > 22 ? question.slice(0, 22) + '…' : question;
+  }
+  s.messages.push({ role: 'user', content: question });
+  saveStorage();
+  renderMessages();
+  renderSidebar();
+
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  input.disabled = true;
+
+  const box     = document.getElementById('chat-messages');
+  const loadEl  = document.createElement('div');
+  loadEl.className = 'msg-row bot';
+  loadEl.innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+  box.appendChild(loadEl);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const sid = s.sessionId || s.id;
+    const res  = await fetch(API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        question,
+        sessionId: sid,
+        overrideConfig: { sessionId: sid }
+      })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data   = await res.json();
+    const answer = data.text ?? data.answer ?? data.output ?? '응답을 받지 못했습니다.';
+    s.messages.push({ role: 'bot', content: answer });
+  } catch (err) {
+    s.messages.push({ role: 'bot', content: `⚠️ 연결 오류: ${err.message}\nFlowise 서버 상태를 확인해주세요.` });
+  }
+
+  saveStorage();
+  btn.disabled = false;
+  input.disabled = false;
+  renderMessages();
+  input.focus();
+}
+
+// ── 입력창 자동 높이 ──────────────────────────────────
+const textarea = document.getElementById('chat-input');
+textarea.addEventListener('input', () => autoResize(textarea));
+textarea.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('SW registered'); })
+        .catch(function(err) { console.log('SW registration skipped:', err.message); });
+    });
+  }
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

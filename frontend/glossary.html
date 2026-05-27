@@ -1,1 +1,487 @@
-﻿
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 수영 용어 사전</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave  { 0%{ transform:translateX(0);} 100%{ transform:translateX(-50%);} }
+@keyframes ocean-wave2 { 0%{ transform:translateX(-50%);} 100%{ transform:translateX(0);} }
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.glossary-wrap {
+  min-height: calc(100vh - 53px);
+  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  padding: 28px 16px 60px;
+  position: relative;
+  overflow: hidden;
+}
+.glossary-wrap::before {
+  content: '';
+  position: fixed;
+  bottom: -10px; left: 0;
+  width: 200%; height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.12' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,15 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 60px;
+  animation: ocean-wave 8s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+.glossary-wrap::after {
+  content: '';
+  position: fixed;
+  bottom: -4px; left: 0;
+  width: 200%; height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%2348cae4' fill-opacity='0.08' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 40px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none; z-index: 0;
+}
+
+.glossary-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.glossary-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.glossary-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text, #e8f4f8);
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 30px rgba(0,180,216,0.3);
+}
+.glossary-header p {
+  font-size: 12px;
+  color: var(--muted, #90c4d4);
+  margin-top: 6px;
+}
+
+/* 검색창 */
+.search-wrap {
+  position: relative;
+  margin-bottom: 18px;
+}
+.search-input {
+  width: 100%;
+  background: rgba(13,33,55,0.88);
+  border: 0.5px solid rgba(0,180,216,0.3);
+  border-radius: 12px;
+  padding: 13px 16px 13px 42px;
+  font-size: 14px;
+  color: #e8f4f8;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  font-family: inherit;
+}
+.search-input::placeholder { color: rgba(144,196,212,0.5); }
+.search-input:focus {
+  border-color: #00b4d8;
+  box-shadow: 0 0 0 2px rgba(0,180,216,0.12);
+}
+.search-icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+.search-count {
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: rgba(144,196,212,0.5);
+}
+
+/* 카테고리 탭 */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 0.5px solid rgba(0,180,216,0.25);
+  background: rgba(13,33,55,0.6);
+  color: rgba(144,196,212,0.8);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { border-color: #00b4d8; color: #00b4d8; }
+.tab.active {
+  background: rgba(0,180,216,0.18);
+  border-color: #00b4d8;
+  color: #00b4d8;
+}
+
+/* 카드 그리드 */
+.cards-section { margin-bottom: 32px; }
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: rgba(144,196,212,0.5);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .cards-grid { grid-template-columns: 1fr; }
+}
+
+.term-card {
+  background: rgba(13,33,55,0.85);
+  border: 0.5px solid rgba(0,180,216,0.15);
+  border-radius: 14px;
+  padding: 16px;
+  transition: border-color .25s, transform .2s, box-shadow .25s;
+  position: relative;
+  overflow: hidden;
+}
+.term-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: -100%;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--card-accent, #00b4d8), transparent);
+  transition: left .4s ease;
+}
+.term-card:hover::after { left: 100%; }
+.term-card:hover {
+  border-color: var(--card-accent, #00b4d8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,180,216,0.1);
+}
+
+.term-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.term-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8f4f8;
+  line-height: 1.3;
+}
+.term-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.badge-basic    { background: rgba(0,180,216,0.15);   color: #00b4d8; }
+.badge-technique{ background: rgba(72,202,228,0.15);  color: #48cae4; }
+.badge-training { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.badge-swimtech { background: rgba(74,222,128,0.15);  color: #4ade80; }
+
+.term-body {
+  font-size: 12px;
+  color: #90c4d4;
+  line-height: 1.7;
+}
+.term-body b { color: #e8f4f8; }
+
+/* 결과 없음 */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(144,196,212,0.4);
+  font-size: 14px;
+}
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;">
+        <span class="logo">SwimTech</span>
+      </a>
+      <span class="logo-sub">수영 용어 사전</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()"
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
+                     padding:4px 12px;font-size:11px;cursor:pointer;">
+        로그아웃
+      </button>
+    </div>
+  </header>
+
+  <div class="glossary-wrap">
+    <div class="glossary-inner">
+
+      <div class="glossary-header">
+        <h1>📖 수영 용어 사전</h1>
+        <p>수영 관련 용어를 검색하거나 카테고리별로 찾아보세요</p>
+      </div>
+
+      <!-- 검색창 -->
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="search-input"
+               placeholder="용어 검색... (예: 하이 엘보우, 킥)"
+               oninput="filterTerms()">
+        <span class="search-count" id="search-count"></span>
+      </div>
+
+      <!-- 카테고리 탭 -->
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-cat="all"     onclick="setTab(this)">전체</div>
+        <div class="tab"        data-cat="basic"   onclick="setTab(this)">영법 기초</div>
+        <div class="tab"        data-cat="technique" onclick="setTab(this)">자세/기술</div>
+        <div class="tab"        data-cat="training" onclick="setTab(this)">훈련 용어</div>
+        <!-- [영상분析_준비중] -->
+        <div class="tab"        data-cat="swimtech" onclick="setTab(this)" style="display:none">SwimTech 분석</div>
+        <!-- [/영상분析_준비중] -->
+      </div>
+
+      <!-- 용어 목록 -->
+      <div id="cards-container"></div>
+      <div class="empty-state hidden" id="empty-state">
+        <div class="empty-icon">🤔</div>
+        검색 결과가 없습니다
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+const TERMS = [
+  // ── 영법 기초 ──
+  { name: "스트로크 (Stroke)", cat: "basic",
+    body: "팔로 물을 젓는 동작 1사이클. 자유형 1스트로크는 왼팔·오른팔 각 1회를 합친 단위예요." },
+  { name: "킥 (Kick)", cat: "basic",
+    body: "다리로 물을 차는 동작. 영법에 따라 플러터킥(자유형·배영), 돌핀킥(접영), 브레스트킥(평영)으로 나뉘어요." },
+  { name: "글라이드 (Glide)", cat: "basic",
+    body: "스트로크 후 추진력을 이용해 미끄러지듯 나아가는 구간. 특히 평영에서 효율을 크게 좌우해요." },
+  { name: "턴 (Turn)", cat: "basic",
+    body: "벽에서 방향을 바꾸는 동작. 플립턴(자유형·배영)과 터치턴(평영·접영)이 있어요." },
+
+  // ── 자세/기술 ──
+  { name: "하이 엘보우 (High Elbow)", cat: "technique",
+    body: "<b>팔꿈치를 높게 유지하는 자세.</b> 물을 효과적으로 잡아 추진력을 극대화해요. SwimTech 분석의 핵심 지표 중 하나예요." },
+  { name: "드롭 엘보우 (Dropped Elbow)", cat: "technique",
+    body: "<b>팔꿈치가 처지는 자세.</b> 추진력이 감소하고 어깨 부상의 원인이 될 수 있어요. 교정이 꼭 필요한 패턴이에요." },
+  { name: "캐치 (Catch)", cat: "technique",
+    body: "손이 물을 잡는 순간. 좋은 캐치는 팔꿈치가 손보다 높은 상태에서 이루어져요." },
+  { name: "풀 (Pull)", cat: "technique",
+    body: "캐치 후 물을 뒤로 밀어내는 구간. 스트로크에서 추진력이 가장 많이 생기는 단계예요." },
+  { name: "피니시 (Finish)", cat: "technique",
+    body: "스트로크의 마무리 동작. 손이 허벅지 옆까지 충분히 밀어야 효율이 높아요." },
+  { name: "바디롤 (Body Roll)", cat: "technique",
+    body: "자유형·배영에서 몸통이 좌우로 회전하는 동작. 적절한 바디롤은 어깨 부상 예방과 추진력 향상에 도움을 줘요." },
+  { name: "돌핀킥 (Dolphin Kick)", cat: "technique",
+    body: "접영에서 양발을 동시에 물결치듯 차는 킥. 스타트·턴 후 수중 구간에서도 활용해요." },
+  { name: "엔트리 (Entry)", cat: "technique",
+    body: "팔이 물에 입수하는 동작. 어깨너비로 입수하는 것이 이상적이에요." },
+
+  // ── 훈련 용어 ──
+  { name: "드릴 (Drill)", cat: "training",
+    body: "특정 기술을 집중 연습하기 위한 훈련 방법. SwimTech가 개선점에 맞는 드릴 영상을 추천해드려요." },
+  { name: "핑거 드래그 (Finger Drag)", cat: "training",
+    body: "팔 회복 시 손가락을 수면에 끌며 팔꿈치를 높이는 드릴. 하이 엘보우를 익히는 데 효과적이에요." },
+  { name: "킥보드 (Kickboard)", cat: "training",
+    body: "발차기만 집중 연습할 때 사용하는 보조 도구. 킥의 리듬과 힘을 교정하는 데 활용해요." },
+  { name: "풀부이 (Pull Buoy)", cat: "training",
+    body: "다리 사이에 끼워 팔 동작만 집중 연습할 때 사용하는 보조 도구. 스트로크 폼을 교정하는 데 활용해요." },
+  { name: "페이스 (Pace)", cat: "training",
+    body: "100m당 수영 속도를 나타내는 단위. 예: 1분 40초 페이스 = 100m를 1분 40초에 완주." },
+  { name: "인터벌 (Interval)", cat: "training",
+    body: "일정 거리를 반복하며 휴식 시간을 조절하는 훈련 방식. 지구력과 속도를 동시에 향상시켜요." },
+
+  // ── SwimTech 분석 용어 ── [영상분析_준비중]
+  /* [영상분析_준비중]
+  { name: "종합점수", cat: "swimtech",
+    body: "팔꿈치 자세, 발차기, 좌우 대칭, 머리 자세를 종합한 점수 (0~100). 높을수록 좋은 영법이에요." },
+  { name: "좌우 대칭", cat: "swimtech",
+    body: "왼팔과 오른팔 동작의 균형 정도 (0~100%). 대칭이 높을수록 물 저항이 줄어 효율이 높아요." },
+  { name: "발차기 빈도", cat: "swimtech",
+    body: "초당 발차기 횟수 (Hz). 자유형 기준 적정 빈도는 영법·목적에 따라 달라요." },
+  { name: "바디롤 각도", cat: "swimtech",
+    body: "몸통의 좌우 회전 각도. 자유형 기준 약 40~50° 회전이 이상적이에요." },
+  { name: "하이 엘보우 점수", cat: "swimtech",
+    body: "팔꿈치가 손보다 높게 유지되는 비율 (%). SwimTech 분석의 핵심 지표예요." },
+  { name: "머리 회전 점수", cat: "swimtech",
+    body: "숨 쉴 때 머리가 과도하게 돌아가지 않는 정도를 평가한 점수. 높을수록 물 저항이 적어요." },
+  [/영상분析_준비중] */
+];
+
+const CAT_LABELS = {
+  basic:     "영법 기초",
+  technique: "자세 / 기술",
+  training:  "훈련 용어",
+  swimtech:  "SwimTech 분석",
+};
+const CAT_BADGE = {
+  basic:     "badge-basic",
+  technique: "badge-technique",
+  training:  "badge-training",
+  swimtech:  "badge-swimtech",
+};
+const CAT_ACCENT = {
+  basic:     "#00b4d8",
+  technique: "#48cae4",
+  training:  "#a78bfa",
+  swimtech:  "#4ade80",
+};
+
+let activeTab = "all";
+let searchQuery = "";
+
+function setTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeTab = el.dataset.cat;
+  renderCards();
+}
+
+function filterTerms() {
+  searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+  renderCards();
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark style="background:rgba(0,180,216,0.25);color:#e8f4f8;border-radius:2px;">$1</mark>');
+}
+
+function renderCards() {
+  const container = document.getElementById('cards-container');
+  const empty = document.getElementById('empty-state');
+
+  const filtered = TERMS.filter(t => {
+    if (t.cat === 'swimtech') return false; // [영상분析_준비중]
+    const catOk = activeTab === 'all' || t.cat === activeTab;
+    const q = searchQuery;
+    const textOk = !q ||
+      t.name.toLowerCase().includes(q) ||
+      t.body.replace(/<[^>]+>/g,'').toLowerCase().includes(q);
+    return catOk && textOk;
+  });
+
+  document.getElementById('search-count').textContent =
+    searchQuery ? `${filtered.length}개` : '';
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // 카테고리별 그룹
+  const groups = {};
+  filtered.forEach(t => {
+    if (!groups[t.cat]) groups[t.cat] = [];
+    groups[t.cat].push(t);
+  });
+
+  const catOrder = ['basic','technique','training']; // [영상분析_준비중] 'swimtech' 제거
+  let html = '';
+  catOrder.forEach(cat => {
+    if (!groups[cat]) return;
+    html += `<div class="cards-section">`;
+    if (activeTab === 'all' || searchQuery) {
+      html += `<div class="section-label">${CAT_LABELS[cat]}</div>`;
+    }
+    html += `<div class="cards-grid">`;
+    groups[cat].forEach(t => {
+      const accent = CAT_ACCENT[t.cat];
+      const nameHl = highlight(t.name, searchQuery);
+      const bodyHl = highlight(t.body, searchQuery);
+      html += `
+        <div class="term-card" style="--card-accent:${accent}">
+          <div class="term-head">
+            <div class="term-name">${nameHl}</div>
+            <span class="term-badge ${CAT_BADGE[t.cat]}">${CAT_LABELS[t.cat]}</span>
+          </div>
+          <div class="term-body">${bodyHl}</div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+renderCards();
+
+// ── 인증 확인 ──
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) window.location.href = '/login';
+  } catch { window.location.href = '/login'; }
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('SW registered'); })
+        .catch(function(err) { console.log('SW registration skipped:', err.message); });
+    });
+  }
+</script>
+<div style="text-align:center;padding:20px 0 16px;font-size:12px;color:#6fa8c0;">
+  <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
+  <span style="margin:0 8px;opacity:.4;">|</span>
+  <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
+</div>
+<script src="/static/theme.js"></script>
+</body>
+</html>

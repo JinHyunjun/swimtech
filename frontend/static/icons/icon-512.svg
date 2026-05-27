@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgG512" cx="38%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#0d2137"/>
+      <stop offset="100%" stop-color="#071525"/>
+    </radialGradient>
+    <linearGradient id="swG512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#48cae4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+    <filter id="glow512">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="106" fill="url(#bgG512)"/>
+  <!-- Outer border glow -->
+  <rect width="512" height="512" rx="106" fill="none" stroke="#00b4d8" stroke-width="3" opacity="0.2"/>
+  <!-- Inner subtle ring -->
+  <rect x="12" y="12" width="488" height="488" rx="96" fill="none" stroke="#48cae4" stroke-width="1" opacity="0.1"/>
+
+  <!-- Swimmer: Head -->
+  <circle cx="394" cy="150" r="37" fill="url(#swG512)" filter="url(#glow512)"/>
+  <!-- Forward arm -->
+  <line x1="388" y1="117" x2="456" y2="83" stroke="#00b4d8" stroke-width="24" stroke-linecap="round"/>
+  <!-- Body / torso -->
+  <path d="M368 179 C320 195 267 216 213 237 C181 250 152 261 122 273"
+        stroke="url(#swG512)" stroke-width="29" stroke-linecap="round" fill="none"/>
+  <!-- Back arm pulling through -->
+  <path d="M282 211 C272 248 267 280 256 312"
+        stroke="#48cae4" stroke-width="21" stroke-linecap="round" fill="none" opacity="0.88"/>
+  <!-- Kick — up leg -->
+  <path d="M122 273 C88 256 62 238 45 227"
+        stroke="url(#swG512)" stroke-width="24" stroke-linecap="round" fill="none"/>
+  <!-- Kick — down leg -->
+  <path d="M122 273 C102 298 80 314 56 323"
+        stroke="#48cae4" stroke-width="19" stroke-linecap="round" fill="none" opacity="0.82"/>
+
+  <!-- Water wave 1 -->
+  <path d="M52 368 C100 347 155 389 207 368 C260 347 315 389 368 368 C408 352 434 370 458 368"
+        stroke="#48cae4" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.52"/>
+  <!-- Water wave 2 -->
+  <path d="M42 406 C100 384 156 426 214 406 C272 386 330 426 394 406 C430 390 452 408 468 406"
+        stroke="#00b4d8" stroke-width="6.5" fill="none" stroke-linecap="round" opacity="0.38"/>
+  <!-- Water wave 3 (subtle) -->
+  <path d="M58 444 C116 424 172 464 232 444 C292 424 350 464 412 444 C442 432 460 444 470 440"
+        stroke="#48cae4" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.22"/>
+
+  <!-- Tech data points -->
+  <circle cx="448" cy="192" r="6.5" fill="#00b4d8" opacity="0.42"/>
+  <circle cx="466" cy="218" r="5" fill="#48cae4" opacity="0.33"/>
+  <circle cx="456" cy="246" r="6.5" fill="#00b4d8" opacity="0.26"/>
+  <line x1="448" y1="192" x2="466" y2="218" stroke="#00b4d8" stroke-width="1.5" opacity="0.25"/>
+  <line x1="466" y1="218" x2="456" y2="246" stroke="#48cae4" stroke-width="1.5" opacity="0.2"/>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="bgG192" cx="38%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#0d2137"/>
+      <stop offset="100%" stop-color="#071525"/>
+    </radialGradient>
+    <linearGradient id="swG192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#48cae4"/>
+      <stop offset="100%" stop-color="#00b4d8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="192" height="192" rx="40" fill="url(#bgG192)"/>
+  <!-- Subtle border -->
+  <rect width="192" height="192" rx="40" fill="none" stroke="#00b4d8" stroke-width="1.5" opacity="0.22"/>
+
+  <!-- Head -->
+  <circle cx="148" cy="56" r="14" fill="url(#swG192)"/>
+  <!-- Forward arm -->
+  <line x1="145" y1="44" x2="171" y2="31" stroke="#00b4d8" stroke-width="9" stroke-linecap="round"/>
+  <!-- Body / torso diagonal -->
+  <path d="M138 67 C120 73 100 81 80 89 C68 94 57 98 46 103"
+        stroke="url(#swG192)" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Back arm pulling through water -->
+  <path d="M106 79 C102 93 100 105 96 117"
+        stroke="#48cae4" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <!-- Kick — up leg -->
+  <path d="M46 103 C33 96 23 89 17 85"
+        stroke="url(#swG192)" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- Kick — down leg -->
+  <path d="M46 103 C38 112 30 118 21 121"
+        stroke="#48cae4" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.85"/>
+
+  <!-- Water waves -->
+  <path d="M20 138 C38 130 58 146 78 138 C98 130 118 146 138 138 C153 132 163 140 172 138"
+        stroke="#48cae4" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
+  <path d="M16 152 C38 144 58 160 82 152 C106 144 126 160 150 152 C163 146 171 154 176 152"
+        stroke="#00b4d8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.38"/>
+
+  <!-- Tech data dots -->
+  <circle cx="168" cy="72" r="2.5" fill="#00b4d8" opacity="0.45"/>
+  <circle cx="175" cy="82" r="2" fill="#48cae4" opacity="0.35"/>
+  <circle cx="171" cy="92" r="2.5" fill="#00b4d8" opacity="0.28"/>
+</svg>

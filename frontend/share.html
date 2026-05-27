@@ -1,1 +1,489 @@
-﻿
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimTech — 분석 결과 공유</title>
+<meta name="theme-color" content="#00b4d8">
+<style>
+:root {
+  --bg: #060f1e;
+  --surface: #0b1d38;
+  --card: #0d2348;
+  --accent: #00b4d8;
+  --accent2: #0077b6;
+  --text: #daeeff;
+  --text-muted: #7aaccc;
+  --border: #1a3a5c;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(160deg, #071628 0%, #0a2a50 100%);
+  padding: 22px 24px 18px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.header-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+.container {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+/* Meta chips */
+.meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.meta-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.meta-chip span { color: var(--accent); font-weight: 700; }
+
+/* Score */
+.score-wrap {
+  text-align: center;
+  padding: 8px 0 18px;
+}
+.score-ring {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--pct, 0) * 3.6deg), #1a3a5c 0deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 0 40px rgba(0,180,216,0.3);
+  position: relative;
+}
+.score-ring::before {
+  content: '';
+  position: absolute;
+  width: 98px;
+  height: 98px;
+  border-radius: 50%;
+  background: var(--card);
+}
+.score-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.score-num { font-size: 38px; font-weight: 800; color: #fff; line-height: 1; }
+.score-unit { font-size: 12px; color: var(--text-muted); }
+.score-title { font-size: 13px; color: var(--text-muted); }
+
+/* Metrics grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.metric-item {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+}
+.metric-val { font-size: 20px; font-weight: 700; color: var(--accent); }
+.metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+/* Section title */
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Feedback */
+.feedback-text {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+/* Drills */
+.drill-list { list-style: none; }
+.drill-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.drill-list li:last-child { border-bottom: none; }
+.drill-list li::before {
+  content: '✦';
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Share buttons */
+.share-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.btn-kakao {
+  flex: 1;
+  padding: 13px 8px;
+  border-radius: 10px;
+  border: none;
+  background: #FEE500;
+  color: #191919;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-kakao:hover { opacity: 0.9; }
+.btn-copy {
+  flex: 1;
+  padding: 13px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-copy:hover { background: rgba(0,180,216,0.12); }
+
+/* CTA */
+.cta-link {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0077b6, #00b4d8);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  letter-spacing: 0.2px;
+  transition: opacity 0.15s;
+}
+.cta-link:hover { opacity: 0.9; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #16a34a;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Loading / error */
+.center-state { text-align: center; padding: 72px 20px; }
+.state-icon { font-size: 48px; margin-bottom: 16px; }
+.state-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.state-desc { font-size: 13px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;">← 뒤로</button>
+    <a href="/" style="text-decoration:none;color:inherit;"><div class="logo">🏊 SwimTech</div></a>
+  </div>
+  <div class="header-sub">분석 결과 공유</div>
+</div>
+
+<div class="container">
+
+  <div id="loading" class="center-state">
+    <div class="state-icon">⏳</div>
+    <div class="state-title">불러오는 중...</div>
+    <div class="state-desc">분석 결과를 가져오고 있어요</div>
+  </div>
+
+  <div id="error" class="center-state" style="display:none">
+    <div class="state-icon">🤔</div>
+    <div class="state-title">결과를 찾을 수 없어요</div>
+    <div class="state-desc">링크가 만료되었거나 잘못된 주소입니다.</div>
+  </div>
+
+  <div id="content" style="display:none">
+
+    <!-- Meta chips -->
+    <div class="meta-row" id="meta-row"></div>
+
+    <!-- Score + metrics -->
+    <div class="card">
+      <div class="score-wrap">
+        <div class="score-ring" id="score-ring">
+          <div class="score-inner">
+            <div class="score-num" id="score-val">--</div>
+            <div class="score-unit">/ 100</div>
+          </div>
+        </div>
+        <div class="score-title">종합 점수</div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-val" id="sym-val">--</div>
+          <div class="metric-lbl">좌우 대칭</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" id="kick-val">0</div>
+          <div class="metric-lbl">발차기 횟수</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" id="freq-val">--</div>
+          <div class="metric-lbl">발차기 빈도</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" id="head-val">--</div>
+          <div class="metric-lbl">머리 각도</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="card" id="feedback-card" style="display:none">
+      <div class="section-title">📝 피드백</div>
+      <div class="feedback-text" id="feedback-text"></div>
+    </div>
+
+    <!-- Drills -->
+    <div class="card" id="drills-card" style="display:none">
+      <div class="section-title">✎ 추천 드릴</div>
+      <ul class="drill-list" id="drill-list"></ul>
+    </div>
+
+    <!-- Share buttons -->
+    <div class="share-row">
+      <button class="btn-kakao" onclick="shareKakao()">🟡 카카오톡 공유</button>
+      <button class="btn-copy" onclick="copyLink()">🔗 링크 복사</button>
+    </div>
+
+    <!-- CTA -->
+    <a href="/landing" class="cta-link">🏊 나도 분석해보기</a>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous"></script>
+<script>
+"use strict";
+
+const STROKE_KO = {
+  freestyle:'자유형', backstroke:'배영', breaststroke:'평영',
+  butterfly:'접영', unknown:'미선택', start:'스타트',
+  flip_turn:'플립턴', touch_turn:'터치턴',
+};
+const PURPOSE_KO = {
+  record:'기록 단축', health:'건강하게 오래', technique:'영법 교정',
+  competition:'대회 준비', hobby:'취미/건강유지',
+};
+
+const pathParts = window.location.pathname.split('/');
+const token = pathParts[pathParts.length - 1];
+const shareUrl = window.location.href;
+
+// Kakao SDK init
+try { Kakao.init('3d51b20b04a33ad0448c941c1268146e'); } catch(e) {}
+
+async function loadShare() {
+  if (!token) { showError(); return; }
+  try {
+    const res = await fetch(`/api/share/${encodeURIComponent(token)}`);
+    if (!res.ok) { showError(); return; }
+    const data = await res.json();
+    renderShare(data);
+  } catch(e) {
+    showError();
+  }
+}
+
+function renderShare(data) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // Meta chips
+  const date = data.analyzed_at ? data.analyzed_at.slice(0, 10) : '';
+  const stroke  = STROKE_KO[data.stroke_type] || data.stroke_type || '';
+  const purpose = PURPOSE_KO[data.purpose]    || data.purpose     || '';
+  const metaRow = document.getElementById('meta-row');
+  metaRow.innerHTML = [
+    stroke  ? `<div class="meta-chip">영법 <span>${stroke}</span></div>`  : '',
+    purpose ? `<div class="meta-chip">목적 <span>${purpose}</span></div>` : '',
+    date    ? `<div class="meta-chip">날짜 <span>${date}</span></div>`    : '',
+  ].join('');
+
+  // Score ring
+  const score = Math.round(data.overall_score || 0);
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('score-ring').style.setProperty('--pct', score);
+
+  // Metrics
+  document.getElementById('sym-val').textContent  = (data.arm_symmetry || 0).toFixed(1);
+  document.getElementById('kick-val').textContent = data.kick_count || 0;
+  document.getElementById('freq-val').textContent = (data.kick_freq_hz || 0).toFixed(2) + '/s';
+  document.getElementById('head-val').textContent = (data.head_angle_avg || 0).toFixed(1) + '°';
+
+  // Feedback
+  if (data.feedback && data.feedback.trim()) {
+    document.getElementById('feedback-text').textContent = data.feedback.trim();
+    document.getElementById('feedback-card').style.display = 'block';
+  }
+
+  // Drills
+  if (data.drills && data.drills.trim()) {
+    const drills = data.drills
+      .replace(/^\[|\]$/g, '')
+      .split(',')
+      .map(s => s.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean);
+    if (drills.length) {
+      const list = document.getElementById('drill-list');
+      drills.forEach(d => {
+        const li = document.createElement('li');
+        li.textContent = d;
+        list.appendChild(li);
+      });
+      document.getElementById('drills-card').style.display = 'block';
+    }
+  }
+}
+
+function showError() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('error').style.display   = 'block';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = shareUrl;
+    Object.assign(ta.style, { position:'fixed', top:'-9999px' });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  showToast('✅ 링크가 복사됐어요!');
+}
+
+async function shareKakao() {
+  // Kakao SDK share
+  if (window.Kakao && Kakao.isInitialized() && Kakao.Share) {
+    try {
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: 'SwimTech 수영 영법 분석 결과',
+          description: '내 수영 분석 결과를 확인해보세요!',
+          imageUrl: window.location.origin + '/static/icons/icon-512.png',
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        },
+        buttons: [{
+          title: '결과 확인하기',
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        }],
+      });
+      return;
+    } catch(e) {}
+  }
+
+  // Web Share API fallback (모바일)
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'SwimTech 수영 분석 결과',
+        text: '내 수영 영법 분석 결과를 확인해보세요!',
+        url: shareUrl,
+      });
+      return;
+    } catch(e) {}
+  }
+
+  // 최종 fallback: 링크 복사
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = shareUrl;
+    Object.assign(ta.style, { position:'fixed', top:'-9999px' });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  showToast('✅ 링크가 복사됐어요! 카카오톡에 붙여넣기 해보세요.');
+}
+
+loadShare();
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

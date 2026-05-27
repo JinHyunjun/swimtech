@@ -1,1 +1,447 @@
-﻿
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 드릴 가이드</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.drill-page {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.drill-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.back-btn {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.drill-title { font-size: 20px; font-weight: 600; color: var(--text); }
+.drill-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* 탭 */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(0,180,216,.18), rgba(72,202,228,.12));
+  color: var(--blue);
+  border: 0.5px solid rgba(0,180,216,.25);
+}
+
+/* 드릴 그리드 */
+.drill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.drill-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
+}
+.drill-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  opacity: 0;
+  transition: opacity .2s;
+}
+.drill-card:hover {
+  border-color: rgba(0,180,216,.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,180,216,.1);
+}
+.drill-card:hover::before { opacity: 1; }
+
+.drill-num {
+  font-size: 10px;
+  color: var(--blue);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.drill-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.drill-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.drill-stars {
+  font-size: 12px;
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
+.drill-time {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255,255,255,.04);
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.drill-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.drill-info-row {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.drill-info-row strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.drill-effect {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  background: rgba(0,180,216,.08);
+  border: 0.5px solid rgba(0,180,216,.2);
+  border-radius: 4px;
+  color: var(--cyan);
+  margin-bottom: 14px;
+}
+
+.drill-yt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255,0,0,.08);
+  border: 0.5px solid rgba(255,80,80,.25);
+  border-radius: 7px;
+  color: #ff6b6b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .2s;
+  width: 100%;
+  justify-content: center;
+}
+.drill-yt-btn:hover { background: rgba(255,0,0,.14); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+@media (max-width: 600px) {
+  .drill-page { padding: 16px; }
+  .drill-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
+      <span class="logo-sub">드릴 가이드</span>
+    </div>
+  </header>
+
+  <div class="drill-page">
+    <div class="drill-topbar">
+      <a href="/" class="back-btn">← 홈으로</a>
+      <div>
+        <div class="drill-title">🏋️ 영법별 드릴 가이드</div>
+        <div class="drill-sub">자세 교정과 기록 단축을 위한 핵심 훈련 동작</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="freestyle">🏊 자유형</button>
+      <button class="tab-btn" data-tab="backstroke">🔄 배영</button>
+      <button class="tab-btn" data-tab="breaststroke">🐸 평영</button>
+      <button class="tab-btn" data-tab="butterfly">🦋 접영</button>
+    </div>
+
+    <!-- 자유형 -->
+    <div id="tab-freestyle" class="tab-content active">
+      <div class="drill-grid">
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 01</div>
+          <div class="drill-name">핑거 드래그 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 5분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 팔꿈치를 높게 유지하는 감각 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 리커버리 시 손가락을 수면에 끌며 팔꿈치를 먼저 올린다</div>
+          </div>
+          <div class="drill-effect">✦ 하이 엘보우 자세 교정</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=핑거+드래그+드릴+자유형" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 02</div>
+          <div class="drill-name">캐치업 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 5분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 스트로크 타이밍과 글라이드 감각 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 앞손이 뻗어있는 동안 뒷손이 따라잡을 때까지 기다린다</div>
+          </div>
+          <div class="drill-effect">✦ 스트로크 리듬 개선</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=캐치업+드릴+자유형" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 03</div>
+          <div class="drill-name">단팔 자유형 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 한쪽 팔 동작에 집중</div>
+            <div class="drill-info-row"><strong>방법</strong> 한 팔은 옆에 붙이고 반대팔로만 수영</div>
+          </div>
+          <div class="drill-effect">✦ 팔꿈치 각도와 풀 감각 훈련</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=단팔+자유형+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 04</div>
+          <div class="drill-name">6비트 킥 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 발차기 리듬 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 킥보드 잡고 6비트 킥만 집중 연습</div>
+          </div>
+          <div class="drill-effect">✦ 발차기 빈도 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=6비트+킥+자유형+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 배영 -->
+    <div id="tab-backstroke" class="tab-content">
+      <div class="drill-grid">
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 01</div>
+          <div class="drill-name">양팔 동시 배영 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 대칭 동작 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 양팔을 동시에 올리고 내리는 동작 반복</div>
+          </div>
+          <div class="drill-effect">✦ 좌우 대칭 개선</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=배영+양팔+동시+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 02</div>
+          <div class="drill-name">손 위치 확인 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐</span>
+            <span class="drill-time">⏱ 5분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 엔트리 시 손 위치 교정</div>
+            <div class="drill-info-row"><strong>방법</strong> 입수 시 손이 어깨 너비로 들어가는지 확인</div>
+          </div>
+          <div class="drill-effect">✦ 스트레이트 풀 방지</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=배영+손+위치+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 평영 -->
+    <div id="tab-breaststroke" class="tab-content">
+      <div class="drill-grid">
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 01</div>
+          <div class="drill-name">2킥 1풀 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 킥과 풀의 타이밍 동기화</div>
+            <div class="drill-info-row"><strong>방법</strong> 킥 2번 후 풀 1번 반복</div>
+          </div>
+          <div class="drill-effect">✦ 글라이드 타이밍 훈련</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=평영+2킥1풀+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 02</div>
+          <div class="drill-name">개구리킥 킥보드 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐</span>
+            <span class="drill-time">⏱ 5분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 발차기 패턴 교정</div>
+            <div class="drill-info-row"><strong>방법</strong> 킥보드 잡고 평영 킥만 집중</div>
+          </div>
+          <div class="drill-effect">✦ 좌우 균형 있는 킥 패턴</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=평영+킥+킥보드+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 접영 -->
+    <div id="tab-butterfly" class="tab-content">
+      <div class="drill-grid">
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 01</div>
+          <div class="drill-name">돌핀킥 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 웨이브 리듬 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 팔은 뻗은 채 돌핀킥만 반복</div>
+          </div>
+          <div class="drill-effect">✦ 웨이브 리듬과 킥 타이밍</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=접영+돌핀킥+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 02</div>
+          <div class="drill-name">단팔 접영 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 팔꿈치 각도와 풀 감각</div>
+            <div class="drill-info-row"><strong>방법</strong> 한 팔씩 번갈아 접영 동작</div>
+          </div>
+          <div class="drill-effect">✦ 팔꿈치 각도 교정</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=접영+단팔+드릴" target="_blank" rel="noopener">
+            ▶ YouTube에서 보기
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- .drill-page -->
+</div>
+
+<script>
+"use strict";
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  });
+});
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>
