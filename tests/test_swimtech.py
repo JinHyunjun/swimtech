@@ -1162,3 +1162,72 @@ def test_feedback_api(page: Page):
         f"/api/feedback 예상 외 응답: {resp.status}"
     )
     shot(page, "18_feedback_api")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 19. /equipment (수영 장비 가이드, v2.5.0)
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_equipment_load(page: Page):
+    """/equipment 페이지 로드 — 탭·장비 카드 렌더링 확인."""
+    goto(page, "/equipment")
+    page.wait_for_timeout(600)
+
+    # 탭 3개 (전체 / 기초장비 / 상급장비)
+    tabs = page.locator(".tab-btn")
+    assert tabs.count() == 3, f"tab-btn 개수 불일치: {tabs.count()}"
+
+    # 전체 탭에 장비 카드 존재
+    cards = page.locator("#grid-all .eq-card")
+    assert cards.count() >= 8, f"장비 카드 개수 부족: {cards.count()}"
+
+    shot(page, "19_equipment_load")
+
+
+def test_equipment_tab_switch(page: Page):
+    """/equipment — 탭 전환 시 기초장비 카드만 표시."""
+    goto(page, "/equipment")
+    page.wait_for_timeout(600)
+
+    basic_tab = page.locator(".tab-btn[data-tab='basic']")
+    basic_tab.click()
+    page.wait_for_timeout(400)
+
+    expect(basic_tab).to_have_class(re.compile(r"\bactive\b"))
+
+    # 기초장비 그리드 카드 수 확인 (오리발·킥판·풀부이 = 3개)
+    basic_cards = page.locator("#grid-basic .eq-card")
+    assert basic_cards.count() == 3, f"기초장비 카드 수 불일치: {basic_cards.count()}"
+
+    shot(page, "19_equipment_tab_basic")
+
+
+def test_equipment_card_toggle(page: Page):
+    """/equipment — 카드 클릭 시 상세 섹션 토글."""
+    goto(page, "/equipment")
+    page.wait_for_timeout(600)
+
+    first_header = page.locator("#grid-all .eq-card-header").first
+    first_header.click()
+    page.wait_for_timeout(300)
+
+    # 토글 후 .open 클래스 추가 확인
+    first_card = page.locator("#grid-all .eq-card").first
+    expect(first_card).to_have_class(re.compile(r"\bopen\b"))
+
+    # 상세 섹션 표시 확인
+    detail = first_card.locator(".eq-detail")
+    expect(detail).to_be_visible()
+
+    shot(page, "19_equipment_card_toggle")
+
+
+def test_equipment_landing_card(page: Page):
+    """/landing — 정보/도움 섹션에 장비 가이드 카드 존재 확인."""
+    goto(page, "/landing")
+    page.wait_for_timeout(500)
+
+    card = page.locator("a.menu-card[href='/equipment']")
+    expect(card).to_be_visible()
+
+    shot(page, "19_equipment_landing_card")

@@ -378,6 +378,11 @@ def challenge_page(request: Request):
     if redir: return redir
     return _serve("challenge.html")
 
+# 장비 가이드 (로그인 불필요)
+@app.get("/equipment")
+def equipment_page():
+    return _serve("equipment.html")
+
 # 피드백 페이지 (로그인 불필요)
 @app.get("/feedback")
 def feedback_page():
