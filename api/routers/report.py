@@ -119,14 +119,14 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "month": month,
         "total_distance": int(total_distance),
         "total_count": total_count,
-        "total_minutes": int(total_minutes),
-        "estimated_calories": round(total_distance / 1000 * 400),
-        "stroke_dist": {k: int(v) for k, v in stroke_dist.items()},
-        "weekday_freq": weekday_freq,
-        "weekly_dist": [int(v) for v in weekly_list],
+        "total_time": int(total_minutes),
+        "calories": round(total_distance / 1000 * 400),
+        "by_stroke": {k: int(v) for k, v in stroke_dist.items()},
+        "by_day": weekday_freq,
+        "by_week": [int(v) for v in weekly_list],
         "prev_distance": int(prev_distance),
         "growth_rate": growth_rate,
-        "max_streak": max_streak,
+        "streak": max_streak,
     }
 
 
@@ -164,19 +164,15 @@ def get_monthly_report(
         raise
     except Exception:
         return {
-            "year": year,
-            "month": month,
             "total_distance": 0,
             "total_count": 0,
-            "total_minutes": 0,
-            "estimated_calories": 0,
-            "stroke_dist": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
-            "weekday_freq": [0] * 7,
-            "weekly_dist": [0] * 5,
-            "prev_distance": 0,
-            "growth_rate": 0.0,
-            "max_streak": 0,
-            "share_token": _make_share_token(username, year, month),
+            "total_time": 0,
+            "calories": 0,
+            "by_stroke": {},
+            "by_week": {},
+            "by_day": {},
+            "growth_rate": 0,
+            "streak": 0,
         }
 
 

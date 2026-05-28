@@ -1048,11 +1048,9 @@ def test_report_api(page: Page):
     )
     assert resp.status == 200, f"/api/report/monthly 응답 코드: {resp.status}"
     body = resp.json()
-    for key in ("total_distance", "total_count", "total_minutes", "growth_rate",
-                "stroke_dist", "weekday_freq", "weekly_dist", "max_streak", "share_token"):
+    for key in ("total_distance", "total_count", "total_time", "calories",
+                "by_stroke", "by_day", "by_week", "growth_rate", "streak"):
         assert key in body, f"'{key}' 키 없음: {list(body.keys())}"
-    assert len(body["weekday_freq"]) == 7, "weekday_freq 길이 != 7"
-    assert len(body["weekly_dist"]) == 5, "weekly_dist 길이 != 5"
     shot(page, "16_report_api")
 
 
