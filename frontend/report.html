@@ -106,6 +106,7 @@
 .share-btn:hover { opacity: .85; }
 .share-btn.kakao { background: #FEE500; color: #191919; }
 .share-btn.link  { background: var(--surface); border: 0.5px solid var(--border); color: var(--text); }
+.share-btn.save  { background: var(--blue); color: #0a1628; }
 
 /* ── 빈 상태 ── */
 .rp-empty {
@@ -114,6 +115,7 @@
 .rp-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .rp-empty-text { font-size: 14px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -207,6 +209,7 @@
 
     <!-- 공유 버튼 -->
     <div class="share-bar">
+      <button class="share-btn save"  id="btn-save"  onclick="saveImage()">💾 이미지로 저장</button>
       <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()">🗨 카카오톡 공유</button>
       <button class="share-btn link"  id="btn-link"  onclick="copyLink()">🔗 링크 복사</button>
     </div>
@@ -398,6 +401,28 @@ async function copyLink() {
     btn.innerHTML = '✅ 복사됨';
     setTimeout(() => { btn.innerHTML = orig; }, 1500);
   } catch { alert('링크: ' + getShareUrl()); }
+}
+
+async function saveImage() {
+  if (typeof html2canvas === 'undefined') { alert('이미지 저장 기능을 사용할 수 없습니다.'); return; }
+  const btn = document.getElementById('btn-save');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ 생성 중...';
+  btn.disabled = true;
+  try {
+    const target = document.querySelector('.rp-page');
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#0a1628', scale: 2, useCORS: true, logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = `수영리포트_${curYear}년${curMonth}월.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch { alert('이미지 저장 중 오류가 발생했습니다.'); }
+  finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
 }
 </script>
 <script src="/static/theme.js"></script>

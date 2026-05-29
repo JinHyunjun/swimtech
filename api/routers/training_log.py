@@ -7,7 +7,7 @@ import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from routers.auth import verify_token
+from routers.auth import verify_token, decode_token
 
 router = APIRouter()
 
@@ -51,6 +51,46 @@ class FromPlanRequest(BaseModel):
     log_date: Optional[str] = None
     notes: Optional[str] = None
     plan_data: Dict[str, Any] = {}
+
+
+class GoalRequest(BaseModel):
+    year: int
+    month: int
+    goal_distance: int
+
+
+def _get_customer_id(request: Request) -> Optional[int]:
+    token = request.cookies.get("swimtech_token")
+    if not token:
+        return None
+    payload = decode_token(token)
+    return payload.get("customer_id")
+
+
+def _ensure_goals_table():
+    conn = _get_db()
+    cur = conn.cursor()
+    # 구버전(username 컬럼) 테이블이 있으면 삭제 후 재생성
+    cur.execute("""
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name='training_goals' AND column_name='username'
+    """)
+    if cur.fetchone():
+        cur.execute("DROP TABLE IF EXISTS training_goals")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS training_goals (
+            id            SERIAL PRIMARY KEY,
+            customer_id   INTEGER NOT NULL,
+            year          INTEGER NOT NULL,
+            month         INTEGER NOT NULL,
+            goal_distance INTEGER NOT NULL DEFAULT 0,
+            created_at    TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (customer_id, year, month)
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 @router.post("/from-plan")
@@ -105,6 +145,60 @@ def create_log_from_plan(req: FromPlanRequest, request: Request):
         }
     except Exception as e:
         raise HTTPException(500, f"DB 저장 오류: {e}")
+
+
+@router.post("/goal")
+def set_goal(req: GoalRequest, request: Request):
+    customer_id = _get_customer_id(request)
+    if not customer_id:
+        raise HTTPException(401, "로그인이 필요합니다.")
+    try:
+        _ensure_goals_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO training_goals (customer_id, year, month, goal_distance)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (customer_id, year, month)
+            DO UPDATE SET goal_distance = EXCLUDED.goal_distance, created_at = NOW()
+            RETURNING id
+        """, (customer_id, req.year, req.month, req.goal_distance))
+        row = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {"id": row[0], "goal_distance": req.goal_distance}
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.get("/goal")
+def get_goal(year: int, month: int, request: Request):
+    customer_id = _get_customer_id(request)
+    if not customer_id:
+        return {"goal_distance": 0, "achieved_distance": 0}
+    try:
+        _ensure_goals_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT goal_distance FROM training_goals
+            WHERE customer_id = %s AND year = %s AND month = %s
+        """, (customer_id, year, month))
+        row = cur.fetchone()
+        goal = row[0] if row else 0
+        cur.execute("""
+            SELECT COALESCE(SUM(total_distance), 0) FROM training_logs
+            WHERE customer_id = %s
+              AND EXTRACT(YEAR FROM log_date) = %s
+              AND EXTRACT(MONTH FROM log_date) = %s
+        """, (customer_id, year, month))
+        achieved = int(cur.fetchone()[0])
+        cur.close()
+        conn.close()
+        return {"goal_distance": goal, "achieved_distance": achieved}
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
 
 
 @router.get("")

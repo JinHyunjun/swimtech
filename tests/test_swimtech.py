@@ -1658,3 +1658,71 @@ def test_injury_expert_tip(page: Page):
     expect(page.locator(".hospital-section").first).to_be_visible()
 
     shot(page, "24_injury_expert_tip")
+
+
+# ═══════════════════════════════════════════════════════════════
+# Section 25 — 리포트 공유 / 훈련 목표 / 마크다운 / 인기글
+# ═══════════════════════════════════════════════════════════════
+
+@pytest.mark.section25
+def test_report_share_btn(page: Page):
+    """/report — 이미지저장·카카오·링크복사 공유 버튼 존재 확인."""
+    goto(page, "/report")
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#btn-save")).to_be_visible()
+    expect(page.locator("#btn-kakao")).to_be_visible()
+    expect(page.locator("#btn-link")).to_be_visible()
+
+    shot(page, "25_report_share_btn")
+
+
+@pytest.mark.section25
+def test_training_goal_ui(page: Page):
+    """/training-log — 월간 목표 설정 UI(섹션+버튼) 존재 확인."""
+    goto(page, "/training-log")
+    page.wait_for_timeout(800)
+
+    expect(page.locator("#goal-section")).to_be_visible()
+    expect(page.locator("#btn-set-goal")).to_be_visible()
+
+    shot(page, "25_training_goal_ui")
+
+
+@pytest.mark.section25
+def test_training_goal_api(page: Page):
+    """/api/training-log/goal — GET 요청 200 + goal_distance 필드 확인."""
+    res = page.request.get("https://localhost/api/training-log/goal?year=2026&month=5")
+    assert res.status == 200, f"status={res.status}"
+    data = res.json()
+    assert "goal_distance" in data, f"goal_distance 키 누락: {data}"
+    assert "achieved_distance" in data, f"achieved_distance 키 누락: {data}"
+
+    shot(page, "25_training_goal_api")
+
+
+@pytest.mark.section25
+def test_community_markdown_editor(page: Page):
+    """/community — 글쓰기 모달에 마크다운 툴바(#md-toolbar) 존재 확인."""
+    goto(page, "/community")
+    page.wait_for_timeout(800)
+
+    write_btn = page.locator("#write-btn")
+    if write_btn.is_visible():
+        write_btn.click()
+        page.wait_for_timeout(600)
+        expect(page.locator("#md-toolbar")).to_be_visible()
+        page.keyboard.press("Escape")
+
+    shot(page, "25_community_markdown_editor")
+
+
+@pytest.mark.section25
+def test_community_top_posts(page: Page):
+    """/community — 인기글 섹션(#popular-section)이 DOM에 존재하는지 확인."""
+    goto(page, "/community")
+    page.wait_for_timeout(1000)
+
+    expect(page.locator("#popular-section")).to_be_attached()
+
+    shot(page, "25_community_top_posts")

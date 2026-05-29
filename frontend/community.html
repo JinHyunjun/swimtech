@@ -281,6 +281,44 @@
 .report-form label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
 .report-form select { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 14px; font-size: 14px; outline: none; }
 .report-form select:focus { border-color: var(--blue); }
+
+/* ── 마크다운 툴바 ─────────────────────────────────── */
+.md-toolbar {
+  display: flex; gap: 4px; flex-wrap: wrap; padding: 6px 8px;
+  background: rgba(0,0,0,.15); border: 0.5px solid var(--border);
+  border-bottom: none; border-radius: 6px 6px 0 0;
+}
+.md-tool-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: 4px; padding: 3px 9px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; min-height: 26px; line-height: 1;
+}
+.md-tool-btn:hover { border-color: var(--blue); color: var(--blue); }
+.md-tab-bar { display: flex; border: 0.5px solid var(--border); border-top: none; border-bottom: none; }
+.md-tab {
+  flex: 1; padding: 5px; background: none; border: none; color: var(--muted);
+  font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s;
+}
+.md-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(0,180,216,.05); }
+.md-preview {
+  display: none; min-height: 180px; background: var(--surface);
+  border: 0.5px solid var(--border); border-top: none;
+  border-radius: 0 0 8px 8px; padding: 10px 14px;
+  font-size: 14px; color: var(--text); line-height: 1.8; word-break: break-word; overflow-y: auto;
+}
+.md-preview h1,.md-preview h2,.md-preview h3 { color: var(--text); margin: 8px 0 4px; }
+.md-preview code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: 13px; color: var(--blue); }
+.md-preview pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.md-preview blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 8px 0; }
+.md-preview a { color: var(--blue); }
+.md-preview ul,.md-preview ol { padding-left: 20px; }
+.detail-content-md { white-space: normal; }
+.detail-content-md h1,.detail-content-md h2,.detail-content-md h3 { color: var(--text); margin: 10px 0 5px; }
+.detail-content-md code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: 13px; color: var(--blue); }
+.detail-content-md pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.detail-content-md blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 8px 0; }
+.detail-content-md a { color: var(--blue); }
+.detail-content-md ul,.detail-content-md ol { padding-left: 20px; }
 </style>
 </head>
 <body>
@@ -381,8 +419,21 @@
         <input id="write-title" type="text" maxlength="200" placeholder="제목을 입력하세요">
       </div>
       <div>
-        <label>내용 <span style="color:var(--muted);font-size:11px;">(최대 10,000자)</span></label>
-        <textarea id="write-content" maxlength="10000" placeholder="내용을 입력하세요"></textarea>
+        <label>내용 <span style="color:var(--muted);font-size:11px;">(최대 10,000자 / 마크다운 지원)</span></label>
+        <div class="md-toolbar" id="md-toolbar">
+          <button type="button" class="md-tool-btn" onclick="insertMd('bold')" title="굵게"><b>B</b></button>
+          <button type="button" class="md-tool-btn" onclick="insertMd('italic')" title="기울임"><i>I</i></button>
+          <button type="button" class="md-tool-btn" onclick="insertMd('code')" title="코드">`코드`</button>
+          <button type="button" class="md-tool-btn" onclick="insertMd('link')" title="링크">🔗</button>
+          <button type="button" class="md-tool-btn" onclick="insertMd('quote')" title="인용구">❝인용</button>
+        </div>
+        <div class="md-tab-bar">
+          <button type="button" class="md-tab active" id="tab-write" onclick="switchMdTab('write')">작성</button>
+          <button type="button" class="md-tab" id="tab-preview" onclick="switchMdTab('preview')">미리보기</button>
+        </div>
+        <textarea id="write-content" maxlength="10000" placeholder="내용을 입력하세요"
+                  style="border-radius:0 0 8px 8px;border-top:none;"></textarea>
+        <div id="write-preview" class="md-preview"></div>
       </div>
       <div>
         <label>태그 <span style="color:var(--muted);font-size:11px;">(최대 10개, Enter 또는 쉼표로 추가)</span></label>
@@ -476,6 +527,7 @@ let mentionStart  = -1;
   loadPosts();
   loadTopPosts();
   loadPopularTags();
+  setInterval(loadTopPosts, 30000);
 })();
 
 function renderHeader() {
@@ -826,7 +878,7 @@ function renderDetail(post, comments) {
       <span>👁 ${post.views}</span>
     </div>
     ${imagesHtml}
-    <div class="detail-content">${esc(post.content)}</div>
+    <div class="detail-content detail-content-md">${renderMarkdown(post.content)}</div>
     ${tagsHtml}
     <div class="detail-actions">${actionBtns}</div>
     <div class="comments-section">
@@ -1002,6 +1054,7 @@ function openWriteModal() {
   renderWriteTags();
   renderImagePreviews();
   document.getElementById('img-file-input').value = '';
+  switchMdTab('write');
   document.getElementById('write-modal').classList.add('open');
 }
 
@@ -1023,6 +1076,7 @@ function openEdit(postId) {
   renderWriteTags();
   renderImagePreviews();
   document.getElementById('img-file-input').value = '';
+  switchMdTab('write');
   document.getElementById('write-modal').classList.add('open');
 }
 
@@ -1174,6 +1228,54 @@ async function submitReport() {
   } catch { alert('신고 중 오류가 발생했습니다.'); }
 }
 
+// ── 마크다운 에디터 ───────────────────────────────────
+function insertMd(type) {
+  const ta = document.getElementById('write-content');
+  if (!ta || ta.style.display === 'none') return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel   = ta.value.substring(start, end);
+  const map   = {
+    bold:  ['**', '**'],
+    italic:['_', '_'],
+    code:  ['`', '`'],
+    link:  ['[', '](https://)'],
+    quote: ['\n> ', ''],
+  };
+  const [before, after] = map[type] || ['', ''];
+  ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
+  const newPos = start + before.length + sel.length;
+  ta.setSelectionRange(newPos, newPos);
+  ta.focus();
+}
+
+function switchMdTab(tab) {
+  const writeEl   = document.getElementById('write-content');
+  const previewEl = document.getElementById('write-preview');
+  const toolbar   = document.getElementById('md-toolbar');
+  if (!writeEl || !previewEl) return;
+  if (tab === 'preview') {
+    previewEl.innerHTML = renderMarkdown(writeEl.value);
+    writeEl.style.display   = 'none';
+    previewEl.style.display = 'block';
+    if (toolbar) toolbar.style.display = 'none';
+  } else {
+    writeEl.style.display   = 'block';
+    previewEl.style.display = 'none';
+    if (toolbar) toolbar.style.display = 'flex';
+  }
+  document.querySelectorAll('.md-tab').forEach(t =>
+    t.classList.toggle('active', t.id === `tab-${tab}`)
+  );
+}
+
+function renderMarkdown(text) {
+  if (typeof marked === 'undefined') return esc(text);
+  try {
+    const html = marked.parse(String(text || ''));
+    return html.replace(/href=["']javascript:[^"']*["']/gi, 'href="#"');
+  } catch { return esc(text); }
+}
+
 // ── 유틸 ─────────────────────────────────────────────
 function esc(str) {
   if (str == null) return '';
@@ -1204,6 +1306,7 @@ document.getElementById('report-modal').addEventListener('click', function(e) {
   if (e.target === this) closeReportModal();
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/marked@5.1.2/marked.min.js"></script>
 <script src="/static/theme.js"></script>
 </body>
 </html>
