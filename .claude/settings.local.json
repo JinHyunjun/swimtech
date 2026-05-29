@@ -50,7 +50,9 @@
       "PowerShell($body = '{\"username\":\"admin\",\"password\":\"swimtech1234\"}'; $resp = Invoke-WebRequest -Uri \"https://localhost/auth/login\" -Method POST -ContentType \"application/json\" -Body $body -SkipCertificateCheck -ErrorAction SilentlyContinue; \"$\\($resp.StatusCode\\): $\\($resp.Content\\)\" 2>&1)",
       "PowerShell($hash = '$2b$12$nfe4x9oFlDanDSt4f0LmbeyGrSn9G1zF7a66sXuzfwlXkliBtpHXW'; docker exec swim-postgres psql -U swimtech -d swimtech -c \"UPDATE customers SET password_hash = '$hash' WHERE username IN \\('admin', 'kom1452'\\); SELECT username, LEFT\\(password_hash, 20\\) FROM customers WHERE username IN \\('admin', 'kom1452'\\);\" 2>&1)",
       "PowerShell(Get-Item *)",
-      "PowerShell(\\(Get-Item \"C:\\\\Users\\\\hyeon\\\\AppData\\\\Roaming\\\\MobaXterm\\\\slash\\\\mx86_64b\\\\var\\\\log\\\\xwin\\\\claude\\\\C--swim\\\\a9143fe4-6a01-4c77-a4f5-8209cc0f25ae\\\\tasks\\\\biwhfqe9w.output\"\\).Length; Get-Content \"C:\\\\Users\\\\hyeon\\\\AppData\\\\Roaming\\\\MobaXterm\\\\slash\\\\mx86_64b\\\\var\\\\log\\\\xwin\\\\claude\\\\C--swim\\\\a9143fe4-6a01-4c77-a4f5-8209cc0f25ae\\\\tasks\\\\biwhfqe9w.output\")"
+      "PowerShell(\\(Get-Item \"C:\\\\Users\\\\hyeon\\\\AppData\\\\Roaming\\\\MobaXterm\\\\slash\\\\mx86_64b\\\\var\\\\log\\\\xwin\\\\claude\\\\C--swim\\\\a9143fe4-6a01-4c77-a4f5-8209cc0f25ae\\\\tasks\\\\biwhfqe9w.output\"\\).Length; Get-Content \"C:\\\\Users\\\\hyeon\\\\AppData\\\\Roaming\\\\MobaXterm\\\\slash\\\\mx86_64b\\\\var\\\\log\\\\xwin\\\\claude\\\\C--swim\\\\a9143fe4-6a01-4c77-a4f5-8209cc0f25ae\\\\tasks\\\\biwhfqe9w.output\")",
+      "PowerShell(docker exec *)",
+      "PowerShell($content = [System.IO.File]::ReadAllText\\(\"C:\\\\swim\\\\db\\\\community_seed.sql\", [System.Text.Encoding]::UTF8\\).TrimStart\\([char]0xFEFF\\); [System.IO.File]::WriteAllText\\(\"C:\\\\swim\\\\db\\\\community_seed.sql\", $content, \\(New-Object System.Text.UTF8Encoding $False\\)\\); Write-Host \"BOM 제거 완료. 파일 크기: $\\(\\(Get-Item 'C:\\\\swim\\\\db\\\\community_seed.sql'\\).Length\\) bytes\")"
     ]
   }
 }
