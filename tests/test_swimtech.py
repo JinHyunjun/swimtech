@@ -323,10 +323,14 @@ def test_chat_load(page: Page):
 def test_chat_sample_cards(page: Page):
     """예시 질문 카드 1개 이상 존재 확인."""
     goto(page, "/chat")
-    page.wait_for_timeout(1000)
+    # DB 복원 세션이 있으면 웰컴 화면이 숨겨지므로 새 채팅을 강제로 생성
+    page.wait_for_timeout(1500)
+    page.click(".btn-new")
+    page.wait_for_timeout(500)
 
-    samples = page.locator(".sample-card")
-    assert samples.count() >= 1, f"sample-card count: {samples.count()}"
+    expect(page.locator(".sample-card").first()).to_be_visible()
+    assert page.locator(".sample-card").count() >= 1, \
+        f"sample-card count: {page.locator('.sample-card').count()}"
 
     shot(page, "05_chat_samples")
 
