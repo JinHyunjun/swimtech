@@ -119,14 +119,14 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "month": month,
         "total_distance": int(total_distance),
         "total_count": total_count,
-        "total_minutes": int(total_minutes),
-        "estimated_calories": round(total_distance / 1000 * 400),
-        "stroke_dist": {k: int(v) for k, v in stroke_dist.items()},
-        "weekday_freq": weekday_freq,
-        "weekly_dist": [int(v) for v in weekly_list],
+        "total_time": int(total_minutes),
+        "calories": round(total_distance / 1000 * 400),
+        "by_stroke": {k: int(v) for k, v in stroke_dist.items()},
+        "by_day": weekday_freq,
+        "by_week": [int(v) for v in weekly_list],
         "prev_distance": int(prev_distance),
         "growth_rate": growth_rate,
-        "max_streak": max_streak,
+        "streak": max_streak,
     }
 
 
@@ -162,8 +162,18 @@ def get_monthly_report(
         return stats
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"리포트 생성 오류: {e}")
+    except Exception:
+        return {
+            "total_distance": 0,
+            "total_count": 0,
+            "total_time": 0,
+            "calories": 0,
+            "by_stroke": {},
+            "by_week": {},
+            "by_day": {},
+            "growth_rate": 0,
+            "streak": 0,
+        }
 
 
 @router.get("/share/{token}")

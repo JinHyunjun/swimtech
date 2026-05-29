@@ -16,12 +16,13 @@
 }
 
 html[data-theme="light"] {
-  --bg:       #f0f7fa;
+  --bg:       #f0f4f8;
   --surface:  #ffffff;
-  --surface2: #e4eff6;
-  --border:   #b8d4e8;
-  --text:     #0a1628;
-  --muted:    #4a7a9b;
+  --card:     #ffffff;
+  --surface2: #e8eef5;
+  --border:   #c5d6e8;
+  --text:     #1a2332;
+  --muted:    #556b82;
   --blue:     #0096b4;
   --green:    #16a34a;
   --amber:    #d97706;
@@ -29,6 +30,11 @@ html[data-theme="light"] {
   --cyan:     #0891b2;
   --purple:   #7c3aed;
 }
+
+html[data-theme="light"] .strength-item   { background: #f0faf4; }
+html[data-theme="light"] .improvement-item{ background: #fff7ed; }
+html[data-theme="light"] .feedback-body   { color: #334155; }
+html[data-theme="light"] .drill-list li   { color: #334155; }
 
 /* ── 테마 토글 버튼 ─────────────────────────── */
 .theme-btn {

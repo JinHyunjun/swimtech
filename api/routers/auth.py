@@ -319,7 +319,7 @@ def register(body: RegisterRequest):
 
 
 @router.post("/login")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 def login(request: Request, body: LoginRequest, response: Response):
     ip = _get_client_ip(request)
     _check_login_blocked(ip)

@@ -229,6 +229,21 @@
 .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
 
 .hidden { display: none !important; }
+
+.term-yt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: #ff6b6b;
+  text-decoration: none;
+  border: 0.5px solid rgba(255,80,80,.3);
+  padding: 3px 10px;
+  border-radius: 4px;
+  transition: background .2s;
+}
+.term-yt-link:hover { background: rgba(255,0,0,.1); border-color: rgba(255,80,80,.55); }
 </style>
 </head>
 <body>
@@ -236,8 +251,8 @@
 
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
-      <a href="/" style="text-decoration:none;">
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="text-decoration:none;">
         <span class="logo">SwimTech</span>
       </a>
       <span class="logo-sub">수영 용어 사전</span>
@@ -438,6 +453,7 @@ function renderCards() {
       const accent = CAT_ACCENT[t.cat];
       const nameHl = highlight(t.name, searchQuery);
       const bodyHl = highlight(t.body, searchQuery);
+      const ytQ = encodeURIComponent('swimming ' + t.name.replace(/\s*\([^)]*\)/g, '').trim());
       html += `
         <div class="term-card" style="--card-accent:${accent}">
           <div class="term-head">
@@ -445,6 +461,8 @@ function renderCards() {
             <span class="term-badge ${CAT_BADGE[t.cat]}">${CAT_LABELS[t.cat]}</span>
           </div>
           <div class="term-body">${bodyHl}</div>
+          <a href="https://www.youtube.com/results?search_query=${ytQ}"
+             target="_blank" rel="noopener" class="term-yt-link">▶ YouTube</a>
         </div>`;
     });
     html += `</div></div>`;

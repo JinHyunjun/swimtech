@@ -307,6 +307,23 @@
   color: rgba(144,196,212,0.4);
 }
 
+.injury-yt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 9px 18px;
+  background: rgba(255,0,0,.08);
+  border: 0.5px solid rgba(255,80,80,.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s, border-color .2s;
+}
+.injury-yt-btn:hover { background: rgba(255,0,0,.16); border-color: rgba(255,80,80,.55); }
+
 @media (max-width: 500px) {
   .stretch-grid { grid-template-columns: 1fr; }
 }
@@ -316,16 +333,14 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
-      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">부상 예방 가이드</span>
     </div>
   </header>
 
   <div class="injury-wrap">
     <div class="injury-inner">
-      <a href="/" class="back-link">← 홈으로</a>
-
       <div class="injury-header">
         <h1>🩺 부상 예방 가이드</h1>
         <p>수영 중 흔히 발생하는 부위별 부상 원인과 예방 스트레칭을 확인하세요</p>
@@ -403,6 +418,39 @@
               <div class="check-item">팔꿈치 각도가 권장 범위 내인지 확인</div>
               <div class="check-item">좌우 대칭 점수 85점 이상 유지</div>
             </div>
+
+            <div class="stretch-title" style="margin-top:18px;">🏋️ 추가 강화 루틴</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">05</div>
+                <div class="stretch-name">저항 밴드 외회전</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">밴드 고정 후 팔꿈치 90° 유지하며 외회전 15회 × 3세트. 로테이터 커프 강화.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">06</div>
+                <div class="stretch-name">폼롤러 흉근 이완</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">폼롤러를 가슴 아래 가로로 놓고 팔을 양쪽으로 내려 30초 × 3회. 흉근 긴장 이완.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">07</div>
+                <div class="stretch-name">Y-T-W 어깨 안정화</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 3분</span>
+                  <span class="stretch-time diff-hard">어려움</span>
+                </div>
+                <div class="stretch-note">엎드린 자세에서 Y·T·W 모양으로 팔을 들어 각 10회. 견갑 주변 근육 강화.</div>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/results?search_query=swimmer+shoulder+stretching+injury+prevention"
+               target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 어깨 스트레칭 더 보기</a>
           </div>
         </div>
 
@@ -466,6 +514,39 @@
                 <div class="stretch-note">서서 발목을 잡고 허벅지 앞면을 30초 늘립니다. 벽을 짚어 균형을 잡아도 됩니다.</div>
               </div>
             </div>
+
+            <div class="stretch-title" style="margin-top:18px;">🏋️ 추가 강화 루틴</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">05</div>
+                <div class="stretch-name">햄스트링 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">누워서 한 다리를 들어 양손으로 감싸고 30초 유지. 좌우 교대로 각 2회. 무릎 뒤쪽 긴장 해소.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">06</div>
+                <div class="stretch-name">IT밴드 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">서서 한 발을 뒤로 교차하고 같은 방향으로 몸을 기울여 30초. 무릎 바깥 장경인대 이완.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">07</div>
+                <div class="stretch-name">힙 플렉서 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">한쪽 무릎을 꿇고 앞다리를 90°로 유지하며 골반을 앞으로 밀어 30초. 좌우 교대.</div>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/results?search_query=breaststroke+knee+injury+prevention+stretching"
+               target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 무릎 예방 운동 더 보기</a>
           </div>
         </div>
 
@@ -529,6 +610,39 @@
                 <div class="stretch-note">누워서 엉덩이를 들어 올려 15회 × 3세트. 엉덩이를 꽉 쥐고 허리를 곧게 유지합니다.</div>
               </div>
             </div>
+
+            <div class="stretch-title" style="margin-top:18px;">🏋️ 추가 강화 루틴</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">05</div>
+                <div class="stretch-name">슈퍼맨 운동</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 3분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">엎드려 양팔·양다리를 동시에 들어 3초 유지 × 15회. 허리 후면 근육 강화.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">06</div>
+                <div class="stretch-name">사이드 플랭크</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 3분</span>
+                  <span class="stretch-time diff-hard">어려움</span>
+                </div>
+                <div class="stretch-note">한쪽 팔꿈치를 짚고 몸을 일직선으로 들어 20초 유지 × 3세트. 좌우 교대. 측면 코어 강화.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">07</div>
+                <div class="stretch-name">무릎 당겨 허리 이완</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">누워서 양 무릎을 가슴 쪽으로 당겨 30초 유지 × 3회. 요추 압박 해소.</div>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/results?search_query=swimming+lower+back+core+strengthening+exercises"
+               target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 허리 코어 강화 더 보기</a>
           </div>
         </div>
 
@@ -582,6 +696,39 @@
                 <div class="stretch-note">매우 천천히 10회. 뒷목 근육이 당기면 즉시 속도를 늦춥니다. 통증 시 중단.</div>
               </div>
             </div>
+
+            <div class="stretch-title" style="margin-top:18px;">🏋️ 추가 강화 루틴</div>
+            <div class="stretch-grid">
+              <div class="stretch-card">
+                <div class="stretch-num">04</div>
+                <div class="stretch-name">턱 당기기 (Chin Tuck)</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">턱을 뒤로 당겨 5초 유지 × 10회. 목 앞쪽 심층 근육을 강화해 자세를 안정시킵니다.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">05</div>
+                <div class="stretch-name">사각근 스트레칭</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 1분</span>
+                  <span class="stretch-time diff-medium">보통</span>
+                </div>
+                <div class="stretch-note">머리를 한쪽으로 기울이고 반대 손으로 어깨를 아래로 당겨 30초. 좌우 교대.</div>
+              </div>
+              <div class="stretch-card">
+                <div class="stretch-num">06</div>
+                <div class="stretch-name">흉추 가동 운동</div>
+                <div class="stretch-meta">
+                  <span class="stretch-time">⏱ 2분</span>
+                  <span class="stretch-time diff-easy">쉬움</span>
+                </div>
+                <div class="stretch-note">의자에 앉아 등받이 위에 양손을 얹고 상체를 부드럽게 뒤로 젖혀 10회. 흉추 가동성 개선.</div>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/results?search_query=swimming+neck+stretching+injury+prevention"
+               target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 목 스트레칭 더 보기</a>
 
             <div class="check-section" style="display:none">
               <div class="check-title">📊 SwimTech 분석으로 확인할 것</div>

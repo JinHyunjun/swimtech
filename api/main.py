@@ -442,6 +442,13 @@ def equipment_page():
 def feedback_page():
     return _serve("feedback.html")
 
+# 훈련 일지 (로그인 필요)
+@app.get("/training-log")
+def training_log_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("training_log.html")
+
 # 코치 연동 페이지 (로그인 필요)
 @app.get("/coach")
 def coach_page(request: Request):
