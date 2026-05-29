@@ -523,7 +523,7 @@ def test_badges_progress_bar(page: Page):
     goto(page, "/badges")
     page.wait_for_timeout(1500)
 
-    expect(page.locator("#prog-bar")).to_be_visible()
+    expect(page.locator(".progress-bar-bg")).to_be_visible()
     expect(page.locator("#prog-earned")).to_be_visible()
     expect(page.locator("#prog-total")).to_be_visible()
 
@@ -1529,3 +1529,127 @@ def test_videos_clickable(page: Page):
     assert href and "youtube" in href, f"YouTube URL이 아님: {href}"
 
     shot(page, "23_videos_clickable")
+
+
+# ── 섹션 24: 기능/콘텐츠 개선 v2.6.0 ──────────────────────────────────────
+
+
+def test_plan_favorite_api(page: Page):
+    """/api/plans — 플랜 즐겨찾기 토글 API 응답 확인."""
+    res = page.request.get("https://localhost/api/plans")
+    assert res.status == 200
+    plans = res.json().get("plans", [])
+
+    if plans:
+        plan_id = plans[0]["id"]
+        r = page.request.post(f"https://localhost/api/plans/{plan_id}/favorite")
+        assert r.status == 200, f"즐겨찾기 API 오류: {r.status}"
+        assert r.json().get("status") in ("added", "removed")
+
+    shot(page, "24_plan_favorite_api")
+
+
+def test_plan_favorites_list_api(page: Page):
+    """/api/plans/favorites — 즐겨찾기 목록 API."""
+    res = page.request.get("https://localhost/api/plans/favorites")
+    assert res.status == 200
+    assert "plans" in res.json()
+
+    shot(page, "24_plan_favorites_list_api")
+
+
+def test_plan_share_api(page: Page):
+    """/api/plans/{id}/share — 공유 토큰 발급 API."""
+    res = page.request.get("https://localhost/api/plans")
+    assert res.status == 200
+    plans = res.json().get("plans", [])
+
+    if plans:
+        plan_id = plans[0]["id"]
+        r = page.request.get(f"https://localhost/api/plans/{plan_id}/share")
+        assert r.status == 200
+        data = r.json()
+        assert "share_token" in data
+        assert "share_url" in data
+
+    shot(page, "24_plan_share_api")
+
+
+def test_plan_myplan_fav_share_buttons(page: Page):
+    """/plan 내 플랜 탭 — 즐겨찾기·공유 버튼 존재 확인."""
+    goto(page, "/plan")
+    page.wait_for_timeout(600)
+
+    page.click('[data-tab="myplan"]')
+    page.wait_for_timeout(1200)
+
+    cards = page.locator(".myplan-card")
+    if cards.count() > 0:
+        cards.first.locator(".myplan-card-header").click()
+        page.wait_for_timeout(400)
+        expect(page.locator(".btn-fav-plan").first).to_be_visible()
+        expect(page.locator(".btn-share-plan").first).to_be_visible()
+
+    shot(page, "24_plan_myplan_fav_share_buttons")
+
+
+def test_badge_log_based_api(page: Page):
+    """/api/badges — 훈련 일지 기반 뱃지 포함 여부 확인."""
+    res = page.request.get("https://localhost/api/badges")
+    assert res.status == 200
+    badge_ids = [b["id"] for b in res.json().get("badges", [])]
+    assert "first_log" in badge_ids, "first_log 뱃지 누락"
+    assert "log_dist_1km" in badge_ids, "log_dist_1km 뱃지 누락"
+    assert "log_streak_7" in badge_ids, "log_streak_7 뱃지 누락"
+
+    shot(page, "24_badge_log_based_api")
+
+
+def test_drill_butterfly_count(page: Page):
+    """/drill — 접영 탭에 드릴이 8개 이상 있는지 확인."""
+    goto(page, "/drill")
+    page.wait_for_timeout(600)
+
+    page.click('[data-tab="butterfly"]')
+    page.wait_for_timeout(400)
+
+    cards = page.locator("#tab-butterfly .drill-card")
+    assert cards.count() >= 8, f"접영 드릴 수 부족: {cards.count()}"
+
+    shot(page, "24_drill_butterfly_count")
+
+
+def test_faq_category_counts(page: Page):
+    """/faq — 각 카테고리 탭에 FAQ가 3개 이상 표시되는지 확인."""
+    goto(page, "/faq")
+    page.wait_for_timeout(600)
+
+    for cat in ["equipment", "training", "correction"]:
+        page.click(f'[data-cat="{cat}"]')
+        page.wait_for_timeout(300)
+        total = page.locator(f'.faq-item[data-cat="{cat}"]').count()
+        assert total >= 3, f"{cat} FAQ 수 부족: {total}"
+
+    shot(page, "24_faq_category_counts")
+
+
+def test_glossary_term_count(page: Page):
+    """/glossary — 용어 카드가 18개 이상 렌더링되는지 확인."""
+    goto(page, "/glossary")
+    page.wait_for_timeout(600)
+
+    cards = page.locator(".term-card")
+    assert cards.count() >= 18, f"용어 카드 수 부족: {cards.count()}"
+
+    shot(page, "24_glossary_term_count")
+
+
+def test_injury_expert_tip(page: Page):
+    """/injury — 전문가 TIP 및 병원 안내 섹션 존재 확인."""
+    goto(page, "/injury")
+    page.wait_for_timeout(500)
+
+    expect(page.locator(".tip-section").first).to_be_visible()
+    expect(page.locator(".hospital-section").first).to_be_visible()
+
+    shot(page, "24_injury_expert_tip")

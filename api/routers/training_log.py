@@ -29,9 +29,11 @@ def _ensure_table():
             log_date    DATE NOT NULL DEFAULT CURRENT_DATE,
             notes       TEXT,
             plan_data   JSONB,
+            distance_m  INTEGER NOT NULL DEFAULT 0,
             created_at  TIMESTAMPTZ DEFAULT NOW()
         )
     """)
+    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS distance_m INTEGER NOT NULL DEFAULT 0")
     conn.commit()
     cur.close()
     conn.close()
@@ -58,12 +60,13 @@ def create_log_from_plan(req: FromPlanRequest, request: Request):
         username = _get_username(request)
         log_date = req.log_date or str(date.today())
         import json
+        dist = int(req.plan_data.get("total_distance") or req.plan_data.get("distance") or 0)
         conn = _get_db()
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO training_logs (username, plan_name, log_date, notes, plan_data)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO training_logs (username, plan_name, log_date, notes, plan_data, distance_m)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id, created_at
             """,
             (
@@ -72,6 +75,7 @@ def create_log_from_plan(req: FromPlanRequest, request: Request):
                 log_date,
                 req.notes or "",
                 json.dumps(req.plan_data, ensure_ascii=False),
+                dist,
             ),
         )
         row = cur.fetchone()
@@ -82,8 +86,14 @@ def create_log_from_plan(req: FromPlanRequest, request: Request):
         # 참여 중인 챌린지에 거리 자동 반영
         try:
             from routers.challenge import update_challenge_progress
-            dist = int(req.plan_data.get("total_distance") or req.plan_data.get("distance") or 0)
             update_challenge_progress(username, dist)
+        except Exception:
+            pass
+
+        # 훈련 일지 뱃지 자동 체크
+        try:
+            from routers.badge import check_badges_on_log
+            check_badges_on_log(username)
         except Exception:
             pass
 

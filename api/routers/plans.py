@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import secrets
 from typing import Any, Dict
 
 import psycopg2
@@ -32,9 +33,21 @@ def _ensure_table():
             focus_stroke     VARCHAR(50),
             level            VARCHAR(50),
             plan_content     JSONB,
+            share_token      VARCHAR(64),
             created_at       TIMESTAMPTZ DEFAULT NOW()
         )
     """)
+    cur.execute("ALTER TABLE custom_plans ADD COLUMN IF NOT EXISTS share_token VARCHAR(64)")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS plan_favorites (
+            id         SERIAL PRIMARY KEY,
+            username   VARCHAR(100) NOT NULL,
+            plan_id    INTEGER NOT NULL REFERENCES custom_plans(id) ON DELETE CASCADE,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (username, plan_id)
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_plan_fav_user ON plan_favorites(username)")
     conn.commit()
     cur.close()
     conn.close()
@@ -152,6 +165,102 @@ def delete_plan(plan_id: int, request: Request):
         if not deleted:
             raise HTTPException(404, "플랜을 찾을 수 없습니다")
         return {"deleted": True, "id": plan_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.post("/{plan_id}/favorite")
+def toggle_plan_favorite(plan_id: int, request: Request):
+    username = _get_username(request)
+    if username == "guest":
+        raise HTTPException(401, "로그인이 필요합니다")
+    try:
+        _ensure_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM custom_plans WHERE id = %s AND username = %s", (plan_id, username))
+        if not cur.fetchone():
+            cur.close(); conn.close()
+            raise HTTPException(404, "플랜을 찾을 수 없습니다")
+        cur.execute("SELECT id FROM plan_favorites WHERE username = %s AND plan_id = %s", (username, plan_id))
+        existing = cur.fetchone()
+        if existing:
+            cur.execute("DELETE FROM plan_favorites WHERE id = %s", (existing[0],))
+            conn.commit()
+            cur.close(); conn.close()
+            return {"status": "removed"}
+        else:
+            cur.execute("INSERT INTO plan_favorites (username, plan_id) VALUES (%s,%s)", (username, plan_id))
+            conn.commit()
+            cur.close(); conn.close()
+            return {"status": "added"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.get("/favorites")
+def get_plan_favorites(request: Request):
+    username = _get_username(request)
+    if username == "guest":
+        raise HTTPException(401, "로그인이 필요합니다")
+    try:
+        _ensure_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT cp.id, cp.plan_name, cp.goal, cp.sessions_per_week, cp.session_duration,
+                   cp.focus_stroke, cp.level, cp.plan_content, cp.created_at
+            FROM plan_favorites pf
+            JOIN custom_plans cp ON cp.id = pf.plan_id
+            WHERE pf.username = %s
+            ORDER BY pf.created_at DESC
+        """, (username,))
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return {
+            "plans": [
+                {
+                    "id": r[0], "plan_name": r[1], "goal": r[2],
+                    "sessions_per_week": r[3], "session_duration": r[4],
+                    "focus_stroke": r[5], "level": r[6],
+                    "plan_content": r[7], "created_at": str(r[8]),
+                    "is_favorite": True,
+                }
+                for r in rows
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.get("/{plan_id}/share")
+def get_plan_share(plan_id: int, request: Request):
+    username = _get_username(request)
+    if username == "guest":
+        raise HTTPException(401, "로그인이 필요합니다")
+    try:
+        _ensure_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, share_token FROM custom_plans WHERE id = %s AND username = %s",
+                    (plan_id, username))
+        row = cur.fetchone()
+        if not row:
+            cur.close(); conn.close()
+            raise HTTPException(404, "플랜을 찾을 수 없습니다")
+        token = row[1]
+        if not token:
+            token = secrets.token_urlsafe(32)
+            cur.execute("UPDATE custom_plans SET share_token = %s WHERE id = %s", (token, plan_id))
+            conn.commit()
+        cur.close(); conn.close()
+        return {"plan_id": plan_id, "share_token": token, "share_url": f"/plan/share/{token}"}
     except HTTPException:
         raise
     except Exception as e:

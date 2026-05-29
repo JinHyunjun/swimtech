@@ -95,6 +95,11 @@
 .myplan-session-day { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .btn-del-plan { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: none; border: 0.5px solid rgba(248,113,113,.4); color: #f87171; cursor: pointer; transition: background .15s; }
 .btn-del-plan:hover { background: rgba(248,113,113,.08); }
+.btn-fav-plan { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: none; border: 0.5px solid rgba(251,191,36,.35); color: #fbbf24; cursor: pointer; transition: background .15s, border-color .15s; }
+.btn-fav-plan:hover { background: rgba(251,191,36,.08); }
+.btn-fav-plan.active { background: rgba(251,191,36,.14); border-color: rgba(251,191,36,.6); }
+.btn-share-plan { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: none; border: 0.5px solid rgba(72,202,228,.35); color: #48cae4; cursor: pointer; transition: background .15s; }
+.btn-share-plan:hover { background: rgba(72,202,228,.08); }
 .myplan-source-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
 .badge-local { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
 .badge-cloud { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
@@ -1675,12 +1680,30 @@ function buildMyPlanCard(plan) {
     </div>
     <div class="myplan-card-body">
       ${weeksHTML || '<div style="color:var(--muted);font-size:12px;">플랜 내용이 없습니다</div>'}
-      <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+      <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+        ${!plan._local ? `<button class="btn-fav-plan" data-id="${plan.id}">☆ 즐겨찾기</button>` : ''}
+        ${!plan._local ? `<button class="btn-share-plan" data-id="${plan.id}">🔗 공유</button>` : ''}
         <button class="btn-del-plan" data-id="${plan.id}" data-local="${plan._local ? '1' : '0'}">🗑 삭제</button>
       </div>
     </div>`;
 
   card.querySelector('.myplan-card-header').addEventListener('click', () => card.classList.toggle('open'));
+
+  const favBtn = card.querySelector('.btn-fav-plan');
+  if (favBtn) {
+    favBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await togglePlanFavorite(plan.id, favBtn);
+    });
+  }
+  const shareBtn = card.querySelector('.btn-share-plan');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await sharePlan(plan.id);
+    });
+  }
+
   card.querySelector('.btn-del-plan').addEventListener('click', e => {
     e.stopPropagation();
     const isLocal = e.currentTarget.dataset.local === '1';
@@ -1718,6 +1741,36 @@ async function deletePlan(id, card) {
 function checkEmptyList() {
   const list = document.getElementById('myplan-list');
   if (list && list.children.length === 0) loadMyPlans();
+}
+
+async function togglePlanFavorite(planId, btn) {
+  try {
+    const res = await fetch(`/api/plans/${planId}/favorite`, { method: 'POST', credentials: 'include' });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (data.status === 'added') {
+      btn.textContent = '⭐ 즐겨찾기';
+      btn.classList.add('active');
+    } else {
+      btn.textContent = '☆ 즐겨찾기';
+      btn.classList.remove('active');
+    }
+  } catch {
+    alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+  }
+}
+
+async function sharePlan(planId) {
+  try {
+    const res = await fetch(`/api/plans/${planId}/share`, { credentials: 'include' });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const url = window.location.origin + data.share_url;
+    await navigator.clipboard.writeText(url).catch(() => {});
+    alert(`공유 링크가 클립보드에 복사됐습니다!\n${url}`);
+  } catch {
+    alert('공유 링크 생성 중 오류가 발생했습니다.');
+  }
 }
 
 /* ══════════════════════════════════════════════
