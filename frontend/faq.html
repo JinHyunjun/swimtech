@@ -180,10 +180,13 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.cat-shoot  { background: rgba(0,180,216,.12);  color: #00b4d8;  border: 0.5px solid rgba(0,180,216,.25); }
-.cat-ai     { background: rgba(167,139,250,.1); color: #a78bfa; border: 0.5px solid rgba(167,139,250,.25); }
-.cat-account{ background: rgba(74,222,128,.1);  color: #4ade80; border: 0.5px solid rgba(74,222,128,.25); }
-.cat-feature{ background: rgba(245,158,11,.1);  color: #f59e0b; border: 0.5px solid rgba(245,158,11,.25); }
+.cat-shoot     { background: rgba(0,180,216,.12);  color: #00b4d8;  border: 0.5px solid rgba(0,180,216,.25); }
+.cat-ai        { background: rgba(167,139,250,.1); color: #a78bfa; border: 0.5px solid rgba(167,139,250,.25); }
+.cat-account   { background: rgba(74,222,128,.1);  color: #4ade80; border: 0.5px solid rgba(74,222,128,.25); }
+.cat-feature   { background: rgba(245,158,11,.1);  color: #f59e0b; border: 0.5px solid rgba(245,158,11,.25); }
+.cat-equipment { background: rgba(96,165,250,.1);  color: #60a5fa; border: 0.5px solid rgba(96,165,250,.25); }
+.cat-training  { background: rgba(52,211,153,.1);  color: #34d399; border: 0.5px solid rgba(52,211,153,.25); }
+.cat-correction{ background: rgba(251,113,133,.1); color: #fb7185; border: 0.5px solid rgba(251,113,133,.25); }
 
 .faq-q-text { flex: 1; }
 .faq-arrow {
@@ -262,6 +265,9 @@
         <button class="tab-pill" data-cat="ai" onclick="switchCat(this)" style="display:none">🤖 분석</button>
         <button class="tab-pill" data-cat="account" onclick="switchCat(this)">👤 계정</button>
         <button class="tab-pill" data-cat="feature" onclick="switchCat(this)">🏊 기능</button>
+        <button class="tab-pill" data-cat="equipment" onclick="switchCat(this)">🥽 장비</button>
+        <button class="tab-pill" data-cat="training" onclick="switchCat(this)">💪 훈련</button>
+        <button class="tab-pill" data-cat="correction" onclick="switchCat(this)">🎯 영법 교정</button>
       </div>
 
       <!-- FAQ 목록 -->
@@ -404,6 +410,42 @@
           </div>
         </div>
 
+        <!-- 계정 추가 질문 -->
+        <div class="faq-item" data-cat="account" data-q="비밀번호를 잊어버렸어요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-account">👤 계정</span>
+            <span class="faq-q-text">비밀번호를 잊어버렸어요. 어떻게 하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            로그인 페이지 하단의 <strong>"비밀번호 찾기"</strong>를 이용하거나, 소셜 로그인(Google/카카오)으로 접속하면 비밀번호 없이 이용할 수 있습니다.<br>
+            일반 계정은 가입 시 사용한 이메일로 재설정 링크를 받을 수 있습니다.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="account" data-q="닉네임을 변경할 수 있나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-account">👤 계정</span>
+            <span class="faq-q-text">닉네임을 변경할 수 있나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            현재 닉네임은 소셜 로그인 최초 가입 시 설정됩니다. 변경이 필요하다면 <strong>피드백</strong> 메뉴를 통해 요청해주세요. 빠르게 도움을 드리겠습니다.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="account" data-q="회원 탈퇴는 어떻게 하나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-account">👤 계정</span>
+            <span class="faq-q-text">회원 탈퇴는 어떻게 하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            피드백 메뉴에서 탈퇴 요청을 보내주시면 <strong>영업일 3일 이내</strong>에 모든 개인정보 및 데이터를 삭제해드립니다.<br>
+            훈련 기록, 분석 결과, 커뮤니티 게시물 등이 모두 삭제됩니다.
+          </div>
+        </div>
+
         <!-- 기능 -->
         <div class="faq-item" data-cat="feature" data-q="수영장 찾기는 어떻게 사용하나요">
           <button class="faq-q" onclick="toggleFaq(this)">
@@ -438,6 +480,154 @@
           <div class="faq-a">
             네! SwimTech는 <strong>PWA</strong>를 지원해 모바일 홈 화면에 설치할 수 있어요.
             갤러리에서 영상을 직접 업로드하거나 카메라로 바로 촬영도 가능합니다.
+          </div>
+        </div>
+
+        <!-- 기능 추가 질문 -->
+        <div class="faq-item" data-cat="feature" data-q="훈련 일지는 무엇인가요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-feature">🏊 기능</span>
+            <span class="faq-q-text">훈련 일지는 어떻게 사용하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            훈련 일지에서 날짜·영법·거리·시간·강도·컨디션을 기록할 수 있어요.<br>
+            기록이 쌓이면 <strong>월간 리포트</strong>에서 영법별 분포, 주차별 추이, 연속 출석일 등을 자동으로 확인할 수 있습니다.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="feature" data-q="챌린지 달성률은 어떻게 업데이트되나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-feature">🏊 기능</span>
+            <span class="faq-q-text">챌린지 달성률은 어떻게 업데이트되나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            훈련 플랜에서 <strong>"일지에 추가"</strong>를 누르거나 훈련 일지에 거리를 기록하면 챌린지 달성 거리가 자동으로 반영됩니다.<br>
+            챌린지 페이지는 <strong>30초마다 자동으로 갱신</strong>되어 실시간 달성률을 확인할 수 있어요.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="feature" data-q="수영장 즐겨찾기 기능이 있나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-feature">🏊 기능</span>
+            <span class="faq-q-text">수영장을 즐겨찾기 할 수 있나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            수영장 찾기 페이지에서 마음에 드는 수영장의 <strong>☆ 버튼</strong>을 클릭하면 즐겨찾기에 저장됩니다.<br>
+            "⭐ 즐겨찾기" 탭에서 저장한 수영장 목록을 한 번에 확인하고 바로 지도로 이동할 수 있어요.
+          </div>
+        </div>
+
+        <!-- 수영 장비 카테고리 -->
+        <div class="faq-item" data-cat="equipment" data-q="수영 초보자에게 꼭 필요한 장비는 무엇인가요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-equipment">🥽 장비</span>
+            <span class="faq-q-text">수영 초보자에게 꼭 필요한 장비는 무엇인가요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            최소한 <strong>수영복, 수경, 수모</strong> 세 가지가 필요합니다.<br>
+            수경은 UV 차단 기능이 있는 실내/실외 겸용이 좋고, 수경 모양은 얼굴 형태에 맞게 직접 착용해보고 선택하세요. 킥판은 대부분의 수영장에서 대여 가능합니다.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="equipment" data-q="풀부이와 킥판은 무엇에 사용하나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-equipment">🥽 장비</span>
+            <span class="faq-q-text">풀부이와 킥판은 어떤 훈련에 쓰나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            <strong>킥판</strong>은 킥 훈련 시 팔을 고정해 하체에만 집중할 때 사용합니다.<br>
+            <strong>풀부이(Pull Buoy)</strong>는 허벅지 사이에 끼워 하체를 띄우고 팔 동작(풀)에만 집중할 때 사용해요. 두 도구를 번갈아 사용하면 상·하체를 균형 있게 훈련할 수 있습니다.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="equipment" data-q="수영 패들은 언제 사용하나요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-equipment">🥽 장비</span>
+            <span class="faq-q-text">수영 패들은 언제, 어떻게 사용하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            <strong>핸드 패들</strong>은 손에 끼워 물 저항을 늘려 팔 근력과 당김 감각을 향상시킵니다.<br>
+            처음에는 작은 사이즈를 선택하세요. 어깨 부상 위험이 있으므로 과도한 사용은 피하고, 반드시 준비 운동 후 사용합니다.
+          </div>
+        </div>
+
+        <!-- 훈련 방법 카테고리 -->
+        <div class="faq-item" data-cat="training" data-q="수영을 얼마나 자주 해야 실력이 늘까요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-training">💪 훈련</span>
+            <span class="faq-q-text">수영을 얼마나 자주 해야 실력이 늘까요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            초보자는 <strong>주 3회</strong>가 이상적입니다. 근육 기억이 형성되려면 규칙적인 반복이 필요하고, 회복 시간도 필요합니다.<br>
+            주 5회 이상은 부상 위험이 높아질 수 있으니, 처음에는 주 3회로 시작해 체력에 맞게 늘려가세요.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="training" data-q="인터벌 훈련이란 무엇인가요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-training">💪 훈련</span>
+            <span class="faq-q-text">인터벌 훈련이란 무엇이고 어떻게 하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            인터벌 훈련은 <strong>고강도 수영 + 짧은 휴식</strong>을 반복하는 방식입니다.<br>
+            예: 100m를 최대 80% 강도로 수영 후 20초 휴식, 10회 반복. 심폐 능력과 기록 단축에 매우 효과적입니다. SwimTech 훈련 플랜에서 목표에 맞는 인터벌 세트를 선택할 수 있어요.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="training" data-q="웜업과 쿨다운은 왜 중요한가요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-training">💪 훈련</span>
+            <span class="faq-q-text">웜업과 쿨다운은 왜 꼭 해야 하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            <strong>웜업</strong>은 근육과 심폐 기능을 점진적으로 활성화시켜 부상을 예방합니다. 최소 200~400m를 천천히 수영하는 것을 권장합니다.<br>
+            <strong>쿨다운</strong>은 젖산을 빠르게 제거하고 회복을 도와 다음 훈련에 영향을 줄 수 있습니다. 200m 이상 배영이나 느린 자유형이 효과적입니다.
+          </div>
+        </div>
+
+        <!-- 영법 교정 카테고리 -->
+        <div class="faq-item" data-cat="correction" data-q="자유형에서 숨쉬기가 너무 어려워요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-correction">🎯 영법 교정</span>
+            <span class="faq-q-text">자유형에서 호흡이 너무 어렵습니다. 어떻게 교정하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            가장 흔한 실수는 <strong>머리를 너무 높이 드는 것</strong>입니다. 호흡 시 한쪽 귀가 물속에 있어야 하며, 입만 수면 위에 올라오면 됩니다.<br>
+            바디롤(몸통 회전)을 활용하면 작은 동작으로도 자연스럽게 호흡할 수 있습니다. 드릴 가이드의 <strong>사이드킥 드릴</strong>을 연습해보세요.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="correction" data-q="평영 킥이 비대칭이에요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-correction">🎯 영법 교정</span>
+            <span class="faq-q-text">평영 킥이 좌우 비대칭입니다. 어떻게 교정하나요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            킥보드를 잡고 평영 킥만 반복하면서 <strong>두 발이 동시에 차이는지</strong> 의식적으로 확인하세요.<br>
+            유리창 밖에서 보는 것처럼 수영장 벽에 있는 타일 선을 기준으로 똑바로 전진하는지 체크하는 것도 효과적입니다. 비대칭이 심하면 고관절 유연성 문제일 수 있으니 지상 스트레칭도 병행하세요.
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="correction" data-q="접영이 너무 힘들어요 체력문제인가요 자세 문제인가요">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span class="faq-cat-badge cat-correction">🎯 영법 교정</span>
+            <span class="faq-q-text">접영이 너무 힘든데, 체력 문제인가요 자세 문제인가요?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            대부분은 <strong>자세 문제</strong>입니다. 돌핀킥의 파형이 제대로 형성되지 않으면 불필요한 에너지 소모가 큽니다.<br>
+            킥보드로 돌핀킥 훈련을 집중적으로 하고, <strong>2킥 1풀의 리듬</strong>을 명확하게 체득하세요. 자세가 교정되면 같은 체력으로도 훨씬 편하게 수영할 수 있습니다.
           </div>
         </div>
 

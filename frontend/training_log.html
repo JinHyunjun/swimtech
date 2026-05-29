@@ -691,7 +691,30 @@ async function saveLog() {
     if (!r.ok) { showModalError(d.detail || '저장 실패'); return; }
     closeModal();
     refresh();
+    showReportToast(body.log_date);
   } catch { showModalError('네트워크 오류가 발생했습니다.'); }
+}
+
+function showReportToast(logDate) {
+  const existing = document.getElementById('report-toast');
+  if (existing) existing.remove();
+  const ym = logDate ? logDate.slice(0, 7) : '';
+  const toast = document.createElement('div');
+  toast.id = 'report-toast';
+  toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#0d2137;border:0.5px solid var(--blue);border-radius:10px;
+    padding:12px 18px;font-size:13px;color:var(--text);z-index:9999;
+    display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);
+    animation:slideUp .3s ease;`;
+  toast.innerHTML = `
+    <span>📊 월간 리포트가 자동으로 업데이트됩니다.</span>
+    <a href="/report" style="color:var(--blue);font-weight:600;text-decoration:none;white-space:nowrap;">리포트 보기 →</a>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1;">✕</button>`;
+  const style = document.createElement('style');
+  style.textContent = '@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(style);
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
 
 // ── 삭제 ─────────────────────────────────────────────────

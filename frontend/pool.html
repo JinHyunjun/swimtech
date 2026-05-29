@@ -160,6 +160,60 @@
   color: var(--blue);
   padding: 2px 8px 8px;
 }
+.pool-tab-bar {
+  display: flex;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.pool-tab-btn {
+  flex: 1;
+  padding: 9px 0;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  font-family: inherit;
+}
+.pool-tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.fav-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+.fav-btn:hover { transform: scale(1.2); }
+.fav-btn.fav-on { color: #f59e0b; }
+.fav-panel { display: none; flex: 1; overflow-y: auto; padding: 8px; }
+.fav-panel.active { display: block; }
+.fav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 0.5px solid transparent;
+  transition: all .15s;
+  margin-bottom: 4px;
+}
+.fav-item:hover { background: var(--surface2); border-color: var(--border); }
+.fav-item-top { display: flex; align-items: center; gap: 8px; }
+.fav-item-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.fav-item-addr { font-size: 11px; color: var(--muted); padding-left: 0; }
+.btn-fav-remove {
+  background: none; border: none; font-size: 13px; color: var(--muted);
+  cursor: pointer; padding: 0 4px; transition: color .15s;
+}
+.btn-fav-remove:hover { color: #f87171; }
 @media (max-width: 768px) {
   .pool-layout {
     grid-template-columns: 1fr;
@@ -205,11 +259,22 @@
         </button>
       </div>
 
-      <div class="pool-list-wrap">
+      <div class="pool-tab-bar">
+        <button class="pool-tab-btn active" id="tab-nearby" onclick="switchPoolTab('nearby')">📍 주변 수영장</button>
+        <button class="pool-tab-btn" id="tab-fav" onclick="switchPoolTab('fav')">⭐ 즐겨찾기</button>
+      </div>
+
+      <div class="pool-list-wrap" id="panel-nearby">
         <div class="pool-list-title">주변 수영장 (거리순)</div>
         <div id="pool-count" class="pool-count"></div>
         <div id="pool-list-body">
           <div class="pool-loading">📡 위치를 불러오는 중...</div>
+        </div>
+      </div>
+
+      <div class="fav-panel" id="panel-fav">
+        <div id="fav-list-body">
+          <div class="pool-loading">즐겨찾기를 불러오는 중...</div>
         </div>
       </div>
     </div>
@@ -223,8 +288,11 @@
 (async () => {
   try {
     const res = await fetch('/auth/me', { credentials: 'include' });
-    if (!res.ok) window.location.href = '/login';
-  } catch { window.location.href = '/login'; }
+    if (!res.ok) { window.location.href = '/login'; return; }
+  } catch { window.location.href = '/login'; return; }
+  await loadFavSet();
+  // panel-nearby starts visible, panel-fav starts hidden
+  document.getElementById('panel-nearby').style.display = '';
 })();
 
 async function logout() {
@@ -237,6 +305,106 @@ let markers = [];
 let poolData = [];
 let myLat = 37.5665, myLng = 126.9780;
 let _accumPages = [], _searchId = 0;
+let favSet = new Set();
+
+async function loadFavSet() {
+  try {
+    const res = await fetch('/api/pool/favorites', { credentials: 'include' });
+    if (!res.ok) return;
+    const d = await res.json();
+    favSet = new Set((d.favorites || []).map(f => f.pool_id));
+  } catch {}
+}
+
+async function toggleFav(e, idx) {
+  e.stopPropagation();
+  const p = poolData[idx];
+  if (!p) return;
+  const btn = e.currentTarget;
+  try {
+    const res = await fetch('/api/pool/favorite', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pool_id: p.id,
+        pool_name: p.place_name,
+        address: p.road_address_name || p.address_name || '',
+      }),
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (d.status === 'added') {
+      favSet.add(p.id);
+      btn.textContent = '⭐';
+      btn.classList.add('fav-on');
+      btn.title = '즐겨찾기 해제';
+    } else {
+      favSet.delete(p.id);
+      btn.textContent = '☆';
+      btn.classList.remove('fav-on');
+      btn.title = '즐겨찾기 추가';
+    }
+  } catch {}
+}
+
+function switchPoolTab(tab) {
+  document.getElementById('tab-nearby').classList.toggle('active', tab === 'nearby');
+  document.getElementById('tab-fav').classList.toggle('active', tab === 'fav');
+  document.getElementById('panel-nearby').style.display = tab === 'nearby' ? '' : 'none';
+  document.getElementById('panel-fav').classList.toggle('active', tab === 'fav');
+  if (tab === 'fav') renderFavList();
+}
+
+async function renderFavList() {
+  const body = document.getElementById('fav-list-body');
+  body.innerHTML = '<div class="pool-loading">즐겨찾기를 불러오는 중...</div>';
+  try {
+    const res = await fetch('/api/pool/favorites', { credentials: 'include' });
+    if (!res.ok) { body.innerHTML = '<div class="pool-empty">로그인 후 이용할 수 있습니다.</div>'; return; }
+    const d = await res.json();
+    const favs = d.favorites || [];
+    if (!favs.length) {
+      body.innerHTML = '<div class="pool-empty">즐겨찾기한 수영장이 없습니다.<br>주변 수영장에서 ☆을 눌러 추가해보세요!</div>';
+      return;
+    }
+    body.innerHTML = favs.map(f => `
+      <div class="fav-item" onclick="searchByFav(${JSON.stringify(f.pool_name).replace(/"/g,'&quot;')}, ${JSON.stringify(f.address).replace(/"/g,'&quot;')})">
+        <div class="fav-item-top">
+          <span style="font-size:14px;">⭐</span>
+          <span class="fav-item-name">${escHtmlPool(f.pool_name)}</span>
+          <button class="btn-fav-remove" onclick="removeFav(event, '${escHtmlPool(f.pool_id)}', this.closest('.fav-item'))" title="삭제">✕</button>
+        </div>
+        <div class="fav-item-addr">${escHtmlPool(f.address || '')}</div>
+      </div>`).join('');
+  } catch {
+    body.innerHTML = '<div class="pool-empty">즐겨찾기를 불러오지 못했습니다.</div>';
+  }
+}
+
+async function removeFav(e, poolId, itemEl) {
+  e.stopPropagation();
+  try {
+    await fetch('/api/pool/favorite', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pool_id: poolId, pool_name: '', address: '' }),
+    });
+    favSet.delete(poolId);
+    itemEl.remove();
+  } catch {}
+}
+
+function searchByFav(name, address) {
+  switchPoolTab('nearby');
+  document.getElementById('search-input').value = name;
+  searchByKeyword();
+}
+
+function escHtmlPool(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 function initMap(lat, lng) {
   const container = document.getElementById('map');
@@ -361,12 +529,14 @@ function renderList(places) {
 
   document.getElementById('pool-list-body').innerHTML = places.map((p, i) => {
     const dist = p.distance !== undefined ? formatDist(Number(p.distance)) : '';
+    const isFav = favSet.has(p.id);
     return `
       <div class="pool-item" id="pi-${i}" onclick="focusPool(${i})">
         <div class="pool-item-top">
           <span class="pool-rank">${i + 1}</span>
           <span class="pool-name">${p.place_name}</span>
           <span class="pool-dist">${dist}</span>
+          <button class="fav-btn${isFav ? ' fav-on' : ''}" onclick="toggleFav(event,${i})" title="${isFav ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${isFav ? '⭐' : '☆'}</button>
         </div>
         <div class="pool-addr">${p.road_address_name || p.address_name}</div>
       </div>`;

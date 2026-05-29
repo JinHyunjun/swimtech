@@ -292,6 +292,12 @@
         <button class="btn-new" onclick="newChat()">+ 새 채팅</button>
       </div>
       <div class="chat-list" id="chat-list"></div>
+      <div style="padding:10px 12px;border-top:0.5px solid var(--border);flex-shrink:0;">
+        <button onclick="clearHistory()" style="width:100%;background:none;border:0.5px solid rgba(248,113,113,.35);color:#f87171;border-radius:7px;padding:7px 0;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit;"
+                onmouseover="this.style.background='rgba(248,113,113,.08)'" onmouseout="this.style.background='none'">
+          🗑 히스토리 초기화
+        </button>
+      </div>
     </aside>
 
     <!-- ── 메인 ── -->
@@ -324,6 +330,38 @@ const SAMPLES = [
 let sessions = {};
 let activeId  = null;
 
+// ── DB 히스토리 저장/불러오기 ─────────────────────────
+async function saveMessageToDB(role, content) {
+  try {
+    await fetch('/api/chat/history', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, content }),
+    });
+  } catch {}
+}
+
+async function loadHistoryFromDB() {
+  try {
+    const r = await fetch('/api/chat/history', { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    return d.history || [];
+  } catch { return []; }
+}
+
+async function clearHistory() {
+  if (!confirm('모든 대화 히스토리를 초기화할까요?')) return;
+  try {
+    await fetch('/api/chat/history', { method: 'DELETE', credentials: 'include' });
+  } catch {}
+  sessions = {};
+  saveStorage();
+  newChat();
+  renderSidebar();
+}
+
 // ── 인증 ──────────────────────────────────────────────
 (async () => {
   try {
@@ -333,8 +371,26 @@ let activeId  = null;
 
   loadStorage();
   const ids = Object.keys(sessions);
-  if (ids.length === 0) newChat();
-  else activateChat(ids[ids.length - 1]);
+
+  if (ids.length === 0) {
+    // localStorage 없으면 DB에서 복원 시도
+    const history = await loadHistoryFromDB();
+    if (history.length > 0) {
+      const id = uuid();
+      sessions[id] = {
+        id,
+        sessionId: uuid(),
+        title: '이전 대화 복원',
+        messages: history.map(h => ({ role: h.role, content: h.content })),
+      };
+      saveStorage();
+      activateChat(id);
+    } else {
+      newChat();
+    }
+  } else {
+    activateChat(ids[ids.length - 1]);
+  }
 })();
 
 async function logout() {
@@ -453,6 +509,7 @@ async function sendMessage() {
   }
   s.messages.push({ role: 'user', content: question });
   saveStorage();
+  saveMessageToDB('user', question);
   renderMessages();
   renderSidebar();
 
@@ -482,8 +539,11 @@ async function sendMessage() {
     const data   = await res.json();
     const answer = data.text ?? data.answer ?? data.output ?? '응답을 받지 못했습니다.';
     s.messages.push({ role: 'bot', content: answer });
+    saveMessageToDB('bot', answer);
   } catch (err) {
-    s.messages.push({ role: 'bot', content: `⚠️ 연결 오류: ${err.message}\nFlowise 서버 상태를 확인해주세요.` });
+    const errMsg = `⚠️ 연결 오류: ${err.message}\nFlowise 서버 상태를 확인해주세요.`;
+    s.messages.push({ role: 'bot', content: errMsg });
+    saveMessageToDB('bot', errMsg);
   }
 
   saveStorage();

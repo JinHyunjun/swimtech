@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat
 from routers.auth import verify_token
 
 logging.basicConfig(level=logging.INFO)
@@ -111,6 +111,24 @@ CREATE TABLE IF NOT EXISTS coach_plans (
     content     TEXT NOT NULL,
     created_at  TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS pool_favorites (
+    id         SERIAL PRIMARY KEY,
+    username   VARCHAR(100) NOT NULL,
+    pool_id    VARCHAR(200) NOT NULL,
+    pool_name  VARCHAR(200) NOT NULL,
+    address    TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (username, pool_id)
+);
+CREATE TABLE IF NOT EXISTS chat_histories (
+    id         SERIAL PRIMARY KEY,
+    username   VARCHAR(100) NOT NULL,
+    role       VARCHAR(10) NOT NULL CHECK (role IN ('user','bot')),
+    content    TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_pool_fav_user  ON pool_favorites(username);
+CREATE INDEX IF NOT EXISTS idx_chat_hist_user ON chat_histories(username, created_at DESC);
 INSERT INTO challenges (title, description, goal_distance, challenge_type, start_date, end_date)
 VALUES
   ('5월 100km 챌린지', '5월 한 달 동안 총 100km를 달성하세요! 매일 꾸준히 수영하면 충분히 달성할 수 있습니다.', 100000, 'distance', '2026-05-01', '2026-05-31'),
@@ -198,6 +216,8 @@ app.include_router(report.router,         prefix="/api/report",          tags=["
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
 app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
 app.include_router(coach.router,          prefix="/api/coach",           tags=["코치"])
+app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
+app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
 
 @app.get("/api/health")
 def health():
