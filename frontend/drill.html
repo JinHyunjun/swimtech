@@ -110,7 +110,19 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+.drill-level {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+.lv-beginner { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
+.lv-intermediate { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
+.lv-advanced { background: rgba(248,113,113,.12); color: #f87171; border: 0.5px solid rgba(248,113,113,.3); }
 
 .drill-name {
   font-size: 15px;
@@ -233,7 +245,7 @@
       <div class="drill-grid">
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 01</div>
+          <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">핑거 드래그 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐</span>
@@ -244,13 +256,11 @@
             <div class="drill-info-row"><strong>방법</strong> 리커버리 시 손가락을 수면에 끌며 팔꿈치를 먼저 올린다</div>
           </div>
           <div class="drill-effect">✦ 하이 엘보우 자세 교정</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=핑거+드래그+드릴+자유형" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+finger+drag+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 02</div>
+          <div class="drill-num">DRILL 02 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">캐치업 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐</span>
@@ -261,13 +271,11 @@
             <div class="drill-info-row"><strong>방법</strong> 앞손이 뻗어있는 동안 뒷손이 따라잡을 때까지 기다린다</div>
           </div>
           <div class="drill-effect">✦ 스트로크 리듬 개선</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=캐치업+드릴+자유형" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+catch+up+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 03</div>
+          <div class="drill-num">DRILL 03 <span class="drill-level lv-intermediate">중급</span></div>
           <div class="drill-name">단팔 자유형 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐⭐</span>
@@ -278,13 +286,11 @@
             <div class="drill-info-row"><strong>방법</strong> 한 팔은 옆에 붙이고 반대팔로만 수영</div>
           </div>
           <div class="drill-effect">✦ 팔꿈치 각도와 풀 감각 훈련</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=단팔+자유형+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+single+arm+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 04</div>
+          <div class="drill-num">DRILL 04 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">6비트 킥 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐</span>
@@ -295,9 +301,52 @@
             <div class="drill-info-row"><strong>방법</strong> 킥보드 잡고 6비트 킥만 집중 연습</div>
           </div>
           <div class="drill-effect">✦ 발차기 빈도 향상</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=6비트+킥+자유형+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+6+beat+kick+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 05 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">사이드킥 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 7분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 바디롤(몸통 회전) 감각 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 옆으로 누운 자세에서 킥을 유지하며 전진, 스트로크 시 반대쪽으로 전환</div>
+          </div>
+          <div class="drill-effect">✦ 바디롤과 균형 감각 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+side+kick+body+rotation+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 06 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">풀부이 자유형 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 팔 당김 효율성 집중 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 풀부이로 하체를 띄운 채 팔 동작만으로 수영</div>
+          </div>
+          <div class="drill-effect">✦ 팔 스트로크 효율 극대화</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+pull+buoy+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 07 <span class="drill-level lv-advanced">고급</span></div>
+          <div class="drill-name">6-1-6 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 10분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 킥 리듬과 스트로크 연결 통합 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 6번 킥 → 1번 스트로크 → 6번 킥을 리듬 있게 반복</div>
+          </div>
+          <div class="drill-effect">✦ 전체 영법 타이밍 통합</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=freestyle+6+1+6+drill+timing" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
       </div>
@@ -308,7 +357,7 @@
       <div class="drill-grid">
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 01</div>
+          <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">양팔 동시 배영 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐</span>
@@ -319,13 +368,11 @@
             <div class="drill-info-row"><strong>방법</strong> 양팔을 동시에 올리고 내리는 동작 반복</div>
           </div>
           <div class="drill-effect">✦ 좌우 대칭 개선</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=배영+양팔+동시+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=backstroke+double+arm+pull+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 02</div>
+          <div class="drill-num">DRILL 02 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">손 위치 확인 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐</span>
@@ -336,9 +383,52 @@
             <div class="drill-info-row"><strong>방법</strong> 입수 시 손이 어깨 너비로 들어가는지 확인</div>
           </div>
           <div class="drill-effect">✦ 스트레이트 풀 방지</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=배영+손+위치+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=backstroke+hand+entry+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 03 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">배영 단팔 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 한쪽 팔 당김 감각 강화</div>
+            <div class="drill-info-row"><strong>방법</strong> 한 팔은 허벅지에 붙이고 반대팔로만 배영</div>
+          </div>
+          <div class="drill-effect">✦ 풀 패턴과 바디롤 연계</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=backstroke+single+arm+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 04 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">배영 킥보드 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 플러터킥 힘 강화 및 균형 훈련</div>
+            <div class="drill-info-row"><strong>방법</strong> 가슴에 킥보드를 얹고 등으로 누운 채 킥만 반복</div>
+          </div>
+          <div class="drill-effect">✦ 배영 킥 파워와 리듬 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=backstroke+kickboard+drill+flutter+kick" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 05 <span class="drill-level lv-advanced">고급</span></div>
+          <div class="drill-name">배영 바디롤 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 스트로크마다 바디롤 극대화</div>
+            <div class="drill-info-row"><strong>방법</strong> 팔을 뻗을 때마다 몸을 45도 이상 회전시키는 것을 의식</div>
+          </div>
+          <div class="drill-effect">✦ 스트로크 파워와 효율 동시 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=backstroke+body+rotation+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
       </div>
@@ -349,7 +439,7 @@
       <div class="drill-grid">
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 01</div>
+          <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">2킥 1풀 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐</span>
@@ -360,13 +450,11 @@
             <div class="drill-info-row"><strong>방법</strong> 킥 2번 후 풀 1번 반복</div>
           </div>
           <div class="drill-effect">✦ 글라이드 타이밍 훈련</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=평영+2킥1풀+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=breaststroke+2+kick+1+pull+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 02</div>
+          <div class="drill-num">DRILL 02 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">개구리킥 킥보드 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐</span>
@@ -377,9 +465,52 @@
             <div class="drill-info-row"><strong>방법</strong> 킥보드 잡고 평영 킥만 집중</div>
           </div>
           <div class="drill-effect">✦ 좌우 균형 있는 킥 패턴</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=평영+킥+킥보드+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=breaststroke+kick+kickboard+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 03 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">평영 팔만 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 아웃-인 팔 당김 궤적 교정</div>
+            <div class="drill-info-row"><strong>방법</strong> 다리를 수평으로 뻗은 채 팔 동작만 반복 (킥판 사용 가능)</div>
+          </div>
+          <div class="drill-effect">✦ 팔 풀 효율과 물잡기 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=breaststroke+arms+only+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 04 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">평영 글라이드 강조 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 7분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 스트림라인 자세와 글라이드 시간 확장</div>
+            <div class="drill-info-row"><strong>방법</strong> 킥 후 팔을 앞으로 완전히 뻗고 3초간 글라이드 유지</div>
+          </div>
+          <div class="drill-effect">✦ 항력 감소 및 추진력 극대화</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=breaststroke+glide+streamline+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 05 <span class="drill-level lv-advanced">고급</span></div>
+          <div class="drill-name">평영 헤드업 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 호흡 타이밍과 머리 위치 교정</div>
+            <div class="drill-info-row"><strong>방법</strong> 머리를 물 위에 항상 노출시키며 평영 동작 수행</div>
+          </div>
+          <div class="drill-effect">✦ 호흡 사이클과 팔 동작 동기화</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=breaststroke+head+up+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
       </div>
@@ -390,7 +521,7 @@
       <div class="drill-grid">
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 01</div>
+          <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
           <div class="drill-name">돌핀킥 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐</span>
@@ -401,13 +532,11 @@
             <div class="drill-info-row"><strong>방법</strong> 팔은 뻗은 채 돌핀킥만 반복</div>
           </div>
           <div class="drill-effect">✦ 웨이브 리듬과 킥 타이밍</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=접영+돌핀킥+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=butterfly+dolphin+kick+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
         <div class="drill-card">
-          <div class="drill-num">DRILL 02</div>
+          <div class="drill-num">DRILL 02 <span class="drill-level lv-intermediate">중급</span></div>
           <div class="drill-name">단팔 접영 드릴</div>
           <div class="drill-meta">
             <span class="drill-stars">⭐⭐⭐</span>
@@ -418,9 +547,52 @@
             <div class="drill-info-row"><strong>방법</strong> 한 팔씩 번갈아 접영 동작</div>
           </div>
           <div class="drill-effect">✦ 팔꿈치 각도 교정</div>
-          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=접영+단팔+드릴" target="_blank" rel="noopener">
-            ▶ YouTube에서 보기
-          </a>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=butterfly+single+arm+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 03 <span class="drill-level lv-beginner">초보</span></div>
+          <div class="drill-name">접영 킥보드 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐</span>
+            <span class="drill-time">⏱ 6분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 돌핀킥 파워와 리듬 강화</div>
+            <div class="drill-info-row"><strong>방법</strong> 킥보드를 앞에 두고 돌핀킥으로만 전진</div>
+          </div>
+          <div class="drill-effect">✦ 킥 파워 및 발목 유연성 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=butterfly+kickboard+dolphin+kick+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 04 <span class="drill-level lv-intermediate">중급</span></div>
+          <div class="drill-name">접영 2-1 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 8분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 리듬 분해 훈련 (킥 2번, 팔 1번)</div>
+            <div class="drill-info-row"><strong>방법</strong> 입수 킥 → 추진 킥 → 풀의 3단계 리듬을 천천히 분리 수행</div>
+          </div>
+          <div class="drill-effect">✦ 2킥 1풀 리듬 체득</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=butterfly+2+kick+1+pull+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
+        </div>
+
+        <div class="drill-card">
+          <div class="drill-num">DRILL 05 <span class="drill-level lv-advanced">고급</span></div>
+          <div class="drill-name">접영 호흡 타이밍 드릴</div>
+          <div class="drill-meta">
+            <span class="drill-stars">⭐⭐⭐</span>
+            <span class="drill-time">⏱ 10분</span>
+          </div>
+          <div class="drill-info">
+            <div class="drill-info-row"><strong>목적</strong> 2스트로크 1호흡 패턴 체득</div>
+            <div class="drill-info-row"><strong>방법</strong> 2스트로크 후 호흡, 머리를 최소한으로 드는 연습 반복</div>
+          </div>
+          <div class="drill-effect">✦ 저항 최소화 + 호흡 효율 향상</div>
+          <a class="drill-yt-btn" href="https://www.youtube.com/results?search_query=butterfly+breathing+timing+2+stroke+drill" target="_blank" rel="noopener">▶ YouTube에서 보기</a>
         </div>
 
       </div>

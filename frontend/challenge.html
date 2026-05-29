@@ -151,6 +151,7 @@ let allChallenges = [];
     myUsername = data.username || data.name || "";
   } catch { window.location.href = '/login'; return; }
   await loadAll();
+  startPolling();
 })();
 
 async function logout() {
@@ -251,6 +252,36 @@ function buildCard(ch, isMy) {
     <div id="ranking-${ch.id}" style="display:none;"></div>
   `;
   return card;
+}
+
+// ── 30초 폴링 (실시간 달성률 업데이트) ───────────────────
+let _pollInterval = null;
+
+function startPolling() {
+  if (_pollInterval) clearInterval(_pollInterval);
+  _pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/challenge', { credentials: 'include' });
+      if (!res.ok) return;
+      const d = await res.json();
+      const updated = d.challenges || [];
+      updated.forEach(ch => {
+        const fill = document.querySelector(`#ch-card-${ch.id} .prog-fill`);
+        const pctEl = document.querySelector(`#ch-card-${ch.id} .prog-label span:last-child`);
+        const distEl = document.querySelector(`#ch-card-${ch.id} .prog-label span:first-child`);
+        if (!fill) return;
+        const pct = Math.min(100, ch.achievement_pct || 0);
+        fill.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct.toFixed(1) + '%';
+        if (distEl) {
+          const distText = ch.challenge_type === 'streak'
+            ? `${ch.my_distance || 0}일 / ${ch.goal_distance}일`
+            : `${((ch.my_distance || 0) / 1000).toFixed(2)}km / ${(ch.goal_distance / 1000).toFixed(0)}km`;
+          distEl.textContent = distText;
+        }
+      });
+    } catch {}
+  }, 30000);
 }
 
 async function joinChallenge(id) {
