@@ -326,9 +326,10 @@ def test_chat_sample_cards(page: Page):
     # DB 복원 세션이 있으면 웰컴 화면이 숨겨지므로 새 채팅을 강제로 생성
     page.wait_for_timeout(1500)
     page.click(".btn-new")
-    page.wait_for_timeout(500)
+    # 히스토리 복원 후 JS 동적 렌더링을 기다림
+    page.wait_for_selector(".sample-card", timeout=10000)
 
-    expect(page.locator(".sample-card").first()).to_be_visible()
+    expect(page.locator(".sample-card").first).to_be_visible()
     assert page.locator(".sample-card").count() >= 1, \
         f"sample-card count: {page.locator('.sample-card').count()}"
 
