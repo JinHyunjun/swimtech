@@ -384,7 +384,7 @@ function shareKakao() {
       content: {
         title: `${curYear}년 ${curMonth}월 수영 리포트`,
         description: `총 거리 ${document.getElementById('stat-distance').textContent}m 달성!`,
-        imageUrl: 'https://localhost/static/icons/icon-192.png',
+        imageUrl: `${location.origin}/static/icons/icon-192.png`,
         link: { mobileWebUrl: url, webUrl: url },
       },
     });

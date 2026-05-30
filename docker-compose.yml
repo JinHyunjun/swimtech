@@ -163,6 +163,7 @@ services:
     environment:
       - FLOWISE_USERNAME=
       - FLOWISE_PASSWORD=
+      - FLOWISE_CORS_ORIGINS=*
     volumes:
       - flowise-data:/root/.flowise
     networks:
