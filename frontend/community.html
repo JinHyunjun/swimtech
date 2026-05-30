@@ -688,12 +688,17 @@ async function loadPosts() {
   }
 }
 
+const AI_HIDDEN_KEYWORDS = ['SwimTech AI 분석', 'AI 분석 결과', 'AI 영법 분석'];
+
 function renderPosts(posts) {
   const el = document.getElementById('post-list');
   if (!posts || !posts.length) {
     el.innerHTML = '<div class="empty-state">게시글이 없습니다.</div>';
     return;
   }
+  posts = posts.filter(p =>
+    !AI_HIDDEN_KEYWORDS.some(kw => p.title.includes(kw) || (p.content || '').includes(kw))
+  );
   el.innerHTML = posts.map(p => `
     <div class="post-card" id="pc-${p.id}">
       <div class="post-card-top" onclick="openPost(${p.id})">

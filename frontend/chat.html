@@ -22,6 +22,48 @@
   overflow: hidden;
 }
 
+/* ── 모바일 사이드바 토글 버튼 ─────────────── */
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .sidebar-toggle { display: inline-flex; align-items: center; gap: 5px; }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .chat-sidebar {
+    height: auto;
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 0.5px solid var(--border);
+    display: none;
+  }
+  .chat-sidebar.mobile-open {
+    display: flex;
+  }
+
+  .chat-messages { padding: 16px 12px; }
+
+  .sample-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .msg-bubble { max-width: 88%; }
+}
+
 /* ── 사이드바 ──────────────────────────────── */
 .chat-sidebar {
   background: var(--surface);
@@ -268,8 +310,10 @@
     <div class="header-left">
       <a href="/landing"
          style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <button class="sidebar-toggle" onclick="toggleMobileSidebar()" id="sidebar-toggle-btn">
+        📋 이전 대화
+      </button>
       <span class="logo">SwimTech AI 코치</span>
-      <span class="logo-sub">수영 전문 챗봇</span>
     </div>
     <div class="header-right">
       <button onclick="logout()"
@@ -314,6 +358,14 @@
 
 <script>
 "use strict";
+
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.chat-sidebar');
+  const btn = document.getElementById('sidebar-toggle-btn');
+  if (!sidebar) return;
+  sidebar.classList.toggle('mobile-open');
+  if (btn) btn.textContent = sidebar.classList.contains('mobile-open') ? '✕ 닫기' : '📋 이전 대화';
+}
 
 const API_URL = 'http://localhost:43000/api/v1/prediction/f8c0ea24-0015-4bd7-a984-d24b1d9df206';
 const SAMPLES = [

@@ -22,7 +22,7 @@ html[data-theme="light"] {
   --surface2: #e8eef5;
   --border:   #c5d6e8;
   --text:     #1a2332;
-  --muted:    #556b82;
+  --muted:    #64748b;
   --blue:     #0096b4;
   --green:    #16a34a;
   --amber:    #d97706;
@@ -35,6 +35,21 @@ html[data-theme="light"] .strength-item   { background: #f0faf4; }
 html[data-theme="light"] .improvement-item{ background: #fff7ed; }
 html[data-theme="light"] .feedback-body   { color: #334155; }
 html[data-theme="light"] .drill-list li   { color: #334155; }
+
+/* 라이트 모드 — body/카드/버튼 */
+body.light-mode { background: var(--bg) !important; }
+html[data-theme="light"] body { background: var(--bg); color: var(--text); }
+html[data-theme="light"] .header { background: var(--surface); border-color: var(--border); }
+html[data-theme="light"] .post-card,
+html[data-theme="light"] .plan-card,
+html[data-theme="light"] .session-card { background: var(--surface); border-color: var(--border); }
+html[data-theme="light"] .notif-dropdown,
+html[data-theme="light"] .modal-box { background: var(--surface); border-color: var(--border); }
+html[data-theme="light"] .msg-row.bot .msg-bubble { background: var(--surface2); color: var(--text); }
+html[data-theme="light"] .chat-sidebar { background: var(--surface); }
+html[data-theme="light"] .chat-item:hover { background: var(--surface2); }
+html[data-theme="light"] .btn-new { background: var(--blue); color: #fff; }
+html[data-theme="light"] .sample-card { background: var(--surface); border-color: var(--border); color: var(--text); }
 
 /* ── 테마 토글 버튼 ─────────────────────────── */
 .theme-btn {

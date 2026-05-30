@@ -1,10 +1,16 @@
 # ================================================
 # SwimTech — Caddyfile
-# 로컬 HTTPS 자동 설정
 # ================================================
 
-# localhost HTTPS (로컬 자체 서명 인증서 자동 생성)
-localhost {
+# 자동 HTTP→HTTPS 리다이렉트 비활성화 (Cloudflare Tunnel 무한 루프 방지)
+{
+  auto_https disable_redirects
+}
+
+# -----------------------------------------------
+# 공통 라우트 스니펫 (HTTP / HTTPS 공유)
+# -----------------------------------------------
+(swimtech_routes) {
 
   # 분석 관련 라우트 — 외부 접근 차단 (private 네트워크 + 로컬만 허용)
   @analysis_restricted {
@@ -15,176 +21,7 @@ localhost {
   }
   redir @analysis_restricted /landing 302
 
-  # SwimTech 메인 앱
-  handle / {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /api/sheets/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /api/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /auth/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /videos {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /videos/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /stream/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /analysis/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /customers/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /static/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /manifest.json {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /sw.js {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /login {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /register {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /landing {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /upload {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /viewer {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /app {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /dashboard {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /meta {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /chat {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /nickname {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /pool {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /onboarding {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /glossary {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /drill {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /faq {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /community {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /injury {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /plan {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /changelog {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /badges {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /privacy {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /terms {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /training-log {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /report {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /report/share/* {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /challenge {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /equipment {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /feedback {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /coach {
-    reverse_proxy swim-api:8000
-  }
-
-  handle /share/* {
-    reverse_proxy swim-api:8000
-  }
-
-  # Flowise AI 챗봇 (HTTPS 경유 — iframe 혼합 콘텐츠 문제 없음)
+  # Flowise AI 챗봇
   handle /flowise/* {
     uri strip_prefix /flowise
     reverse_proxy swim-flowise:3000 {
@@ -205,7 +42,18 @@ localhost {
     reverse_proxy swim-minio:9001
   }
 
-  # 헤더 보안 설정
+  # 나머지 모든 요청 → swim-api
+  handle {
+    reverse_proxy swim-api:8000
+  }
+}
+
+# -----------------------------------------------
+# HTTPS — 로컬 직접 접근 (자체 서명 인증서)
+# -----------------------------------------------
+localhost {
+  import swimtech_routes
+
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains"
     X-Content-Type-Options "nosniff"
@@ -213,18 +61,19 @@ localhost {
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
     X-XSS-Protection "1; mode=block"
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://kauth.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.kakaocdn.net https://t1.daumcdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://kauth.kakao.com https://kapi.kakao.com https://dapi.kakao.com https://*.daumcdn.net https://*.kakao.com http://localhost:43000 https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https:; font-src 'self' data:; media-src 'self' blob:;"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.kakao.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.daumcdn.net; frame-src 'self' https://accounts.google.com https://kauth.kakao.com; connect-src 'self' https://accounts.google.com https://*.kakao.com https://kapi.kakao.com https://dapi.kakao.com https://*.daumcdn.net http://localhost:43000 https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net https:; font-src 'self' data:; media-src 'self' blob:;"
     -Server
   }
 
-  # 로그
   log {
     output file /data/logs/swimtech.log
     format json
   }
 }
 
-# HTTP → HTTPS 리다이렉트
-http://localhost {
-  redir https://localhost{uri} permanent
+# -----------------------------------------------
+# HTTP — Cloudflare Tunnel 지원 (모든 호스트, 리다이렉트 없음)
+# -----------------------------------------------
+:80 {
+  import swimtech_routes
 }

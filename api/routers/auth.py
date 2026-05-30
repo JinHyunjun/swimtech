@@ -39,11 +39,15 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 REDIS_URL    = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 GOOGLE_OAUTH_FILE   = "/app/credentials/google_oauth_client.json"
-GOOGLE_REDIRECT_URI = "https://localhost/auth/google/callback"
 
 KAKAO_CLIENT_ID     = os.getenv("KAKAO_CLIENT_ID", "")
 KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
-KAKAO_REDIRECT_URI  = "https://localhost/auth/kakao/callback"
+
+# BASE_URL: Cloudflare Tunnel 등 외부 도메인 사용 시 환경변수로 주입
+# 예) BASE_URL=https://wilderness-xxx.trycloudflare.com
+_BASE_URL = os.getenv("BASE_URL", "https://localhost").rstrip("/")
+GOOGLE_REDIRECT_URI = f"{_BASE_URL}/auth/google/callback"
+KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
 
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9]{4,20}$')
 _PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$')
