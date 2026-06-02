@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 40px 16px 60px;
-  background: linear-gradient(160deg, #0a1628 0%, #0d2137 50%, #0a1628 100%);
+  background: linear-gradient(160deg, #0a1628 0%, var(--surface) 50%, #0a1628 100%);
 }
 
 .feedback-card {
@@ -22,7 +22,7 @@
   max-width: 640px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(0,180,216,0.2);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   padding: 40px 36px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
@@ -69,7 +69,7 @@
 .type-btn {
   padding: 12px 10px;
   border: 1.5px solid rgba(0,180,216,0.25);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(0,180,216,0.06);
   color: #7aafc2;
   font-size: 0.88rem;
@@ -102,10 +102,10 @@ textarea {
   padding: 12px 14px;
   background: rgba(255,255,255,0.05);
   border: 1.5px solid rgba(0,180,216,0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: #e0f2fe;
   font-size: 0.93rem;
-  font-family: inherit;
+  font-family: var(--font-base);
   transition: border-color 0.18s;
   outline: none;
   appearance: none;
@@ -121,7 +121,7 @@ select {
 }
 
 select option {
-  background: #0d2137;
+  background: var(--surface);
   color: #e0f2fe;
 }
 
@@ -150,7 +150,7 @@ textarea::placeholder {
   margin-top: 8px;
   background: linear-gradient(135deg, #0096c7, #00b4d8);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
@@ -174,7 +174,7 @@ textarea::placeholder {
   display: none;
   margin-top: 16px;
   padding: 14px 18px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -213,7 +213,7 @@ textarea::placeholder {
 </head>
 <body>
 <nav class="navbar">
-  <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+  <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
   <a href="/landing" class="navbar-brand">🏊 SwimTech</a>
 </nav>
 
@@ -357,3 +357,6 @@ textarea::placeholder {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

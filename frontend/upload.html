@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -23,17 +23,17 @@
 }
 .back-btn {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
-  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 6px 14px; font-size: var(--fs-caption); cursor: pointer;
   transition: all .2s;
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 .meta-badge { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .meta-tag {
-  font-size: 11px; color: var(--muted); background: var(--surface2);
-  border: 0.5px solid var(--border); border-radius: 4px; padding: 3px 8px;
+  font-size: var(--fs-caption); color: var(--muted); background: var(--surface2);
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 3px 8px;
 }
 .upload-zone {
-  border: 1.5px dashed var(--border); border-radius: 12px;
+  border: 1.5px dashed var(--border); border-radius: var(--radius-md);
   padding: 48px 24px; text-align: center;
   transition: border-color .2s; background: var(--surface);
 }
@@ -41,14 +41,14 @@
 .upload-zone.drag-over {
   border-color: var(--blue); background: rgba(0,180,216,.06);
 }
-.upload-icon { font-size: 40px; margin-bottom: 12px; }
-.upload-title { font-size: 15px; color: var(--text); margin-bottom: 6px; font-weight: 500; }
-.upload-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+.upload-icon { font-size: var(--fs-display); margin-bottom: 12px; }
+.upload-title { font-size: var(--fs-body-lg); color: var(--text); margin-bottom: 6px; font-weight: 500; }
+.upload-sub { font-size: var(--fs-caption); color: var(--muted); margin-bottom: 24px; }
 .select-file-btn {
   display: inline-block;
   background: var(--blue); color: #fff;
-  padding: 11px 28px; border-radius: 8px;
-  font-size: 14px; font-weight: 500;
+  padding: 11px 28px; border-radius: var(--radius-sm);
+  font-size: var(--fs-body); font-weight: 500;
   cursor: pointer; transition: background .2s;
   border: none;
 }
@@ -58,16 +58,16 @@
   margin-top: 16px; padding: 12px 16px;
   background: rgba(0,180,216,.08);
   border: 0.5px solid rgba(0,180,216,.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .selected-info.show { display: flex; }
-.selected-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500;
+.selected-name { flex: 1; font-size: var(--fs-body); color: var(--text); font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.selected-size { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.selected-size { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
 .upload-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
 .proceed-btn {
   background: var(--blue); color: #fff; border: none;
-  border-radius: 8px; padding: 11px 28px; font-size: 14px;
+  border-radius: var(--radius-sm); padding: 11px 28px; font-size: var(--fs-body);
   font-weight: 500; cursor: pointer; transition: all .2s;
 }
 .proceed-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -75,9 +75,9 @@
 .size-warning {
   background: rgba(245,158,11,.1);
   border: 0.5px solid rgba(245,158,11,.4);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #f59e0b;
   margin-top: 10px;
   line-height: 1.6;
@@ -85,9 +85,9 @@
 .size-error {
   background: rgba(248,113,113,.1);
   border: 0.5px solid rgba(248,113,113,.4);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #f87171;
   margin-top: 10px;
 }
@@ -97,12 +97,12 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);cursor:pointer;font-size: var(--fs-body);margin-right:8px;">← 뒤로</button>
       <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">수영 영법 분석 플랫폼</span>
     </div>
     <div class="header-right">
-      <button onclick="doLogout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+      <button onclick="doLogout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 
@@ -111,7 +111,7 @@
 
       <div class="upload-nav">
         <button class="back-btn" onclick="history.back()">&#8592; 영법 선택으로</button>
-        <span style="font-size:14px;font-weight:500;color:var(--text);">영상 파일 선택</span>
+        <span style="font-size: var(--fs-body);font-weight:500;color:var(--text);">영상 파일 선택</span>
       </div>
 
       <div class="meta-badge" id="meta-badge"></div>
@@ -130,7 +130,7 @@
       </div>
 
       <div class="selected-info" id="selected-info">
-        <span style="font-size:18px;">&#127909;</span>
+        <span style="font-size: var(--fs-title);">&#127909;</span>
         <span class="selected-name" id="selected-name"></span>
         <span class="selected-size" id="selected-size"></span>
       </div>
@@ -288,3 +288,4 @@ async function doLogout() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+

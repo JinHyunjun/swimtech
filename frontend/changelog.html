@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -26,7 +26,7 @@
 
 .cl-wrap {
   min-height: calc(100vh - 53px);
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   padding: 32px 16px 80px;
@@ -66,14 +66,14 @@
   margin-bottom: 40px;
 }
 .cl-header h1 {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
   text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .cl-header p {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   margin-top: 8px;
 }
@@ -116,7 +116,7 @@
   height: 12px;
   border-radius: 50%;
   background: #00b4d8;
-  border: 2px solid #0d2137;
+  border: 2px solid var(--surface);
   box-shadow: 0 0 8px rgba(0,180,216,0.6);
 }
 .tl-item:first-child .tl-dot {
@@ -130,7 +130,7 @@
 .tl-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
   transition: border-color .25s, box-shadow .25s;
 }
@@ -147,17 +147,17 @@
   flex-wrap: wrap;
 }
 .tl-version {
-  font-size: 15px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: #48cae4;
   letter-spacing: -0.3px;
 }
 .tl-date {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 2px 7px;
 }
 
@@ -172,14 +172,14 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: #c8d8e4;
   line-height: 1.6;
 }
 .tl-change::before {
   content: '•';
   color: #00b4d8;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   line-height: 1.4;
   flex-shrink: 0;
 }
@@ -201,7 +201,7 @@
   background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
@@ -210,7 +210,7 @@
 .sk-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
   margin-bottom: 28px;
   margin-left: 4px;
@@ -225,16 +225,16 @@
   padding: 48px 24px;
   color: var(--muted);
 }
-.cl-error .err-icon { font-size: 40px; margin-bottom: 12px; }
-.cl-error h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
-.cl-error p  { font-size: 13px; line-height: 1.7; }
+.cl-error .err-icon { font-size: var(--fs-display); margin-bottom: 12px; }
+.cl-error h3 { font-size: var(--fs-body-lg); color: var(--text); margin-bottom: 8px; }
+.cl-error p  { font-size: var(--fs-body); line-height: 1.7; }
 .cl-error code {
   display: inline-block;
   background: rgba(255,255,255,0.05);
   border: 0.5px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 2px 6px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #48cae4;
 }
 
@@ -243,7 +243,7 @@
   text-align: center;
   padding: 48px 24px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
 </style>
 </head>
@@ -252,7 +252,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;">
         <span class="logo">SwimTech</span>
       </a>
@@ -301,7 +301,7 @@
     </div>
   </div>
 
-  <div style="text-align:center;padding:24px 0 16px;font-size:12px;color:#7aafc2;position:relative;z-index:1;">
+  <div style="text-align:center;padding:24px 0 16px;font-size: var(--fs-caption);color:#7aafc2;position:relative;z-index:1;">
     <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
     <span style="margin:0 8px;opacity:0.5;">|</span>
     <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
@@ -384,3 +384,5 @@ loadChangelog();
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -23,7 +23,7 @@
 
 .glossary-wrap {
   min-height: calc(100vh - 53px);
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   padding: 28px 16px 60px;
@@ -63,14 +63,14 @@
   margin-bottom: 28px;
 }
 .glossary-header h1 {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--text, #e8f4f8);
   letter-spacing: -0.5px;
   text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .glossary-header p {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted, #90c4d4);
   margin-top: 6px;
 }
@@ -84,13 +84,13 @@
   width: 100%;
   background: rgba(13,33,55,0.88);
   border: 0.5px solid rgba(0,180,216,0.3);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 13px 16px 13px 42px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: #e8f4f8;
   outline: none;
   transition: border-color .2s, box-shadow .2s;
-  font-family: inherit;
+  font-family: var(--font-base);
 }
 .search-input::placeholder { color: rgba(144,196,212,0.5); }
 .search-input:focus {
@@ -101,14 +101,14 @@
   position: absolute;
   left: 14px; top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   pointer-events: none;
 }
 .search-count {
   position: absolute;
   right: 14px; top: 50%;
   transform: translateY(-50%);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.5);
 }
 
@@ -125,8 +125,8 @@
 .tab {
   flex-shrink: 0;
   padding: 7px 16px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
   font-weight: 600;
   cursor: pointer;
   border: 0.5px solid rgba(0,180,216,0.25);
@@ -145,7 +145,7 @@
 /* 카드 그리드 */
 .cards-section { margin-bottom: 32px; }
 .section-label {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   letter-spacing: 0.8px;
   color: rgba(144,196,212,0.5);
@@ -165,7 +165,7 @@
 .term-card {
   background: rgba(13,33,55,0.85);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   transition: border-color .25s, transform .2s, box-shadow .25s;
   position: relative;
@@ -194,26 +194,26 @@
   margin-bottom: 8px;
 }
 .term-name {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: #e8f4f8;
   line-height: 1.3;
 }
 .term-badge {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   white-space: nowrap;
 }
 .badge-basic    { background: rgba(0,180,216,0.15);   color: #00b4d8; }
 .badge-technique{ background: rgba(72,202,228,0.15);  color: #48cae4; }
-.badge-training { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.badge-training { background: rgba(72,202,228,0.15); color: var(--accent-secondary); }
 .badge-swimtech { background: rgba(74,222,128,0.15);  color: #4ade80; }
 
 .term-body {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #90c4d4;
   line-height: 1.7;
 }
@@ -224,9 +224,9 @@
   text-align: center;
   padding: 60px 20px;
   color: rgba(144,196,212,0.4);
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
-.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state .empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 
 .hidden { display: none !important; }
 
@@ -235,12 +235,12 @@
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: #ff6b6b;
   text-decoration: none;
   border: 0.5px solid rgba(255,80,80,.3);
   padding: 3px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background .2s;
 }
 .term-yt-link:hover { background: rgba(255,0,0,.1); border-color: rgba(255,80,80,.55); }
@@ -251,7 +251,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;">
         <span class="logo">SwimTech</span>
       </a>
@@ -259,8 +259,8 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
-                     padding:4px 12px;font-size:11px;cursor:pointer;">
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);
+                     padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">
         로그아웃
       </button>
     </div>
@@ -410,7 +410,7 @@ const CAT_BADGE = {
 const CAT_ACCENT = {
   basic:     "#00b4d8",
   technique: "#48cae4",
-  training:  "#a78bfa",
+  training:  "var(--accent-secondary)",
   swimtech:  "#4ade80",
 };
 
@@ -521,7 +521,7 @@ async function logout() {
     });
   }
 </script>
-<div style="text-align:center;padding:20px 0 16px;font-size:12px;color:#6fa8c0;">
+<div style="text-align:center;padding:20px 0 16px;font-size: var(--fs-caption);color:#6fa8c0;">
   <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
   <span style="margin:0 8px;opacity:.4;">|</span>
   <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
@@ -529,3 +529,7 @@ async function logout() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+
+

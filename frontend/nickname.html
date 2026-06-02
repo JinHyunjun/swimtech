@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -26,10 +26,10 @@
   }
 
   body {
-    background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #082030);
+    background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #082030);
     background-size: 400% 400%;
     animation: ocean-bg 10s ease infinite;
-    font-family: -apple-system, 'Segoe UI', sans-serif;
+    font-family: var(--font-base);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -42,7 +42,7 @@
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 0.5px solid #1e4d6b;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     padding: 44px 38px;
     width: 100%;
     max-width: 420px;
@@ -56,20 +56,20 @@
   }
 
   .logo-icon {
-    font-size: 44px;
+    font-size: var(--fs-display);
     display: block;
     margin-bottom: 10px;
   }
 
   .logo-title {
-    font-size: 22px;
+    font-size: var(--fs-heading);
     font-weight: 700;
     color: #00b4d8;
     letter-spacing: -0.5px;
   }
 
   .logo-sub {
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-top: 8px;
     line-height: 1.7;
@@ -81,7 +81,7 @@
 
   label {
     display: block;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-bottom: 6px;
     font-weight: 500;
@@ -95,9 +95,9 @@
     width: 100%;
     background: rgba(26, 58, 92, 0.8);
     border: 0.5px solid #1e4d6b;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px 14px;
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: #e8f4f8;
     outline: none;
     transition: border-color .2s, box-shadow .2s;
@@ -115,13 +115,13 @@
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 11px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     pointer-events: none;
   }
 
   .hint {
-    font-size: 11px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-top: 6px;
     opacity: 0.75;
@@ -133,9 +133,9 @@
     background: #00b4d8;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 13px;
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 600;
     cursor: pointer;
     margin-top: 4px;
@@ -153,9 +153,9 @@
   .error {
     background: rgba(248, 113, 113, 0.1);
     border: 0.5px solid rgba(248, 113, 113, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #f87171;
     margin-top: 12px;
     display: none;
@@ -163,7 +163,7 @@
 
   .skip {
     text-align: center;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-top: 18px;
   }
@@ -188,7 +188,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-bottom: 20px;
   }
@@ -334,3 +334,6 @@ function showError(msg) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

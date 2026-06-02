@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -42,10 +42,10 @@
 }
 
 body {
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #082030);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #082030);
   background-size: 400% 400%;
   animation: ocean-bg 12s ease infinite;
-  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-base);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -96,7 +96,7 @@ body::after {
 .skip-btn {
   position: fixed;
   top: 18px; right: 20px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.7);
   text-decoration: none;
   z-index: 100;
@@ -130,20 +130,20 @@ body::after {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 0.5px solid rgba(0,180,216,0.25);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   padding: 40px 32px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(0,180,216,0.08);
 }
 
 .slide-icon {
-  font-size: 56px;
+  font-size: var(--fs-display);
   text-align: center;
   display: block;
   margin-bottom: 20px;
 }
 
 .slide-title {
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 700;
   color: #e8f4f8;
   text-align: center;
@@ -152,7 +152,7 @@ body::after {
 }
 
 .slide-sub {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: #90c4d4;
   text-align: center;
   margin-bottom: 24px;
@@ -170,12 +170,12 @@ body::after {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: #c8e0ec;
   line-height: 1.5;
 }
 .check-list .icon {
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -198,17 +198,17 @@ body::after {
   gap: 12px;
   background: rgba(0,180,216,0.06);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
 }
-.purpose-item .p-icon { font-size: 20px; flex-shrink: 0; }
+.purpose-item .p-icon { font-size: var(--fs-title); flex-shrink: 0; }
 .purpose-item .p-label {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: #e8f4f8;
 }
 .purpose-item .p-desc {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: #90c4d4;
   margin-top: 1px;
 }
@@ -222,20 +222,20 @@ body::after {
 .feedback-item {
   background: rgba(0,180,216,0.06);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
 }
 .feedback-item .fb-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: #e8f4f8;
   margin-bottom: 4px;
 }
 .feedback-item .fb-body {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #90c4d4;
   line-height: 1.6;
 }
@@ -247,9 +247,9 @@ body::after {
   background: linear-gradient(135deg, #00b4d8, #0096c7);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 15px;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   cursor: pointer;
   text-align: center;
@@ -265,7 +265,7 @@ body::after {
 .cta-skip {
   display: block;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.6);
   margin-top: 14px;
   cursor: pointer;
@@ -289,9 +289,9 @@ body::after {
   background: rgba(13,33,55,0.88);
   border: 0.5px solid rgba(0,180,216,0.3);
   color: #00b4d8;
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   padding: 10px 24px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
@@ -320,13 +320,13 @@ body::after {
 }
 .dot.active {
   width: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: #00b4d8;
 }
 
 @media (max-width: 400px) {
   .slide-card { padding: 28px 20px; }
-  .slide-title { font-size: 18px; }
+  .slide-title { font-size: var(--fs-title); }
 }
 </style>
 </head>
@@ -339,7 +339,7 @@ body::after {
 
 <!-- 로고 -->
 <div style="position:fixed;top:10px;left:16px;z-index:100;">
-  <a href="/" style="text-decoration:none;color:#00b4d8;font-size:15px;font-weight:700;">🏊 SwimTech</a>
+  <a href="/" style="text-decoration:none;color:#00b4d8;font-size: var(--fs-body-lg);font-weight:700;">🏊 SwimTech</a>
 </div>
 
 <!-- 건너뛰기 -->
@@ -541,7 +541,7 @@ updateUI();
     });
   }
 </script>
-<div style="text-align:center;padding:20px 0 16px;font-size:12px;color:#6fa8c0;">
+<div style="text-align:center;padding:20px 0 16px;font-size: var(--fs-caption);color:#6fa8c0;">
   <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
   <span style="margin:0 8px;opacity:.4;">|</span>
   <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
@@ -549,3 +549,6 @@ updateUI();
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

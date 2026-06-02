@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -28,9 +28,9 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -82,9 +82,9 @@
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 0;
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   transition: opacity .2s;
@@ -100,9 +100,9 @@
   align-items: center;
   gap: 6px;
   padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   transition: background .15s, color .15s;
 }
@@ -120,9 +120,9 @@
   border: none;
   color: var(--muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-body);
   padding: 1px 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   line-height: 1;
   flex-shrink: 0;
 }
@@ -157,9 +157,9 @@
   text-align: center;
   padding: 20px;
 }
-.welcome-icon  { font-size: 52px; margin-bottom: 14px; line-height: 1; }
-.welcome-title { font-size: 22px; font-weight: 700; color: var(--blue); margin-bottom: 8px; }
-.welcome-desc  { font-size: 13px; color: var(--muted); line-height: 1.75; margin-bottom: 28px; }
+.welcome-icon  { font-size: var(--fs-display); margin-bottom: 14px; line-height: 1; }
+.welcome-title { font-size: var(--fs-heading); font-weight: 700; color: var(--blue); margin-bottom: 8px; }
+.welcome-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.75; margin-bottom: 28px; }
 .sample-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -170,9 +170,9 @@
 .sample-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 13px 15px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--text);
   text-align: left;
   cursor: pointer;
@@ -180,7 +180,7 @@
   line-height: 1.5;
 }
 .sample-card:hover { border-color: var(--blue); background: rgba(59,130,246,.06); }
-.sample-card::before { content: "💬"; display: block; font-size: 15px; margin-bottom: 5px; }
+.sample-card::before { content: "💬"; display: block; font-size: var(--fs-body-lg); margin-bottom: 5px; }
 
 /* ── 말풍선 ────────────────────────────────── */
 .msg-row { display: flex; flex-direction: column; gap: 3px; }
@@ -189,8 +189,8 @@
 .msg-bubble {
   max-width: 70%;
   padding: 11px 16px;
-  border-radius: 14px;
-  font-size: 14px;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-body);
   line-height: 1.7;
   word-break: break-word;
 }
@@ -209,14 +209,14 @@
 .msg-bubble code {
   background: rgba(255,255,255,.12);
   padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
   font-family: 'Consolas', 'Monaco', monospace;
 }
 .msg-bubble pre {
   background: rgba(0,0,0,.35);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   margin: 8px 0;
 }
@@ -226,7 +226,7 @@
 .msg-bubble strong { color: #fff; }
 .msg-bubble h1,.msg-bubble h2,.msg-bubble h3 {
   margin: 10px 0 6px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--cyan);
 }
 
@@ -237,7 +237,7 @@
   align-items: center;
   padding: 14px 18px;
   background: #1a3a5c;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border-bottom-left-radius: 3px;
 }
 .loading-dots span {
@@ -266,7 +266,7 @@
   align-items: flex-end;
   background: var(--surface2);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   transition: border-color .2s;
 }
@@ -277,8 +277,8 @@
   border: none;
   outline: none;
   color: var(--text);
-  font-size: 14px;
-  font-family: inherit;
+  font-size: var(--fs-body);
+  font-family: var(--font-base);
   resize: none;
   max-height: 120px;
   line-height: 1.55;
@@ -288,10 +288,10 @@
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   width: 36px; height: 36px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--fs-title);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,7 +300,7 @@
 }
 #send-btn:disabled { opacity: .35; cursor: not-allowed; }
 #send-btn:not(:disabled):hover { opacity: .82; }
-.input-hint { font-size: 11px; color: var(--muted); margin-top: 6px; padding-left: 2px; }
+.input-hint { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; padding-left: 2px; }
 </style>
 </head>
 <body>
@@ -308,8 +308,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing"
-         style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" class="back-btn" style="margin-right:8px;white-space:nowrap;">← 홈</a>
       <button class="sidebar-toggle" onclick="toggleMobileSidebar()" id="sidebar-toggle-btn">
         📋 이전 대화
       </button>
@@ -317,8 +316,8 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
-                     padding:4px 12px;font-size:11px;cursor:pointer;">
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);
+                     padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">
         로그아웃
       </button>
     </div>
@@ -333,7 +332,7 @@
       </div>
       <div class="chat-list" id="chat-list"></div>
       <div style="padding:10px 12px;border-top:0.5px solid var(--border);flex-shrink:0;">
-        <button onclick="clearHistory()" style="width:100%;background:none;border:0.5px solid rgba(248,113,113,.35);color:#f87171;border-radius:7px;padding:7px 0;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit;"
+        <button onclick="clearHistory()" style="width:100%;background:none;border:0.5px solid rgba(248,113,113,.35);color:#f87171;border-radius: var(--radius-sm);padding:7px 0;font-size: var(--fs-caption);font-weight:600;cursor:pointer;transition:background .15s;font-family: var(--font-base);"
                 onmouseover="this.style.background='rgba(248,113,113,.08)'" onmouseout="this.style.background='none'">
           🗑 히스토리 초기화
         </button>
@@ -624,3 +623,4 @@ function autoResize(el) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+

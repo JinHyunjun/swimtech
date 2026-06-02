@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -34,7 +34,7 @@
   min-height: calc(100vh - 53px);
   padding: 32px 20px 48px;
   position: relative;
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   overflow: hidden;
@@ -75,14 +75,14 @@
   margin-bottom: 32px;
 }
 .home-title h1 {
-  font-size: 22px;
+  font-size: var(--fs-display);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
   text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .home-title p {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   margin-top: 8px;
 }
@@ -92,7 +92,7 @@
   margin-bottom: 24px;
 }
 .section-label {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.8px;
@@ -110,7 +110,7 @@
   padding: 22px 32px;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text);
   transition: border-color .3s, background .3s, transform .2s, box-shadow .3s;
@@ -127,40 +127,40 @@
   left: -100%;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #a78bfa, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
   transition: left .4s ease;
 }
 .hero-card:hover::after { left: 100%; }
 .hero-card:hover {
   transform: translateY(-4px);
-  border-color: #a78bfa;
-  background: rgba(167,139,250,.08);
-  box-shadow: 0 10px 36px rgba(167,139,250,0.18);
+  border-color: var(--accent-secondary);
+  background: rgba(72,202,228,.08);
+  box-shadow: 0 10px 36px rgba(72,202,228,0.18);
 }
 .hero-icon {
-  font-size: 40px;
+  font-size: var(--fs-display);
   line-height: 1;
   flex-shrink: 0;
 }
 .hero-body { flex: 1; }
 .hero-title {
-  font-size: 17px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 5px;
 }
 .hero-desc {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.65;
 }
 .hero-btn {
   padding: 9px 24px;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
   font-weight: 600;
   color: #0a1628;
-  background: #a78bfa;
+  background: var(--accent-secondary);
   border: none;
   cursor: pointer;
   white-space: nowrap;
@@ -184,7 +184,7 @@
   padding: 20px 14px;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text);
   transition: border-color .3s, background .3s, transform .2s, box-shadow .3s;
@@ -206,24 +206,24 @@
 .menu-card:hover { transform: translateY(-4px); }
 
 .menu-icon {
-  font-size: 32px;
+  font-size: var(--fs-display);
   line-height: 1;
 }
 .menu-title {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--text);
 }
 .menu-desc {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.65;
 }
 .menu-btn {
   margin-top: 4px;
   padding: 6px 18px;
-  border-radius: 7px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -265,19 +265,19 @@
 /* ── 모바일: 3열 유지, 패딩·폰트만 축소 ── */
 @media (max-width: 540px) {
   .home-wrap { padding: 20px 12px 40px; }
-  .home-title h1 { font-size: 18px; }
+  .home-title h1 { font-size: var(--fs-title); }
   .hero-card { padding: 14px 16px; gap: 12px; }
-  .hero-icon { font-size: 30px; }
-  .hero-title { font-size: 14px; }
-  .hero-desc { font-size: 11px; }
-  .hero-btn { padding: 7px 14px; font-size: 11px; }
+  .hero-icon { font-size: var(--fs-display); }
+  .hero-title { font-size: var(--fs-body); }
+  .hero-desc { font-size: var(--fs-caption); }
+  .hero-btn { padding: 7px 14px; font-size: var(--fs-caption); }
   .menu-grid { gap: 8px; }
   .menu-card { padding: 12px 8px; gap: 5px; }
-  .menu-icon { font-size: 24px; }
-  .menu-title { font-size: 11px; }
-  .menu-desc { font-size: 10px; line-height: 1.5; }
-  .menu-btn { padding: 5px 10px; font-size: 10px; margin-top: 2px; }
-  .section-label { font-size: 10px; }
+  .menu-icon { font-size: var(--fs-heading); }
+  .menu-title { font-size: var(--fs-caption); }
+  .menu-desc { font-size: var(--fs-caption); line-height: 1.5; }
+  .menu-btn { padding: 5px 10px; font-size: var(--fs-caption); margin-top: 2px; }
+  .section-label { font-size: var(--fs-caption); }
   .menu-section { margin-bottom: 18px; }
 }
 </style>
@@ -293,8 +293,8 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;
-                     padding:4px 12px;font-size:11px;cursor:pointer;min-height:44px;">
+              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);
+                     padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">
         로그아웃
       </button>
     </div>
@@ -476,19 +476,19 @@
 
 <!-- PWA 설치 배너 -->
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;
-  background:#0d2137;border-top:1px solid #00b4d8;padding:12px 16px;
+  background:var(--surface);border-top:1px solid #00b4d8;padding:12px 16px;
   display:flex;align-items:center;gap:12px;z-index:9999;
   padding-bottom:max(12px, env(safe-area-inset-bottom));">
-  <span style="font-size:24px;">🏊</span>
+  <span style="font-size: var(--fs-heading);">🏊</span>
   <div style="flex:1;">
-    <div style="font-size:13px;font-weight:600;color:#e8e8e8;">SwimTech 앱 설치</div>
-    <div id="pwa-banner-msg" style="font-size:11px;color:#888;margin-top:2px;"></div>
+    <div style="font-size: var(--fs-body);font-weight:600;color:#e8e8e8;">SwimTech 앱 설치</div>
+    <div id="pwa-banner-msg" style="font-size: var(--fs-caption);color:#888;margin-top:2px;"></div>
   </div>
   <button id="pwa-install-btn" style="display:none;background:#00b4d8;color:#fff;
-    border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;
+    border:none;border-radius: var(--radius-sm);padding:8px 16px;font-size: var(--fs-body);font-weight:600;
     cursor:pointer;min-height:44px;">설치</button>
   <button onclick="closePwaBanner()" style="background:none;border:none;color:#666;
-    font-size:18px;cursor:pointer;padding:4px 8px;min-height:44px;">✕</button>
+    font-size: var(--fs-title);cursor:pointer;padding:4px 8px;min-height:44px;">✕</button>
 </div>
 
 <script>
@@ -560,7 +560,7 @@ if (!localStorage.getItem('pwa-banner-closed')) {
     });
   }
 </script>
-<div style="text-align:center;padding:24px 0 16px;font-size:12px;color:#7aafc2;">
+<div style="text-align:center;padding:24px 0 16px;font-size: var(--fs-caption);color:#7aafc2;">
   <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
   <span style="margin:0 8px;opacity:0.5;">|</span>
   <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
@@ -572,3 +572,6 @@ if (!localStorage.getItem('pwa-banner-closed')) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

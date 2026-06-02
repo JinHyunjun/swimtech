@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -71,7 +71,7 @@
 }
 
 .error-emoji {
-  font-size: 80px;
+  font-size: var(--fs-display);
   line-height: 1;
   margin-bottom: 20px;
   display: block;
@@ -80,7 +80,7 @@
 }
 
 .error-code {
-  font-size: 96px;
+  font-size: var(--fs-display);
   font-weight: 800;
   line-height: 1;
   background: linear-gradient(135deg, #f87171, #fb923c);
@@ -92,14 +92,14 @@
 }
 
 .error-title {
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 600;
   color: var(--text);
   margin-bottom: 10px;
 }
 
 .error-desc {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   line-height: 1.8;
   margin-bottom: 36px;
@@ -117,8 +117,8 @@
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -134,8 +134,8 @@
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -180,3 +180,5 @@
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

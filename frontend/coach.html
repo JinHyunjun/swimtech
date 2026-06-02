@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -13,12 +13,12 @@
 .coach-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .back-btn {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
-  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 6px 14px; font-size: var(--fs-caption); cursor: pointer;
   text-decoration: none; transition: all .2s; white-space: nowrap;
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
-.coach-title { font-size: 20px; font-weight: 700; color: var(--text); }
-.coach-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.coach-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
+.coach-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* ── 탭 ── */
 .coach-tabs {
@@ -26,7 +26,7 @@
   border-bottom: 1px solid var(--border);
 }
 .coach-tab {
-  padding: 10px 24px; font-size: 13px; font-weight: 600; color: var(--muted);
+  padding: 10px 24px; font-size: var(--fs-body); font-weight: 600; color: var(--muted);
   background: none; border: none; cursor: pointer;
   border-bottom: 2px solid transparent; transition: all .2s; margin-bottom: -1px;
 }
@@ -35,31 +35,31 @@
 /* ── 카드 공통 ── */
 .c-card {
   background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: 14px; padding: 22px;
+  border-radius: var(--radius-lg); padding: 22px;
   transition: border-color .2s, box-shadow .2s; margin-bottom: 16px;
 }
 .c-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(0,180,216,.08); }
 .c-card-title {
-  font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 14px;
+  font-size: var(--fs-body); font-weight: 700; color: var(--text); margin-bottom: 14px;
   display: flex; align-items: center; gap: 8px;
 }
 
 /* ── 폼 ── */
 .c-field { margin-bottom: 14px; }
-.c-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+.c-label { font-size: var(--fs-caption); color: var(--muted); font-weight: 600; margin-bottom: 5px; }
 .c-input, .c-textarea {
   width: 100%; box-sizing: border-box;
   background: var(--bg); border: 0.5px solid var(--border);
-  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  border-radius: var(--radius-sm); padding: 10px 14px; font-size: var(--fs-body);
   color: var(--text); outline: none; transition: border-color .2s;
-  font-family: inherit;
+  font-family: var(--font-base);
 }
 .c-input:focus, .c-textarea:focus { border-color: var(--blue); }
 .c-textarea { min-height: 80px; resize: vertical; }
 
 .c-btn {
-  padding: 11px 24px; border: none; border-radius: 8px;
-  font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s;
+  padding: 11px 24px; border: none; border-radius: var(--radius-sm);
+  font-size: var(--fs-body); font-weight: 700; cursor: pointer; transition: all .2s;
 }
 .c-btn-primary { background: var(--blue); color: #0a1628; }
 .c-btn-primary:hover { opacity: .85; }
@@ -72,16 +72,16 @@
 .invite-box {
   display: flex; align-items: center; gap: 12px;
   background: rgba(0,180,216,.08); border: 1px dashed rgba(0,180,216,.4);
-  border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+  border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px;
 }
 .invite-code {
-  font-size: 22px; font-weight: 800; color: var(--blue);
+  font-size: var(--fs-heading); font-weight: 800; color: var(--blue);
   letter-spacing: 2px; font-family: monospace;
 }
 .invite-copy-btn {
   padding: 7px 16px; background: rgba(0,180,216,.15); color: var(--blue);
-  border: 0.5px solid rgba(0,180,216,.3); border-radius: 6px;
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s;
+  border: 0.5px solid rgba(0,180,216,.3); border-radius: var(--radius-sm);
+  font-size: var(--fs-caption); font-weight: 600; cursor: pointer; transition: all .2s;
   white-space: nowrap;
 }
 .invite-copy-btn:hover { background: rgba(0,180,216,.25); }
@@ -89,21 +89,21 @@
 /* ── 수강생 카드 ── */
 .student-card {
   background: var(--bg); border: 0.5px solid var(--border);
-  border-radius: 10px; padding: 14px 16px;
+  border-radius: var(--radius-md); padding: 14px 16px;
   display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
 }
 .student-avatar {
   width: 40px; height: 40px; border-radius: 50%;
   background: linear-gradient(135deg, rgba(0,180,216,.3), rgba(72,202,228,.2));
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
+  font-size: var(--fs-title); flex-shrink: 0;
 }
 .student-info { flex: 1; min-width: 0; }
-.student-name { font-size: 14px; font-weight: 700; color: var(--text); }
-.student-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.student-name { font-size: var(--fs-body); font-weight: 700; color: var(--text); }
+.student-meta { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 .student-actions { display: flex; gap: 8px; }
 .s-btn {
-  padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  padding: 6px 12px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 600;
   cursor: pointer; border: none; transition: all .2s;
 }
 .s-btn-log  { background: rgba(0,180,216,.15); color: var(--blue); }
@@ -120,8 +120,8 @@
   background: var(--bg); border-left: 3px solid var(--blue);
   border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px;
 }
-.fb-content { font-size: 13px; color: var(--text); line-height: 1.6; }
-.fb-meta    { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.fb-content { font-size: var(--fs-body); color: var(--text); line-height: 1.6; }
+.fb-meta    { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; }
 
 /* ── 코치 프로필 카드 ── */
 .coach-profile {
@@ -130,40 +130,40 @@
 .coach-avatar-lg {
   width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
   background: linear-gradient(135deg, rgba(0,180,216,.3), rgba(72,202,228,.2));
-  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  display: flex; align-items: center; justify-content: center; font-size: var(--fs-heading);
 }
-.coach-info-lg .coach-name  { font-size: 17px; font-weight: 700; color: var(--text); }
-.coach-info-lg .coach-spec  { font-size: 12px; color: var(--blue); margin-top: 3px; }
-.coach-info-lg .coach-career { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.coach-intro { font-size: 13px; color: var(--text); line-height: 1.6; margin-top: 12px; }
+.coach-info-lg .coach-name  { font-size: var(--fs-body-lg); font-weight: 700; color: var(--text); }
+.coach-info-lg .coach-spec  { font-size: var(--fs-caption); color: var(--blue); margin-top: 3px; }
+.coach-info-lg .coach-career { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+.coach-intro { font-size: var(--fs-body); color: var(--text); line-height: 1.6; margin-top: 12px; }
 
 /* ── 플랜 아이템 ── */
 .plan-item {
   background: var(--bg); border-left: 3px solid #facc15;
   border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px;
 }
-.plan-content { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-.plan-meta    { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.plan-content { font-size: var(--fs-body); color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.plan-meta    { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; }
 
 /* ── 상태 배지 ── */
-.badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
-.badge-pending { background: rgba(250,204,21,.15); color: #facc15; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
+.badge-pending { background: rgba(250,204,21,.15); color: #facc15; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
 
 /* ── 빈 상태 / 로딩 ── */
 .c-empty { text-align: center; padding: 48px 20px; color: var(--muted); }
-.c-empty-icon { font-size: 44px; margin-bottom: 12px; }
-.c-empty-text { font-size: 13px; line-height: 1.6; }
-.c-loading { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+.c-empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
+.c-empty-text { font-size: var(--fs-body); line-height: 1.6; }
+.c-loading { text-align: center; padding: 32px; color: var(--muted); font-size: var(--fs-body); }
 
 /* ── 로그 목록 ── */
 .log-item {
-  background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px;
+  background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
   transition: border-color .2s;
 }
 .log-item:hover { border-color: var(--blue); }
-.log-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.log-item-meta  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.log-item-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.log-item-meta  { font-size: var(--fs-caption); color: var(--muted); margin-top: 3px; }
 .log-item.selected { border-color: var(--blue); background: rgba(0,180,216,.05); }
 
 /* ── 모달 ── */
@@ -174,21 +174,21 @@
 }
 .modal-box {
   background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: 16px; padding: 28px; max-width: 520px; width: 100%;
+  border-radius: var(--radius-lg); padding: 28px; max-width: 520px; width: 100%;
   max-height: 80vh; overflow-y: auto;
 }
-.modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+.modal-title { font-size: var(--fs-body-lg); font-weight: 700; color: var(--text); margin-bottom: 18px; }
 .modal-close {
   float: right; background: none; border: none; color: var(--muted);
-  font-size: 20px; cursor: pointer; line-height: 1;
+  font-size: var(--fs-title); cursor: pointer; line-height: 1;
 }
 .modal-close:hover { color: var(--text); }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
 
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: #0d2137; border: 0.5px solid var(--blue); border-radius: 10px;
-  padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 9999;
+  background: var(--surface); border: 0.5px solid var(--blue); border-radius: var(--radius-md);
+  padding: 10px 20px; font-size: var(--fs-body); color: var(--text); z-index: 9999;
   opacity: 0; transition: opacity .3s; pointer-events: none;
 }
 .toast.show { opacity: 1; }
@@ -203,7 +203,7 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
            style="height:32px;width:auto;display:block;"
            onerror="this.style.display='none';document.getElementById('logo-fb').style.display='inline';">
@@ -211,7 +211,7 @@
     </div>
     <div class="header-right">
       <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
-        border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">로그아웃</button>
+        border-radius: var(--radius-sm);padding:6px 14px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 
@@ -260,17 +260,17 @@
           <div class="c-card-title">🔑 초대코드</div>
           <div class="invite-box">
             <div style="flex:1">
-              <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">수강생에게 아래 코드를 공유하세요</div>
+              <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:6px;">수강생에게 아래 코드를 공유하세요</div>
               <div class="invite-code" id="my-invite-code">—</div>
             </div>
             <button class="invite-copy-btn" onclick="copyInviteCode()">복사</button>
           </div>
-          <div style="font-size:11px;color:var(--muted);">수강생이 <strong>수강생 탭</strong>에서 이 코드를 입력하면 연동됩니다.</div>
+          <div style="font-size: var(--fs-caption);color:var(--muted);">수강생이 <strong>수강생 탭</strong>에서 이 코드를 입력하면 연동됩니다.</div>
         </div>
 
         <!-- 수강생 목록 -->
         <div class="c-card">
-          <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size:11px;color:var(--muted);font-weight:400;"></span></div>
+          <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size: var(--fs-caption);color:var(--muted);font-weight:400;"></span></div>
           <div id="student-list"><div class="c-loading">불러오는 중...</div></div>
         </div>
       </div>
@@ -287,11 +287,11 @@
           <div class="c-field">
             <div class="c-label">초대코드 입력</div>
             <input id="join-code" class="c-input" placeholder="SWIM-XXXX" maxlength="20"
-                   style="font-family:monospace;font-size:16px;letter-spacing:1px;"
+                   style="font-family:monospace;font-size: var(--fs-body-lg);letter-spacing:1px;"
                    oninput="this.value=this.value.toUpperCase()">
           </div>
           <button class="c-btn c-btn-primary" onclick="joinCoach()">연동 요청</button>
-          <div style="font-size:11px;color:var(--muted);margin-top:10px;">코치에게 초대코드를 받아 입력하세요.</div>
+          <div style="font-size: var(--fs-caption);color:var(--muted);margin-top:10px;">코치에게 초대코드를 받아 입력하세요.</div>
         </div>
       </div>
 
@@ -333,7 +333,7 @@
     <button class="modal-close" onclick="closeModal('modal-feedback')">✕</button>
     <div class="modal-title">💬 피드백 작성</div>
     <input type="hidden" id="fb-student-id">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="fb-student-name"></strong></div>
+    <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="fb-student-name"></strong></div>
 
     <div class="c-field">
       <div class="c-label">훈련 일지 선택 (선택사항)</div>
@@ -356,7 +356,7 @@
     <button class="modal-close" onclick="closeModal('modal-plan')">✕</button>
     <div class="modal-title">📋 훈련 플랜 전달</div>
     <input type="hidden" id="plan-student-id">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="plan-student-name"></strong></div>
+    <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="plan-student-name"></strong></div>
     <div class="c-field">
       <div class="c-label">플랜 내용</div>
       <textarea id="plan-content" class="c-textarea" placeholder="수강생에게 전달할 훈련 플랜을 작성하세요." style="min-height:120px;"></textarea>
@@ -373,7 +373,7 @@
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal('modal-logs')">✕</button>
     <div class="modal-title">📓 훈련 일지</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">수강생: <strong id="logs-student-name"></strong></div>
+    <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="logs-student-name"></strong></div>
     <div id="modal-logs-content"><div class="c-loading">불러오는 중...</div></div>
   </div>
 </div>
@@ -515,7 +515,7 @@ function openFeedback(studentId, name) {
   document.getElementById("fb-student-name").textContent = name;
   document.getElementById("fb-content").value = "";
   _selectedLogId = null;
-  document.getElementById("modal-log-list").innerHTML = `<div style="font-size:12px;color:var(--muted)">일지를 선택하지 않으면 일반 피드백으로 저장됩니다.</div>`;
+  document.getElementById("modal-log-list").innerHTML = `<div style="font-size: var(--fs-caption);color:var(--muted)">일지를 선택하지 않으면 일반 피드백으로 저장됩니다.</div>`;
   openModal("modal-feedback");
   loadLogsForFeedback(studentId);
 }
@@ -689,3 +689,6 @@ document.addEventListener("DOMContentLoaded", () => loadCoachTab());
 </script>
 </body>
 </html>
+
+
+

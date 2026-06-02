@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -17,16 +17,16 @@
 .ch-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .ch-back {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
-  border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 6px 14px; font-size: var(--fs-caption); cursor: pointer;
   text-decoration: none; transition: all .2s;
 }
 .ch-back:hover { border-color: var(--blue); color: var(--blue); }
-.ch-title { font-size: 20px; font-weight: 700; color: var(--text); }
+.ch-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
 
 /* ── 탭 ── */
 .ch-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
 .ch-tab {
-  padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--muted);
+  padding: 10px 20px; font-size: var(--fs-body); font-weight: 600; color: var(--muted);
   background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent;
   transition: all .2s; margin-bottom: -1px;
 }
@@ -35,18 +35,18 @@
 /* ── 챌린지 카드 ── */
 .ch-list { display: flex; flex-direction: column; gap: 16px; }
 .ch-card {
-  background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px;
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
   padding: 20px; transition: border-color .2s, box-shadow .2s;
 }
 .ch-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(0,180,216,.1); }
 .ch-card-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
-.ch-card-icon { font-size: 36px; line-height: 1; flex-shrink: 0; }
+.ch-card-icon { font-size: var(--fs-display); line-height: 1; flex-shrink: 0; }
 .ch-card-info { flex: 1; }
-.ch-card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.ch-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ch-card-title { font-size: var(--fs-body-lg); font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.ch-card-desc  { font-size: var(--fs-caption); color: var(--muted); line-height: 1.6; }
 .ch-card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .ch-badge {
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: var(--radius-pill); font-size: var(--fs-caption); font-weight: 600;
   background: rgba(0,180,216,.15); color: var(--blue);
 }
 .ch-badge.red   { background: rgba(248,113,113,.15); color: #f87171; }
@@ -54,13 +54,13 @@
 
 /* ── 진행률 바 ── */
 .prog-wrap { margin-bottom: 14px; }
-.prog-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.prog-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-.prog-fill { height: 100%; background: linear-gradient(90deg, #00b4d8, #48cae4); border-radius: 4px; transition: width .6s ease; }
+.prog-label { display: flex; justify-content: space-between; font-size: var(--fs-caption); color: var(--muted); margin-bottom: 4px; }
+.prog-bar { height: 8px; background: var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, #00b4d8, #48cae4); border-radius: var(--radius-sm); transition: width .6s ease; }
 
 /* ── 참여 버튼 ── */
 .ch-join-btn {
-  padding: 10px 24px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+  padding: 10px 24px; border: none; border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600;
   cursor: pointer; transition: all .2s;
 }
 .ch-join-btn.joinable { background: var(--blue); color: #fff; }
@@ -69,10 +69,10 @@
 
 /* ── 랭킹 ── */
 .ranking-wrap { margin-top: 14px; border-top: 0.5px solid var(--border); padding-top: 14px; }
-.ranking-title { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.ranking-title { font-size: var(--fs-caption); font-weight: 700; color: var(--muted); margin-bottom: 8px; }
 .ranking-table { width: 100%; border-collapse: collapse; }
 .ranking-table th,
-.ranking-table td { padding: 7px 10px; text-align: left; font-size: 12px; }
+.ranking-table td { padding: 7px 10px; text-align: left; font-size: var(--fs-caption); }
 .ranking-table th { color: var(--muted); font-weight: 600; border-bottom: 0.5px solid var(--border); }
 .ranking-table td { color: var(--text); border-bottom: 0.5px solid rgba(255,255,255,.04); }
 .ranking-table tr.me td { color: var(--blue); font-weight: 700; }
@@ -84,8 +84,8 @@
 .ch-leave-btn {
   padding: 10px 18px;
   border: 0.5px solid rgba(248,113,113,.4);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
   font-weight: 600;
   background: rgba(248,113,113,.08);
   color: #f87171;
@@ -97,24 +97,24 @@
 
 /* ── 빈 상태 ── */
 .ch-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-.ch-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.ch-empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 
 /* ── 로딩 ── */
-.ch-loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+.ch-loading { text-align: center; padding: 40px; color: var(--muted); font-size: var(--fs-body); }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
            style="height:32px;width:auto;display:block;" onerror="this.style.display='none';document.getElementById('logo-fb').style.display='inline';">
       <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
     </div>
     <div class="header-right">
       <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
-        border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;min-height:44px;">로그아웃</button>
+        border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">로그아웃</button>
     </div>
   </header>
 
@@ -247,7 +247,7 @@ function buildCard(ch, isMy) {
            <button class="ch-leave-btn" onclick="leaveChallenge(${ch.id})">🚪 포기하기</button>`
         : `<button class="ch-join-btn joinable" onclick="joinChallenge(${ch.id})">참여하기</button>`
       }
-      <button style="background:none;border:0.5px solid var(--border);color:var(--muted);border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;" onclick="toggleRanking(${ch.id})">랭킹 보기</button>
+      <button style="background:none;border:0.5px solid var(--border);color:var(--muted);border-radius: var(--radius-sm);padding:8px 14px;font-size: var(--fs-caption);cursor:pointer;" onclick="toggleRanking(${ch.id})">랭킹 보기</button>
     </div>
     <div id="ranking-${ch.id}" style="display:none;"></div>
   `;
@@ -314,13 +314,13 @@ async function toggleRanking(id) {
   const el = document.getElementById(`ranking-${id}`);
   if (el.style.display !== 'none') { el.style.display = 'none'; return; }
   el.style.display = 'block';
-  el.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px;">랭킹 로드 중...</div>';
+  el.innerHTML = '<div style="padding:12px;color:var(--muted);font-size: var(--fs-caption);">랭킹 로드 중...</div>';
   try {
     const res = await fetch(`/api/challenge/${id}/ranking`, { credentials: 'include' });
     const d = await res.json();
     const rows = d.ranking || [];
     if (!rows.length) {
-      el.innerHTML = '<div class="ranking-wrap"><div style="font-size:12px;color:var(--muted);">아직 참여자가 없습니다</div></div>';
+      el.innerHTML = '<div class="ranking-wrap"><div style="font-size: var(--fs-caption);color:var(--muted);">아직 참여자가 없습니다</div></div>';
       return;
     }
     const medals = ['🥇','🥈','🥉'];
@@ -346,10 +346,12 @@ async function toggleRanking(id) {
         </table>
       </div>`;
   } catch {
-    el.innerHTML = '<div class="ranking-wrap" style="color:var(--muted);font-size:12px;">랭킹을 불러오지 못했습니다</div>';
+    el.innerHTML = '<div class="ranking-wrap" style="color:var(--muted);font-size: var(--fs-caption);">랭킹을 불러오지 못했습니다</div>';
   }
 }
 </script>
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

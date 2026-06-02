@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -25,9 +25,9 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   transition: all .2s;
   text-decoration: none;
@@ -35,8 +35,8 @@
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-.eq-title { font-size: 20px; font-weight: 600; color: var(--text); }
-.eq-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.eq-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.eq-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* 탭 */
 .tab-bar {
@@ -44,7 +44,7 @@
   gap: 0;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 4px;
   margin-bottom: 28px;
   overflow-x: auto;
@@ -56,9 +56,9 @@
   padding: 10px 18px;
   background: none;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   transition: background .2s, color .2s;
@@ -82,7 +82,7 @@
 .eq-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color .2s, transform .15s, box-shadow .2s;
   position: relative;
@@ -118,7 +118,7 @@
 }
 
 .eq-icon {
-  font-size: 36px;
+  font-size: var(--fs-display);
   line-height: 1;
   flex-shrink: 0;
 }
@@ -126,20 +126,20 @@
 .eq-card-info { flex: 1; min-width: 0; }
 
 .eq-name {
-  font-size: 15px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 4px;
 }
 
 .eq-name-sub {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-bottom: 8px;
 }
 
 .eq-role {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.6;
 }
@@ -153,9 +153,9 @@
 }
 
 .eq-level {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   letter-spacing: 0.3px;
 }
@@ -164,7 +164,7 @@
 .eq-level.advanced { background: rgba(248,113,113,.12); color: #f87171; border: 0.5px solid rgba(248,113,113,.25); }
 
 .eq-toggle-icon {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--muted);
   transition: transform .25s;
   flex-shrink: 0;
@@ -185,7 +185,7 @@
   margin-top: 14px;
 }
 .eq-section-label {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -194,7 +194,7 @@
 }
 
 .eq-section-body {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -209,7 +209,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
 }
 .eq-drill-item::before {
@@ -221,9 +221,9 @@
 .eq-tip-box {
   background: rgba(0,180,216,.06);
   border: 0.5px solid rgba(0,180,216,.18);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -231,9 +231,9 @@
 .eq-warning-box {
   background: rgba(248,113,113,.06);
   border: 0.5px solid rgba(248,113,113,.18);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: #f87171;
   line-height: 1.7;
 }
@@ -243,12 +243,12 @@
   align-items: center;
   gap: 5px;
   margin-top: 10px;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--blue);
   text-decoration: none;
   border: 0.5px solid rgba(0,180,216,.3);
   padding: 5px 12px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   transition: background .2s;
 }
 .eq-drill-link:hover { background: rgba(0,180,216,.1); }
@@ -263,9 +263,9 @@
   padding: 10px 16px;
   background: rgba(255,0,0,.08);
   border: 0.5px solid rgba(255,80,80,.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #ff6b6b;
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   text-decoration: none;
   transition: background .2s, border-color .2s;
@@ -282,8 +282,8 @@
 @media (max-width: 600px) {
   .eq-page { padding: 14px; }
   .eq-grid { grid-template-columns: 1fr; }
-  .eq-icon { font-size: 28px; }
-  .eq-name { font-size: 14px; }
+  .eq-icon { font-size: var(--fs-heading); }
+  .eq-name { font-size: var(--fs-body); }
 }
 </style>
 </head>
@@ -292,7 +292,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">장비 가이드</span>
     </div>
@@ -575,3 +575,5 @@ renderGrids();
 </script>
 </body>
 </html>
+
+

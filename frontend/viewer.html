@@ -20,8 +20,8 @@
   position:fixed;bottom:28px;left:50%;
   transform:translateX(-50%) translateY(10px);
   background:#16a34a;color:#fff;
-  padding:10px 22px;border-radius:8px;
-  font-size:14px;font-weight:600;
+  padding:10px 22px;border-radius: var(--radius-sm);
+  font-size: var(--fs-body);font-weight:600;
   opacity:0;transition:opacity 0.25s,transform 0.25s;
   pointer-events:none;z-index:999;white-space:nowrap;">
 </div>
@@ -30,14 +30,14 @@
 
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);cursor:pointer;font-size: var(--fs-body);margin-right:8px;">← 뒤로</button>
       <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">수영 영법 분석 플랫폼</span>
     </div>
     <div class="header-right">
       <span class="status-dot" id="status-dot"></span>
       <span class="status-label" id="status-label">대기 중</span>
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;margin-left:12px;">로그아웃</button>
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;margin-left:12px;">로그아웃</button>
     </div>
   </header>
 
@@ -411,8 +411,8 @@ function finishAnalysis(d) {
         ${imp.reason ? `<div class="fb-reason">💡 ${imp.reason}</div>` : ''}
         ${imp.youtube_url ? `<a href="${imp.youtube_url}" target="_blank" rel="noopener noreferrer"
            style="display:inline-block;margin-top:6px;padding:3px 10px;
-                  background:#ff0000;color:#fff;border-radius:4px;
-                  font-size:11px;font-weight:600;text-decoration:none;">
+                  background:#ff0000;color:#fff;border-radius: var(--radius-sm);
+                  font-size: var(--fs-caption);font-weight:600;text-decoration:none;">
           📺 참고 영상 보기
         </a>` : ''}
       `;
@@ -453,13 +453,13 @@ function showDashboardBtn() {
   wrap.innerHTML = `
     <a href="https://localhost/dashboard" target="_blank"
        style="display:flex;align-items:center;justify-content:center;gap:8px;
-              width:100%;padding:12px;border-radius:10px;
+              width:100%;padding:12px;border-radius: var(--radius-md);
               background:linear-gradient(135deg,#3b82f6,#06b6d4);
-              color:#fff;font-size:14px;font-weight:600;
+              color:#fff;font-size: var(--fs-body);font-weight:600;
               text-decoration:none;box-sizing:border-box;">
       📊 나만의 수영 대시보드 확인하기
     </a>
-    <p style="text-align:center;font-size:11px;color:#666;margin-top:6px;">
+    <p style="text-align:center;font-size: var(--fs-caption);color:#666;margin-top:6px;">
       분석 데이터가 Metabase 대시보드에 자동으로 저장됩니다
     </p>
   `;
@@ -572,9 +572,9 @@ function showActionButtons() {
   const shareBtn = (lastAnalysisData && lastAnalysisData.analysis_id)
     ? `<button id="share-btn" onclick="shareResult()"
          style="display:flex;align-items:center;justify-content:center;gap:8px;
-                width:100%;padding:11px;border-radius:10px;border:none;
+                width:100%;padding:11px;border-radius: var(--radius-md);border:none;
                 background:linear-gradient(135deg,#0077b6,#00b4d8);color:#fff;
-                font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box;">
+                font-size: var(--fs-body);font-weight:600;cursor:pointer;box-sizing:border-box;">
          🔗 결과 공유하기
        </button>`
     : '';
@@ -582,15 +582,15 @@ function showActionButtons() {
     ${shareBtn}
     <button id="sheets-save-btn" onclick="saveToSheets()"
       style="display:flex;align-items:center;justify-content:center;gap:8px;
-             width:100%;padding:11px;border-radius:10px;border:none;
-             background:#4285f4;color:#fff;font-size:14px;font-weight:600;
+             width:100%;padding:11px;border-radius: var(--radius-md);border:none;
+             background:#4285f4;color:#fff;font-size: var(--fs-body);font-weight:600;
              cursor:pointer;box-sizing:border-box;">
       📊 Google Sheets에 저장
     </button>
     <button id="jpg-save-btn" onclick="saveJpg()"
       style="display:flex;align-items:center;justify-content:center;gap:8px;
-             width:100%;padding:11px;border-radius:10px;border:none;
-             background:#22c55e;color:#fff;font-size:14px;font-weight:600;
+             width:100%;padding:11px;border-radius: var(--radius-md);border:none;
+             background:#22c55e;color:#fff;font-size: var(--fs-body);font-weight:600;
              cursor:pointer;box-sizing:border-box;">
       📥 분석 결과 JPG 저장
     </button>
@@ -627,18 +627,18 @@ async function saveJpg() {
     let strengthsHtml = '';
     if (d.strengths && d.strengths.length) {
       const items = d.strengths.map(s => `
-        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius: var(--radius-sm);padding:12px 16px;margin-bottom:10px;">
           <div style="margin-bottom:6px;">
-            <span style="font-weight:700;color:#166534;font-size:14px;">${s.item}</span>
-            <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600;margin-left:10px;">${s.value}</span>
-            <span style="color:#6b7280;font-size:12px;margin-left:8px;">이상 범위: ${s.ideal}</span>
+            <span style="font-weight:700;color:#166534;font-size: var(--fs-body);">${s.item}</span>
+            <span style="background:#22c55e;color:#fff;border-radius: var(--radius-sm);padding:2px 8px;font-size: var(--fs-caption);font-weight:600;margin-left:10px;">${s.value}</span>
+            <span style="color:#6b7280;font-size: var(--fs-caption);margin-left:8px;">이상 범위: ${s.ideal}</span>
           </div>
-          <div style="color:#374151;font-size:13px;line-height:1.5;">${s.comment}</div>
-          ${s.reason ? `<div style="color:#6b7280;font-size:12px;margin-top:6px;">💡 ${s.reason}</div>` : ''}
+          <div style="color:#374151;font-size: var(--fs-body);line-height:1.5;">${s.comment}</div>
+          ${s.reason ? `<div style="color:#6b7280;font-size: var(--fs-caption);margin-top:6px;">💡 ${s.reason}</div>` : ''}
         </div>`).join('');
       strengthsHtml = `
         <div style="margin-bottom:24px;">
-          <div style="font-size:16px;font-weight:700;color:#166534;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #86efac;">✅ 강점</div>
+          <div style="font-size: var(--fs-body-lg);font-weight:700;color:#166534;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #86efac;">✅ 강점</div>
           ${items}
         </div>`;
     }
@@ -647,18 +647,18 @@ async function saveJpg() {
     let improvementsHtml = '';
     if (d.improvements && d.improvements.length) {
       const items = d.improvements.map(imp => `
-        <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+        <div style="background:#fff7ed;border:1px solid #fdba74;border-radius: var(--radius-sm);padding:12px 16px;margin-bottom:10px;">
           <div style="margin-bottom:6px;">
-            <span style="font-weight:700;color:#9a3412;font-size:14px;">${imp.item}</span>
-            <span style="background:#f97316;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600;margin-left:10px;">${imp.value}</span>
-            <span style="color:#6b7280;font-size:12px;margin-left:8px;">이상 범위: ${imp.ideal}</span>
+            <span style="font-weight:700;color:#9a3412;font-size: var(--fs-body);">${imp.item}</span>
+            <span style="background:#f97316;color:#fff;border-radius: var(--radius-sm);padding:2px 8px;font-size: var(--fs-caption);font-weight:600;margin-left:10px;">${imp.value}</span>
+            <span style="color:#6b7280;font-size: var(--fs-caption);margin-left:8px;">이상 범위: ${imp.ideal}</span>
           </div>
-          <div style="color:#374151;font-size:13px;line-height:1.5;">${imp.comment}</div>
-          ${imp.reason ? `<div style="color:#6b7280;font-size:12px;margin-top:6px;">💡 ${imp.reason}</div>` : ''}
+          <div style="color:#374151;font-size: var(--fs-body);line-height:1.5;">${imp.comment}</div>
+          ${imp.reason ? `<div style="color:#6b7280;font-size: var(--fs-caption);margin-top:6px;">💡 ${imp.reason}</div>` : ''}
         </div>`).join('');
       improvementsHtml = `
         <div style="margin-bottom:24px;">
-          <div style="font-size:16px;font-weight:700;color:#9a3412;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #fdba74;">⚠️ 개선점</div>
+          <div style="font-size: var(--fs-body-lg);font-weight:700;color:#9a3412;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #fdba74;">⚠️ 개선점</div>
           ${items}
         </div>`;
     }
@@ -666,10 +666,10 @@ async function saveJpg() {
     // ── 추천 드릴 섹션 HTML ──
     let drillsHtml = '';
     if (drills.length) {
-      const items = drills.map(drill => `<li style="margin-bottom:8px;color:#374151;font-size:13px;">${drill}</li>`).join('');
+      const items = drills.map(drill => `<li style="margin-bottom:8px;color:#374151;font-size: var(--fs-body);">${drill}</li>`).join('');
       drillsHtml = `
         <div style="margin-bottom:24px;">
-          <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">✎ 추천 드릴</div>
+          <div style="font-size: var(--fs-body-lg);font-weight:700;color:#1a1a1a;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">✎ 추천 드릴</div>
           <ul style="margin:0;padding-left:20px;line-height:1.8;">${items}</ul>
         </div>`;
     }
@@ -680,14 +680,14 @@ async function saveJpg() {
       'position:absolute', 'top:-9999px', 'left:-9999px',
       'width:794px', 'background:#ffffff', 'color:#1a1a1a',
       'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-      'font-size:14px', 'line-height:1.6', 'padding:40px', 'box-sizing:border-box',
+      'font-size: var(--fs-body)', 'line-height:1.6', 'padding:40px', 'box-sizing:border-box',
     ].join(';');
 
     report.innerHTML = `
       <!-- 헤더 -->
-      <div style="background:linear-gradient(135deg,#1e40af,#0891b2);color:#fff;border-radius:12px;padding:24px 28px;margin-bottom:24px;">
-        <div style="font-size:22px;font-weight:800;margin-bottom:10px;">🏊 SwimTech 분석 보고서</div>
-        <div style="font-size:13px;opacity:0.9;line-height:2;">
+      <div style="background:linear-gradient(135deg,#1e40af,#0891b2);color:#fff;border-radius: var(--radius-md);padding:24px 28px;margin-bottom:24px;">
+        <div style="font-size: var(--fs-heading);font-weight:800;margin-bottom:10px;">🏊 SwimTech 분석 보고서</div>
+        <div style="font-size: var(--fs-body);opacity:0.9;line-height:2;">
           <span style="margin-right:24px;">📅 날짜: ${today}</span>
           <span style="margin-right:24px;">🏊 영법: ${strokeLabel}</span>
           <span>🎯 목적: ${purposeLabel}</span>
@@ -695,25 +695,25 @@ async function saveJpg() {
       </div>
 
       <!-- 종합 요약 -->
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-        <div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#0f172a;">📊 종합 분석 요약</div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius: var(--radius-md);padding:20px 24px;margin-bottom:24px;">
+        <div style="font-size: var(--fs-body-lg);font-weight:700;margin-bottom:16px;color:#0f172a;">📊 종합 분석 요약</div>
         <table style="width:100%;border-collapse:separate;border-spacing:10px;">
           <tr>
-            <td style="text-align:center;background:#fff;border-radius:10px;padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
-              <div style="font-size:28px;font-weight:800;color:#3b82f6;">${score}</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">종합 점수 / 100</div>
+            <td style="text-align:center;background:#fff;border-radius: var(--radius-md);padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
+              <div style="font-size: var(--fs-heading);font-weight:800;color:#3b82f6;">${score}</div>
+              <div style="font-size: var(--fs-caption);color:#6b7280;margin-top:4px;">종합 점수 / 100</div>
             </td>
-            <td style="text-align:center;background:#fff;border-radius:10px;padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
-              <div style="font-size:24px;font-weight:700;color:#8b5cf6;">${sym.toFixed(1)}</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">좌우 대칭</div>
+            <td style="text-align:center;background:#fff;border-radius: var(--radius-md);padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
+              <div style="font-size: var(--fs-heading);font-weight:700;color:#8b5cf6;">${sym.toFixed(1)}</div>
+              <div style="font-size: var(--fs-caption);color:#6b7280;margin-top:4px;">좌우 대칭</div>
             </td>
-            <td style="text-align:center;background:#fff;border-radius:10px;padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
-              <div style="font-size:24px;font-weight:700;color:#10b981;">${kickCount}</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">발차기 횟수</div>
+            <td style="text-align:center;background:#fff;border-radius: var(--radius-md);padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
+              <div style="font-size: var(--fs-heading);font-weight:700;color:#10b981;">${kickCount}</div>
+              <div style="font-size: var(--fs-caption);color:#6b7280;margin-top:4px;">발차기 횟수</div>
             </td>
-            <td style="text-align:center;background:#fff;border-radius:10px;padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
-              <div style="font-size:24px;font-weight:700;color:#f59e0b;">${(d.kick_frequency_hz || 0).toFixed(2)}/s</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">발차기 빈도</div>
+            <td style="text-align:center;background:#fff;border-radius: var(--radius-md);padding:16px 8px;border:1px solid #e2e8f0;width:25%;">
+              <div style="font-size: var(--fs-heading);font-weight:700;color:#f59e0b;">${(d.kick_frequency_hz || 0).toFixed(2)}/s</div>
+              <div style="font-size: var(--fs-caption);color:#6b7280;margin-top:4px;">발차기 빈도</div>
             </td>
           </tr>
         </table>
@@ -724,7 +724,7 @@ async function saveJpg() {
       ${drillsHtml}
 
       <!-- 푸터 -->
-      <div style="border-top:1px solid #e2e8f0;padding-top:14px;text-align:center;color:#9ca3af;font-size:12px;">
+      <div style="border-top:1px solid #e2e8f0;padding-top:14px;text-align:center;color:#9ca3af;font-size: var(--fs-caption);">
         SwimTech | swimtech.kr
       </div>
     `;
@@ -776,7 +776,7 @@ async function saveToSheets() {
         const link = document.createElement('a');
         link.href = data.sheets_url; link.target = '_blank'; link.rel = 'noopener noreferrer';
         link.textContent = '📋 Sheets 열기';
-        link.style.cssText = 'display:block;text-align:center;font-size:11px;color:#4285f4;margin-top:4px;text-decoration:underline;cursor:pointer;';
+        link.style.cssText = 'display:block;text-align:center;font-size: var(--fs-caption);color:#4285f4;margin-top:4px;text-decoration:underline;cursor:pointer;';
         btn.insertAdjacentElement('afterend', link);
       }
     } else {
@@ -882,4 +882,6 @@ function resetAnalyzeBtn() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
 

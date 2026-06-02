@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -31,9 +31,9 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   transition: all .2s;
   text-decoration: none;
@@ -41,7 +41,7 @@
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
 .dash-title {
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 600;
   color: var(--text);
 }
@@ -57,17 +57,17 @@
   background: linear-gradient(var(--surface), var(--surface)) padding-box,
               linear-gradient(135deg, #00b4d8, #1e4d6b) border-box;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
 }
 .summary-card-label {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-bottom: 8px;
   letter-spacing: 0.3px;
 }
 .summary-card-value {
-  font-size: 32px;
+  font-size: var(--fs-display);
   font-weight: 600;
   line-height: 1;
 }
@@ -76,7 +76,7 @@
 .summary-card-value.amber  { color: var(--amber); }
 .summary-card-value.cyan   { color: var(--cyan); }
 .summary-card-unit {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-top: 4px;
 }
@@ -91,11 +91,11 @@
 .chart-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
 }
 .chart-card-title {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-bottom: 14px;
   font-weight: 500;
@@ -110,11 +110,11 @@
 .table-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
 }
 .table-card-title {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--text);
   margin-bottom: 14px;
@@ -122,13 +122,13 @@
 .analysis-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
 .analysis-table th {
   text-align: left;
   color: var(--muted);
   font-weight: 400;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   padding: 0 10px 10px 0;
   border-bottom: 0.5px solid var(--border);
 }
@@ -142,28 +142,28 @@
 
 .badge {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
 }
 .badge-blue   { background: rgba(0,180,216,.15); color: var(--blue); border: 0.5px solid rgba(0,180,216,.3); }
 .badge-green  { background: rgba(74,222,128,.12); color: var(--green); border: 0.5px solid rgba(74,222,128,.3); }
 .badge-amber  { background: rgba(245,158,11,.12); color: var(--amber); border: 0.5px solid rgba(245,158,11,.3); }
-.badge-purple { background: rgba(167,139,250,.12); color: var(--purple); border: 0.5px solid rgba(167,139,250,.3); }
+.badge-purple { background: rgba(72,202,228,.12); color: var(--purple); border: 0.5px solid rgba(72,202,228,.3); }
 
 .empty-msg {
   text-align: center;
   color: var(--muted);
   padding: 60px 0;
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
 
 .loading-overlay {
   text-align: center;
   color: var(--muted);
   padding: 40px 0;
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
 
 /* 히스토리 타임라인 */
@@ -171,7 +171,7 @@
   margin-top: 20px;
 }
 .history-header {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--text);
   margin-bottom: 14px;
@@ -187,7 +187,7 @@
 .history-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -196,7 +196,7 @@
 }
 .history-card:hover { border-color: rgba(0,180,216,.35); }
 .history-date {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   white-space: nowrap;
   min-width: 80px;
@@ -210,20 +210,20 @@
   flex-wrap: wrap;
 }
 .history-stroke {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: var(--blue);
   background: rgba(0,180,216,.1);
   border: 0.5px solid rgba(0,180,216,.25);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 1px 7px;
 }
 .history-purpose {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
 }
 .history-feedback {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -237,12 +237,12 @@
   min-width: 56px;
 }
 .history-score {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   line-height: 1;
 }
 .history-diff {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
 }
 .history-diff.up   { color: var(--green); }
@@ -253,8 +253,8 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
@@ -266,7 +266,7 @@
 .weekly-card {
   background: linear-gradient(135deg, #0f2942, #1a3a5c);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 18px 20px;
   margin-bottom: 20px;
 }
@@ -278,19 +278,19 @@
   gap: 10px;
   flex-wrap: wrap;
 }
-.weekly-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.weekly-stats { font-size: 13px; color: var(--muted); }
-.weekly-stats strong { color: var(--blue); font-size: 16px; }
+.weekly-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.weekly-stats { font-size: var(--fs-body); color: var(--muted); }
+.weekly-stats strong { color: var(--blue); font-size: var(--fs-body-lg); }
 .weekly-bar-bg {
   height: 8px;
   background: rgba(255,255,255,.06);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   margin-bottom: 8px;
 }
 .weekly-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, #00b4d8, #48cae4);
   transition: width .7s ease;
 }
@@ -302,15 +302,15 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.weekly-msg { font-size: 12px; color: var(--muted); }
+.weekly-msg { font-size: var(--fs-caption); color: var(--muted); }
 .weekly-msg.done { color: var(--green); font-weight: 600; }
 .weekly-goal-btn {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   padding: 4px 12px;
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: border-color .2s, color .2s;
 }
@@ -319,9 +319,9 @@
   background: var(--surface);
   border: 0.5px solid var(--blue);
   color: var(--text);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   display: none;
 }
@@ -333,14 +333,14 @@
   gap: 10px;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   margin-bottom: 20px;
 }
-.mini-badge-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.mini-badge-emojis { display: flex; gap: 6px; font-size: 22px; flex: 1; }
+.mini-badge-label { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
+.mini-badge-emojis { display: flex; gap: 6px; font-size: var(--fs-heading); flex: 1; }
 .mini-badge-link {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--blue);
   text-decoration: none;
   white-space: nowrap;
@@ -362,12 +362,12 @@
 
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;">← 뒤로</button>
+      <button onclick="history.back()" class="back-btn" style="margin-right:8px;">← 뒤로</button>
       <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">대시보드</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 
@@ -402,17 +402,17 @@
     <div class="mini-badge-row">
       <span class="mini-badge-label">🏅 내 뱃지</span>
       <div class="mini-badge-emojis" id="mini-badge-emojis">
-        <span style="color:var(--muted);font-size:13px;">불러오는 중...</span>
+        <span style="color:var(--muted);font-size: var(--fs-body);">불러오는 중...</span>
       </div>
       <a href="/badges" class="mini-badge-link">전체 보기 →</a>
     </div>
 
     <!-- AI 분석 기능 준비 중 안내 -->
-    <div id="analysis-coming-soon" style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:32px 20px;text-align:center;margin-bottom:20px;">
-      <div style="font-size:32px;margin-bottom:12px;">&#x1F6A7;</div>
-      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">AI 분석 기능 준비 중</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.7;">수영 영상 분석 및 자세 분석 기능이 곧 제공될 예정입니다.<br>업데이트 소식은 릴리즈 노트에서 확인하세요.</div>
-      <a href="/changelog" style="display:inline-block;margin-top:16px;padding:8px 20px;background:var(--blue);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">릴리즈 노트 보기</a>
+    <div id="analysis-coming-soon" style="background:var(--surface);border:0.5px solid var(--border);border-radius: var(--radius-md);padding:32px 20px;text-align:center;margin-bottom:20px;">
+      <div style="font-size: var(--fs-display);margin-bottom:12px;">&#x1F6A7;</div>
+      <div style="font-size: var(--fs-body-lg);font-weight:600;color:var(--text);margin-bottom:8px;">AI 분석 기능 준비 중</div>
+      <div style="font-size: var(--fs-body);color:var(--muted);line-height:1.7;">수영 영상 분석 및 자세 분석 기능이 곧 제공될 예정입니다.<br>업데이트 소식은 릴리즈 노트에서 확인하세요.</div>
+      <a href="/changelog" style="display:inline-block;margin-top:16px;padding:8px 20px;background:var(--blue);color:#fff;text-decoration:none;border-radius: var(--radius-sm);font-size: var(--fs-body);font-weight:600;">릴리즈 노트 보기</a>
     </div>
 
     <!-- 숫자 카드 -->
@@ -772,10 +772,10 @@ async function loadBadgeMini() {
     const earned = (data.badges || []).filter(b => b.earned);
     const wrap = document.getElementById('mini-badge-emojis');
     if (!earned.length) {
-      wrap.innerHTML = '<span style="color:var(--muted);font-size:13px;">아직 없어요 — 첫 분석을 시작해보세요!</span>';
+      wrap.innerHTML = '<span style="color:var(--muted);font-size: var(--fs-body);">아직 없어요 — 첫 분석을 시작해보세요!</span>';
     } else {
       const show = earned.slice(0, 3);
-      const rest = earned.length > 3 ? `<span style="font-size:13px;color:var(--muted);margin-left:2px;">+${earned.length - 3}</span>` : '';
+      const rest = earned.length > 3 ? `<span style="font-size: var(--fs-body);color:var(--muted);margin-left:2px;">+${earned.length - 3}</span>` : '';
       wrap.innerHTML = show.map(b => `<span title="${b.name}">${b.emoji}</span>`).join('') + rest;
     }
   } catch { /* 무시 */ }
@@ -854,3 +854,5 @@ async function logout() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

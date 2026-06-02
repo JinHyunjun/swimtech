@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -18,7 +18,7 @@
 
 .injury-wrap {
   min-height: calc(100vh - 53px);
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   padding: 28px 16px 80px;
@@ -58,14 +58,14 @@
   margin-bottom: 28px;
 }
 .injury-header h1 {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
   text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .injury-header p {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-top: 6px;
 }
@@ -75,11 +75,11 @@
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   text-decoration: none;
   margin-bottom: 20px;
   border: 0.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 5px 12px;
   transition: color .2s, border-color .2s;
 }
@@ -91,7 +91,7 @@
   gap: 0;
   background: rgba(13,33,55,0.85);
   border: 0.5px solid rgba(0,180,216,0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 4px;
   margin-bottom: 28px;
   overflow-x: auto;
@@ -104,14 +104,14 @@
   padding: 10px 14px;
   background: none;
   border: none;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   color: rgba(144,196,212,0.7);
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   transition: background .2s, color .2s;
   white-space: nowrap;
-  font-family: inherit;
+  font-family: var(--font-base);
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
@@ -127,7 +127,7 @@
 .section-card {
   background: rgba(13,33,55,0.85);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -135,14 +135,14 @@
   padding: 18px 20px 12px;
   border-bottom: 0.5px solid rgba(0,180,216,0.1);
 }
-.section-icon { font-size: 24px; margin-bottom: 6px; }
+.section-icon { font-size: var(--fs-heading); margin-bottom: 6px; }
 .section-title {
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--text);
 }
 .section-sub {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: rgba(248,113,113,0.8);
   font-style: italic;
   margin-top: 2px;
@@ -154,7 +154,7 @@
   margin-bottom: 18px;
 }
 .cause-title {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   letter-spacing: 0.5px;
   color: rgba(245,158,11,0.8);
@@ -167,7 +167,7 @@
   gap: 4px;
 }
 .cause-item {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   padding-left: 12px;
   position: relative;
@@ -181,7 +181,7 @@
 
 /* 스트레칭 그리드 */
 .stretch-title {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   letter-spacing: 0.5px;
   color: rgba(0,180,216,0.8);
@@ -199,20 +199,20 @@
 .stretch-card {
   background: rgba(0,180,216,0.05);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 14px;
   transition: border-color .2s;
 }
 .stretch-card:hover { border-color: rgba(0,180,216,0.35); }
 
 .stretch-num {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   color: var(--blue);
   margin-bottom: 6px;
 }
 .stretch-name {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--text);
   margin-bottom: 6px;
@@ -225,10 +225,10 @@
   margin-bottom: 6px;
 }
 .stretch-time {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   background: rgba(72,202,228,.1);
   border: 0.5px solid rgba(72,202,228,.2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 1px 7px;
   color: var(--cyan);
 }
@@ -236,7 +236,7 @@
 .diff-medium { background: rgba(245,158,11,.08);  color: var(--amber);  border: 0.5px solid rgba(245,158,11,.2);  }
 .diff-hard   { background: rgba(248,113,113,.08); color: var(--red);    border: 0.5px solid rgba(248,113,113,.2); }
 .stretch-note {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.6);
   line-height: 1.5;
 }
@@ -245,11 +245,11 @@
 .check-section {
   background: rgba(74,222,128,0.05);
   border: 0.5px solid rgba(74,222,128,0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 14px 16px;
 }
 .check-title {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: rgba(74,222,128,0.8);
   letter-spacing: 0.5px;
@@ -257,7 +257,7 @@
   margin-bottom: 8px;
 }
 .check-item {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   padding-left: 16px;
   position: relative;
@@ -269,7 +269,7 @@
   position: absolute;
   left: 0;
   color: rgba(74,222,128,0.7);
-  font-size: 11px;
+  font-size: var(--fs-caption);
 }
 
 /* 하단 버튼 */
@@ -279,10 +279,10 @@
   padding: 24px;
   background: rgba(13,33,55,0.7);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
 }
-.cta-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.cta-desc  { font-size: 12px; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+.cta-title { font-size: var(--fs-body-lg); font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.cta-desc  { font-size: var(--fs-caption); color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
 .cta-btn {
   display: inline-flex;
   align-items: center;
@@ -291,8 +291,8 @@
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body);
   font-weight: 600;
   text-decoration: none;
   transition: background .2s, transform .15s;
@@ -303,7 +303,7 @@
 .ref-note {
   text-align: center;
   margin-top: 20px;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.4);
 }
 
@@ -315,9 +315,9 @@
   padding: 9px 18px;
   background: rgba(255,0,0,.08);
   border: 0.5px solid rgba(255,80,80,.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #ff6b6b;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   text-decoration: none;
   transition: background .2s, border-color .2s;
@@ -325,22 +325,22 @@
 .injury-yt-btn:hover { background: rgba(255,0,0,.16); border-color: rgba(255,80,80,.55); }
 
 .tip-section {
-  background: rgba(167,139,250,0.07);
-  border: 0.5px solid rgba(167,139,250,0.25);
-  border-radius: 10px;
+  background: rgba(72,202,228,0.07);
+  border: 0.5px solid rgba(72,202,228,0.25);
+  border-radius: var(--radius-md);
   padding: 14px 16px;
   margin-top: 18px;
 }
 .tip-title {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
-  color: rgba(167,139,250,0.9);
+  color: rgba(72,202,228,0.9);
   letter-spacing: 0.5px;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 .tip-body {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -349,12 +349,12 @@
 .hospital-section {
   background: rgba(248,113,113,0.06);
   border: 0.5px solid rgba(248,113,113,0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 14px 16px;
   margin-top: 12px;
 }
 .hospital-title {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: rgba(248,113,113,0.85);
   letter-spacing: 0.5px;
@@ -362,7 +362,7 @@
   margin-bottom: 8px;
 }
 .hospital-item {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   padding-left: 16px;
   position: relative;
@@ -373,7 +373,7 @@
   content: '🏥';
   position: absolute;
   left: 0;
-  font-size: 10px;
+  font-size: var(--fs-caption);
 }
 
 @media (max-width: 500px) {
@@ -385,7 +385,7 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">부상 예방 가이드</span>
     </div>
@@ -876,3 +876,6 @@ function switchTab(el) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

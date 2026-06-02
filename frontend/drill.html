@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -25,17 +25,17 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   transition: all .2s;
   text-decoration: none;
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-.drill-title { font-size: 20px; font-weight: 600; color: var(--text); }
-.drill-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.drill-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.drill-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* 탭 */
 .tab-bar {
@@ -43,7 +43,7 @@
   gap: 0;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 4px;
   margin-bottom: 28px;
   overflow-x: auto;
@@ -55,9 +55,9 @@
   padding: 10px 18px;
   background: none;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   transition: background .2s, color .2s;
@@ -80,7 +80,7 @@
 .drill-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   transition: border-color .2s, transform .15s, box-shadow .2s;
   position: relative;
@@ -105,7 +105,7 @@
 .drill-card:hover::before { opacity: 1; }
 
 .drill-num {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: var(--blue);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -115,17 +115,17 @@
   gap: 8px;
 }
 .drill-level {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   padding: 1px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 .lv-beginner { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
 .lv-intermediate { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
 .lv-advanced { background: rgba(248,113,113,.12); color: #f87171; border: 0.5px solid rgba(248,113,113,.3); }
 
 .drill-name {
-  font-size: 15px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 12px;
@@ -141,17 +141,17 @@
 }
 
 .drill-stars {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--amber);
   letter-spacing: 1px;
 }
 
 .drill-time {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   background: rgba(255,255,255,.04);
   border: 0.5px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
 }
 
@@ -163,7 +163,7 @@
 }
 
 .drill-info-row {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.6;
 }
@@ -176,11 +176,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   padding: 3px 10px;
   background: rgba(0,180,216,.08);
   border: 0.5px solid rgba(0,180,216,.2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--cyan);
   margin-bottom: 14px;
 }
@@ -192,9 +192,9 @@
   padding: 8px 16px;
   background: rgba(255,0,0,.08);
   border: 0.5px solid rgba(255,80,80,.25);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: #ff6b6b;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
@@ -218,7 +218,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">드릴 가이드</span>
     </div>
@@ -799,3 +799,4 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+

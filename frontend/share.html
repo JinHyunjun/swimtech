@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -31,13 +31,13 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .logo {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 800;
   color: var(--accent);
   letter-spacing: -0.5px;
 }
 .header-sub {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
   margin-top: 4px;
   letter-spacing: 0.5px;
@@ -52,7 +52,7 @@ body {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   margin-bottom: 14px;
 }
@@ -67,9 +67,9 @@ body {
 .meta-chip {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   padding: 5px 13px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
 }
 .meta-chip span { color: var(--accent); font-weight: 700; }
@@ -104,9 +104,9 @@ body {
   z-index: 1;
   text-align: center;
 }
-.score-num { font-size: 38px; font-weight: 800; color: #fff; line-height: 1; }
-.score-unit { font-size: 12px; color: var(--text-muted); }
-.score-title { font-size: 13px; color: var(--text-muted); }
+.score-num { font-size: var(--fs-display); font-weight: 800; color: #fff; line-height: 1; }
+.score-unit { font-size: var(--fs-caption); color: var(--text-muted); }
+.score-title { font-size: var(--fs-body); color: var(--text-muted); }
 
 /* Metrics grid */
 .metrics-grid {
@@ -116,16 +116,16 @@ body {
 }
 .metric-item {
   background: var(--surface);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 10px;
   text-align: center;
 }
-.metric-val { font-size: 20px; font-weight: 700; color: var(--accent); }
-.metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.metric-val { font-size: var(--fs-title); font-weight: 700; color: var(--accent); }
+.metric-lbl { font-size: var(--fs-caption); color: var(--text-muted); margin-top: 3px; }
 
 /* Section title */
 .section-title {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 12px;
@@ -135,7 +135,7 @@ body {
 
 /* Feedback */
 .feedback-text {
-  font-size: 13px;
+  font-size: var(--fs-body);
   line-height: 1.75;
   color: var(--text);
   white-space: pre-wrap;
@@ -146,7 +146,7 @@ body {
 .drill-list li {
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--text);
   display: flex;
   align-items: flex-start;
@@ -169,11 +169,11 @@ body {
 .btn-kakao {
   flex: 1;
   padding: 13px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: none;
   background: #FEE500;
   color: #191919;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s;
@@ -182,11 +182,11 @@ body {
 .btn-copy {
   flex: 1;
   padding: 13px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--accent);
   background: transparent;
   color: var(--accent);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
@@ -198,10 +198,10 @@ body {
   display: block;
   width: 100%;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, #0077b6, #00b4d8);
   color: #fff;
-  font-size: 15px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   text-align: center;
   text-decoration: none;
@@ -219,8 +219,8 @@ body {
   background: #16a34a;
   color: #fff;
   padding: 10px 22px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
   font-weight: 600;
   opacity: 0;
   transition: opacity 0.25s, transform 0.25s;
@@ -232,16 +232,16 @@ body {
 
 /* Loading / error */
 .center-state { text-align: center; padding: 72px 20px; }
-.state-icon { font-size: 48px; margin-bottom: 16px; }
-.state-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-.state-desc { font-size: 13px; color: var(--text-muted); }
+.state-icon { font-size: var(--fs-display); margin-bottom: 16px; }
+.state-title { font-size: var(--fs-title); font-weight: 700; margin-bottom: 8px; }
+.state-desc { font-size: var(--fs-body); color: var(--text-muted); }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div style="display:flex;align-items:center;gap:10px;">
-    <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;">← 뒤로</button>
+    <button onclick="history.back()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);cursor:pointer;font-size: var(--fs-body);">← 뒤로</button>
     <a href="/" style="text-decoration:none;color:inherit;"><div class="logo">🏊 SwimTech</div></a>
   </div>
   <div class="header-sub">분석 결과 공유</div>
@@ -487,3 +487,6 @@ loadShare();
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+

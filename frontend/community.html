@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -15,84 +15,84 @@
 .comm-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 .comm-search { flex: 1; min-width: 180px; display: flex; gap: 8px; }
 .comm-search input {
-  flex: 1; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px;
-  color: var(--text); padding: 9px 14px; font-size: 13px; outline: none; transition: border-color .2s;
+  flex: 1; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); padding: 9px 14px; font-size: var(--fs-body); outline: none; transition: border-color .2s;
 }
 .comm-search input:focus { border-color: var(--blue); }
 .comm-search button {
   padding: 9px 16px; background: var(--blue); color: #fff; border: none;
-  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600; cursor: pointer;
 }
 #write-btn {
   padding: 9px 20px; background: #00b4d8; color: #fff; border: none;
-  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600; cursor: pointer;
   white-space: nowrap; display: none;
 }
 
 /* ── 카테고리 탭 ─────────────────────────────────────── */
 .cat-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
 .cat-tab {
-  padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border);
-  background: var(--surface); color: var(--muted); font-size: 13px; cursor: pointer; transition: all .2s;
+  padding: 6px 16px; border-radius: var(--radius-pill); border: 0.5px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
 }
 .cat-tab.active, .cat-tab:hover { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,.08); }
 
 /* ── 정렬 버튼 ───────────────────────────────────────── */
 .sort-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
-.sort-label { font-size: 11px; color: var(--muted); }
+.sort-label { font-size: var(--fs-caption); color: var(--muted); }
 .sort-btn {
-  padding: 4px 12px; border-radius: 14px; border: 0.5px solid var(--border);
-  background: var(--surface); color: var(--muted); font-size: 12px; cursor: pointer; transition: all .2s;
+  padding: 4px 12px; border-radius: var(--radius-lg); border: 0.5px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: var(--fs-caption); cursor: pointer; transition: all .2s;
 }
 .sort-btn.active, .sort-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,.08); }
 
 /* ── 주간 인기글 ─────────────────────────────────────── */
 .popular-section {
   background: linear-gradient(135deg, rgba(0,180,216,.08), rgba(0,180,216,.02));
-  border: 0.5px solid rgba(0,180,216,.2); border-radius: 12px;
+  border: 0.5px solid rgba(0,180,216,.2); border-radius: var(--radius-md);
   padding: 12px 16px; margin-bottom: 14px;
 }
 .popular-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.popular-title { font-size: 12px; font-weight: 700; color: var(--blue); }
+.popular-title { font-size: var(--fs-caption); font-weight: 700; color: var(--blue); }
 .popular-item {
   display: flex; align-items: center; gap: 8px; padding: 6px 0;
   border-bottom: 0.5px solid rgba(255,255,255,.04); cursor: pointer;
 }
 .popular-item:last-child { border-bottom: none; }
-.popular-rank { font-size: 11px; font-weight: 700; color: var(--blue); width: 14px; text-align: center; }
-.popular-item-title { flex: 1; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.popular-item-likes { font-size: 11px; color: var(--muted); }
+.popular-rank { font-size: var(--fs-caption); font-weight: 700; color: var(--blue); width: 14px; text-align: center; }
+.popular-item-title { flex: 1; font-size: var(--fs-body); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.popular-item-likes { font-size: var(--fs-caption); color: var(--muted); }
 
 /* ── 태그 필터 바 ─────────────────────────────────────── */
 .tag-filter-bar {
   display: none; align-items: center; gap: 8px; margin-bottom: 12px;
-  padding: 8px 12px; background: rgba(0,180,216,.06); border-radius: 8px; font-size: 12px; color: var(--blue);
+  padding: 8px 12px; background: rgba(0,180,216,.06); border-radius: var(--radius-sm); font-size: var(--fs-caption); color: var(--blue);
 }
 .tag-filter-bar.active { display: flex; }
-.tag-clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+.tag-clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: var(--fs-body); }
 
 /* ── 인기 태그 ─────────────────────────────────────────── */
 .popular-tags-section { margin-bottom: 12px; display: none; }
-.popular-tags-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.popular-tags-label { font-size: var(--fs-caption); color: var(--muted); margin-bottom: 6px; }
 #popular-tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
 
 /* ── 게시글 목록 ─────────────────────────────────────── */
 .post-list { display: flex; flex-direction: column; gap: 10px; }
 .post-card {
   background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: 12px; padding: 14px 18px; transition: border-color .2s, transform .15s;
+  border-radius: var(--radius-md); padding: 14px 18px; transition: border-color .2s, transform .15s;
 }
 .post-card:hover { border-color: var(--blue); transform: translateY(-1px); }
 .post-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; }
 .post-cat-badge {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  font-size: var(--fs-caption); font-weight: 600; padding: 2px 8px; border-radius: var(--radius-md);
   background: rgba(0,180,216,.15); color: var(--blue); white-space: nowrap;
 }
 .post-cat-badge.공지 { background: rgba(248,113,113,.15); color: #f87171; }
 .post-cat-badge.훈련후기 { background: rgba(74,222,128,.15); color: #4ade80; }
 .post-cat-badge.질문 { background: rgba(251,191,36,.15); color: #fbbf24; }
-.post-title { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.post-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 4px; cursor: pointer; }
+.post-title { font-size: var(--fs-body-lg); font-weight: 600; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post-meta { display: flex; align-items: center; gap: 12px; font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; cursor: pointer; }
 .post-meta span { display: flex; align-items: center; gap: 4px; }
 .post-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .post-tags-row { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -101,50 +101,50 @@
 .tag-chip {
   display: inline-flex; align-items: center; gap: 3px;
   background: rgba(0,180,216,.10); color: var(--blue);
-  border-radius: 10px; padding: 2px 8px; font-size: 11px;
+  border-radius: var(--radius-md); padding: 2px 8px; font-size: var(--fs-caption);
 }
-.tag-chip-del { background: none; border: none; color: var(--blue); cursor: pointer; font-size: 11px; padding: 0; line-height: 1; }
+.tag-chip-del { background: none; border: none; color: var(--blue); cursor: pointer; font-size: var(--fs-caption); padding: 0; line-height: 1; }
 
 /* ── 북마크 버튼 (카드) ─────────────────────────────── */
-.btn-card-bookmark { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--muted); padding: 2px 4px; transition: color .2s; }
+.btn-card-bookmark { background: none; border: none; font-size: var(--fs-body-lg); cursor: pointer; color: var(--muted); padding: 2px 4px; transition: color .2s; }
 .btn-card-bookmark.bookmarked { color: #fbbf24; }
 
 /* ── 페이지네이션 ─────────────────────────────────────── */
 .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 24px; }
 .page-btn {
-  width: 34px; height: 34px; border-radius: 8px; border: 0.5px solid var(--border);
-  background: var(--surface); color: var(--muted); font-size: 13px; cursor: pointer; transition: all .2s;
+  width: 34px; height: 34px; border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
   display: flex; align-items: center; justify-content: center;
 }
 .page-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,.08); }
 .page-btn:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
 
-.empty-state { text-align: center; padding: 60px 0; color: var(--muted); font-size: 14px; }
+.empty-state { text-align: center; padding: 60px 0; color: var(--muted); font-size: var(--fs-body); }
 
 /* ── 알림 ─────────────────────────────────────────────── */
 .notif-wrap { position: relative; }
-.btn-notif { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 6px; color: var(--muted); position: relative; line-height: 1; }
+.btn-notif { background: none; border: none; font-size: var(--fs-title); cursor: pointer; padding: 4px 6px; color: var(--muted); position: relative; line-height: 1; }
 .notif-badge {
   position: absolute; top: 0; right: 0; background: #f87171; color: #fff;
-  font-size: 9px; font-weight: 700; border-radius: 8px; padding: 1px 4px;
+  font-size: var(--fs-caption); font-weight: 700; border-radius: var(--radius-sm); padding: 1px 4px;
   min-width: 14px; text-align: center; display: none; line-height: 1.4;
 }
 .notif-dropdown {
   display: none; position: absolute; top: calc(100% + 8px); right: 0;
-  width: 310px; background: #0d2137; border: 0.5px solid var(--border);
-  border-radius: 12px; z-index: 600; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  width: 310px; background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-md); z-index: 600; box-shadow: 0 8px 32px rgba(0,0,0,.5);
 }
 .notif-dropdown.open { display: block; }
 .notif-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 0.5px solid var(--border); }
-.notif-header-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.btn-mark-all { font-size: 11px; color: var(--blue); background: none; border: none; cursor: pointer; }
+.notif-header-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.btn-mark-all { font-size: var(--fs-caption); color: var(--blue); background: none; border: none; cursor: pointer; }
 .notif-list { max-height: 280px; overflow-y: auto; }
 .notif-item { padding: 10px 14px; border-bottom: 0.5px solid rgba(255,255,255,.04); cursor: pointer; transition: background .15s; }
 .notif-item:hover { background: rgba(255,255,255,.03); }
 .notif-item.unread { border-left: 2px solid var(--blue); }
-.notif-msg { font-size: 12px; color: var(--text); line-height: 1.4; }
-.notif-time { font-size: 10px; color: var(--muted); margin-top: 3px; }
-.notif-empty { padding: 20px; text-align: center; font-size: 12px; color: var(--muted); }
+.notif-msg { font-size: var(--fs-caption); color: var(--text); line-height: 1.4; }
+.notif-time { font-size: var(--fs-caption); color: var(--muted); margin-top: 3px; }
+.notif-empty { padding: 20px; text-align: center; font-size: var(--fs-caption); color: var(--muted); }
 
 /* ── 모달 공통 ────────────────────────────────────────── */
 .modal-overlay {
@@ -153,10 +153,10 @@
 }
 .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
 .modal-box {
-  background: #0d2137; border: 0.5px solid var(--border); border-radius: 16px;
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
   width: 100%; max-width: 700px; padding: 28px; position: relative;
 }
-.modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; min-height: 44px; min-width: 44px; }
+.modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: var(--fs-title); cursor: pointer; line-height: 1; min-height: 44px; min-width: 44px; }
 .modal-close:hover { color: var(--text); }
 .modal-drag-handle {
   display: none; width: 40px; height: 4px; border-radius: 2px;
@@ -168,118 +168,118 @@
 
 /* ── 글쓰기 / 수정 폼 ───────────────────────────────── */
 .write-form { display: flex; flex-direction: column; gap: 14px; }
-.write-form label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; }
+.write-form label { font-size: var(--fs-caption); color: var(--muted); margin-bottom: 4px; display: block; }
 .write-form select, .write-form input, .write-form textarea {
   width: 100%; box-sizing: border-box; background: var(--surface);
-  border: 0.5px solid var(--border); border-radius: 8px; color: var(--text);
-  padding: 10px 14px; font-size: 14px; outline: none; transition: border-color .2s;
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text);
+  padding: 10px 14px; font-size: var(--fs-body); outline: none; transition: border-color .2s;
 }
 .write-form select:focus, .write-form input:focus, .write-form textarea:focus { border-color: var(--blue); }
-.write-form textarea { min-height: 180px; resize: vertical; font-family: inherit; }
+.write-form textarea { min-height: 180px; resize: vertical; font-family: var(--font-base); }
 .write-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.btn-cancel { padding: 9px 20px; border-radius: 8px; border: 0.5px solid var(--border); background: none; color: var(--muted); font-size: 13px; cursor: pointer; }
-.btn-submit { padding: 9px 24px; border-radius: 8px; border: none; background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-cancel { padding: 9px 20px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: none; color: var(--muted); font-size: var(--fs-body); cursor: pointer; }
+.btn-submit { padding: 9px 24px; border-radius: var(--radius-sm); border: none; background: var(--blue); color: #fff; font-size: var(--fs-body); font-weight: 600; cursor: pointer; }
 
 /* ── 태그 입력 ───────────────────────────────────────── */
 .tag-input-wrap {
   display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
   padding: 7px 10px; background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: 8px; min-height: 36px; cursor: text;
+  border-radius: var(--radius-sm); min-height: 36px; cursor: text;
 }
 .tag-input-wrap:focus-within { border-color: var(--blue); }
-.tag-input-inner { flex: 1; min-width: 80px; background: none; border: none; color: var(--text); font-size: 13px; outline: none; }
-.tag-hint { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.tag-input-inner { flex: 1; min-width: 80px; background: none; border: none; color: var(--text); font-size: var(--fs-body); outline: none; }
+.tag-hint { font-size: var(--fs-caption); color: var(--muted); margin-top: 3px; }
 
 /* ── 이미지 업로드 ───────────────────────────────────── */
 .image-upload-wrap { display: flex; flex-direction: column; gap: 8px; }
 .image-upload-label {
   display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-  border: 1px dashed var(--border); border-radius: 8px; background: var(--surface);
-  color: var(--muted); font-size: 12px; cursor: pointer; transition: border-color .2s; width: fit-content;
+  border: 1px dashed var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  color: var(--muted); font-size: var(--fs-caption); cursor: pointer; transition: border-color .2s; width: fit-content;
 }
 .image-upload-label:hover { border-color: var(--blue); color: var(--blue); }
 .image-preview-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .image-preview-item { position: relative; width: 80px; height: 80px; }
-.image-preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 0.5px solid var(--border); }
+.image-preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); border: 0.5px solid var(--border); }
 .image-preview-del {
   position: absolute; top: -5px; right: -5px; width: 18px; height: 18px;
   border-radius: 50%; background: #f87171; color: #fff; border: none;
-  font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-caption); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 
 /* ── 게시글 상세 ─────────────────────────────────────── */
-.detail-cat { font-size: 12px; color: var(--blue); margin-bottom: 8px; }
-.detail-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
-.detail-meta { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 16px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
+.detail-cat { font-size: var(--fs-caption); color: var(--blue); margin-bottom: 8px; }
+.detail-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.detail-meta { display: flex; gap: 14px; font-size: var(--fs-caption); color: var(--muted); margin-bottom: 16px; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
 .detail-images { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.detail-image { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; border: 0.5px solid var(--border); cursor: pointer; transition: opacity .2s; }
+.detail-image { width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius-sm); border: 0.5px solid var(--border); cursor: pointer; transition: opacity .2s; }
 .detail-image:hover { opacity: .85; }
-.detail-content { font-size: 14px; color: var(--text); line-height: 1.8; white-space: pre-wrap; word-break: break-word; margin-bottom: 16px; }
+.detail-content { font-size: var(--fs-body); color: var(--text); line-height: 1.8; white-space: pre-wrap; word-break: break-word; margin-bottom: 16px; }
 .detail-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
 .detail-actions { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; }
 
 /* ── 버튼들 ─────────────────────────────────────────── */
 .btn-like {
   display: flex; align-items: center; gap: 6px; padding: 7px 16px;
-  border-radius: 20px; border: 0.5px solid var(--border); background: none;
-  color: var(--muted); font-size: 13px; cursor: pointer; transition: all .2s;
+  border-radius: var(--radius-pill); border: 0.5px solid var(--border); background: none;
+  color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
 }
 .btn-like.liked, .btn-like:hover { border-color: #f87171; color: #f87171; background: rgba(248,113,113,.08); }
 .btn-bookmark {
   display: flex; align-items: center; gap: 5px; padding: 7px 14px;
-  border-radius: 20px; border: 0.5px solid var(--border); background: none;
-  color: var(--muted); font-size: 13px; cursor: pointer; transition: all .2s;
+  border-radius: var(--radius-pill); border: 0.5px solid var(--border); background: none;
+  color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
 }
 .btn-bookmark.bookmarked { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,.08); }
 .btn-bookmark:hover { border-color: #fbbf24; color: #fbbf24; }
-.btn-edit, .btn-delete { padding: 7px 14px; border-radius: 8px; border: 0.5px solid var(--border); background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+.btn-edit, .btn-delete { padding: 7px 14px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: none; color: var(--muted); font-size: var(--fs-caption); cursor: pointer; }
 .btn-delete:hover { border-color: #f87171; color: #f87171; }
 .btn-edit:hover { border-color: var(--blue); color: var(--blue); }
-.btn-report { background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 6px; }
+.btn-report { background: none; border: none; font-size: var(--fs-caption); color: var(--muted); cursor: pointer; padding: 2px 6px; }
 .btn-report:hover { color: #f87171; }
 
 /* ── 댓글 ────────────────────────────────────────────── */
-.comments-section h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 14px; padding-top: 20px; border-top: 0.5px solid var(--border); }
+.comments-section h3 { font-size: var(--fs-body-lg); font-weight: 600; color: var(--text); margin-bottom: 14px; padding-top: 20px; border-top: 0.5px solid var(--border); }
 .comment-item { padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,.06); }
 .comment-item.reply { padding-left: 24px; }
-.comment-author { font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-.comment-date { font-size: 11px; color: var(--muted); font-weight: 400; }
-.comment-content { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.comment-author { font-size: var(--fs-caption); font-weight: 600; color: var(--blue); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.comment-date { font-size: var(--fs-caption); color: var(--muted); font-weight: 400; }
+.comment-content { font-size: var(--fs-body); color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 .comment-actions { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
-.btn-reply, .btn-comment-delete, .btn-comment-like { background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; padding: 2px 4px; }
+.btn-reply, .btn-comment-delete, .btn-comment-like { background: none; border: none; font-size: var(--fs-caption); color: var(--muted); cursor: pointer; padding: 2px 4px; }
 .btn-reply:hover { color: var(--blue); }
 .btn-comment-delete:hover { color: #f87171; }
 .btn-comment-like:hover, .btn-comment-like.liked { color: #f87171; }
 
 /* ── 댓글 입력 ───────────────────────────────────────── */
 .comment-input-wrap { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
-.reply-indicator { font-size: 12px; color: var(--blue); display: flex; align-items: center; gap: 6px; }
-.reply-indicator button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; }
+.reply-indicator { font-size: var(--fs-caption); color: var(--blue); display: flex; align-items: center; gap: 6px; }
+.reply-indicator button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: var(--fs-body); line-height: 1; }
 .comment-input-wrap textarea {
   width: 100%; box-sizing: border-box; background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: 8px; color: var(--text); padding: 10px 14px; font-size: 13px;
-  font-family: inherit; min-height: 80px; resize: vertical; outline: none; transition: border-color .2s;
+  border-radius: var(--radius-sm); color: var(--text); padding: 10px 14px; font-size: var(--fs-body);
+  font-family: var(--font-base); min-height: 80px; resize: vertical; outline: none; transition: border-color .2s;
 }
 .comment-input-wrap textarea:focus { border-color: var(--blue); }
-.btn-comment-submit { align-self: flex-end; padding: 8px 20px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.login-prompt { font-size: 13px; color: var(--muted); text-align: center; padding: 12px; }
+.btn-comment-submit { align-self: flex-end; padding: 8px 20px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600; cursor: pointer; }
+.login-prompt { font-size: var(--fs-body); color: var(--muted); text-align: center; padding: 12px; }
 .login-prompt a { color: var(--blue); }
 
 /* ── 멘션 자동완성 ───────────────────────────────────── */
 .mention-wrap { position: relative; }
 .mention-dropdown {
   display: none; position: absolute; bottom: calc(100% + 4px); left: 0;
-  background: #0d2137; border: 0.5px solid var(--border);
-  border-radius: 8px; z-index: 200; min-width: 160px; box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); z-index: 200; min-width: 160px; box-shadow: 0 4px 16px rgba(0,0,0,.4);
 }
-.mention-item { padding: 8px 12px; font-size: 13px; color: var(--text); cursor: pointer; }
+.mention-item { padding: 8px 12px; font-size: var(--fs-body); color: var(--text); cursor: pointer; }
 .mention-item:hover { background: rgba(255,255,255,.05); }
 
 /* ── 신고 모달 ───────────────────────────────────────── */
 .report-modal-box { max-width: 380px; }
 .report-form { display: flex; flex-direction: column; gap: 14px; }
-.report-form label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-.report-form select { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 14px; font-size: 14px; outline: none; }
+.report-form label { font-size: var(--fs-caption); color: var(--muted); display: block; margin-bottom: 4px; }
+.report-form select { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); padding: 10px 14px; font-size: var(--fs-body); outline: none; }
 .report-form select:focus { border-color: var(--blue); }
 
 /* ── 마크다운 툴바 ─────────────────────────────────── */
@@ -290,32 +290,32 @@
 }
 .md-tool-btn {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
-  border-radius: 4px; padding: 3px 9px; font-size: 12px; font-weight: 600;
+  border-radius: var(--radius-sm); padding: 3px 9px; font-size: var(--fs-caption); font-weight: 600;
   cursor: pointer; transition: all .15s; min-height: 26px; line-height: 1;
 }
 .md-tool-btn:hover { border-color: var(--blue); color: var(--blue); }
 .md-tab-bar { display: flex; border: 0.5px solid var(--border); border-top: none; border-bottom: none; }
 .md-tab {
   flex: 1; padding: 5px; background: none; border: none; color: var(--muted);
-  font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s;
+  font-size: var(--fs-caption); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s;
 }
 .md-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(0,180,216,.05); }
 .md-preview {
   display: none; min-height: 180px; background: var(--surface);
   border: 0.5px solid var(--border); border-top: none;
   border-radius: 0 0 8px 8px; padding: 10px 14px;
-  font-size: 14px; color: var(--text); line-height: 1.8; word-break: break-word; overflow-y: auto;
+  font-size: var(--fs-body); color: var(--text); line-height: 1.8; word-break: break-word; overflow-y: auto;
 }
 .md-preview h1,.md-preview h2,.md-preview h3 { color: var(--text); margin: 8px 0 4px; }
-.md-preview code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: 13px; color: var(--blue); }
-.md-preview pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.md-preview code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: var(--fs-body); color: var(--blue); }
+.md-preview pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: var(--radius-sm); overflow-x: auto; }
 .md-preview blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 8px 0; }
 .md-preview a { color: var(--blue); }
 .md-preview ul,.md-preview ol { padding-left: 20px; }
 .detail-content-md { white-space: normal; }
 .detail-content-md h1,.detail-content-md h2,.detail-content-md h3 { color: var(--text); margin: 10px 0 5px; }
-.detail-content-md code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: 13px; color: var(--blue); }
-.detail-content-md pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.detail-content-md code { background: rgba(0,180,216,.1); padding: 1px 5px; border-radius: 3px; font-size: var(--fs-body); color: var(--blue); }
+.detail-content-md pre { background: rgba(0,0,0,.2); padding: 12px; border-radius: var(--radius-sm); overflow-x: auto; }
 .detail-content-md blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 8px 0; }
 .detail-content-md a { color: var(--blue); }
 .detail-content-md ul,.detail-content-md ol { padding-left: 20px; }
@@ -326,7 +326,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;">
         <span class="logo">SwimTech</span>
         <span class="logo-sub">커뮤니티</span>
@@ -403,7 +403,7 @@
   <div class="modal-box">
     <div class="modal-drag-handle" aria-hidden="true"></div>
     <button class="modal-close" onclick="closeWriteModal()">✕</button>
-    <h2 id="write-modal-title" style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:20px;">게시글 작성</h2>
+    <h2 id="write-modal-title" style="font-size: var(--fs-body-lg);font-weight:700;color:var(--text);margin-bottom:20px;">게시글 작성</h2>
     <div class="write-form">
       <div>
         <label>카테고리</label>
@@ -415,11 +415,11 @@
         </select>
       </div>
       <div>
-        <label>제목 <span style="color:var(--muted);font-size:11px;">(최대 200자)</span></label>
+        <label>제목 <span style="color:var(--muted);font-size: var(--fs-caption);">(최대 200자)</span></label>
         <input id="write-title" type="text" maxlength="200" placeholder="제목을 입력하세요">
       </div>
       <div>
-        <label>내용 <span style="color:var(--muted);font-size:11px;">(최대 10,000자 / 마크다운 지원)</span></label>
+        <label>내용 <span style="color:var(--muted);font-size: var(--fs-caption);">(최대 10,000자 / 마크다운 지원)</span></label>
         <div class="md-toolbar" id="md-toolbar">
           <button type="button" class="md-tool-btn" onclick="insertMd('bold')" title="굵게"><b>B</b></button>
           <button type="button" class="md-tool-btn" onclick="insertMd('italic')" title="기울임"><i>I</i></button>
@@ -436,14 +436,14 @@
         <div id="write-preview" class="md-preview"></div>
       </div>
       <div>
-        <label>태그 <span style="color:var(--muted);font-size:11px;">(최대 10개, Enter 또는 쉼표로 추가)</span></label>
+        <label>태그 <span style="color:var(--muted);font-size: var(--fs-caption);">(최대 10개, Enter 또는 쉼표로 추가)</span></label>
         <div class="tag-input-wrap" id="tag-chips-wrap" onclick="document.getElementById('tag-input-inner').focus()">
           <input id="tag-input-inner" class="tag-input-inner" type="text" placeholder="#태그입력"
                  maxlength="30" onkeydown="handleTagKeydown(event)">
         </div>
       </div>
       <div>
-        <label>이미지 첨부 <span style="color:var(--muted);font-size:11px;">(최대 3장, jpg/png/webp, 5MB 이하)</span></label>
+        <label>이미지 첨부 <span style="color:var(--muted);font-size: var(--fs-caption);">(최대 3장, jpg/png/webp, 5MB 이하)</span></label>
         <div class="image-upload-wrap">
           <label class="image-upload-label" id="img-upload-label" for="img-file-input">
             📎 이미지 선택
@@ -474,7 +474,7 @@
 <div class="modal-overlay" id="report-modal">
   <div class="modal-box report-modal-box">
     <button class="modal-close" onclick="closeReportModal()">✕</button>
-    <h2 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;">신고하기</h2>
+    <h2 style="font-size: var(--fs-body-lg);font-weight:700;color:var(--text);margin-bottom:20px;">신고하기</h2>
     <div class="report-form">
       <div>
         <label>신고 사유</label>
@@ -547,8 +547,8 @@ function renderHeader() {
         </div>
       </div>
     </div>
-    <span style="font-size:12px;color:var(--muted);margin:0 10px;">${esc(meInfo.nickname || meInfo.username)}</span>
-    <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+    <span style="font-size: var(--fs-caption);color:var(--muted);margin:0 10px;">${esc(meInfo.nickname || meInfo.username)}</span>
+    <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
   `;
   fetchNotifCount();
   setInterval(fetchNotifCount, 30000);
@@ -556,7 +556,7 @@ function renderHeader() {
 
 function renderHeaderLoggedOut() {
   document.getElementById('header-right').innerHTML = `
-    <a href="/login" style="background:#00b4d8;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;text-decoration:none;">로그인</a>
+    <a href="/login" style="background:#00b4d8;color:#fff;border:none;border-radius: var(--radius-sm);padding:5px 14px;font-size: var(--fs-caption);font-weight:600;text-decoration:none;">로그인</a>
   `;
 }
 
@@ -888,7 +888,7 @@ function renderDetail(post, comments) {
     <div class="detail-actions">${actionBtns}</div>
     <div class="comments-section">
       <h3>댓글 ${comments.length}개</h3>
-      <div id="comments-list">${commentsHtml || '<div style="color:var(--muted);font-size:13px;padding:8px 0;">첫 번째 댓글을 남겨보세요.</div>'}</div>
+      <div id="comments-list">${commentsHtml || '<div style="color:var(--muted);font-size: var(--fs-body);padding:8px 0;">첫 번째 댓글을 남겨보세요.</div>'}</div>
       ${inputArea}
     </div>
   `;
@@ -1315,3 +1315,5 @@ document.getElementById('report-modal').addEventListener('click', function(e) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

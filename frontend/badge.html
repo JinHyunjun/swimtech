@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -25,33 +25,33 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   text-decoration: none;
   transition: all .2s;
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-.badge-title { font-size: 20px; font-weight: 600; color: var(--text); }
-.badge-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.badge-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.badge-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* 진행 카드 */
 .progress-card {
   background: linear-gradient(135deg, #0f2942, #1a3a5c);
   border: 0.5px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 22px 24px;
   margin-bottom: 24px;
 }
 .progress-label {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   margin-bottom: 8px;
 }
 .progress-count {
-  font-size: 32px;
+  font-size: var(--fs-display);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 12px;
@@ -60,19 +60,19 @@
 .progress-bar-bg {
   height: 8px;
   background: rgba(255,255,255,.06);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .progress-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, #00b4d8, #48cae4);
   transition: width .8s ease;
 }
 
 /* 뱃지 그리드 */
 .badge-section-title {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0.5px;
@@ -90,7 +90,7 @@
 .badge-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px 16px;
   text-align: center;
   cursor: pointer;
@@ -118,22 +118,22 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .badge-emoji {
-  font-size: 44px;
+  font-size: var(--fs-display);
   line-height: 1;
   margin-bottom: 10px;
 }
 .badge-name {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 6px;
 }
 .badge-desc {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   line-height: 1.5;
 }
@@ -152,7 +152,7 @@
   transition: width .6s ease;
 }
 .badge-mini-label {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-top: 4px;
 }
@@ -172,7 +172,7 @@
 .modal-box {
   background: #0f2942;
   border: 0.5px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 32px 28px;
   max-width: 340px;
   width: 100%;
@@ -186,18 +186,18 @@
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 18px;
+  font-size: var(--fs-title);
   cursor: pointer;
   line-height: 1;
 }
-.modal-emoji { font-size: 60px; margin-bottom: 14px; }
-.modal-name  { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.modal-desc  { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+.modal-emoji { font-size: var(--fs-display); margin-bottom: 14px; }
+.modal-name  { font-size: var(--fs-title); font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.modal-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
 .modal-status {
   display: inline-block;
   padding: 6px 18px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
   font-weight: 600;
 }
 .modal-status.earned { background: rgba(74,222,128,.12); color: var(--green); border: 0.5px solid rgba(74,222,128,.3); }
@@ -214,12 +214,12 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">나의 뱃지</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">로그아웃</button>
+      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 
@@ -322,9 +322,9 @@ async function loadBadges() {
     const locked = _badges.filter(b => !b.earned);
 
     document.getElementById('earned-grid').innerHTML =
-      earned.length ? earned.map(renderBadge).join('') : '<div style="color:var(--muted);font-size:13px;padding:20px 0;">아직 획득한 뱃지가 없어요. 첫 분석을 시작해보세요!</div>';
+      earned.length ? earned.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">아직 획득한 뱃지가 없어요. 첫 분석을 시작해보세요!</div>';
     document.getElementById('locked-grid').innerHTML =
-      locked.length ? locked.map(renderBadge).join('') : '<div style="color:var(--muted);font-size:13px;padding:20px 0;">🎉 모든 뱃지를 획득했습니다!</div>';
+      locked.length ? locked.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">🎉 모든 뱃지를 획득했습니다!</div>';
 
   } catch (e) {
     console.error(e);
@@ -347,3 +347,5 @@ async function logout() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+

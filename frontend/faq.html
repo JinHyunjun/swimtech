@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -18,7 +18,7 @@
 
 .faq-wrap {
   min-height: calc(100vh - 53px);
-  background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   padding: 28px 16px 80px;
@@ -58,14 +58,14 @@
   margin-bottom: 28px;
 }
 .faq-header h1 {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
   text-shadow: 0 0 30px rgba(0,180,216,0.3);
 }
 .faq-header p {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-top: 6px;
 }
@@ -79,13 +79,13 @@
   width: 100%;
   background: rgba(13,33,55,0.88);
   border: 0.5px solid rgba(0,180,216,0.3);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 13px 46px 13px 42px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--text);
   outline: none;
   transition: border-color .2s, box-shadow .2s;
-  font-family: inherit;
+  font-family: var(--font-base);
 }
 .search-input::placeholder { color: rgba(144,196,212,0.5); }
 .search-input:focus {
@@ -96,14 +96,14 @@
   position: absolute;
   left: 14px; top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   pointer-events: none;
 }
 .search-count {
   position: absolute;
   right: 14px; top: 50%;
   transform: translateY(-50%);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: rgba(144,196,212,0.5);
 }
 
@@ -120,8 +120,8 @@
 .tab-pill {
   flex-shrink: 0;
   padding: 7px 16px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
   font-weight: 600;
   cursor: pointer;
   border: 0.5px solid rgba(0,180,216,0.25);
@@ -147,7 +147,7 @@
 .faq-item {
   background: rgba(13,33,55,0.85);
   border: 0.5px solid rgba(0,180,216,0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   transition: border-color .2s;
 }
@@ -165,23 +165,23 @@
   cursor: pointer;
   text-align: left;
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
-  font-family: inherit;
+  font-family: var(--font-base);
   line-height: 1.5;
 }
 .faq-q:hover { background: rgba(0,180,216,0.05); }
 
 .faq-cat-badge {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   white-space: nowrap;
 }
 .cat-shoot     { background: rgba(0,180,216,.12);  color: #00b4d8;  border: 0.5px solid rgba(0,180,216,.25); }
-.cat-ai        { background: rgba(167,139,250,.1); color: #a78bfa; border: 0.5px solid rgba(167,139,250,.25); }
+.cat-ai        { background: rgba(72,202,228,.1); color: var(--accent-secondary); border: 0.5px solid rgba(72,202,228,.25); }
 .cat-account   { background: rgba(74,222,128,.1);  color: #4ade80; border: 0.5px solid rgba(74,222,128,.25); }
 .cat-feature   { background: rgba(245,158,11,.1);  color: #f59e0b; border: 0.5px solid rgba(245,158,11,.25); }
 .cat-equipment { background: rgba(96,165,250,.1);  color: #60a5fa; border: 0.5px solid rgba(96,165,250,.25); }
@@ -191,7 +191,7 @@
 .faq-q-text { flex: 1; }
 .faq-arrow {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   transition: transform .2s;
 }
@@ -200,7 +200,7 @@
 .faq-a {
   display: none;
   padding: 0 18px 16px 18px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   line-height: 1.8;
   border-top: 0.5px solid rgba(0,180,216,0.1);
@@ -213,7 +213,7 @@
   text-align: center;
   color: var(--muted);
   padding: 60px 0;
-  font-size: 13px;
+  font-size: var(--fs-body);
 }
 
 .back-link {
@@ -221,11 +221,11 @@
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   text-decoration: none;
   margin-bottom: 20px;
   border: 0.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 5px 12px;
   transition: color .2s, border-color .2s;
 }
@@ -236,7 +236,7 @@
 <div class="app">
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">자주 묻는 질문</span>
     </div>
@@ -863,3 +863,7 @@ function filterFaq() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
+
+

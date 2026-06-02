@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -25,9 +25,9 @@
   background: none;
   border: 0.5px solid var(--border);
   color: var(--muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   cursor: pointer;
   transition: all .2s;
   text-decoration: none;
@@ -36,8 +36,8 @@
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-.vids-title { font-size: 20px; font-weight: 600; color: var(--text); }
-.vids-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.vids-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.vids-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* 검색 */
 .search-wrap {
@@ -49,9 +49,9 @@
   box-sizing: border-box;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 16px 10px 38px;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--text);
   outline: none;
   transition: border-color .2s;
@@ -63,7 +63,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 15px;
+  font-size: var(--fs-body-lg);
   pointer-events: none;
 }
 
@@ -73,7 +73,7 @@
   gap: 0;
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 4px;
   margin-bottom: 14px;
   overflow-x: auto;
@@ -84,9 +84,9 @@
   padding: 9px 12px;
   background: none;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 500;
   cursor: pointer;
   transition: background .2s, color .2s;
@@ -108,8 +108,8 @@
 }
 .level-btn {
   padding: 5px 14px;
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
   font-weight: 600;
   cursor: pointer;
   border: 0.5px solid var(--border);
@@ -135,7 +135,7 @@
 .video-card {
   background: var(--surface);
   border: 0.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   text-decoration: none;
   color: var(--text);
@@ -189,7 +189,7 @@
   opacity: 0;
   transform: scale(0.8);
   transition: opacity .25s, transform .25s;
-  font-size: 20px;
+  font-size: var(--fs-title);
   color: #fff;
   padding-left: 4px;
 }
@@ -204,7 +204,7 @@
   gap: 6px;
 }
 .card-title {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--text);
   line-height: 1.5;
@@ -214,7 +214,7 @@
   overflow: hidden;
 }
 .card-channel {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
 }
 .card-meta {
@@ -225,10 +225,10 @@
   margin-top: 2px;
 }
 .level-badge {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 .level-badge.입문 { background: rgba(74,222,128,.12);  color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
 .level-badge.초급 { background: rgba(52,211,153,.12);  color: #34d399; border: 0.5px solid rgba(52,211,153,.3); }
@@ -236,12 +236,12 @@
 .level-badge.고급 { background: rgba(248,113,113,.12); color: #f87171; border: 0.5px solid rgba(248,113,113,.3); }
 
 .cat-badge {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: var(--blue);
   background: rgba(0,180,216,.08);
   border: 0.5px solid rgba(0,180,216,.2);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* 빈 상태 */
@@ -250,13 +250,13 @@
   text-align: center;
   padding: 60px 20px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
-.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state .empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 
 /* 결과 수 */
 .result-count {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--muted);
   margin-bottom: 14px;
 }
@@ -265,8 +265,8 @@
   .vids-page { padding: 14px; }
   .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
   .card-body { padding: 10px; }
-  .card-title { font-size: 12px; }
-  .tab-btn { font-size: 11px; padding: 7px 8px; }
+  .card-title { font-size: var(--fs-caption); }
+  .tab-btn { font-size: var(--fs-caption); padding: 7px 8px; }
 }
 </style>
 </head>
@@ -275,7 +275,7 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:14px;margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
       <span class="logo-sub">영상 큐레이션</span>
     </div>
@@ -597,3 +597,5 @@ applyFilters();
 </script>
 </body>
 </html>
+
+

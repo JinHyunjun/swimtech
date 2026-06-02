@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -21,10 +21,10 @@
   }
 
   body {
-    background: linear-gradient(-45deg, #0a1628, #0d2137, #1a3a5c, #082030);
+    background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #082030);
     background-size: 400% 400%;
     animation: ocean-bg 10s ease infinite;
-    font-family: -apple-system, 'Segoe UI', sans-serif;
+    font-family: var(--font-base);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -37,7 +37,7 @@
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 0.5px solid #1e4d6b;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     padding: 40px 36px;
     width: 100%;
     max-width: 380px;
@@ -50,20 +50,20 @@
   }
 
   .logo-icon {
-    font-size: 40px;
+    font-size: var(--fs-display);
     display: block;
     margin-bottom: 8px;
   }
 
   .logo-title {
-    font-size: 22px;
+    font-size: var(--fs-heading);
     font-weight: 700;
     color: #00b4d8;
     letter-spacing: -0.5px;
   }
 
   .logo-sub {
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-top: 4px;
   }
@@ -74,7 +74,7 @@
 
   label {
     display: block;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-bottom: 6px;
   }
@@ -83,9 +83,9 @@
     width: 100%;
     background: rgba(26, 58, 92, 0.8);
     border: 0.5px solid #1e4d6b;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 11px 14px;
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: #e8f4f8;
     outline: none;
     transition: border-color .2s, box-shadow .2s;
@@ -101,9 +101,9 @@
     background: #00b4d8;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px;
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
@@ -116,9 +116,9 @@
   .error {
     background: rgba(248, 113, 113, 0.1);
     border: 0.5px solid rgba(248, 113, 113, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #f87171;
     margin-top: 12px;
     display: none;
@@ -126,7 +126,7 @@
 
   .footer {
     text-align: center;
-    font-size: 12px;
+    font-size: var(--fs-caption);
     color: #90c4d4;
     margin-top: 20px;
   }
@@ -144,7 +144,7 @@
     gap: 10px;
     margin: 20px 0 16px;
     color: #90c4d4;
-    font-size: 11px;
+    font-size: var(--fs-caption);
   }
 
   .divider::before, .divider::after {
@@ -157,9 +157,9 @@
   .btn-social {
     width: 100%;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px;
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 600;
     cursor: pointer;
     margin-bottom: 8px;
@@ -314,3 +314,5 @@ function showError(msg) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
