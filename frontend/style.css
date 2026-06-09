@@ -513,4 +513,20 @@ body { padding-bottom: env(safe-area-inset-bottom); }
   .score-card, .metric-card, .feedback-card { padding: 10px 12px; }
 }
 
-
+/* ── SVG 아이콘 유틸리티 ───────────────────── */
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+  fill: none;
+  vertical-align: middle;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+.icon-sm  { width: 16px; height: 16px; }
+.icon-md  { width: 20px; height: 20px; }
+.icon-lg  { width: 24px; height: 24px; }
+.icon-xl  { width: 32px; height: 32px; }
