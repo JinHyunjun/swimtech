@@ -135,6 +135,31 @@ VALUES
   ('영법 마스터 챌린지', '자유형·배영·평영·접영 4가지 영법을 각 10km씩, 총 40km를 완주하세요!', 40000, 'distance', '2026-05-01', '2026-06-30'),
   ('30일 연속 수영 챌린지', '30일 동안 하루도 빠지지 않고 수영하세요. 꾸준함이 실력을 만들어 줍니다!', 30, 'streak', '2026-05-01', '2026-06-30')
 ON CONFLICT (title) DO NOTHING;
+CREATE TABLE IF NOT EXISTS plan_favorites (
+    id         SERIAL PRIMARY KEY,
+    username   VARCHAR(100) NOT NULL,
+    plan_key   VARCHAR(200) NOT NULL,
+    plan_title VARCHAR(200),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (username, plan_key)
+);
+CREATE TABLE IF NOT EXISTS plan_shares (
+    id          SERIAL PRIMARY KEY,
+    username    VARCHAR(100) NOT NULL,
+    plan_key    VARCHAR(200) NOT NULL,
+    plan_title  VARCHAR(200),
+    share_token VARCHAR(32) NOT NULL UNIQUE,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS user_badges (
+    id        SERIAL PRIMARY KEY,
+    username  VARCHAR(100) NOT NULL,
+    badge_id  VARCHAR(100) NOT NULL,
+    earned_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (username, badge_id)
+);
+CREATE INDEX IF NOT EXISTS idx_plan_fav_user  ON plan_favorites(username);
+CREATE INDEX IF NOT EXISTS idx_user_badges_user ON user_badges(username);
 """
 
 app = FastAPI(

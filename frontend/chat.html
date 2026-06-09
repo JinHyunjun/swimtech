@@ -310,7 +310,7 @@
     <div class="header-left">
       <a href="/landing" class="back-btn" style="margin-right:8px;white-space:nowrap;">← 홈</a>
       <button class="sidebar-toggle" onclick="toggleMobileSidebar()" id="sidebar-toggle-btn">
-        📋 이전 대화
+        <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 이전 대화
       </button>
       <span class="logo">SwimTech AI 코치</span>
     </div>
@@ -334,7 +334,7 @@
       <div style="padding:10px 12px;border-top:0.5px solid var(--border);flex-shrink:0;">
         <button onclick="clearHistory()" style="width:100%;background:none;border:0.5px solid rgba(248,113,113,.35);color:#f87171;border-radius: var(--radius-sm);padding:7px 0;font-size: var(--fs-caption);font-weight:600;cursor:pointer;transition:background .15s;font-family: var(--font-base);"
                 onmouseover="this.style.background='rgba(248,113,113,.08)'" onmouseout="this.style.background='none'">
-          🗑 히스토리 초기화
+          <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-trash"/></svg> 히스토리 초기화
         </button>
       </div>
     </aside>
@@ -363,7 +363,7 @@ function toggleMobileSidebar() {
   const btn = document.getElementById('sidebar-toggle-btn');
   if (!sidebar) return;
   sidebar.classList.toggle('mobile-open');
-  if (btn) btn.textContent = sidebar.classList.contains('mobile-open') ? '✕ 닫기' : '📋 이전 대화';
+  if (btn) btn.textContent = sidebar.classList.contains('mobile-open') ? '✕ 닫기' : '이전 대화';
 }
 
 const API_URL = '/flowise/api/v1/prediction/f8c0ea24-0015-4bd7-a984-d24b1d9df206';
@@ -507,7 +507,7 @@ function renderMessages() {
   if (!s || s.messages.length === 0) {
     box.innerHTML = `
       <div class="chat-welcome">
-        <div class="welcome-icon">🤖</div>
+        <div class="welcome-icon"><svg class="icon icon-xl" aria-hidden="true"><use href="/static/icons.svg#icon-robot"/></svg></div>
         <div class="welcome-title">SwimTech AI 코치</div>
         <p class="welcome-desc">수영 기술, 훈련 방법, 지상운동, 스트레칭,<br>대회 정보, 용품 추천 등 수영과 관련된 모든 것을 물어보세요!</p>
         <div class="sample-grid">

@@ -346,7 +346,7 @@
                onkeydown="if(event.key==='Enter')doSearch()">
         <button onclick="doSearch()">검색</button>
       </div>
-      <button id="write-btn" onclick="openWriteModal()">✏️ 글쓰기</button>
+      <button id="write-btn" onclick="openWriteModal()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-feedback"/></svg> 글쓰기</button>
     </div>
 
     <!-- 카테고리 탭 -->
@@ -369,7 +369,7 @@
     <!-- 주간 인기글 -->
     <div class="popular-section" id="popular-section" style="display:none;">
       <div class="popular-header">
-        <span class="popular-title">🔥 이번 주 인기글</span>
+        <span class="popular-title"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg> 이번 주 인기글</span>
       </div>
       <div id="popular-list"></div>
     </div>
@@ -534,7 +534,7 @@ function renderHeader() {
   document.getElementById('write-btn').style.display = 'block';
   document.getElementById('header-right').innerHTML = `
     <div class="notif-wrap">
-      <button class="btn-notif" id="notif-bell" onclick="toggleNotifDropdown()" title="알림">🔔
+      <button class="btn-notif" id="notif-bell" onclick="toggleNotifDropdown()" title="알림"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-bell"/></svg>
         <span class="notif-badge" id="notif-badge"></span>
       </button>
       <div class="notif-dropdown" id="notif-dropdown">
@@ -713,15 +713,15 @@ function renderPosts(posts) {
         <div class="post-meta" onclick="openPost(${p.id})">
           <span>${esc(p.author)}</span>
           <span>${fmtDate(p.created_at)}</span>
-          <span>👁 ${p.views}</span>
-          <span>❤ ${p.likes}</span>
-          <span>💬 ${p.comment_count}</span>
+          <span><svg class="icon icon-sm" aria-hidden="true"><use href="/static/icons.svg#icon-eye"/></svg> ${p.views}</span>
+          <span><svg class="icon icon-sm" aria-hidden="true"><use href="/static/icons.svg#icon-heart"/></svg> ${p.likes}</span>
+          <span><svg class="icon icon-sm" aria-hidden="true"><use href="/static/icons.svg#icon-chat"/></svg> ${p.comment_count}</span>
         </div>
         ${meInfo ? `
           <button class="btn-card-bookmark ${p.bookmarked ? 'bookmarked' : ''}"
                   id="bm-${p.id}" onclick="toggleBookmarkCard(event,${p.id})"
                   title="${p.bookmarked ? '북마크 해제' : '북마크 추가'}">
-            ${p.bookmarked ? '🔖' : '🏷️'}
+            <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-bookmark"/></svg>
           </button>` : ''}
       </div>
     </div>
@@ -739,7 +739,7 @@ async function toggleBookmarkCard(e, postId) {
     const btn = document.getElementById(`bm-${postId}`);
     if (btn) {
       btn.classList.toggle('bookmarked', bookmarked);
-      btn.innerHTML = bookmarked ? '🔖' : '🏷️';
+      btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-bookmark"/></svg>';
       btn.title = bookmarked ? '북마크 해제' : '북마크 추가';
     }
   } catch {}
@@ -774,7 +774,7 @@ async function loadTopPosts() {
       <div class="popular-item" onclick="openPost(${p.id})">
         <span class="popular-rank">${i+1}</span>
         <span class="popular-item-title">${esc(p.title)}</span>
-        <span class="popular-item-likes">❤ ${p.likes}</span>
+        <span class="popular-item-likes"><svg class="icon icon-sm" aria-hidden="true"><use href="/static/icons.svg#icon-heart"/></svg> ${p.likes}</span>
       </div>
     `).join('');
   } catch {
@@ -822,7 +822,7 @@ function renderDetail(post, comments) {
 
   let actionBtns = `
     <button class="btn-like ${post.liked?'liked':''}" id="like-btn" onclick="toggleLike(${post.id})">
-      ❤ <span id="like-count">${post.likes}</span>
+      <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-heart"/></svg> <span id="like-count">${post.likes}</span>
     </button>
   `;
   if (meInfo) {

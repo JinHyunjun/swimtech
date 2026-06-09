@@ -139,7 +139,7 @@
         border-radius: var(--radius-sm);padding:6px 14px;font-size: var(--fs-caption);text-decoration:none;font-weight:600;
         white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:4px;"
         onmouseover="this.style.background='rgba(0,180,216,.1)'" onmouseout="this.style.background='none'">
-        📓 훈련 일지
+        <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 훈련 일지
       </a>
       <div class="rp-month-nav">
         <button class="rp-month-btn" id="prev-month" onclick="shiftMonth(-1)">&#8249;</button>
@@ -151,12 +151,12 @@
     <!-- 통계 카드 -->
     <div class="stat-grid">
       <div class="stat-card">
-        <div class="stat-icon">🏊</div>
+        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
         <div class="stat-value" id="stat-distance">—</div>
         <div class="stat-label">총 거리 (m)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">📅</div>
+        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
         <div class="stat-value" id="stat-count">—</div>
         <div class="stat-label">총 훈련 횟수</div>
       </div>
@@ -166,7 +166,7 @@
         <div class="stat-label">총 시간 (분)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🔥</div>
+        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
         <div class="stat-value" id="stat-cal">—</div>
         <div class="stat-label">추정 칼로리 (kcal)</div>
       </div>
@@ -209,9 +209,9 @@
 
     <!-- 공유 버튼 -->
     <div class="share-bar">
-      <button class="share-btn save"  id="btn-save"  onclick="saveImage()">💾 이미지로 저장</button>
-      <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()">🗨 카카오톡 공유</button>
-      <button class="share-btn link"  id="btn-link"  onclick="copyLink()">🔗 링크 복사</button>
+      <button class="share-btn save"  id="btn-save"  onclick="saveImage()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 이미지로 저장</button>
+      <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-chat"/></svg> 카카오톡 공유</button>
+      <button class="share-btn link"  id="btn-link"  onclick="copyLink()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-link"/></svg> 링크 복사</button>
     </div>
   </div>
 </div>

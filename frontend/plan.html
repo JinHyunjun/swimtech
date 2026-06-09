@@ -268,20 +268,20 @@
   <div class="plan-page">
     <div class="plan-topbar">
       <div class="plan-topbar-title">
-        <div class="plan-title">📅 수영 훈련 플랜</div>
+        <div class="plan-title"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg> 수영 훈련 플랜</div>
         <div class="plan-sub">목적에 맞는 4주 플랜으로 체계적으로 성장하세요</div>
       </div>
       <button class="btn-create-plan" id="open-modal-btn">🎲 내 플랜 만들기</button>
     </div>
 
     <div class="tab-bar" id="tab-bar">
-      <button class="tab-btn active" data-tab="speed">🏅 기록 단축</button>
+      <button class="tab-btn active" data-tab="speed"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-badges"/></svg> 기록 단축</button>
       <button class="tab-btn" data-tab="health">💪 건강하게 오래</button>
       <button class="tab-btn" data-tab="form">🎯 영법 교정</button>
       <button class="tab-btn" data-tab="hobby">😊 취미/건강유지</button>
       <button class="tab-btn" data-tab="diet">🔥 다이어트</button>
       <button class="tab-btn" data-tab="butterfly_master">🦋 접영 마스터</button>
-      <button class="tab-btn" data-tab="masters">🏆 마스터즈</button>
+      <button class="tab-btn" data-tab="masters"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-challenge"/></svg> 마스터즈</button>
       <button class="tab-btn" data-tab="fitness">⚡ 체력 향상</button>
       <button class="tab-btn" data-tab="correction">🔧 교정 집중</button>
       <button class="tab-btn" data-tab="random">🎲 랜덤 생성</button>
@@ -370,7 +370,7 @@
           <div class="preview-body" id="r-preview-body"></div>
         </div>
         <div class="random-footer">
-          <button class="btn-save-plan" id="btn-save-random">💾 저장하기</button>
+          <button class="btn-save-plan" id="btn-save-random"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 저장하기</button>
         </div>
       </div>
     </div>
@@ -382,7 +382,7 @@
           <div class="pool-panel-header">
             <div class="pool-panel-title">세션 풀</div>
             <div class="pool-search-wrap">
-              <span class="pool-search-icon">🔍</span>
+              <svg class="pool-search-icon icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-search"/></svg>
               <input type="text" class="pool-search" id="pool-search" placeholder="드릴명 · 목적 · 영법 검색...">
             </div>
             <div class="pool-filters" id="pool-filters">
@@ -418,7 +418,7 @@
           <div class="editor-body" id="builder-editor-body"></div>
           <div class="editor-footer">
             <input type="text" class="builder-name-input" id="builder-name" placeholder="플랜 이름 입력..." maxlength="50">
-            <button class="btn-save-builder" id="btn-save-builder">💾 저장</button>
+            <button class="btn-save-builder" id="btn-save-builder"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 저장</button>
           </div>
         </div>
       </div>
@@ -445,7 +445,7 @@
 <div class="cm-overlay" id="cm-overlay">
   <div class="cm-modal" role="dialog" aria-modal="true">
     <div class="cm-modal-header">
-      <span class="cm-modal-title">✏️ 훈련 직접 입력</span>
+      <span class="cm-modal-title"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-feedback"/></svg> 훈련 직접 입력</span>
       <button class="cm-modal-close" id="cm-close">✕</button>
     </div>
     <div class="cm-modal-body">
@@ -983,9 +983,13 @@ function renderPlanTab(key, plan, containerId) {
     <div class="week-panels">${weekPanels}</div>
     <div class="plan-card-footer">
       <a href="/upload" style="display:none" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
-      <a href="/drill" class="plan-btn plan-btn-secondary">🏋️ 드릴 보기</a>
-      <button class="plan-btn plan-btn-secondary" onclick="addToTrainingLog('${plan.id}')"
-              style="border-color:var(--amber);color:var(--amber);">📓 일지에 추가</button>
+      <a href="/drill" class="plan-btn plan-btn-secondary"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg> 드릴 보기</a>
+      <button class="plan-btn plan-btn-secondary" onclick="addToTrainingLog('${key}')"
+              style="border-color:var(--amber);color:var(--amber);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 일지에 추가</button>
+      <button id="plan-fav-${key}" class="plan-btn plan-btn-secondary" onclick="togglePlanFav('${key}','${plan.title}',this)"
+              style="border-color:var(--muted);color:var(--muted);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기</button>
+      <button class="plan-btn plan-btn-secondary" onclick="sharePlan('${key}','${plan.title}')"
+              style="border-color:var(--muted);color:var(--muted);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-link"/></svg> 공유</button>
       <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
     </div>
   </div>`;
@@ -1753,10 +1757,10 @@ async function togglePlanFavorite(planId, btn) {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     if (data.status === 'added') {
-      btn.textContent = '⭐ 즐겨찾기';
+      btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기';
       btn.classList.add('active');
     } else {
-      btn.textContent = '☆ 즐겨찾기';
+      btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기';
       btn.classList.remove('active');
     }
   } catch {
@@ -1792,6 +1796,7 @@ renderPlanTab('correction',       PLANS.correction,       'tab-correction');
 initTabs();
 initChips();
 renderPoolList('전체');
+loadPlanFavSet();
 
 /* ── 훈련 일지에 추가 ───────────────────────── */
 async function addToTrainingLog(planId) {
@@ -1822,6 +1827,57 @@ async function addToTrainingLog(planId) {
   } catch (e) {
     alert('네트워크 오류');
   }
+}
+
+/* ── 플랜 즐겨찾기 ───────────────────────── */
+let planFavSet = new Set();
+
+async function loadPlanFavSet() {
+  try {
+    const res = await fetch('/api/plans/favorites', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    planFavSet = new Set((data.favorites || []).map(f => f.plan_key));
+    planFavSet.forEach(key => {
+      const btn = document.getElementById('plan-fav-' + key);
+      if (btn) { btn.textContent = '★ 즐겨찾기'; btn.style.borderColor = 'var(--amber)'; btn.style.color = 'var(--amber)'; }
+    });
+  } catch (e) { /* 비로그인 시 무시 */ }
+}
+
+async function togglePlanFav(key, title, btn) {
+  try {
+    const res = await fetch(`/api/plans/${key}/favorite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ plan_title: title })
+    });
+    if (!res.ok) { alert('로그인이 필요합니다.'); return; }
+    const data = await res.json();
+    if (data.status === 'added') {
+      planFavSet.add(key);
+      btn.textContent = '★ 즐겨찾기';
+      btn.style.borderColor = 'var(--amber)';
+      btn.style.color = 'var(--amber)';
+    } else {
+      planFavSet.delete(key);
+      btn.textContent = '☆ 즐겨찾기';
+      btn.style.borderColor = 'var(--muted)';
+      btn.style.color = 'var(--muted)';
+    }
+  } catch (e) { alert('네트워크 오류'); }
+}
+
+async function sharePlan(key, title) {
+  try {
+    const res = await fetch(`/api/plans/${key}/share`, { credentials: 'include' });
+    if (!res.ok) { alert('로그인이 필요합니다.'); return; }
+    const data = await res.json();
+    const url = location.origin + data.share_url;
+    await navigator.clipboard.writeText(url);
+    alert(`공유 링크가 클립보드에 복사되었습니다!\n${url}`);
+  } catch (e) { alert('네트워크 오류 또는 클립보드 권한 없음'); }
 }
 
 /* ── 터치 드래그앤드롭 폴리필 ─────────────── */
