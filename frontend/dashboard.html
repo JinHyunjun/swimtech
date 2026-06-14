@@ -42,7 +42,9 @@
 
 .dash-title {
   font-size: var(--fs-title);
-  font-weight: 600;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -55,11 +57,19 @@
 }
 .summary-card {
   background: linear-gradient(var(--surface), var(--surface)) padding-box,
-              linear-gradient(135deg, #00b4d8, #1e4d6b) border-box;
+              linear-gradient(135deg, #00b4d8, var(--border)) border-box;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: 18px 20px;
+  transition: transform .22s ease, box-shadow .22s ease;
 }
+.summary-card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,150,180,.2); }
+/* 최고 점수 — 성취 에너지(코랄) */
+.summary-card.hot {
+  background: linear-gradient(var(--surface), var(--surface)) padding-box,
+              linear-gradient(135deg, var(--energy), var(--border)) border-box;
+}
+.summary-card.hot:hover { box-shadow: 0 14px 30px rgba(255,106,61,.2); }
 .summary-card-label {
   font-size: var(--fs-caption);
   color: var(--muted);
@@ -67,14 +77,17 @@
   letter-spacing: 0.3px;
 }
 .summary-card-value {
-  font-size: var(--fs-display);
-  font-weight: 600;
-  line-height: 1;
+  font-size: clamp(32px, 5vw, 44px);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
 }
 .summary-card-value.blue   { color: var(--blue); }
 .summary-card-value.green  { color: var(--green); }
 .summary-card-value.amber  { color: var(--amber); }
 .summary-card-value.cyan   { color: var(--cyan); }
+.summary-card-value.energy { color: var(--energy); }
 .summary-card-unit {
   font-size: var(--fs-caption);
   color: var(--muted);
@@ -93,7 +106,9 @@
   border: 0.5px solid var(--border);
   border-radius: var(--radius-md);
   padding: 18px 20px;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
+.chart-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(0,150,180,.16); }
 .chart-card-title {
   font-size: var(--fs-caption);
   color: var(--muted);
@@ -194,7 +209,7 @@
   gap: 16px;
   transition: border-color .2s;
 }
-.history-card:hover { border-color: rgba(0,180,216,.35); }
+.history-card:hover { border-color: rgba(0,180,216,.35); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,150,180,.14); }
 .history-date {
   font-size: var(--fs-caption);
   color: var(--muted);
@@ -238,7 +253,9 @@
 }
 .history-score {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 .history-diff {
@@ -264,7 +281,7 @@
 
 /* 주간 목표 */
 .weekly-card {
-  background: linear-gradient(135deg, #0f2942, #1a3a5c);
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
   border: 0.5px solid var(--border);
   border-radius: var(--radius-md);
   padding: 18px 20px;
@@ -367,7 +384,7 @@
       <span class="logo-sub">대시보드</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 
@@ -416,7 +433,7 @@
     </div>
 
     <!-- 숫자 카드 -->
-    <div class="summary-cards" style="display:none">
+    <div class="summary-cards st-stagger" style="display:none">
       <div class="summary-card">
         <div class="summary-card-label">총 분석 횟수</div>
         <div class="summary-card-value blue" id="card-total">—</div>
@@ -427,10 +444,10 @@
         <div class="summary-card-value green" id="card-avg-score">—</div>
         <div class="summary-card-unit">점</div>
       </div>
-      <div class="summary-card">
+      <div class="summary-card hot">
         <div class="summary-card-label">최고 종합점수</div>
-        <div class="summary-card-value amber" id="card-max-score">—</div>
-        <div class="summary-card-unit">점</div>
+        <div class="summary-card-value energy" id="card-max-score">—</div>
+        <div class="summary-card-unit">점 <span class="pill-energy" style="margin-left:4px">PB</span></div>
       </div>
       <div class="summary-card">
         <div class="summary-card-label">총 발차기 횟수</div>
@@ -440,7 +457,7 @@
     </div>
 
     <!-- 차트 2×2 -->
-    <div class="charts-grid" style="display:none">
+    <div class="charts-grid st-stagger" style="display:none">
       <div class="chart-card">
         <div class="chart-card-title">회차별 종합점수 추이</div>
         <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
@@ -470,7 +487,7 @@
     <!-- 분석 히스토리 타임라인 -->
     <div class="history-section" style="display:none">
       <div class="history-header">📅 분석 히스토리</div>
-      <div id="history-list" class="history-list">
+      <div id="history-list" class="history-list st-stagger">
         <div class="loading-overlay">히스토리 불러오는 중...</div>
       </div>
     </div>

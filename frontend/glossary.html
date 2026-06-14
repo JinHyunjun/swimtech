@@ -23,7 +23,7 @@
 
 .glossary-wrap {
   min-height: calc(100vh - 53px);
-  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, var(--bg), var(--surface), var(--surface), var(--bg));
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   padding: 28px 16px 60px;
@@ -259,7 +259,7 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);
+              style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);
                      padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">
         로그아웃
       </button>

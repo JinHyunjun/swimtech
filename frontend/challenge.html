@@ -21,7 +21,17 @@
   text-decoration: none; transition: all .2s;
 }
 .ch-back:hover { border-color: var(--blue); color: var(--blue); }
-.ch-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
+.ch-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+.ch-live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-caption); font-weight: 800; letter-spacing: .3px;
+  color: var(--energy); background: var(--energy-soft);
+  border: 1px solid rgba(255,106,61,.32); border-radius: var(--radius-pill);
+  padding: 4px 11px;
+}
+.ch-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--energy); animation: ch-pulse 1.4s ease-in-out infinite; }
+@keyframes ch-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+@media (prefers-reduced-motion: reduce) { .ch-live-dot { animation: none; } }
 
 /* ── 탭 ── */
 .ch-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
@@ -36,9 +46,9 @@
 .ch-list { display: flex; flex-direction: column; gap: 16px; }
 .ch-card {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
-  padding: 20px; transition: border-color .2s, box-shadow .2s;
+  padding: 20px; transition: transform .22s ease, border-color .22s, box-shadow .22s;
 }
-.ch-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(0,180,216,.1); }
+.ch-card:hover { transform: translateY(-4px); border-color: var(--accent-secondary); box-shadow: 0 14px 32px rgba(0,150,180,.2); }
 .ch-card-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
 .ch-card-icon { font-size: var(--fs-display); line-height: 1; flex-shrink: 0; }
 .ch-card-info { flex: 1; }
@@ -75,7 +85,8 @@
 .ranking-table td { padding: 7px 10px; text-align: left; font-size: var(--fs-caption); }
 .ranking-table th { color: var(--muted); font-weight: 600; border-bottom: 0.5px solid var(--border); }
 .ranking-table td { color: var(--text); border-bottom: 0.5px solid rgba(255,255,255,.04); }
-.ranking-table tr.me td { color: var(--blue); font-weight: 700; }
+.ranking-table tr.me td { color: var(--blue); font-weight: 700; background: linear-gradient(90deg, rgba(0,180,216,.10), transparent); }
+.ranking-table td:first-child { font-style: italic; font-weight: 800; font-size: var(--fs-body); }
 .rank-medal-1 { color: #fbbf24; }
 .rank-medal-2 { color: #d1d5db; }
 .rank-medal-3 { color: #c07850; }
@@ -113,7 +124,7 @@
       <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;
         border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">로그아웃</button>
     </div>
   </header>
@@ -121,6 +132,7 @@
   <div class="ch-page">
     <div class="ch-topbar">
       <h1 class="ch-title">수영 챌린지</h1>
+      <span class="ch-live"><span class="ch-live-dot"></span>실시간</span>
     </div>
 
     <div class="ch-tabs">

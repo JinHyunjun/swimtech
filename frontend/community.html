@@ -82,7 +82,7 @@
   background: var(--surface); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 14px 18px; transition: border-color .2s, transform .15s;
 }
-.post-card:hover { border-color: var(--blue); transform: translateY(-1px); }
+.post-card:hover { border-color: var(--accent-secondary); transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,150,180,.16); }
 .post-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; }
 .post-cat-badge {
   font-size: var(--fs-caption); font-weight: 600; padding: 2px 8px; border-radius: var(--radius-md);
@@ -388,7 +388,7 @@
     </div>
 
     <!-- 게시글 목록 -->
-    <div class="post-list" id="post-list">
+    <div class="post-list st-stagger" id="post-list">
       <div class="empty-state">불러오는 중...</div>
     </div>
 
@@ -548,7 +548,7 @@ function renderHeader() {
       </div>
     </div>
     <span style="font-size: var(--fs-caption);color:var(--muted);margin:0 10px;">${esc(meInfo.nickname || meInfo.username)}</span>
-    <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
+    <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
   `;
   fetchNotifCount();
   setInterval(fetchNotifCount, 30000);

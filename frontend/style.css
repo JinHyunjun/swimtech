@@ -4,10 +4,10 @@
 
 :root {
   /* ── 색상 토큰 ─────────────────────────── */
-  --bg:       #0a1628;
-  --surface:  #1a3a5c;
-  --surface2: #0f2942;
-  --border:   #1e4d6b;
+  --bg:       #06121c;
+  --surface:  #0f2a44;
+  --surface2: #0a2032;
+  --border:   #173f5c;
   --text:     #e8f4f8;
   --muted:    #90c4d4;
 
@@ -16,6 +16,11 @@
   --accent-secondary: #48cae4;
   --blue: var(--accent-primary);
   --cyan: var(--accent-secondary);
+
+  /* 성취 액센트 — PB·신기록·랭킹 전용 (v2.8) */
+  --energy:      #ff6a3d;
+  --energy-soft: rgba(255,106,61,.14);
+  --aqua:        #2ff0c4;   /* display 텍스트 그라데이션 보조 */
 
   /* 상태색 (기능 표시 전용) */
   --status-success: #4ade80;
@@ -36,6 +41,7 @@
   --fs-title:    20px;
   --fs-heading:  28px;
   --fs-display:  36px;
+  --fs-display-xl: clamp(56px, 14vw, 104px);  /* 스코어보드 빅 넘버 (v2.8) */
 
   /* ── 반경 토큰 ─────────────────────────── */
   --radius-sm:   8px;
@@ -64,6 +70,9 @@ html[data-theme="light"] {
   --accent-secondary: #0891b2;
   --blue:   var(--accent-primary);
   --cyan:   var(--accent-secondary);
+  --energy:      #ea580c;
+  --energy-soft: rgba(234,88,12,.10);
+  --aqua:        #0891b2;
   --status-success: #16a34a;
   --status-warning: #d97706;
   --status-danger:  #dc2626;
@@ -111,7 +120,7 @@ html[data-theme="light"] .sample-card { background: var(--surface); border-color
 }
 .theme-btn:hover { border-color: var(--blue); background: rgba(0,180,216,.08); }
 
-body { background: var(--bg); color: var(--text); font-family: var(--font-base); font-size: var(--fs-body); }
+body { background: radial-gradient(1200px 620px at 88% -10%, rgba(0,198,221,.10), transparent 60%), radial-gradient(900px 520px at -8% 4%, rgba(255,106,61,.05), transparent 55%), var(--bg); background-attachment: fixed; color: var(--text); font-family: var(--font-base); font-size: var(--fs-body); min-height: 100vh; }
 
 /* ── 공통 유틸리티 ───────────────────────── */
 .back-btn {
@@ -530,3 +539,73 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 .icon-md  { width: 20px; height: 20px; }
 .icon-lg  { width: 24px; height: 24px; }
 .icon-xl  { width: 32px; height: 32px; }
+
+/* ════════════════════════════════════════════════════════════
+   v2.8 — Hydro Velocity 유틸 레이어
+   A(딥오션 몰입) + C(스포티 에너지) 공통 모션·디스플레이
+   각 페이지 인라인 CSS 없이 클래스만 붙여 재사용
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 디스플레이 타이포 (이탤릭 헤비 + 그라데이션) ── */
+.display-italic {
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  background: linear-gradient(120deg, var(--text) 10%, var(--accent-primary) 68%, var(--aqua));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* 스코어보드 빅 넘버 */
+.num-score {
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-size: var(--fs-display-xl);
+  line-height: 0.86;
+  background: linear-gradient(120deg, #ffffff 8%, var(--accent-primary) 58%, var(--aqua));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.num-score small { font-size: 0.32em; -webkit-text-fill-color: var(--aqua); }
+
+/* ── 성취 포인트 필 (PB·신기록·랭킹 전용) ── */
+.pill-energy {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-caption); font-weight: 800; letter-spacing: .3px;
+  padding: 4px 11px; border-radius: var(--radius-pill);
+  background: var(--energy-soft); color: var(--energy);
+  border: 1px solid rgba(255,106,61,.32);
+  white-space: nowrap;
+}
+
+/* ── 카드 hover lift + glow ── */
+.st-lift { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+.st-lift:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 16px 34px rgba(0,150,180,.26);
+}
+
+/* ── 등장 스태거 (자식 순차 페이드업) ── */
+@keyframes st-rise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+.st-stagger > * { animation: st-rise .55s cubic-bezier(.2,.8,.2,1) backwards; }
+.st-stagger > *:nth-child(1){animation-delay:.04s}
+.st-stagger > *:nth-child(2){animation-delay:.09s}
+.st-stagger > *:nth-child(3){animation-delay:.14s}
+.st-stagger > *:nth-child(4){animation-delay:.19s}
+.st-stagger > *:nth-child(5){animation-delay:.24s}
+.st-stagger > *:nth-child(6){animation-delay:.29s}
+.st-stagger > *:nth-child(7){animation-delay:.34s}
+.st-stagger > *:nth-child(n+8){animation-delay:.38s}
+
+/* ── 채우기 바 (정확도/속도 등) ── */
+@keyframes st-fill-bar { from { width: 0; } }
+.st-fill { animation: st-fill-bar 1.5s cubic-bezier(.2,.85,.2,1) .3s backwards; }
+
+/* ── 모션 최소화 선호 시 전부 정지 ── */
+@media (prefers-reduced-motion: reduce) {
+  .st-stagger > *, .st-lift, .st-fill { animation: none !important; transition: none !important; }
+}

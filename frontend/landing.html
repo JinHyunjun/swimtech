@@ -34,7 +34,7 @@
   min-height: calc(100vh - 53px);
   padding: 32px 20px 48px;
   position: relative;
-  background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #0a1628);
+  background: linear-gradient(-45deg, var(--bg), var(--surface), var(--surface), var(--bg));
   background-size: 400% 400%;
   animation: gradient-shift 12s ease infinite;
   overflow: hidden;
@@ -58,7 +58,7 @@
   left: 0;
   width: 200%;
   height: 40px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%2348cae4' fill-opacity='0.1' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%23ff6a3d' fill-opacity='0.08' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
   background-size: 960px 40px;
   animation: ocean-wave2 11s linear infinite;
   pointer-events: none;
@@ -76,10 +76,13 @@
 }
 .home-title h1 {
   font-size: var(--fs-display);
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.5px;
-  text-shadow: 0 0 30px rgba(0,180,216,0.3);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--text) 12%, var(--accent-primary) 68%, var(--aqua));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .home-title p {
   font-size: var(--fs-body);
@@ -159,7 +162,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--fs-body);
   font-weight: 600;
-  color: #0a1628;
+  color: var(--bg);
   background: var(--accent-secondary);
   border: none;
   cursor: pointer;
@@ -203,7 +206,7 @@
   transition: left .4s ease;
 }
 .menu-card:hover::after { left: 100%; }
-.menu-card:hover { transform: translateY(-4px); }
+.menu-card:hover { transform: translateY(-5px); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
 
 .menu-icon {
   font-size: var(--fs-display);
@@ -238,7 +241,7 @@
 .menu-card.train::after {
   background: linear-gradient(90deg, transparent, #00b4d8, transparent);
 }
-.menu-card.train .menu-btn { background: #00b4d8; color: #0a1628; }
+.menu-card.train .menu-btn { background: #00b4d8; color: var(--bg); }
 
 /* 커뮤니티 — 초록 계열 */
 .menu-card.community:hover {
@@ -249,7 +252,7 @@
 .menu-card.community::after {
   background: linear-gradient(90deg, transparent, #4ade80, transparent);
 }
-.menu-card.community .menu-btn { background: #4ade80; color: #0a1628; }
+.menu-card.community .menu-btn { background: #4ade80; color: var(--bg); }
 
 /* 정보/도움 — 회색 계열 */
 .menu-card.info:hover {
@@ -262,7 +265,18 @@
 }
 .menu-card.info .menu-btn { background: #475569; color: #fff; }
 
-/* ── 모바일: 3열 유지, 패딩·폰트만 축소 ── */
+/* 챌린지 — 성취 에너지(코랄) 계열 (v2.8) */
+.menu-card.hot:hover {
+  border-color: var(--energy);
+  background: var(--energy-soft);
+  box-shadow: 0 8px 28px rgba(255,106,61,.18);
+}
+.menu-card.hot::after {
+  background: linear-gradient(90deg, transparent, var(--energy), transparent);
+}
+.menu-card.hot .menu-btn { background: var(--energy); color: #2a0f06; }
+
+/* ── 모바일: 2열 reflow, 패딩·폰트 축소 ── */
 @media (max-width: 540px) {
   .home-wrap { padding: 20px 12px 40px; }
   .home-title h1 { font-size: var(--fs-title); }
@@ -271,7 +285,7 @@
   .hero-title { font-size: var(--fs-body); }
   .hero-desc { font-size: var(--fs-caption); }
   .hero-btn { padding: 7px 14px; font-size: var(--fs-caption); }
-  .menu-grid { gap: 8px; }
+  .menu-grid { gap: 8px; grid-template-columns: repeat(2, 1fr); }
   .menu-card { padding: 12px 8px; gap: 5px; }
   .menu-icon { font-size: var(--fs-heading); }
   .menu-title { font-size: var(--fs-caption); }
@@ -293,7 +307,7 @@
     </div>
     <div class="header-right">
       <button onclick="logout()"
-              style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);
+              style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);
                      padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">
         로그아웃
       </button>
@@ -303,7 +317,7 @@
   <div class="home-wrap">
     <div class="home-inner">
       <div class="home-title">
-        <h1>🏊 SwimTech에 오신 것을 환영합니다</h1>
+        <h1>SwimTech에 오신 것을 환영합니다</h1>
         <p>무엇을 도와드릴까요? 원하는 서비스를 선택해주세요</p>
       </div>
 
@@ -326,7 +340,7 @@
       <!-- 🏊 훈련 관리 -->
       <div class="menu-section">
         <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg> 훈련 관리</div>
-        <div class="menu-grid">
+        <div class="menu-grid st-stagger">
           <a href="/plan" class="menu-card train">
             <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
             <div class="menu-title">훈련 플랜</div>
@@ -360,7 +374,7 @@
       <!-- 👥 커뮤니티 -->
       <div class="menu-section">
         <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-community"/></svg> 커뮤니티</div>
-        <div class="menu-grid">
+        <div class="menu-grid st-stagger">
           <a href="/community" class="menu-card community">
             <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-community"/></svg></div>
             <div class="menu-title">커뮤니티</div>
@@ -370,9 +384,10 @@
             </div>
             <button class="menu-btn">커뮤니티 가기</button>
           </a>
-          <a href="/challenge" class="menu-card community">
+          <a href="/challenge" class="menu-card hot">
             <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-challenge"/></svg></div>
             <div class="menu-title">수영 챌린지</div>
+            <span class="pill-energy">실시간 랭킹</span>
             <div class="menu-desc">
               100km·30일 연속 등 다양한<br>
               챌린지에 참여하고 경쟁하기
@@ -403,7 +418,7 @@
       <!-- 📚 정보/도움 -->
       <div class="menu-section">
         <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-glossary"/></svg> 정보/도움</div>
-        <div class="menu-grid">
+        <div class="menu-grid st-stagger">
           <a href="/drill" class="menu-card info">
             <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg></div>
             <div class="menu-title">드릴 가이드</div>

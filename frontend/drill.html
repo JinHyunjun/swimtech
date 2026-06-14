@@ -34,7 +34,7 @@
 }
 .back-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-.drill-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.drill-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .drill-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* 탭 */
@@ -98,16 +98,17 @@
   transition: opacity .2s;
 }
 .drill-card:hover {
-  border-color: rgba(0,180,216,.4);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,180,216,.1);
+  border-color: var(--accent-secondary);
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(0,150,180,.2);
 }
 .drill-card:hover::before { opacity: 1; }
 
 .drill-num {
   font-size: var(--fs-caption);
   color: var(--blue);
-  font-weight: 600;
+  font-style: italic;
+  font-weight: 800;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
   display: flex;
@@ -242,7 +243,7 @@
 
     <!-- 자유형 -->
     <div id="tab-freestyle" class="tab-content active">
-      <div class="drill-grid">
+      <div class="drill-grid st-stagger">
 
         <div class="drill-card">
           <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
@@ -399,7 +400,7 @@
 
     <!-- 배영 -->
     <div id="tab-backstroke" class="tab-content">
-      <div class="drill-grid">
+      <div class="drill-grid st-stagger">
 
         <div class="drill-card">
           <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
@@ -526,7 +527,7 @@
 
     <!-- 평영 -->
     <div id="tab-breaststroke" class="tab-content">
-      <div class="drill-grid">
+      <div class="drill-grid st-stagger">
 
         <div class="drill-card">
           <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>
@@ -653,7 +654,7 @@
 
     <!-- 접영 -->
     <div id="tab-butterfly" class="tab-content">
-      <div class="drill-grid">
+      <div class="drill-grid st-stagger">
 
         <div class="drill-card">
           <div class="drill-num">DRILL 01 <span class="drill-level lv-beginner">초보</span></div>

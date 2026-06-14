@@ -21,7 +21,7 @@
   }
 
   body {
-    background: linear-gradient(-45deg, #0a1628, var(--surface), #1a3a5c, #082030);
+    background: linear-gradient(-45deg, var(--bg), var(--surface), var(--surface), #082030);
     background-size: 400% 400%;
     animation: ocean-bg 10s ease infinite;
     font-family: var(--font-base);
@@ -36,7 +36,7 @@
     background: rgba(15, 41, 66, 0.85);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 0.5px solid #1e4d6b;
+    border: 0.5px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 40px 36px;
     width: 100%;
@@ -82,7 +82,7 @@
   input {
     width: 100%;
     background: rgba(26, 58, 92, 0.8);
-    border: 0.5px solid #1e4d6b;
+    border: 0.5px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 11px 14px;
     font-size: var(--fs-body);
@@ -111,7 +111,7 @@
   }
 
   .btn:hover { background: #0096c7; box-shadow: 0 4px 16px rgba(0,180,216,0.3); }
-  .btn:disabled { background: #1e4d6b; cursor: not-allowed; }
+  .btn:disabled { background: var(--border); cursor: not-allowed; }
 
   .error {
     background: rgba(248, 113, 113, 0.1);
@@ -151,7 +151,7 @@
     content: '';
     flex: 1;
     height: 0.5px;
-    background: #1e4d6b;
+    background: var(--border);
   }
 
   .btn-social {
