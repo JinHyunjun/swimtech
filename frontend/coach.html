@@ -199,6 +199,24 @@
   .student-actions { flex-wrap: wrap; gap: 6px; }
   .coach-profile { flex-direction: column; }
 }
+
+/* 자유수영 공유 */
+.ss-open-btn { padding: 10px 16px; border-radius: var(--radius-pill); border: none; background: var(--energy); color: #2a0f06; font-weight: 800; font-size: var(--fs-caption); cursor: pointer; }
+.ss-open-btn:hover { filter: brightness(1.08); }
+.ss-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.ss-overlay.open { display: flex; }
+.ss-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+.ss-title { font-style: italic; font-weight: 900; font-size: var(--fs-title); margin-bottom: 18px; }
+.ss-field { margin-bottom: 13px; }
+.ss-field label { display: block; font-size: var(--fs-caption); color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+.ss-input { width: 100%; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); font-size: var(--fs-body); font-family: inherit; }
+textarea.ss-input { min-height: 60px; resize: vertical; }
+.ss-row { display: flex; gap: 10px; } .ss-row .ss-field { flex: 1; }
+.ss-msg { font-size: var(--fs-caption); color: var(--energy); min-height: 18px; margin-bottom: 8px; }
+.ss-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.ss-btn { padding: 10px 18px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 700; }
+.ss-cancel { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+.ss-submit { background: var(--energy); color: #2a0f06; }
 </style>
 </head>
 <body>
@@ -300,6 +318,12 @@
       <!-- 코치 연동 완료 -->
       <div id="student-has-coach" style="display:none">
         <!-- 코치 프로필 -->
+        <div class="c-card" id="swim-share-card">
+          <div class="c-card-title">🏊 오늘 자유수영 공유</div>
+          <p style="color:var(--muted);font-size:var(--fs-caption);margin-bottom:12px;">수업에 못 갔어도, 자유수영 기록을 코치에게 공유해보세요.</p>
+          <button class="ss-open-btn" onclick="openShareSwim()">+ 자유수영 공유하기</button>
+        </div>
+
         <div class="c-card" id="my-coach-card">
           <div class="c-card-title">👨‍🏫 내 코치</div>
           <div class="coach-profile">
@@ -688,6 +712,48 @@ function esc(s) {
 
 // ── 초기 로드 ──
 document.addEventListener("DOMContentLoaded", () => loadCoachTab());
+</script>
+
+<!-- 자유수영 공유 모달 -->
+<div class="ss-overlay" id="ss-overlay">
+  <div class="ss-box">
+    <div class="ss-title">자유수영 공유</div>
+    <div class="ss-field"><label>날짜</label><input id="ss-date" type="date" class="ss-input"></div>
+    <div class="ss-field"><label>영법</label>
+      <select id="ss-stroke" class="ss-input">
+        <option value="자유형">자유형</option><option value="배영">배영</option>
+        <option value="평영">평영</option><option value="접영">접영</option><option value="혼영">혼영</option>
+      </select></div>
+    <div class="ss-row">
+      <div class="ss-field"><label>거리 (m)</label><input id="ss-dist" type="number" min="1" class="ss-input" placeholder="1600"></div>
+      <div class="ss-field"><label>시간 (분)</label><input id="ss-dur" type="number" min="1" class="ss-input" placeholder="45"></div>
+    </div>
+    <div class="ss-field"><label>메모</label><textarea id="ss-notes" class="ss-input" placeholder="오늘 컨디션, 느낀 점 등"></textarea></div>
+    <div class="ss-msg" id="ss-msg"></div>
+    <div class="ss-actions">
+      <button class="ss-btn ss-cancel" onclick="closeShareSwim()">취소</button>
+      <button class="ss-btn ss-submit" id="ss-submit" onclick="submitShareSwim()">코치에게 공유</button>
+    </div>
+  </div>
+</div>
+<script>
+function openShareSwim(){var o=document.getElementById('ss-overlay');if(o)o.classList.add('open');var d=document.getElementById('ss-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);}
+function closeShareSwim(){var o=document.getElementById('ss-overlay');if(o)o.classList.remove('open');var m=document.getElementById('ss-msg');if(m){m.textContent='';m.style.color='';}}
+async function submitShareSwim(){
+  var msg=document.getElementById('ss-msg'),btn=document.getElementById('ss-submit');
+  var dist=parseInt(document.getElementById('ss-dist').value,10);
+  if(!dist||dist<=0){msg.textContent='거리를 입력하세요';return;}
+  var dur=parseInt(document.getElementById('ss-dur').value,10);
+  var body={stroke:document.getElementById('ss-stroke').value,distance_m:dist,duration_min:isNaN(dur)?null:dur,notes:document.getElementById('ss-notes').value||'',swim_date:document.getElementById('ss-date').value||null};
+  btn.disabled=true;msg.style.color='';msg.textContent='공유 중...';
+  try{
+    var res=await fetch('/api/coach/share-swim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var data=await res.json().catch(function(){return {};});
+    if(!res.ok){msg.textContent=(data&&data.detail)?data.detail:('공유 실패 ('+res.status+')');btn.disabled=false;return;}
+    msg.style.color='var(--green)';msg.textContent='공유 완료! 코치에게 알림이 갔어요.';
+    setTimeout(function(){closeShareSwim();btn.disabled=false;},1300);
+  }catch(e){msg.textContent='네트워크 오류: '+e;btn.disabled=false;}
+}
 </script>
 </body>
 </html>

@@ -9,6 +9,7 @@ import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from datetime import date
 from routers.auth import verify_token
 
 router = APIRouter()
@@ -113,6 +114,132 @@ class PlanRequest(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+def _ensure_swim_shares():
+    conn = _get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS swim_shares (
+            id           SERIAL PRIMARY KEY,
+            coach_id     INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+            student_id   INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+            swim_date    DATE NOT NULL DEFAULT CURRENT_DATE,
+            stroke       VARCHAR(20),
+            distance_m   INTEGER NOT NULL DEFAULT 0,
+            duration_min INTEGER,
+            notes        TEXT,
+            created_at   TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_swim_shares_coach ON swim_shares(coach_id)")
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+class ShareSwimRequest(BaseModel):
+    stroke:       Optional[str] = ""
+    distance_m:   int
+    duration_min: Optional[int] = None
+    notes:        Optional[str] = ""
+    swim_date:    Optional[str] = None   # YYYY-MM-DD
+
+
+@router.post("/share-swim")
+def share_swim(req: ShareSwimRequest, request: Request):
+    """수강생: 자유수영 운동량을 연결된 코치에게 공유 (+코치 알림)."""
+    username = _require_user(request)
+    if req.distance_m is None or req.distance_m <= 0:
+        raise HTTPException(400, "거리를 입력하세요")
+    if req.distance_m > 100000:
+        raise HTTPException(400, "거리가 너무 큽니다")
+    _ensure_swim_shares()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        sid = _get_customer_id(conn, username)
+        cur.execute(
+            "SELECT coach_id FROM coach_students WHERE student_id = %s AND status = 'active' LIMIT 1",
+            (sid,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(400, "연결된 코치가 없습니다")
+        coach_id = row[0]
+        if req.swim_date:
+            try:
+                sdate = date.fromisoformat(req.swim_date)
+            except Exception:
+                raise HTTPException(400, "날짜 형식 오류 (YYYY-MM-DD)")
+        else:
+            sdate = date.today()
+        stroke = (req.stroke or "").strip()[:20]
+        notes = (req.notes or "").strip()[:1000]
+        cur.execute(
+            """INSERT INTO swim_shares (coach_id, student_id, swim_date, stroke, distance_m, duration_min, notes)
+               VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (coach_id, sid, sdate, stroke, req.distance_m, req.duration_min, notes),
+        )
+        share_id = cur.fetchone()[0]
+        cur.execute("SELECT customer_id FROM coaches WHERE id = %s", (coach_id,))
+        crow = cur.fetchone()
+        cur.execute("SELECT name FROM customers WHERE id = %s", (sid,))
+        nrow = cur.fetchone()
+        sname = nrow[0] if nrow else "수강생"
+        if crow:
+            km = req.distance_m / 1000
+            msg = f"{sname}님이 자유수영 {km:.1f}km를 공유했어요"
+            cur.execute(
+                "INSERT INTO notifications (customer_id, type, message, target_id) VALUES (%s,%s,%s,%s)",
+                (crow[0], "swim_share", msg, share_id),
+            )
+        conn.commit()
+        return {"status": "shared", "id": share_id}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"공유 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.get("/shares")
+def list_swim_shares(request: Request):
+    """코치: 수강생들이 공유한 자유수영 목록."""
+    username = _require_user(request)
+    _ensure_swim_shares()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cid = _get_customer_id(conn, username)
+        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
+        crow = cur.fetchone()
+        if not crow:
+            raise HTTPException(403, "코치 프로필이 없습니다")
+        coach_id = crow[0]
+        cur.execute(
+            """SELECT s.id, c.name, s.swim_date, s.stroke, s.distance_m, s.duration_min, s.notes, s.created_at
+               FROM swim_shares s JOIN customers c ON c.id = s.student_id
+               WHERE s.coach_id = %s ORDER BY s.created_at DESC LIMIT 30""",
+            (coach_id,),
+        )
+        shares = [
+            {"id": r[0], "student_name": r[1], "swim_date": str(r[2]), "stroke": r[3],
+             "distance_m": r[4], "duration_min": r[5], "notes": r[6], "created_at": str(r[7])}
+            for r in cur.fetchall()
+        ]
+        cur.close()
+        return {"shares": shares}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+    finally:
+        conn.close()
+
 
 @router.post("/register")
 def register_coach(req: RegisterRequest, request: Request):
