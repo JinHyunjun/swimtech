@@ -5,6 +5,7 @@ from typing import Optional
 
 import psycopg2
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 from routers.auth import verify_token
 
@@ -39,6 +40,15 @@ _SEED = [
 ]
 
 
+class ChallengeCreate(BaseModel):
+    title: str
+    description: str = ""
+    challenge_type: str = "distance"   # distance | streak
+    goal_distance: int                 # distance=미터, streak=일수
+    start_date: str                    # YYYY-MM-DD
+    end_date: str
+
+
 def _get_db():
     return psycopg2.connect(DATABASE_URL)
 
@@ -70,6 +80,7 @@ def _ensure_tables():
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_chall_part_cid  ON challenge_participants(challenge_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_chall_part_user ON challenge_participants(username)")
+    cur.execute("ALTER TABLE challenges ADD COLUMN IF NOT EXISTS created_by VARCHAR(100)")
     conn.commit()
     for ch in _SEED:
         cur.execute("""
@@ -88,6 +99,95 @@ def _get_username(request: Request) -> Optional[str]:
     if not token:
         return None
     return verify_token(token)
+
+
+@router.post("")
+def create_challenge(payload: ChallengeCreate, request: Request):
+    """사용자가 직접 챌린지를 생성. 생성자는 자동 참여 처리."""
+    username = _get_username(request)
+    if not username:
+        raise HTTPException(401, "로그인이 필요합니다")
+    title = (payload.title or "").strip()
+    desc = (payload.description or "").strip()
+    ctype = payload.challenge_type if payload.challenge_type in ("distance", "streak") else "distance"
+    if not title:
+        raise HTTPException(400, "제목을 입력하세요")
+    if len(title) > 200:
+        raise HTTPException(400, "제목이 너무 깁니다 (최대 200자)")
+    if len(desc) > 1000:
+        raise HTTPException(400, "설명이 너무 깁니다 (최대 1000자)")
+    if payload.goal_distance is None or payload.goal_distance <= 0:
+        raise HTTPException(400, "목표값은 0보다 커야 합니다")
+    if ctype == "distance" and payload.goal_distance > 10_000_000:
+        raise HTTPException(400, "거리 목표가 너무 큽니다 (최대 10,000km)")
+    if ctype == "streak" and payload.goal_distance > 365:
+        raise HTTPException(400, "연속 일수가 너무 큽니다 (최대 365일)")
+    try:
+        sd = date.fromisoformat(payload.start_date)
+        ed = date.fromisoformat(payload.end_date)
+    except Exception:
+        raise HTTPException(400, "날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)")
+    if ed < sd:
+        raise HTTPException(400, "종료일이 시작일보다 빠릅니다")
+    if ed < date.today():
+        raise HTTPException(400, "종료일이 이미 지났습니다")
+    _ensure_tables()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT 1 FROM challenges WHERE title = %s", (title,))
+        if cur.fetchone():
+            raise HTTPException(409, "같은 제목의 챌린지가 이미 있어요")
+        cur.execute("""
+            INSERT INTO challenges (title, description, goal_distance, challenge_type, start_date, end_date, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (title, desc, payload.goal_distance, ctype, sd, ed, username))
+        new_id = cur.fetchone()[0]
+        cur.execute("""
+            INSERT INTO challenge_participants (challenge_id, username)
+            VALUES (%s, %s) ON CONFLICT (challenge_id, username) DO NOTHING
+        """, (new_id, username))
+        conn.commit()
+        return {"status": "created", "id": new_id}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"생성 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.delete("/{challenge_id}")
+def delete_own_challenge(challenge_id: int, request: Request):
+    """생성자 본인만 자신이 만든 챌린지를 삭제."""
+    username = _get_username(request)
+    if not username:
+        raise HTTPException(401, "로그인이 필요합니다")
+    _ensure_tables()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT created_by FROM challenges WHERE id = %s", (challenge_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "챌린지를 찾을 수 없습니다")
+        if not row[0] or row[0] != username:
+            raise HTTPException(403, "내가 만든 챌린지만 삭제할 수 있어요")
+        cur.execute("DELETE FROM challenges WHERE id = %s", (challenge_id,))
+        conn.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"삭제 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
 
 
 @router.get("")
