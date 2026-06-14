@@ -112,6 +112,29 @@
 
 /* ── 로딩 ── */
 .ch-loading { text-align: center; padding: 40px; color: var(--muted); font-size: var(--fs-body); }
+
+/* 챌린지 만들기 버튼/모달 */
+.ch-create-btn { margin-left: auto; padding: 9px 16px; border-radius: var(--radius-pill); border: none; background: var(--energy); color: #2a0f06; font-weight: 800; font-size: var(--fs-caption); cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.ch-create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255,106,61,.4); }
+.cm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.cm-overlay.open { display: flex; }
+.cm-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
+.cm-title { font-style: italic; font-weight: 900; font-size: var(--fs-title); margin-bottom: 18px; }
+.cm-field { margin-bottom: 14px; }
+.cm-label { display: block; font-size: var(--fs-caption); color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.cm-input, .cm-textarea { width: 100%; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text); font-size: var(--fs-body); font-family: inherit; }
+.cm-textarea { min-height: 70px; resize: vertical; }
+.cm-type { display: flex; gap: 8px; }
+.cm-type-btn { flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; font-size: var(--fs-body); }
+.cm-type-btn.active { border-color: var(--energy); color: var(--energy); background: var(--energy-soft); font-weight: 700; }
+.cm-row { display: flex; gap: 12px; }
+.cm-row .cm-field { flex: 1; }
+.cm-msg { font-size: var(--fs-caption); color: var(--energy); min-height: 18px; margin-bottom: 8px; }
+.cm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.cm-btn { padding: 10px 18px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 700; font-size: var(--fs-body); }
+.cm-btn-cancel { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+.cm-btn-submit { background: var(--energy); color: #2a0f06; }
+.cm-btn-submit:hover { filter: brightness(1.08); }
 </style>
 </head>
 <body>
@@ -133,6 +156,7 @@
     <div class="ch-topbar">
       <h1 class="ch-title">수영 챌린지</h1>
       <span class="ch-live"><span class="ch-live-dot"></span>실시간</span>
+      <button class="ch-create-btn" onclick="openCreateModal()">+ 챌린지 만들기</button>
     </div>
 
     <div class="ch-tabs">
@@ -169,6 +193,56 @@ let allChallenges = [];
 async function logout() {
   await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
   window.location.href = '/login';
+}
+
+function openCreateModal() {
+  var ov = document.getElementById('cm-overlay'); if (ov) ov.classList.add('open');
+  try {
+    var t = new Date(), e = new Date(Date.now() + 30*864e5);
+    var s = document.getElementById('cm-start'), en = document.getElementById('cm-end');
+    if (s && !s.value) s.value = t.toISOString().slice(0,10);
+    if (en && !en.value) en.value = e.toISOString().slice(0,10);
+  } catch (_) {}
+}
+function closeCreateModal() {
+  var ov = document.getElementById('cm-overlay'); if (ov) ov.classList.remove('open');
+  var m = document.getElementById('cm-msg'); if (m) m.textContent = '';
+}
+function setCmType(type) {
+  var isStreak = (type === 'streak');
+  var d = document.getElementById('cm-type-distance'), s = document.getElementById('cm-type-streak');
+  var lbl = document.getElementById('cm-goal-label'), goal = document.getElementById('cm-goal');
+  if (d) d.classList.toggle('active', !isStreak);
+  if (s) s.classList.toggle('active', isStreak);
+  if (lbl) lbl.textContent = isStreak ? '목표 연속일수 (일)' : '목표 거리 (km)';
+  if (goal) goal.placeholder = isStreak ? '30' : '100';
+  document.getElementById('cm-overlay').dataset.ctype = type;
+}
+async function submitCreate() {
+  var msg = document.getElementById('cm-msg');
+  var btn = document.getElementById('cm-submit');
+  var title = (document.getElementById('cm-title').value || '').trim();
+  var desc = (document.getElementById('cm-desc').value || '').trim();
+  var ctype = document.getElementById('cm-overlay').dataset.ctype || 'distance';
+  var goalRaw = parseFloat(document.getElementById('cm-goal').value);
+  var start = document.getElementById('cm-start').value;
+  var end = document.getElementById('cm-end').value;
+  if (!title) { msg.textContent = '제목을 입력하세요'; return; }
+  if (!goalRaw || goalRaw <= 0) { msg.textContent = '목표값을 입력하세요'; return; }
+  if (!start || !end) { msg.textContent = '시작일과 종료일을 선택하세요'; return; }
+  var goal = ctype === 'distance' ? Math.round(goalRaw * 1000) : Math.round(goalRaw);
+  btn.disabled = true; msg.textContent = '생성 중...';
+  try {
+    var res = await fetch('/api/challenge', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, description: desc, challenge_type: ctype, goal_distance: goal, start_date: start, end_date: end })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) { msg.textContent = (data && data.detail) ? data.detail : ('생성 실패 (' + res.status + ')'); btn.disabled = false; return; }
+    closeCreateModal();
+    location.reload();
+  } catch (e) { msg.textContent = '네트워크 오류: ' + e; btn.disabled = false; }
 }
 
 function switchTab(tab) {
@@ -363,6 +437,33 @@ async function toggleRanking(id) {
 }
 </script>
 <script src="/static/theme.js"></script>
+
+<!-- 챌린지 만들기 모달 -->
+<div class="cm-overlay" id="cm-overlay" data-ctype="distance">
+  <div class="cm-box">
+    <div class="cm-title">새 챌린지 만들기</div>
+    <div class="cm-field"><label class="cm-label">제목</label>
+      <input class="cm-input" id="cm-title" maxlength="200" placeholder="예: 6월 100km 챌린지"></div>
+    <div class="cm-field"><label class="cm-label">설명</label>
+      <textarea class="cm-textarea" id="cm-desc" maxlength="1000" placeholder="챌린지를 소개해주세요"></textarea></div>
+    <div class="cm-field"><label class="cm-label">유형</label>
+      <div class="cm-type">
+        <button type="button" class="cm-type-btn active" id="cm-type-distance" onclick="setCmType('distance')">🎯 거리 누적</button>
+        <button type="button" class="cm-type-btn" id="cm-type-streak" onclick="setCmType('streak')">🔥 연속 출석</button>
+      </div></div>
+    <div class="cm-field"><label class="cm-label" id="cm-goal-label">목표 거리 (km)</label>
+      <input class="cm-input" id="cm-goal" type="number" min="1" placeholder="100"></div>
+    <div class="cm-row">
+      <div class="cm-field"><label class="cm-label">시작일</label><input class="cm-input" id="cm-start" type="date"></div>
+      <div class="cm-field"><label class="cm-label">종료일</label><input class="cm-input" id="cm-end" type="date"></div>
+    </div>
+    <div class="cm-msg" id="cm-msg"></div>
+    <div class="cm-actions">
+      <button class="cm-btn cm-btn-cancel" onclick="closeCreateModal()">취소</button>
+      <button class="cm-btn cm-btn-submit" id="cm-submit" onclick="submitCreate()">만들기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 
