@@ -39,7 +39,7 @@
 
 /* 진행 카드 */
 .progress-card {
-  background: linear-gradient(135deg, #0f2942, #1a3a5c);
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
   border: 0.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px 24px;
@@ -99,7 +99,7 @@
 }
 .badge-card.earned {
   border-color: rgba(0,180,216,.35);
-  background: linear-gradient(135deg, #0f2942, #1a3a5c);
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
 }
 .badge-card.earned:hover {
   transform: translateY(-3px);
@@ -170,7 +170,7 @@
 }
 .modal-overlay.open { display: flex; }
 .modal-box {
-  background: #0f2942;
+  background: var(--surface2);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 32px 28px;
@@ -219,7 +219,7 @@
       <span class="logo-sub">나의 뱃지</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     </div>
   </header>
 

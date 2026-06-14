@@ -24,7 +24,7 @@
   transition: all .2s; text-decoration: none;
 }
 .tl-back:hover { border-color: var(--blue); color: var(--blue); }
-.tl-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
+.tl-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .tl-month-nav {
   margin-left: auto; display: flex; align-items: center; gap: 8px;
 }
@@ -42,9 +42,12 @@
 .stat-card {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
   padding: 16px; text-align: center;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
-.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; }
-.stat-value { font-size: var(--fs-heading); font-weight: 700; color: var(--blue); line-height: 1.2; }
+.stat-card:hover { transform: translateY(-4px); border-color: var(--accent-secondary); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
+.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; color: var(--accent-secondary); }
+.stat-value { font-size: clamp(24px, 4.5vw, 34px); font-style: italic; font-weight: 900; letter-spacing: -0.03em; color: var(--blue); line-height: 1.1; }
+.stat-value.energy { color: var(--energy); }
 .stat-label { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
 
 /* ── 캘린더 ── */
@@ -71,7 +74,7 @@
 .cal-day.intensity-보통 .cal-dot  { background: var(--blue); }
 .cal-day.intensity-힘듦 .cal-dot  { background: var(--red); }
 .cal-day.today .cal-day-num {
-  background: var(--blue); color: #0a1628; width: 20px; height: 20px;
+  background: var(--blue); color: var(--bg); width: 20px; height: 20px;
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
 .cal-day.other-month { opacity: .3; }
@@ -91,7 +94,7 @@
 }
 .log-list-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
 .btn-add-log {
-  background: var(--blue); color: #0a1628; border: none; border-radius: var(--radius-sm);
+  background: var(--blue); color: var(--bg); border: none; border-radius: var(--radius-sm);
   padding: 8px 18px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .btn-add-log:hover { opacity: .85; }
@@ -99,11 +102,11 @@
 .log-item {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
   padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;
-  transition: border-color .2s;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
-.log-item:hover { border-color: var(--blue); }
+.log-item:hover { transform: translateY(-3px); border-color: var(--accent-secondary); box-shadow: 0 10px 24px rgba(0,150,180,.14); }
 .log-date-col { min-width: 44px; text-align: center; }
-.log-date-day { font-size: var(--fs-heading); font-weight: 700; color: var(--blue); line-height: 1; }
+.log-date-day { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -0.02em; color: var(--blue); line-height: 1; }
 .log-date-wd  { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 .log-body { flex: 1; }
 .log-row1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
@@ -158,7 +161,7 @@ select.form-control option { background: var(--surface); }
 .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .btn-submit {
-  flex: 1; background: var(--blue); color: #0a1628; border: none; border-radius: var(--radius-sm);
+  flex: 1; background: var(--blue); color: var(--bg); border: none; border-radius: var(--radius-sm);
   padding: 11px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .btn-submit:hover { opacity: .85; }
@@ -238,7 +241,7 @@ select.form-control option { background: var(--surface); }
   </div>
 
   <!-- 이번 달 통계 -->
-  <div class="stats-grid" id="stats-grid">
+  <div class="stats-grid st-stagger" id="stats-grid">
     <div class="stat-card">
       <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
       <div class="stat-value" id="stat-count">—</div>
@@ -256,7 +259,7 @@ select.form-control option { background: var(--surface); }
     </div>
     <div class="stat-card">
       <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
-      <div class="stat-value" id="stat-streak">—</div>
+      <div class="stat-value energy" id="stat-streak">—</div>
       <div class="stat-label">연속 출석 (일)</div>
     </div>
   </div>
@@ -651,8 +654,8 @@ function renderChart(logs) {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: '#1e4d6b' } },
-        y: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: '#1e4d6b' } },
+        x: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: 'var(--border)' } },
+        y: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: 'var(--border)' } },
       },
       plugins: { legend: { display: false } },
     },

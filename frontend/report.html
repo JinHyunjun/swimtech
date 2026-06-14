@@ -24,7 +24,7 @@
   text-decoration: none; transition: all .2s;
 }
 .rp-back:hover { border-color: var(--blue); color: var(--blue); }
-.rp-title { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
+.rp-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 
 .rp-month-nav {
   margin-left: auto; display: flex; align-items: center; gap: 8px;
@@ -46,9 +46,12 @@
 .stat-card {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
   padding: 18px 14px; text-align: center;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
-.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; }
-.stat-value { font-size: var(--fs-heading); font-weight: 700; color: var(--blue); line-height: 1.2; }
+.stat-card:hover { transform: translateY(-4px); border-color: var(--accent-secondary); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
+.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; color: var(--accent-secondary); }
+.stat-value { font-size: clamp(26px, 4.5vw, 36px); font-style: italic; font-weight: 900; letter-spacing: -0.03em; color: var(--blue); line-height: 1.1; }
+.stat-value.energy { color: var(--energy); }
 .stat-label { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
 
 /* ── 성장률 배너 ── */
@@ -58,20 +61,22 @@
 }
 .growth-arrow { font-size: var(--fs-display); line-height: 1; }
 .growth-info { flex: 1; }
-.growth-rate { font-size: var(--fs-heading); font-weight: 700; }
+.growth-rate { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -0.02em; }
 .growth-rate.up   { color: #4ade80; }
 .growth-rate.down { color: #f87171; }
 .growth-rate.flat { color: var(--muted); }
 .growth-desc { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
 .growth-streak { margin-left: auto; text-align: center; }
-.growth-streak-num { font-size: var(--fs-heading); font-weight: 700; color: #f59e0b; }
+.growth-streak-num { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -0.02em; color: var(--energy); }
 .growth-streak-lbl { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 /* ── 차트 섹션 ── */
 .chart-section {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
   padding: 20px; margin-bottom: 20px;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
+.chart-section:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(0,150,180,.14); }
 .chart-title {
   font-size: var(--fs-body); font-weight: 700; color: var(--text); margin-bottom: 16px;
 }
@@ -106,7 +111,7 @@
 .share-btn:hover { opacity: .85; }
 .share-btn.kakao { background: #FEE500; color: #191919; }
 .share-btn.link  { background: var(--surface); border: 0.5px solid var(--border); color: var(--text); }
-.share-btn.save  { background: var(--blue); color: #0a1628; }
+.share-btn.save  { background: var(--blue); color: var(--bg); }
 
 /* ── 빈 상태 ── */
 .rp-empty {
@@ -127,7 +132,7 @@
       <span id="logo-fb" class="logo" style="display:none;">SwimTech</span>
     </div>
     <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid #1e4d6b;color:#90c4d4;
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;
         border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">로그아웃</button>
     </div>
   </header>
@@ -149,7 +154,7 @@
     </div>
 
     <!-- 통계 카드 -->
-    <div class="stat-grid">
+    <div class="stat-grid st-stagger">
       <div class="stat-card">
         <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
         <div class="stat-value" id="stat-distance">—</div>
@@ -167,7 +172,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
-        <div class="stat-value" id="stat-cal">—</div>
+        <div class="stat-value energy" id="stat-cal">—</div>
         <div class="stat-label">추정 칼로리 (kcal)</div>
       </div>
     </div>
@@ -412,7 +417,7 @@ async function saveImage() {
   try {
     const target = document.querySelector('.rp-page');
     const canvas = await html2canvas(target, {
-      backgroundColor: '#0a1628', scale: 2, useCORS: true, logging: false,
+      backgroundColor: 'var(--bg)', scale: 2, useCORS: true, logging: false,
     });
     const link = document.createElement('a');
     link.download = `수영리포트_${curYear}년${curMonth}월.png`;

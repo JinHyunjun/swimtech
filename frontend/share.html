@@ -14,7 +14,7 @@
   --accent2: #0077b6;
   --text: #daeeff;
   --text-muted: #7aaccc;
-  --border: #1a3a5c;
+  --border: var(--surface);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -83,7 +83,7 @@ body {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  background: conic-gradient(var(--accent) calc(var(--pct, 0) * 3.6deg), #1a3a5c 0deg);
+  background: conic-gradient(var(--accent) calc(var(--pct, 0) * 3.6deg), var(--surface) 0deg);
   display: flex;
   align-items: center;
   justify-content: center;
