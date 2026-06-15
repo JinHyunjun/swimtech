@@ -598,7 +598,7 @@ async function loadNotifications() {
       return;
     }
     list.innerHTML = notifications.map(n => `
-      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="clickNotif(${n.id},${n.target_id ?? 'null'})">
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="clickNotif(${n.id},${n.target_id ?? 'null'},'${n.type}')">
         <div class="notif-msg">${esc(n.message)}</div>
         <div class="notif-time">${fmtDate(n.created_at)}</div>
       </div>
@@ -609,10 +609,11 @@ async function loadNotifications() {
   } catch {}
 }
 
-async function clickNotif(notifId, postId) {
+async function clickNotif(notifId, targetId, type) {
   await fetch(`/api/notifications/${notifId}/read`, { method: 'PUT', credentials: 'include' });
   document.getElementById('notif-dropdown')?.classList.remove('open');
-  if (postId) await openPost(postId);
+  if (type === 'swim_share' || type === 'lesson_broadcast') { location.href = '/coach'; return; }
+  if (targetId) await openPost(targetId);
 }
 
 async function markAllRead() {
