@@ -3,13 +3,14 @@
 import os
 import random
 import string
-from typing import Optional
+from typing import List, Optional
 
 import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from datetime import date
+import json
 from routers.auth import verify_token
 
 router = APIRouter()
@@ -132,14 +133,19 @@ def _ensure_swim_shares():
         )
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_swim_shares_coach ON swim_shares(coach_id)")
+    cur.execute("ALTER TABLE swim_shares ADD COLUMN IF NOT EXISTS strokes JSONB")
     conn.commit()
     cur.close()
     conn.close()
 
 
+class StrokeEntry(BaseModel):
+    stroke:     str = ""
+    distance_m: int
+
+
 class ShareSwimRequest(BaseModel):
-    stroke:       Optional[str] = ""
-    distance_m:   int
+    entries:      List[StrokeEntry] = []
     duration_min: Optional[int] = None
     notes:        Optional[str] = ""
     swim_date:    Optional[str] = None   # YYYY-MM-DD
@@ -149,10 +155,20 @@ class ShareSwimRequest(BaseModel):
 def share_swim(req: ShareSwimRequest, request: Request):
     """수강생: 자유수영 운동량을 연결된 코치에게 공유 (+코치 알림)."""
     username = _require_user(request)
-    if req.distance_m is None or req.distance_m <= 0:
+    if not req.entries:
+        raise HTTPException(400, "영법을 1개 이상 입력하세요")
+    clean_entries = []
+    total = 0
+    for ent in req.entries:
+        d = int(ent.distance_m or 0)
+        if d <= 0:
+            continue
+        clean_entries.append({"stroke": (ent.stroke or "").strip()[:20] or "자유형", "distance_m": d})
+        total += d
+    if not clean_entries:
         raise HTTPException(400, "거리를 입력하세요")
-    if req.distance_m > 100000:
-        raise HTTPException(400, "거리가 너무 큽니다")
+    if total > 200000:
+        raise HTTPException(400, "총 거리가 너무 큽니다")
     _ensure_swim_shares()
     conn = _get_db()
     cur = conn.cursor()
@@ -173,12 +189,13 @@ def share_swim(req: ShareSwimRequest, request: Request):
                 raise HTTPException(400, "날짜 형식 오류 (YYYY-MM-DD)")
         else:
             sdate = date.today()
-        stroke = (req.stroke or "").strip()[:20]
         notes = (req.notes or "").strip()[:1000]
+        primary = clean_entries[0]["stroke"]
         cur.execute(
-            """INSERT INTO swim_shares (coach_id, student_id, swim_date, stroke, distance_m, duration_min, notes)
-               VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
-            (coach_id, sid, sdate, stroke, req.distance_m, req.duration_min, notes),
+            """INSERT INTO swim_shares (coach_id, student_id, swim_date, stroke, distance_m, duration_min, notes, strokes)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (coach_id, sid, sdate, primary, total, req.duration_min, notes,
+             json.dumps(clean_entries, ensure_ascii=False)),
         )
         share_id = cur.fetchone()[0]
         cur.execute("SELECT customer_id FROM coaches WHERE id = %s", (coach_id,))
@@ -187,7 +204,7 @@ def share_swim(req: ShareSwimRequest, request: Request):
         nrow = cur.fetchone()
         sname = nrow[0] if nrow else "수강생"
         if crow:
-            km = req.distance_m / 1000
+            km = total / 1000
             msg = f"{sname}님이 자유수영 {km:.1f}km를 공유했어요"
             cur.execute(
                 "INSERT INTO notifications (customer_id, type, message, target_id) VALUES (%s,%s,%s,%s)",
@@ -221,18 +238,160 @@ def list_swim_shares(request: Request):
             raise HTTPException(403, "코치 프로필이 없습니다")
         coach_id = crow[0]
         cur.execute(
-            """SELECT s.id, c.name, s.swim_date, s.stroke, s.distance_m, s.duration_min, s.notes, s.created_at
+            """SELECT s.id, c.name, s.swim_date, s.stroke, s.distance_m, s.duration_min, s.notes, s.created_at, s.strokes
                FROM swim_shares s JOIN customers c ON c.id = s.student_id
                WHERE s.coach_id = %s ORDER BY s.created_at DESC LIMIT 30""",
             (coach_id,),
         )
         shares = [
             {"id": r[0], "student_name": r[1], "swim_date": str(r[2]), "stroke": r[3],
-             "distance_m": r[4], "duration_min": r[5], "notes": r[6], "created_at": str(r[7])}
+             "distance_m": r[4], "duration_min": r[5], "notes": r[6], "created_at": str(r[7]), "strokes": r[8]}
             for r in cur.fetchall()
         ]
         cur.close()
         return {"shares": shares}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+    finally:
+        conn.close()
+
+
+def _ensure_lessons():
+    conn = _get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS coach_lessons (
+            id          SERIAL PRIMARY KEY,
+            coach_id    INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+            lesson_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            kind        VARCHAR(20) NOT NULL DEFAULT '공지',
+            content     TEXT NOT NULL,
+            created_at  TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_lessons_coach ON coach_lessons(coach_id)")
+    conn.commit(); cur.close(); conn.close()
+
+
+class LessonRequest(BaseModel):
+    kind:        str = "공지"
+    lesson_date: Optional[str] = None
+    content:     str
+
+
+@router.post("/lesson")
+def create_lesson(req: LessonRequest, request: Request):
+    """코치: 강습 일지를 작성해 연동된 전 수강생에게 일괄 공유 (+각자 알림)."""
+    username = _require_user(request)
+    content = (req.content or "").strip()
+    if not content:
+        raise HTTPException(400, "내용을 입력하세요")
+    if len(content) > 2000:
+        raise HTTPException(400, "내용이 너무 깁니다 (최대 2000자)")
+    kind = (req.kind or "공지").strip()[:20]
+    _ensure_lessons()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cid = _get_customer_id(conn, username)
+        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
+        crow = cur.fetchone()
+        if not crow:
+            raise HTTPException(403, "코치 프로필이 없습니다")
+        coach_id = crow[0]
+        if req.lesson_date:
+            try:
+                ldate = date.fromisoformat(req.lesson_date)
+            except Exception:
+                raise HTTPException(400, "날짜 형식 오류 (YYYY-MM-DD)")
+        else:
+            ldate = date.today()
+        cur.execute(
+            """INSERT INTO coach_lessons (coach_id, lesson_date, kind, content)
+               VALUES (%s,%s,%s,%s) RETURNING id""",
+            (coach_id, ldate, kind, content),
+        )
+        lesson_id = cur.fetchone()[0]
+        cur.execute(
+            "SELECT student_id FROM coach_students WHERE coach_id = %s AND status = 'active'",
+            (coach_id,),
+        )
+        students = [r[0] for r in cur.fetchall()]
+        msg = f"코치가 강습 일지를 공유했어요: [{kind}]"
+        for sid in students:
+            cur.execute(
+                "INSERT INTO notifications (customer_id, type, message, target_id) VALUES (%s,%s,%s,%s)",
+                (sid, "lesson_broadcast", msg, lesson_id),
+            )
+        conn.commit()
+        return {"status": "broadcast", "id": lesson_id, "count": len(students)}
+    except HTTPException:
+        conn.rollback(); raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"공유 오류: {e}")
+    finally:
+        cur.close(); conn.close()
+
+
+def _fetch_lessons(cur, coach_id):
+    cur.execute(
+        """SELECT id, lesson_date, kind, content, created_at
+           FROM coach_lessons WHERE coach_id = %s ORDER BY created_at DESC LIMIT 20""",
+        (coach_id,),
+    )
+    return [
+        {"id": r[0], "lesson_date": str(r[1]), "kind": r[2], "content": r[3], "created_at": str(r[4])}
+        for r in cur.fetchall()
+    ]
+
+
+@router.get("/lessons")
+def list_lessons(request: Request):
+    """코치: 내가 공유한 강습 일지 목록."""
+    username = _require_user(request)
+    _ensure_lessons()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cid = _get_customer_id(conn, username)
+        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
+        crow = cur.fetchone()
+        if not crow:
+            raise HTTPException(403, "코치 프로필이 없습니다")
+        lessons = _fetch_lessons(cur, crow[0])
+        cur.close()
+        return {"lessons": lessons}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+    finally:
+        conn.close()
+
+
+@router.get("/my-lessons")
+def my_lessons(request: Request):
+    """수강생: 내 코치가 공유한 강습 일지."""
+    username = _require_user(request)
+    _ensure_lessons()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        sid = _get_customer_id(conn, username)
+        cur.execute(
+            "SELECT coach_id FROM coach_students WHERE student_id = %s AND status = 'active' LIMIT 1",
+            (sid,),
+        )
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            return {"lessons": []}
+        lessons = _fetch_lessons(cur, row[0])
+        cur.close()
+        return {"lessons": lessons}
     except HTTPException:
         raise
     except Exception as e:
@@ -431,17 +590,21 @@ def get_student_logs(student_id: int, request: Request):
         if not cur.fetchone():
             raise HTTPException(403, "열람 권한이 없습니다.")
         cur.execute(
-            """SELECT id, plan_name, log_date, notes, created_at
+            """SELECT id, log_date, stroke_type, total_distance, duration_minutes, intensity, memo, mood
                FROM training_logs
-               WHERE username = (SELECT username FROM customers WHERE id = %s)
+               WHERE customer_id = %s
                ORDER BY log_date DESC LIMIT 20""",
             (student_id,),
         )
-        logs = [
-            {"id": r[0], "plan_name": r[1], "log_date": str(r[2]),
-             "notes": r[3], "created_at": str(r[4])}
-            for r in cur.fetchall()
-        ]
+        logs = []
+        for r in cur.fetchall():
+            _pn = (str(r[2] or "") + " " + str(r[3] or 0) + "m").strip()
+            if r[4]:
+                _pn += " · " + str(r[4]) + "분"
+            if r[5]:
+                _pn += " · " + str(r[5])
+            logs.append({"id": r[0], "plan_name": _pn, "log_date": str(r[1]),
+                         "notes": r[6], "created_at": ""})
         cur.close()
         return {"logs": logs}
     except HTTPException:
@@ -516,15 +679,29 @@ def get_my_coach(request: Request):
             return {"has_coach": False}
         coach_id = coach_row[0]
         cur.execute(
-            """SELECT id, content, training_log_id, created_at
-               FROM coach_feedbacks WHERE coach_id = %s AND student_id = %s
-               ORDER BY created_at DESC LIMIT 20""",
+            """SELECT cf.id, cf.content, cf.training_log_id, cf.created_at,
+                      tl.log_date, tl.stroke_type, tl.total_distance, tl.duration_minutes, tl.intensity
+               FROM coach_feedbacks cf
+               LEFT JOIN training_logs tl ON cf.training_log_id = tl.id
+               WHERE cf.coach_id = %s AND cf.student_id = %s
+               ORDER BY cf.created_at DESC LIMIT 20""",
             (coach_id, cid),
         )
-        feedbacks = [
-            {"id": r[0], "content": r[1], "training_log_id": r[2], "created_at": str(r[3])}
-            for r in cur.fetchall()
-        ]
+        feedbacks = []
+        for r in cur.fetchall():
+            _ls = None
+            if r[2] and r[5] is not None:
+                _ls = str(r[5]) + " " + str(r[6] or 0) + "m"
+                if r[7]:
+                    _ls += " · " + str(r[7]) + "분"
+                if r[8]:
+                    _ls += " · " + str(r[8])
+            feedbacks.append({
+                "id": r[0], "content": r[1], "training_log_id": r[2],
+                "created_at": str(r[3]),
+                "log_summary": _ls,
+                "log_date": str(r[4]) if r[4] else None,
+            })
         cur.close()
         return {
             "has_coach": True,

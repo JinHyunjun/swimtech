@@ -155,18 +155,18 @@ def _calc_log_stats(username: str) -> dict:
     try:
         conn = get_db()
         cur = conn.cursor()
+        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+        crow = cur.fetchone()
+        if not crow:
+            cur.close(); conn.close()
+            return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
+        cid = crow[0]
         cur.execute("""
-            SELECT log_date,
-                   COALESCE(
-                       (plan_data->>'total_distance')::int,
-                       (plan_data->>'distance')::int,
-                       0
-                   ) AS dist_m,
-                   LOWER(COALESCE(plan_name,'')) AS pname
+            SELECT log_date, total_distance, stroke_type
             FROM training_logs
-            WHERE username = %s
+            WHERE customer_id = %s
             ORDER BY log_date ASC
-        """, (username,))
+        """, (cid,))
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -176,7 +176,7 @@ def _calc_log_stats(username: str) -> dict:
     if not rows:
         return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
 
-    total_dist = sum(r[1] for r in rows)
+    total_dist = sum(int(r[1] or 0) for r in rows)
     date_set = set(r[0] for r in rows)
 
     streak = 0
@@ -187,11 +187,7 @@ def _calc_log_stats(username: str) -> dict:
             streak += 1
             current -= timedelta(days=1)
 
-    found_strokes = set()
-    for _, _, pname in rows:
-        for stroke, keywords in _STROKE_KEYWORDS.items():
-            if any(kw in pname for kw in keywords):
-                found_strokes.add(stroke)
+    found_strokes = set((r[2] or "").strip() for r in rows if (r[2] or "").strip())
 
     return {
         "total_logs": len(rows),
@@ -199,7 +195,6 @@ def _calc_log_stats(username: str) -> dict:
         "log_streak": streak,
         "unique_strokes": len(found_strokes),
     }
-
 
 def _calc_stats(customer_id):
     conn = get_db()

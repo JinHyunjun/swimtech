@@ -29,38 +29,46 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
     conn = _get_db()
     cur = conn.cursor()
 
+    cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+    crow = cur.fetchone()
+    if not crow:
+        cur.close(); conn.close()
+        return {
+            "year": year, "month": month, "total_distance": 0, "total_count": 0,
+            "total_time": 0, "calories": 0,
+            "by_stroke": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
+            "by_day": [0]*7, "by_week": [0]*5, "prev_distance": 0,
+            "growth_rate": 0.0, "streak": 0,
+        }
+    cid = crow[0]
+
     cur.execute("""
-        SELECT log_date, plan_data
+        SELECT log_date, stroke_type, total_distance, duration_minutes
         FROM training_logs
-        WHERE username = %s
+        WHERE customer_id = %s
           AND EXTRACT(YEAR FROM log_date) = %s
           AND EXTRACT(MONTH FROM log_date) = %s
         ORDER BY log_date
-    """, (username, year, month))
+    """, (cid, year, month))
     rows = cur.fetchall()
 
     prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
     cur.execute("""
-        SELECT COALESCE(SUM(
-            CASE WHEN plan_data ? 'total_distance'
-                 THEN (plan_data->>'total_distance')::NUMERIC
-                 ELSE 0 END
-        ), 0)
+        SELECT COALESCE(SUM(total_distance), 0)
         FROM training_logs
-        WHERE username = %s
+        WHERE customer_id = %s
           AND EXTRACT(YEAR FROM log_date) = %s
           AND EXTRACT(MONTH FROM log_date) = %s
-    """, (username, prev_year, prev_month))
+    """, (cid, prev_year, prev_month))
     prev_row = cur.fetchone()
     prev_distance = float(prev_row[0]) if prev_row else 0.0
 
-    cur.execute("""
-        SELECT DISTINCT log_date FROM training_logs
-        WHERE username = %s ORDER BY log_date
-    """, (username,))
+    cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s ORDER BY log_date", (cid,))
     all_dates = [r[0] for r in cur.fetchall()]
     cur.close()
     conn.close()
+
+    _BUCKET = {"자유형": "freestyle", "배영": "backstroke", "평영": "breaststroke", "접영": "butterfly"}
 
     total_distance = 0.0
     total_minutes = 0.0
@@ -69,26 +77,13 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
     weekday_freq = [0] * 7
     weekly_dist: dict = {}
 
-    for log_date, plan_data in rows:
-        pd = plan_data or {}
-
-        dist = float(pd.get("total_distance") or pd.get("distance") or 0)
-        mins = float(pd.get("total_minutes") or pd.get("total_time") or pd.get("duration") or 0)
-
+    for log_date, stroke_type, dist_v, dur_v in rows:
+        dist = float(dist_v or 0)
+        mins = float(dur_v or 0)
         total_distance += dist
         total_minutes += mins
-
-        strokes = pd.get("strokes")
-        if isinstance(strokes, dict):
-            for stroke, d in strokes.items():
-                key = stroke.lower()
-                if key in stroke_dist:
-                    stroke_dist[key] += float(d or 0)
-                else:
-                    stroke_dist["other"] += float(d or 0)
-        else:
-            stroke_dist["other"] += dist
-
+        bucket = _BUCKET.get((stroke_type or "").strip(), "other")
+        stroke_dist[bucket] += dist
         weekday_freq[log_date.weekday()] += 1
         week_num = (log_date.day - 1) // 7 + 1
         weekly_dist[week_num] = weekly_dist.get(week_num, 0) + dist
@@ -128,7 +123,6 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "growth_rate": growth_rate,
         "streak": max_streak,
     }
-
 
 def _make_share_token(username: str, year: int, month: int) -> str:
     payload = json.dumps({"u": username, "y": year, "m": month}, separators=(",", ":"))
