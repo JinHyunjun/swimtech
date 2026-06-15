@@ -124,6 +124,11 @@
 }
 .fb-content { font-size: var(--fs-body); color: var(--text); line-height: 1.6; }
 .fb-meta    { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; }
+.fb-log-ref {
+  display: inline-block; font-size: var(--fs-caption); color: var(--blue);
+  background: rgba(0,180,216,.12); border: 0.5px solid rgba(0,180,216,.3);
+  border-radius: 6px; padding: 2px 8px; margin-bottom: 6px; font-weight: 600;
+}
 
 /* ── 코치 프로필 카드 ── */
 .coach-profile {
@@ -775,6 +780,7 @@ function renderFeedbacks(feedbacks) {
   }
   el.innerHTML = feedbacks.map(f => `
     <div class="fb-item">
+      ${f.log_summary ? `<div class="fb-log-ref">📓 ${esc(f.log_summary)}${f.log_date ? ' · ' + f.log_date.slice(5) : ''}</div>` : ''}
       <div class="fb-content">${esc(f.content)}</div>
       <div class="fb-meta">${f.created_at ? f.created_at.slice(0,16) : ''}</div>
     </div>
