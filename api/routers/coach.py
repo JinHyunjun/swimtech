@@ -590,17 +590,21 @@ def get_student_logs(student_id: int, request: Request):
         if not cur.fetchone():
             raise HTTPException(403, "열람 권한이 없습니다.")
         cur.execute(
-            """SELECT id, plan_name, log_date, notes, created_at
+            """SELECT id, log_date, stroke_type, total_distance, duration_minutes, intensity, memo, mood
                FROM training_logs
-               WHERE username = (SELECT username FROM customers WHERE id = %s)
+               WHERE customer_id = %s
                ORDER BY log_date DESC LIMIT 20""",
             (student_id,),
         )
-        logs = [
-            {"id": r[0], "plan_name": r[1], "log_date": str(r[2]),
-             "notes": r[3], "created_at": str(r[4])}
-            for r in cur.fetchall()
-        ]
+        logs = []
+        for r in cur.fetchall():
+            _pn = (str(r[2] or "") + " " + str(r[3] or 0) + "m").strip()
+            if r[4]:
+                _pn += " · " + str(r[4]) + "분"
+            if r[5]:
+                _pn += " · " + str(r[5])
+            logs.append({"id": r[0], "plan_name": _pn, "log_date": str(r[1]),
+                         "notes": r[6], "created_at": ""})
         cur.close()
         return {"logs": logs}
     except HTTPException:
@@ -675,15 +679,29 @@ def get_my_coach(request: Request):
             return {"has_coach": False}
         coach_id = coach_row[0]
         cur.execute(
-            """SELECT id, content, training_log_id, created_at
-               FROM coach_feedbacks WHERE coach_id = %s AND student_id = %s
-               ORDER BY created_at DESC LIMIT 20""",
+            """SELECT cf.id, cf.content, cf.training_log_id, cf.created_at,
+                      tl.log_date, tl.stroke_type, tl.total_distance, tl.duration_minutes, tl.intensity
+               FROM coach_feedbacks cf
+               LEFT JOIN training_logs tl ON cf.training_log_id = tl.id
+               WHERE cf.coach_id = %s AND cf.student_id = %s
+               ORDER BY cf.created_at DESC LIMIT 20""",
             (coach_id, cid),
         )
-        feedbacks = [
-            {"id": r[0], "content": r[1], "training_log_id": r[2], "created_at": str(r[3])}
-            for r in cur.fetchall()
-        ]
+        feedbacks = []
+        for r in cur.fetchall():
+            _ls = None
+            if r[2] and r[5] is not None:
+                _ls = str(r[5]) + " " + str(r[6] or 0) + "m"
+                if r[7]:
+                    _ls += " · " + str(r[7]) + "분"
+                if r[8]:
+                    _ls += " · " + str(r[8])
+            feedbacks.append({
+                "id": r[0], "content": r[1], "training_log_id": r[2],
+                "created_at": str(r[3]),
+                "log_summary": _ls,
+                "log_date": str(r[4]) if r[4] else None,
+            })
         cur.close()
         return {
             "has_coach": True,

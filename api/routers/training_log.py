@@ -101,25 +101,19 @@ def _ensure_goals_table():
 
 class LogRequest(BaseModel):
     log_date:         str
-    stroke_type:      str = ""
-    pool_length:      Optional[int] = None
+    stroke_type:      str = "자유형"
+    pool_length:      int = 25
     total_distance:   int
-    duration_minutes: Optional[int] = None
+    duration_minutes: int = 0
     intensity:        str = "보통"
     mood:             Optional[str] = None
     memo:             Optional[str] = None
 
 
-def _log_summary(stroke, dist):
-    return (str(stroke or "").strip() + " " + str(dist) + "m").strip()
-
-
 @router.post("")
 def create_log(req: LogRequest, request: Request):
-    """수동 훈련 기록 생성."""
-    _ensure_table()
-    username = _get_username(request)
-    if username == "guest":
+    cid = _get_customer_id(request)
+    if not cid:
         raise HTTPException(401, "로그인이 필요합니다")
     try:
         ld = date.fromisoformat(req.log_date)
@@ -129,15 +123,14 @@ def create_log(req: LogRequest, request: Request):
     if dist <= 0:
         raise HTTPException(400, "거리를 입력하세요")
     memo = (req.memo or "").strip() or None
-    summary = _log_summary(req.stroke_type, dist)
     conn = _get_db()
     cur = conn.cursor()
     try:
         cur.execute("""INSERT INTO training_logs
-            (username, plan_name, log_date, notes, distance_m, stroke_type, pool_length, duration_minutes, intensity, mood, memo)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
-            (username, summary, ld, memo, dist, req.stroke_type, req.pool_length,
-             req.duration_minutes, req.intensity, req.mood, memo))
+            (customer_id, log_date, stroke_type, total_distance, duration_minutes, pool_length, intensity, memo, mood)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (cid, ld, req.stroke_type, dist, int(req.duration_minutes or 0),
+             int(req.pool_length or 25), req.intensity, memo, req.mood))
         nid = cur.fetchone()[0]
         conn.commit()
         return {"id": nid, "status": "created"}
@@ -150,9 +143,9 @@ def create_log(req: LogRequest, request: Request):
 
 @router.put("/{log_id}")
 def update_log(log_id: int, req: LogRequest, request: Request):
-    """훈련 기록 수정 (본인만)."""
-    _ensure_table()
-    username = _get_username(request)
+    cid = _get_customer_id(request)
+    if not cid:
+        raise HTTPException(401, "로그인이 필요합니다")
     try:
         ld = date.fromisoformat(req.log_date)
     except Exception:
@@ -161,22 +154,21 @@ def update_log(log_id: int, req: LogRequest, request: Request):
     if dist <= 0:
         raise HTTPException(400, "거리를 입력하세요")
     memo = (req.memo or "").strip() or None
-    summary = _log_summary(req.stroke_type, dist)
     conn = _get_db()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT username FROM training_logs WHERE id = %s", (log_id,))
+        cur.execute("SELECT customer_id FROM training_logs WHERE id = %s", (log_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "기록을 찾을 수 없습니다")
-        if row[0] != username:
+        if row[0] != cid:
             raise HTTPException(403, "권한이 없습니다")
         cur.execute("""UPDATE training_logs SET
-            plan_name=%s, log_date=%s, notes=%s, distance_m=%s, stroke_type=%s,
-            pool_length=%s, duration_minutes=%s, intensity=%s, mood=%s, memo=%s
+            log_date=%s, stroke_type=%s, total_distance=%s, duration_minutes=%s,
+            pool_length=%s, intensity=%s, memo=%s, mood=%s, updated_at=NOW()
             WHERE id=%s""",
-            (summary, ld, memo, dist, req.stroke_type, req.pool_length,
-             req.duration_minutes, req.intensity, req.mood, memo, log_id))
+            (ld, req.stroke_type, dist, int(req.duration_minutes or 0),
+             int(req.pool_length or 25), req.intensity, memo, req.mood, log_id))
         conn.commit()
         return {"status": "updated"}
     except HTTPException:
@@ -190,17 +182,17 @@ def update_log(log_id: int, req: LogRequest, request: Request):
 
 @router.delete("/{log_id}")
 def delete_log(log_id: int, request: Request):
-    """훈련 기록 삭제 (본인만)."""
-    _ensure_table()
-    username = _get_username(request)
+    cid = _get_customer_id(request)
+    if not cid:
+        raise HTTPException(401, "로그인이 필요합니다")
     conn = _get_db()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT username FROM training_logs WHERE id = %s", (log_id,))
+        cur.execute("SELECT customer_id FROM training_logs WHERE id = %s", (log_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "기록을 찾을 수 없습니다")
-        if row[0] != username:
+        if row[0] != cid:
             raise HTTPException(403, "권한이 없습니다")
         cur.execute("DELETE FROM training_logs WHERE id = %s", (log_id,))
         conn.commit()
@@ -216,16 +208,16 @@ def delete_log(log_id: int, request: Request):
 
 @router.get("/stats")
 def get_stats(request: Request, year: int, month: int):
-    """월별 통계: 횟수/총거리/평균거리."""
-    _ensure_table()
-    username = _get_username(request)
+    cid = _get_customer_id(request)
+    if not cid:
+        return {"count": 0, "total_distance": 0, "avg_distance": 0}
     conn = _get_db()
     cur = conn.cursor()
     try:
-        cur.execute("""SELECT COUNT(*), COALESCE(SUM(distance_m),0), COALESCE(AVG(distance_m),0)
-            FROM training_logs WHERE username=%s
+        cur.execute("""SELECT COUNT(*), COALESCE(SUM(total_distance),0), COALESCE(AVG(total_distance),0)
+            FROM training_logs WHERE customer_id=%s
               AND EXTRACT(YEAR FROM log_date)=%s AND EXTRACT(MONTH FROM log_date)=%s""",
-            (username, year, month))
+            (cid, year, month))
         r = cur.fetchone()
         cur.close()
         return {"count": int(r[0] or 0), "total_distance": int(r[1] or 0), "avg_distance": round(float(r[2] or 0))}
@@ -237,13 +229,13 @@ def get_stats(request: Request, year: int, month: int):
 
 @router.get("/streak")
 def get_streak(request: Request):
-    """오늘(또는 어제) 기준 연속 출석일수."""
-    _ensure_table()
-    username = _get_username(request)
+    cid = _get_customer_id(request)
+    if not cid:
+        return {"streak": 0}
     conn = _get_db()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE username=%s", (username,))
+        cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE customer_id=%s", (cid,))
         dates = set(r[0] for r in cur.fetchall())
         cur.close()
         if not dates:
@@ -262,31 +254,31 @@ def get_streak(request: Request):
     finally:
         conn.close()
 
-
 @router.post("/from-plan")
 def create_log_from_plan(req: FromPlanRequest, request: Request):
     try:
         _ensure_table()
         username = _get_username(request)
+        cid = _get_customer_id(request)
+        if not cid:
+            raise HTTPException(401, "로그인이 필요합니다")
         log_date = req.log_date or str(date.today())
-        import json
-        dist = int(req.plan_data.get("total_distance") or req.plan_data.get("distance") or 0)
+        pd = req.plan_data or {}
+        dist = int(pd.get("total_distance") or pd.get("distance") or 0)
+        _stroke = pd.get("stroke_type") or pd.get("stroke") or "자유형"
+        _dur = int(pd.get("duration_minutes") or pd.get("duration") or 0)
+        _pool = int(pd.get("pool_length") or 25)
+        _inten = pd.get("intensity") or "보통"
+        _memo = (str(req.plan_name or "") + ((" - " + req.notes) if req.notes else "")).strip() or None
         conn = _get_db()
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO training_logs (username, plan_name, log_date, notes, plan_data, distance_m)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO training_logs (customer_id, log_date, stroke_type, total_distance, duration_minutes, pool_length, intensity, memo)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, created_at
             """,
-            (
-                username,
-                req.plan_name,
-                log_date,
-                req.notes or "",
-                json.dumps(req.plan_data, ensure_ascii=False),
-                dist,
-            ),
+            (cid, log_date, _stroke, dist, _dur, _pool, _inten, _memo),
         )
         row = cur.fetchone()
         conn.commit()
@@ -373,53 +365,41 @@ def get_goal(year: int, month: int, request: Request):
 
 @router.get("")
 def list_logs(request: Request, year: Optional[int] = None, month: Optional[int] = None):
+    cid = _get_customer_id(request)
+    if not cid:
+        return {"logs": []}
+    conn = _get_db()
+    cur = conn.cursor()
     try:
-        _ensure_table()
-        username = _get_username(request)
-        conn = _get_db()
-        cur = conn.cursor()
         if year and month:
-            cur.execute(
-                """
-                SELECT id, plan_name, log_date, notes, distance_m, stroke_type,
-                       pool_length, duration_minutes, intensity, mood, memo, created_at
-                FROM training_logs WHERE username = %s
-                  AND EXTRACT(YEAR FROM log_date) = %s AND EXTRACT(MONTH FROM log_date) = %s
-                ORDER BY log_date DESC, created_at DESC
-                """,
-                (username, year, month),
-            )
+            cur.execute("""SELECT id, log_date, stroke_type, total_distance, duration_minutes,
+                       pool_length, intensity, mood, memo, created_at
+                FROM training_logs WHERE customer_id=%s
+                  AND EXTRACT(YEAR FROM log_date)=%s AND EXTRACT(MONTH FROM log_date)=%s
+                ORDER BY log_date DESC, created_at DESC""",
+                (cid, year, month))
         else:
-            cur.execute(
-                """
-                SELECT id, plan_name, log_date, notes, distance_m, stroke_type,
-                       pool_length, duration_minutes, intensity, mood, memo, created_at
-                FROM training_logs WHERE username = %s
-                ORDER BY log_date DESC, created_at DESC LIMIT 100
-                """,
-                (username,),
-            )
+            cur.execute("""SELECT id, log_date, stroke_type, total_distance, duration_minutes,
+                       pool_length, intensity, mood, memo, created_at
+                FROM training_logs WHERE customer_id=%s
+                ORDER BY log_date DESC, created_at DESC LIMIT 100""",
+                (cid,))
         rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        return {
-            "logs": [
-                {
-                    "id": r[0],
-                    "plan_name": r[1],
-                    "log_date": str(r[2]),
-                    "notes": r[3],
-                    "total_distance": r[4] or 0,
-                    "stroke_type": r[5] or "",
-                    "pool_length": r[6],
-                    "duration_minutes": r[7],
-                    "intensity": r[8] or "보통",
-                    "mood": r[9],
-                    "memo": r[10],
-                    "created_at": str(r[11]),
-                }
-                for r in rows
-            ]
-        }
+        cur.close(); conn.close()
+        return {"logs": [
+            {
+                "id": r[0],
+                "log_date": str(r[1]),
+                "stroke_type": r[2],
+                "total_distance": r[3],
+                "duration_minutes": r[4],
+                "pool_length": r[5],
+                "intensity": r[6],
+                "mood": r[7],
+                "memo": r[8],
+                "created_at": str(r[9]),
+            }
+            for r in rows
+        ]}
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
