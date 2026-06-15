@@ -217,6 +217,32 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
 .ss-btn { padding: 10px 18px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 700; }
 .ss-cancel { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
 .ss-submit { background: var(--energy); color: #2a0f06; }
+
+/* 멀티 영법 행 */
+.ss-row-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.ss-row-item .ss-stroke { flex: 0 0 40%; }
+.ss-row-item .ss-dist { flex: 1; }
+.ss-del { background: var(--surface2); border: 0.5px solid var(--border); color: var(--muted); border-radius: var(--radius-sm); width: 34px; height: 34px; cursor: pointer; font-size: 16px; flex: 0 0 auto; }
+.ss-add { margin-top: 4px; background: none; border: 1px dashed var(--border); color: var(--accent-secondary); border-radius: var(--radius-sm); padding: 8px 12px; cursor: pointer; font-size: var(--fs-caption); }
+.ss-total { margin-top: 8px; text-align: right; font-weight: 700; color: var(--energy); font-style: italic; }
+
+/* 받은 자유수영 */
+.ssh-item { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 10px; }
+.ssh-top { display: flex; justify-content: space-between; align-items: center; }
+.ssh-name { font-weight: 700; color: var(--text); }
+.ssh-km { font-style: italic; font-weight: 800; color: var(--energy); }
+.ssh-meta { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
+.ssh-notes { font-size: var(--fs-caption); color: var(--text); margin-top: 6px; opacity: .85; }
+.ssh-empty { color: var(--muted); font-size: var(--fs-caption); padding: 8px 0; }
+
+/* 강습 일지 */
+.lesson-item { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 10px; }
+.lesson-item-top { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.lesson-kind-tag { font-size: var(--fs-caption); font-weight: 700; color: var(--energy); background: var(--energy-soft); padding: 2px 8px; border-radius: var(--radius-pill); }
+.lesson-date { font-size: var(--fs-caption); color: var(--muted); }
+.lesson-content { font-size: var(--fs-body); color: var(--text); white-space: pre-wrap; line-height: 1.5; }
+.lesson-list-title { font-size: var(--fs-caption); color: var(--muted); margin: 4px 0 8px; font-weight: 600; }
+.lesson-msg { font-size: var(--fs-caption); color: var(--energy); min-height: 18px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -293,6 +319,29 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size: var(--fs-caption);color:var(--muted);font-weight:400;"></span></div>
           <div id="student-list"><div class="c-loading">불러오는 중...</div></div>
         </div>
+
+        <!-- 받은 자유수영 -->
+        <div class="c-card" id="swim-shares-card">
+          <div class="c-card-title">🏊 받은 자유수영</div>
+          <div id="swim-shares-list"><div class="c-loading">불러오는 중...</div></div>
+        </div>
+
+        <!-- 강습 일지 (일괄 공유) -->
+        <div class="c-card" id="lesson-log-card">
+          <div class="c-card-title">📋 강습 일지 <span style="font-size:var(--fs-caption);color:var(--muted);font-weight:400;">전체 수강생에게 공유</span></div>
+          <div class="c-field"><div class="c-label">구분</div>
+            <select id="lesson-kind" class="c-input">
+              <option value="오늘 예정">오늘 예정 강습</option>
+              <option value="어제 강습">어제 강습</option>
+              <option value="공지">일반 공지</option>
+            </select></div>
+          <div class="c-field"><div class="c-label">날짜</div><input id="lesson-date" type="date" class="c-input"></div>
+          <div class="c-field"><div class="c-label">내용</div>
+            <textarea id="lesson-content" class="c-textarea" placeholder="오늘 강습 내용, 준비물, 다음 강습 예고 등을 전체 수강생에게 공유하세요." style="min-height:90px;"></textarea></div>
+          <div class="lesson-msg" id="lesson-msg"></div>
+          <button class="c-btn c-btn-primary" onclick="submitLesson()">전체 수강생에게 공유</button>
+          <div id="lessons-list" style="margin-top:16px;"><div class="c-loading">불러오는 중...</div></div>
+        </div>
       </div>
     </div>
 
@@ -348,6 +397,12 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <div class="c-card-title">📋 코치 훈련 플랜</div>
           <div id="plan-list"><div class="c-loading">불러오는 중...</div></div>
         </div>
+
+        <!-- 강습 일지 (받은) -->
+        <div class="c-card">
+          <div class="c-card-title">📋 강습 일지</div>
+          <div id="my-lessons-list"><div class="c-loading">불러오는 중...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -398,7 +453,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
 <div id="modal-logs" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-logs')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal('modal-logs')">✕</button>
-    <div class="modal-title">📓 훈련 일지</div>
+    <div class="modal-title">📓 수강생 훈련 일지</div>
     <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="logs-student-name"></strong></div>
     <div id="modal-logs-content"><div class="c-loading">불러오는 중...</div></div>
   </div>
@@ -437,7 +492,71 @@ function switchTab(tab) {
 
 // ──────────────── 코치 탭 ────────────────
 
+function _sse(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+async function loadSwimShares() {
+  const el = document.getElementById('swim-shares-list');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/coach/shares', { credentials: 'include' });
+    if (!r.ok) { el.innerHTML = '<div class="ssh-empty">불러올 수 없습니다.</div>'; return; }
+    const { shares } = await r.json();
+    if (!shares || !shares.length) { el.innerHTML = '<div class="ssh-empty">아직 공유된 자유수영이 없습니다.</div>'; return; }
+    el.innerHTML = shares.map(function(s){
+      var breakdown = '';
+      if (s.strokes && Array.isArray(s.strokes) && s.strokes.length) {
+        breakdown = s.strokes.map(function(e){ return _sse(e.stroke) + ' ' + e.distance_m + 'm'; }).join(' · ');
+      } else if (s.stroke) { breakdown = _sse(s.stroke) + ' ' + s.distance_m + 'm'; }
+      var km = (s.distance_m/1000).toFixed(1);
+      var dur = s.duration_min ? (' · ' + s.duration_min + '분') : '';
+      var notes = s.notes ? ('<div class="ssh-notes">' + _sse(s.notes) + '</div>') : '';
+      return '<div class="ssh-item"><div class="ssh-top"><span class="ssh-name">' + _sse(s.student_name) + '</span><span class="ssh-km">' + km + 'km</span></div>' +
+             '<div class="ssh-meta">' + _sse(s.swim_date) + ' · ' + breakdown + dur + '</div>' + notes + '</div>';
+    }).join('');
+  } catch (e) { el.innerHTML = '<div class="ssh-empty">오류가 발생했습니다.</div>'; }
+}
+
+async function loadLessons() {
+  var el = document.getElementById('lessons-list'); if (!el) return;
+  try {
+    var r = await fetch('/api/coach/lessons', { credentials: 'include' });
+    if (!r.ok) { el.innerHTML = ''; return; }
+    var d = await r.json(); var lessons = d.lessons || [];
+    if (!lessons.length) { el.innerHTML = '<div class="ssh-empty">아직 공유한 강습 일지가 없습니다.</div>'; return; }
+    el.innerHTML = '<div class="lesson-list-title">최근 공유</div>' + lessons.map(_lessonHtml).join('');
+  } catch (e) { el.innerHTML = ''; }
+}
+function _lessonHtml(l) {
+  return '<div class="lesson-item"><div class="lesson-item-top"><span class="lesson-kind-tag">' + _sse(l.kind) + '</span><span class="lesson-date">' + _sse(l.lesson_date) + '</span></div><div class="lesson-content">' + _sse(l.content) + '</div></div>';
+}
+async function submitLesson() {
+  var msg = document.getElementById('lesson-msg');
+  var content = (document.getElementById('lesson-content').value || '').trim();
+  if (!content) { msg.style.color = ''; msg.textContent = '내용을 입력하세요'; return; }
+  var body = { kind: document.getElementById('lesson-kind').value, lesson_date: document.getElementById('lesson-date').value || null, content: content };
+  msg.style.color = ''; msg.textContent = '공유 중...';
+  try {
+    var r = await fetch('/api/coach/lesson', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var data = await r.json().catch(function(){return {};});
+    if (!r.ok) { msg.textContent = (data && data.detail) ? data.detail : '공유 실패'; return; }
+    msg.style.color = 'var(--green)'; msg.textContent = (data.count || 0) + '명에게 공유했어요.';
+    document.getElementById('lesson-content').value = '';
+    loadLessons();
+  } catch (e) { msg.textContent = '네트워크 오류'; }
+}
+async function loadMyLessons() {
+  var el = document.getElementById('my-lessons-list'); if (!el) return;
+  try {
+    var r = await fetch('/api/coach/my-lessons', { credentials: 'include' });
+    if (!r.ok) { el.innerHTML = '<div class="ssh-empty">불러올 수 없습니다.</div>'; return; }
+    var d = await r.json(); var lessons = d.lessons || [];
+    if (!lessons.length) { el.innerHTML = '<div class="ssh-empty">아직 공유된 강습이 없습니다.</div>'; return; }
+    el.innerHTML = lessons.map(_lessonHtml).join('');
+  } catch (e) { el.innerHTML = '<div class="ssh-empty">오류가 발생했습니다.</div>'; }
+}
+
 async function loadCoachTab() {
+  loadLessons();
+  loadSwimShares();
   document.getElementById("coach-loading").style.display = "";
   document.getElementById("coach-unregistered").style.display = "none";
   document.getElementById("coach-dashboard").style.display = "none";
@@ -639,6 +758,7 @@ async function loadStudentTab() {
       document.getElementById("sc-intro").textContent  = data.intro || "";
       renderFeedbacks(data.feedbacks || []);
       loadMyPlans();
+      loadMyLessons();
     } else {
       document.getElementById("student-no-coach").style.display = "";
     }
@@ -719,15 +839,12 @@ document.addEventListener("DOMContentLoaded", () => loadCoachTab());
   <div class="ss-box">
     <div class="ss-title">자유수영 공유</div>
     <div class="ss-field"><label>날짜</label><input id="ss-date" type="date" class="ss-input"></div>
-    <div class="ss-field"><label>영법</label>
-      <select id="ss-stroke" class="ss-input">
-        <option value="자유형">자유형</option><option value="배영">배영</option>
-        <option value="평영">평영</option><option value="접영">접영</option><option value="혼영">혼영</option>
-      </select></div>
-    <div class="ss-row">
-      <div class="ss-field"><label>거리 (m)</label><input id="ss-dist" type="number" min="1" class="ss-input" placeholder="1600"></div>
-      <div class="ss-field"><label>시간 (분)</label><input id="ss-dur" type="number" min="1" class="ss-input" placeholder="45"></div>
+    <div class="ss-field"><label>영법별 거리</label>
+      <div id="ss-rows"></div>
+      <button type="button" class="ss-add" onclick="addStrokeRow()">+ 영법 추가</button>
+      <div class="ss-total" id="ss-total">총 0m</div>
     </div>
+    <div class="ss-field"><label>시간 (분)</label><input id="ss-dur" type="number" min="1" class="ss-input" placeholder="45"></div>
     <div class="ss-field"><label>메모</label><textarea id="ss-notes" class="ss-input" placeholder="오늘 컨디션, 느낀 점 등"></textarea></div>
     <div class="ss-msg" id="ss-msg"></div>
     <div class="ss-actions">
@@ -737,21 +854,24 @@ document.addEventListener("DOMContentLoaded", () => loadCoachTab());
   </div>
 </div>
 <script>
-function openShareSwim(){var o=document.getElementById('ss-overlay');if(o)o.classList.add('open');var d=document.getElementById('ss-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);}
+function openShareSwim(){var o=document.getElementById('ss-overlay');if(o)o.classList.add('open');var d=document.getElementById('ss-date');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);var rows=document.getElementById('ss-rows');if(rows&&rows.children.length===0)addStrokeRow();}
+function addStrokeRow(){var rows=document.getElementById('ss-rows');var div=document.createElement('div');div.className='ss-row-item';div.innerHTML='<select class="ss-input ss-stroke">'+['자유형','배영','평영','접영','혼영'].map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('')+'</select><input type="number" min="1" class="ss-input ss-dist" placeholder="거리(m)" oninput="recalcTotal()"><button type="button" class="ss-del" onclick="this.parentNode.remove();recalcTotal()">×</button>';rows.appendChild(div);}
+function recalcTotal(){var t=0;document.querySelectorAll('#ss-rows .ss-dist').forEach(function(el){var v=parseInt(el.value,10);if(!isNaN(v)&&v>0)t+=v;});var el=document.getElementById('ss-total');if(el)el.textContent='총 '+t.toLocaleString()+'m';}
 function closeShareSwim(){var o=document.getElementById('ss-overlay');if(o)o.classList.remove('open');var m=document.getElementById('ss-msg');if(m){m.textContent='';m.style.color='';}}
 async function submitShareSwim(){
   var msg=document.getElementById('ss-msg'),btn=document.getElementById('ss-submit');
-  var dist=parseInt(document.getElementById('ss-dist').value,10);
-  if(!dist||dist<=0){msg.textContent='거리를 입력하세요';return;}
+  var entries=[];
+  document.querySelectorAll('#ss-rows .ss-row-item').forEach(function(row){var st=row.querySelector('.ss-stroke').value;var d=parseInt(row.querySelector('.ss-dist').value,10);if(!isNaN(d)&&d>0)entries.push({stroke:st,distance_m:d});});
+  if(entries.length===0){msg.textContent='영법별 거리를 1개 이상 입력하세요';return;}
   var dur=parseInt(document.getElementById('ss-dur').value,10);
-  var body={stroke:document.getElementById('ss-stroke').value,distance_m:dist,duration_min:isNaN(dur)?null:dur,notes:document.getElementById('ss-notes').value||'',swim_date:document.getElementById('ss-date').value||null};
+  var body={entries:entries,duration_min:isNaN(dur)?null:dur,notes:document.getElementById('ss-notes').value||'',swim_date:document.getElementById('ss-date').value||null};
   btn.disabled=true;msg.style.color='';msg.textContent='공유 중...';
   try{
     var res=await fetch('/api/coach/share-swim',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     var data=await res.json().catch(function(){return {};});
     if(!res.ok){msg.textContent=(data&&data.detail)?data.detail:('공유 실패 ('+res.status+')');btn.disabled=false;return;}
     msg.style.color='var(--green)';msg.textContent='공유 완료! 코치에게 알림이 갔어요.';
-    setTimeout(function(){closeShareSwim();btn.disabled=false;},1300);
+    setTimeout(function(){closeShareSwim();document.getElementById('ss-rows').innerHTML='';btn.disabled=false;},1300);
   }catch(e){msg.textContent='네트워크 오류: '+e;btn.disabled=false;}
 }
 </script>
