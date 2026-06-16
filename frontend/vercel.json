@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/api/(.*)",       "destination": "https://RENDER_APP_URL/api/$1" },
+    { "source": "/auth/(.*)",      "destination": "https://RENDER_APP_URL/auth/$1" },
+    { "source": "/customers/(.*)", "destination": "https://RENDER_APP_URL/customers/$1" },
+    { "source": "/share/(.*)",     "destination": "/share.html" },
+    { "source": "/badges",         "destination": "/badge.html" },
+    { "source": "/training-log",   "destination": "/training_log.html" },
+    { "source": "/app",            "destination": "/index.html" },
+    { "source": "/",               "destination": "/landing.html" }
+  ]
+}
