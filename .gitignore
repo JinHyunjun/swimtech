@@ -66,3 +66,7 @@ frontend/dist/
 add_*.py
 apply_*.py
 fix_*.py
+
+trim_*.py
+/vercel.json
+/swimtech_pathA_deploy_runbook.md
