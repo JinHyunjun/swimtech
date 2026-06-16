@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
@@ -12,7 +12,7 @@
     { "source": "/share/(.*)",     "destination": "/share.html" },
     { "source": "/badges",         "destination": "/badge.html" },
     { "source": "/training-log",   "destination": "/training_log.html" },
-    { "source": "/app",            "destination": "/index.html" },
+    { "source": "/app",            "destination": "/landing.html" },
     { "source": "/",               "destination": "/landing.html" }
   ]
 }

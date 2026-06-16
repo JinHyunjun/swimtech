@@ -2,222 +2,576 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwimTech — 수영 영법 분석</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 홈</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
+<style>
+@keyframes ocean-wave {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ocean-wave2 {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.home-wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: calc(100vh - 53px);
+  padding: 32px 20px 48px;
+  position: relative;
+  background: linear-gradient(-45deg, var(--bg), var(--surface), var(--surface), var(--bg));
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+  overflow: hidden;
+}
+.home-wrap::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 200%;
+  height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%2300b4d8' fill-opacity='0.15' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,15 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 720px 60px;
+  animation: ocean-wave 8s linear infinite;
+  pointer-events: none;
+}
+.home-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 200%;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%23ff6a3d' fill-opacity='0.08' d='M0,20 C360,40 720,0 1080,20 C1260,30 1350,10 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") repeat-x;
+  background-size: 960px 40px;
+  animation: ocean-wave2 11s linear infinite;
+  pointer-events: none;
+}
+
+.home-inner {
+  width: 100%;
+  max-width: 860px;
+  position: relative;
+  z-index: 1;
+}
+.home-title {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.home-title h1 {
+  font-size: var(--fs-display);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--text) 12%, var(--accent-primary) 68%, var(--aqua));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.home-title p {
+  font-size: var(--fs-body);
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── 섹션 ── */
+.menu-section {
+  margin-bottom: 24px;
+}
+.section-label {
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-left: 2px;
+  opacity: 0.8;
+}
+
+/* ── 히어로 카드 (AI 코치 전체 너비) ── */
+.hero-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 32px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .3s, background .3s, transform .2s, box-shadow .3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+.hero-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
+  transition: left .4s ease;
+}
+.hero-card:hover::after { left: 100%; }
+.hero-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-secondary);
+  background: rgba(72,202,228,.08);
+  box-shadow: 0 10px 36px rgba(72,202,228,0.18);
+}
+.hero-icon {
+  font-size: var(--fs-display);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.hero-body { flex: 1; }
+.hero-title {
+  font-size: var(--fs-body-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+.hero-desc {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  line-height: 1.65;
+}
+.hero-btn {
+  padding: 9px 24px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent-secondary);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 3열 그리드 ── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* ── 메뉴 카드 ── */
+.menu-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 20px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .3s, background .3s, transform .2s, box-shadow .3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.menu-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  transition: left .4s ease;
+}
+.menu-card:hover::after { left: 100%; }
+.menu-card:hover { transform: translateY(-5px); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
+
+.menu-icon {
+  font-size: var(--fs-display);
+  line-height: 1;
+}
+.menu-title {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text);
+}
+.menu-desc {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  line-height: 1.65;
+}
+.menu-btn {
+  margin-top: 4px;
+  padding: 6px 18px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+/* 훈련 관리 — 파란 계열 */
+.menu-card.train:hover {
+  border-color: #00b4d8;
+  background: rgba(0,180,216,.08);
+  box-shadow: 0 8px 28px rgba(0,180,216,0.14);
+}
+.menu-card.train::after {
+  background: linear-gradient(90deg, transparent, #00b4d8, transparent);
+}
+.menu-card.train .menu-btn { background: #00b4d8; color: var(--bg); }
+
+/* 커뮤니티 — 초록 계열 */
+.menu-card.community:hover {
+  border-color: #4ade80;
+  background: rgba(74,222,128,.08);
+  box-shadow: 0 8px 28px rgba(74,222,128,0.14);
+}
+.menu-card.community::after {
+  background: linear-gradient(90deg, transparent, #4ade80, transparent);
+}
+.menu-card.community .menu-btn { background: #4ade80; color: var(--bg); }
+
+/* 정보/도움 — 회색 계열 */
+.menu-card.info:hover {
+  border-color: #64748b;
+  background: rgba(100,116,139,.08);
+  box-shadow: 0 8px 28px rgba(100,116,139,0.14);
+}
+.menu-card.info::after {
+  background: linear-gradient(90deg, transparent, #94a3b8, transparent);
+}
+.menu-card.info .menu-btn { background: #475569; color: #fff; }
+
+/* 챌린지 — 성취 에너지(코랄) 계열 (v2.8) */
+.menu-card.hot:hover {
+  border-color: var(--energy);
+  background: var(--energy-soft);
+  box-shadow: 0 8px 28px rgba(255,106,61,.18);
+}
+.menu-card.hot::after {
+  background: linear-gradient(90deg, transparent, var(--energy), transparent);
+}
+.menu-card.hot .menu-btn { background: var(--energy); color: #2a0f06; }
+
+/* ── 모바일: 2열 reflow, 패딩·폰트 축소 ── */
+@media (max-width: 540px) {
+  .home-wrap { padding: 20px 12px 40px; }
+  .home-title h1 { font-size: var(--fs-title); }
+  .hero-card { padding: 14px 16px; gap: 12px; }
+  .hero-icon { font-size: var(--fs-display); }
+  .hero-title { font-size: var(--fs-body); }
+  .hero-desc { font-size: var(--fs-caption); }
+  .hero-btn { padding: 7px 14px; font-size: var(--fs-caption); }
+  .menu-grid { gap: 8px; grid-template-columns: repeat(2, 1fr); }
+  .menu-card { padding: 12px 8px; gap: 5px; }
+  .menu-icon { font-size: var(--fs-heading); }
+  .menu-title { font-size: var(--fs-caption); }
+  .menu-desc { font-size: var(--fs-caption); line-height: 1.5; }
+  .menu-btn { padding: 5px 10px; font-size: var(--fs-caption); margin-top: 2px; }
+  .section-label { font-size: var(--fs-caption); }
+  .menu-section { margin-bottom: 18px; }
+}
+</style>
 </head>
 <body>
-
 <div class="app">
 
-  <!-- 헤더 -->
   <header class="header">
     <div class="header-left">
-      <span class="logo">SwimTech</span>
-      <span class="logo-sub">수영 영법 분석 플랫폼</span>
+      <img src="/static/icons/logo.svg" alt="SwimTech" class="logo-img"
+           style="height:32px;width:auto;display:block;" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='inline';">
+      <span id="logo-fallback" class="logo" style="display:none;">SwimTech</span>
     </div>
     <div class="header-right">
-      <span class="status-dot" id="status-dot"></span>
-      <span class="status-label" id="status-label">대기 중</span>
-      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;margin-left:12px;">로그아웃</button>
+      <button onclick="logout()"
+              style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);
+                     padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:44px;">
+        로그아웃
+      </button>
     </div>
   </header>
 
-  <div class="layout">
+  <div class="home-wrap">
+    <div class="home-inner">
+      <div class="home-title">
+        <h1>SwimTech에 오신 것을 환영합니다</h1>
+        <p>무엇을 도와드릴까요? 원하는 서비스를 선택해주세요</p>
+      </div>
 
-    <!-- 왼쪽: 영상 + 컨트롤 -->
-    <div class="main-col">
-
-      <!-- 업로드 전 메타 선택 패널 -->
-      <div class="meta-panel" id="meta-panel">
-        <div class="meta-title">📋 영상 정보를 먼저 선택해주세요</div>
-
-        <div class="meta-row">
-          <div class="meta-group">
-            <div class="meta-label">🏊 영법 선택 <span class="required">*</span></div>
-            <div class="meta-options" id="stroke-options">
-              <button class="meta-btn" data-value="freestyle" onclick="selectMeta('stroke', this)">자유형</button>
-              <button class="meta-btn" data-value="backstroke" onclick="selectMeta('stroke', this)">배영</button>
-              <button class="meta-btn" data-value="breaststroke" onclick="selectMeta('stroke', this)">평영</button>
-              <button class="meta-btn" data-value="butterfly" onclick="selectMeta('stroke', this)">접영</button>
-              <button class="meta-btn" data-value="unknown" onclick="selectMeta('stroke', this)">모름</button>
-              <button class="meta-btn" data-value="start" onclick="selectMeta('stroke', this)">🏁 스타트</button>
-              <button class="meta-btn" data-value="flip_turn" onclick="selectMeta('stroke', this)">🔄 플립턴</button>
-              <button class="meta-btn" data-value="touch_turn" onclick="selectMeta('stroke', this)">🤲 터치턴</button>
+      <!-- 🤖 AI 서비스 -->
+      <!-- 🏊 훈련 관리 -->
+      <div class="menu-section">
+        <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg> 훈련 관리</div>
+        <div class="menu-grid st-stagger">
+          <a href="/plan" class="menu-card train">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
+            <div class="menu-title">훈련 플랜</div>
+            <div class="menu-desc">
+              기록 단축·건강·영법 교정·취미<br>
+              목적별 4주 체계 훈련 플랜
             </div>
-          </div>
-
-          <div class="meta-group">
-            <div class="meta-label">📍 촬영 환경 <span class="required">*</span></div>
-            <div class="meta-options" id="context-options">
-              <button class="meta-btn" data-value="free_swim" onclick="selectMeta('context', this)">자유수영</button>
-              <button class="meta-btn" data-value="lesson" onclick="selectMeta('context', this)">강습 후</button>
-              <button class="meta-btn" data-value="competition" onclick="selectMeta('context', this)">대회</button>
-              <button class="meta-btn" data-value="training" onclick="selectMeta('context', this)">훈련</button>
-              <button class="meta-btn" data-value="drill" onclick="selectMeta('context', this)">드릴 연습</button>
+            <button class="menu-btn">플랜 보기</button>
+          </a>
+          <a href="/training-log" class="menu-card train" id="training-log-card">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg></div>
+            <div class="menu-title">훈련 일지</div>
+            <div class="menu-desc">
+              매일 훈련을 기록하고<br>
+              월별 통계·캘린더로 확인
             </div>
-          </div>
-        </div>
-
-          <div class="meta-group">
-            <div class="meta-label">🎯 수영 목적 <span class="required">*</span></div>
-            <div class="meta-options" id="purpose-options">
-              <button class="meta-btn" data-value="record" onclick="selectMeta('purpose', this)">🏅 기록 단축</button>
-              <button class="meta-btn" data-value="health" onclick="selectMeta('purpose', this)">💪 건강하게 오래</button>
-              <button class="meta-btn" data-value="technique" onclick="selectMeta('purpose', this)">🎯 영법 교정</button>
-              <button class="meta-btn" data-value="competition" onclick="selectMeta('purpose', this)">🏆 대회 준비</button>
-              <button class="meta-btn" data-value="hobby" onclick="selectMeta('purpose', this)">😊 취미/건강유지</button>
+            <button class="menu-btn">일지 보기</button>
+          </a>
+          <a href="/report" class="menu-card train">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-report"/></svg></div>
+            <div class="menu-title">월간 리포트</div>
+            <div class="menu-desc">
+              총 거리·칼로리·영법별<br>
+              성장을 시각화해 보세요
             </div>
-          </div>
-
-        <div class="meta-next-wrap">
-          <button class="meta-next-btn" id="meta-next-btn" onclick="proceedToUpload()" disabled>
-            다음 — 영상 선택 →
-          </button>
+            <button class="menu-btn">리포트 보기</button>
+          </a>
         </div>
       </div>
 
-      <!-- 업로드 드롭존 -->
-      <div class="dropzone" id="dropzone" style="display:none">
-        <button class="back-to-meta-btn" onclick="backToMeta()">← 영법 선택으로</button>
-        <div class="drop-inner">
-          <div class="drop-icon">&#9654;</div>
-          <p class="drop-title">수영 영상을 선택해주세요</p>
-          <p class="drop-sub">MP4, MOV, AVI 지원</p>
-          <div class="file-btn-wrap">
-            <label class="file-select-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-              📁 파일 선택
-              <input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv"
-                     style="position:fixed;top:-9999px;left:-9999px;width:0;height:0;opacity:0;">
-            </label>
-            <button class="file-select-btn file-select-btn-outline" onclick="openVideoFolder()">
-              📂 C:\swim\video 열기
-            </button>
-          </div>
-          <div class="selected-file" id="selected-file" style="display:none">
-            <span class="file-icon">🎬</span>
-            <span class="file-name" id="file-name-label"></span>
-            <span class="file-size" id="file-size-label"></span>
-          </div>
-        </div>
-      </div>
-      <div class="player-wrap" id="player-wrap" style="display:none">
-        <button class="remove-video-btn" id="remove-video-btn" onclick="removeVideo()" title="영상 제거">✕</button>
-        <div class="video-container">
-          <video id="video" playsinline></video>
-          <canvas id="overlay-canvas"></canvas>
-
-          <!-- 실시간 수치 오버레이 -->
-          <div class="live-overlay" id="live-overlay">
-            <div class="ov-row">
-              <span class="ov-label">L 팔꿈치</span>
-              <span class="ov-val" id="ov-le">--</span>
+      <!-- 👥 커뮤니티 -->
+      <div class="menu-section">
+        <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-community"/></svg> 커뮤니티</div>
+        <div class="menu-grid st-stagger">
+          <a href="/community" class="menu-card community">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-community"/></svg></div>
+            <div class="menu-title">커뮤니티</div>
+            <div class="menu-desc">
+              자유·질문·훈련후기 게시판에서<br>
+              수영 동료와 정보 나누기
             </div>
-            <div class="ov-row">
-              <span class="ov-label">R 팔꿈치</span>
-              <span class="ov-val" id="ov-re">--</span>
+            <button class="menu-btn">커뮤니티 가기</button>
+          </a>
+          <a href="/challenge" class="menu-card hot">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-challenge"/></svg></div>
+            <div class="menu-title">수영 챌린지</div>
+            <span class="pill-energy">실시간 랭킹</span>
+            <div class="menu-desc">
+              100km·30일 연속 등 다양한<br>
+              챌린지에 참여하고 경쟁하기
             </div>
-            <div class="ov-row">
-              <span class="ov-label">머리 각도</span>
-              <span class="ov-val" id="ov-head">--</span>
+            <button class="menu-btn">챌린지 참여</button>
+          </a>
+          <a href="/pool" class="menu-card community">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
+            <div class="menu-title">수영장 찾기</div>
+            <div class="menu-desc">
+              카카오 지도로 주변 수영장<br>
+              위치·연락처 확인
             </div>
-            <div class="ov-row">
-              <span class="ov-label">경과</span>
-              <span class="ov-val" id="ov-time">0:00</span>
+            <button class="menu-btn">수영장 찾기</button>
+          </a>
+          <a href="/coach" class="menu-card community">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-coach"/></svg></div>
+            <div class="menu-title">코치 연동</div>
+            <div class="menu-desc">
+              코치와 수강생을 연결해<br>
+              피드백·플랜 함께 관리
             </div>
-          </div>
-
-          <!-- KICK 뱃지 -->
-          <div class="kick-badge" id="kick-badge">KICK!</div>
-
-          <!-- 영법 뱃지 (선택한 영법 + 분석 결과) -->
-          <div class="stroke-badge" id="stroke-badge"></div>
-        </div>
-
-        <!-- 프로그레스바 -->
-        <div class="progress-bar" id="progress-bar" onclick="seekVideo(event)">
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-
-        <!-- 컨트롤 바 -->
-        <div class="controls">
-          <button class="ctrl-btn" id="play-btn" onclick="togglePlay()" title="재생/일시정지">
-            &#9654;
-          </button>
-          <span class="time-display" id="time-display">0:00 / 0:00</span>
-          <div class="ctrl-spacer"></div>
-          <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">
-            &#9654; 분석 시작
-          </button>
-          <button class="reset-btn" onclick="resetAll()" title="초기화">&#8635;</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 오른쪽: 지표 패널 -->
-    <div class="side-col">
-
-      <!-- 종합 점수 -->
-      <div class="score-card" id="score-card">
-        <div class="score-label">종합 점수</div>
-        <div class="score-val" id="score-val">--</div>
-        <div class="score-sub">/ 100점</div>
-        <div class="score-bar-wrap">
-          <div class="score-bar-fill" id="score-bar"></div>
+            <button class="menu-btn">코치 연동</button>
+          </a>
         </div>
       </div>
 
-      <!-- 세부 지표 -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">좌우 대칭</div>
-          <div class="metric-val" id="m-sym">--</div>
-          <div class="metric-bar-wrap"><div class="metric-bar sym-bar" id="b-sym"></div></div>
+      <!-- 📚 정보/도움 -->
+      <div class="menu-section">
+        <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-glossary"/></svg> 정보/도움</div>
+        <div class="menu-grid st-stagger">
+          <a href="/drill" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg></div>
+            <div class="menu-title">드릴 가이드</div>
+            <div class="menu-desc">
+              영법별 핵심 훈련 드릴과<br>
+              YouTube 영상으로 자세 교정
+            </div>
+            <button class="menu-btn">드릴 보기</button>
+          </a>
+          <a href="/injury" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-injury"/></svg></div>
+            <div class="menu-title">부상 예방</div>
+            <div class="menu-desc">
+              부위별 원인과 예방 스트레칭<br>
+              루틴으로 건강하게 수영하기
+            </div>
+            <button class="menu-btn">가이드 보기</button>
+          </a>
+          <a href="/faq" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-faq"/></svg></div>
+            <div class="menu-title">FAQ</div>
+            <div class="menu-desc">
+              자주 묻는 질문을 검색하고<br>
+              카테고리별로 빠르게 찾기
+            </div>
+            <button class="menu-btn">FAQ 보기</button>
+          </a>
+          <a href="/glossary" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-glossary"/></svg></div>
+            <div class="menu-title">용어 사전</div>
+            <div class="menu-desc">
+              수영·SwimTech 분석 용어를<br>
+              검색하고 카테고리별로 탐색
+            </div>
+            <button class="menu-btn">용어 찾기</button>
+          </a>
+          <a href="/equipment" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-equipment"/></svg></div>
+            <div class="menu-title">장비 가이드</div>
+            <div class="menu-desc">
+              오리발·킥판·패들 등 훈련 장비<br>
+              사용법과 선택 팁 완벽 정리
+            </div>
+            <button class="menu-btn">장비 보기</button>
+          </a>
+          <a href="/videos" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-videos"/></svg></div>
+            <div class="menu-title">영상 큐레이션</div>
+            <div class="menu-desc">
+              영법별 추천 유튜브 영상 모음
+            </div>
+            <button class="menu-btn">영상 보기</button>
+          </a>
+          <a href="/feedback" class="menu-card info">
+            <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-feedback"/></svg></div>
+            <div class="menu-title">피드백</div>
+            <div class="menu-desc">
+              개선 의견·버그 제보를<br>
+              개발팀에 직접 전달하기
+            </div>
+            <button class="menu-btn">피드백 보내기</button>
+          </a>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">발차기 횟수</div>
-          <div class="metric-val" id="m-kick">0</div>
-          <div class="metric-bar-wrap"><div class="metric-bar kick-bar" id="b-kick"></div></div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">발차기 빈도</div>
-          <div class="metric-val" id="m-freq">--</div>
-          <div class="metric-bar-wrap"><div class="metric-bar freq-bar" id="b-freq"></div></div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">머리 자세</div>
-          <div class="metric-val" id="m-head">--</div>
-          <div class="metric-bar-wrap"><div class="metric-bar head-bar" id="b-head"></div></div>
-        </div>
-      </div>
-
-      <!-- 분석 진행 -->
-      <div class="progress-card" id="progress-card">
-        <div class="progress-label">분석 진행률</div>
-        <div class="analysis-bar-wrap">
-          <div class="analysis-bar-fill" id="analysis-bar"></div>
-        </div>
-        <div class="progress-pct" id="progress-pct">0%</div>
-      </div>
-
-      <!-- 피드백 -->
-      <div class="feedback-card" id="feedback-card" style="display:none">
-        <div class="feedback-title">&#9888; 피드백</div>
-        <div class="feedback-body" id="feedback-body"></div>
-      </div>
-
-      <!-- 추천 드릴 -->
-      <div class="drill-card" id="drill-card" style="display:none">
-        <div class="drill-title">&#9998; 추천 드릴</div>
-        <ul class="drill-list" id="drill-list"></ul>
       </div>
 
     </div>
   </div>
+
 </div>
 
-<script src="/static/viewer.js"></script>
+<!-- PWA 설치 배너 -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:1px solid #00b4d8;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;z-index:9999;
+  padding-bottom:max(12px, env(safe-area-inset-bottom));">
+  <svg class="icon icon-xl" aria-hidden="true" style="flex-shrink:0;"><use href="/static/icons.svg#icon-pool"/></svg>
+  <div style="flex:1;">
+    <div style="font-size: var(--fs-body);font-weight:600;color:#e8e8e8;">SwimTech 앱 설치</div>
+    <div id="pwa-banner-msg" style="font-size: var(--fs-caption);color:#888;margin-top:2px;"></div>
+  </div>
+  <button id="pwa-install-btn" style="display:none;background:#00b4d8;color:#fff;
+    border:none;border-radius: var(--radius-sm);padding:8px 16px;font-size: var(--fs-body);font-weight:600;
+    cursor:pointer;min-height:44px;">설치</button>
+  <button onclick="closePwaBanner()" style="background:none;border:none;color:#666;
+    font-size: var(--fs-title);cursor:pointer;padding:4px 8px;min-height:44px;">✕</button>
+</div>
+
+<script>
+"use strict";
+
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) window.location.href = '/login';
+  } catch { window.location.href = '/login'; }
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+const banner = document.getElementById('pwa-banner');
+const msg    = document.getElementById('pwa-banner-msg');
+const btn    = document.getElementById('pwa-install-btn');
+
+function closePwaBanner() {
+  banner.style.display = 'none';
+  localStorage.setItem('pwa-banner-closed', '1');
+}
+
+if (!localStorage.getItem('pwa-banner-closed')) {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  if (!isStandalone) {
+    if (isIOS && isSafari) {
+      msg.textContent = "Safari에서 공유 → '홈 화면에 추가'를 탭하세요";
+      banner.style.display = 'flex';
+    } else {
+      let deferredPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        msg.textContent = '홈 화면에 추가하면 앱처럼 사용할 수 있어요';
+        btn.style.display = 'block';
+        banner.style.display = 'flex';
+      });
+
+      btn.addEventListener('click', () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(({ outcome }) => {
+          if (outcome === 'accepted') {
+            btn.style.display = 'none';
+            closePwaBanner();
+          }
+          deferredPrompt = null;
+        });
+      });
+    }
+  }
+}
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('SW registered'); })
+        .catch(function(err) { console.log('SW registration skipped:', err.message); });
+    });
+  }
+</script>
+<div style="text-align:center;padding:24px 0 16px;font-size: var(--fs-caption);color:#7aafc2;">
+  <a href="/privacy" style="color:#00b4d8;text-decoration:none;">개인정보처리방침</a>
+  <span style="margin:0 8px;opacity:0.5;">|</span>
+  <a href="/terms" style="color:#00b4d8;text-decoration:none;">이용약관</a>
+  <span style="margin:0 8px;opacity:0.5;">|</span>
+  <a href="/changelog" style="color:#00b4d8;text-decoration:none;">릴리즈 노트</a>
+  <span style="margin:0 8px;opacity:0.5;">|</span>
+  <a href="/feedback" style="color:#00b4d8;text-decoration:none;">피드백</a>
+</div>
 <script src="/static/theme.js"></script>
 </body>
 </html>
+
+
 
