@@ -43,6 +43,11 @@ GOOGLE_OAUTH_FILE   = "/app/credentials/google_oauth_client.json"
 KAKAO_CLIENT_ID     = os.getenv("KAKAO_CLIENT_ID", "")
 KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/v2/auth")
+GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token")
+
 # BASE_URL: Cloudflare Tunnel 등 외부 도메인 사용 시 환경변수로 주입
 # 예) BASE_URL=https://wilderness-xxx.trycloudflare.com
 _BASE_URL = os.getenv("BASE_URL", "https://localhost").rstrip("/")
@@ -471,6 +476,14 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 
 def _load_google_client() -> dict:
+    if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+        return {
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "auth_uri": GOOGLE_AUTH_URI,
+            "token_uri": GOOGLE_TOKEN_URI,
+        }
+
     with open(GOOGLE_OAUTH_FILE) as f:
         return json.load(f)["web"]
 
