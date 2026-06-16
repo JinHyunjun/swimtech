@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SwimTech ? ¼ö¿µÀå Ã£±â</title>
+<title>SwimTech â€” ìˆ˜ì˜ì¥ ì°¾ê¸°</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
 <script type="text/javascript"
-  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3d51b20b04a33ad0448c941c1268146e
-&libraries=services&autoload=false">
+  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3d51b20b04a33ad0448c941c1268146e&libraries=services&autoload=false">
 </script>
 <style>
 .pool-layout {
@@ -234,15 +233,15 @@
 
   <header class="header">
     <div class="header-left">
-      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">¡ç È¨</a>
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">â† í™ˆ</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
-      <span class="logo-sub">?? ¼ö¿µÀå Ã£±â</span>
+      <span class="logo-sub">ğŸŠ ìˆ˜ì˜ì¥ ì°¾ê¸°</span>
     </div>
     <div class="header-right">
       <button onclick="logout()"
               style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);
                      padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;min-height:auto;">
-        ·Î±×¾Æ¿ô
+        ë¡œê·¸ì•„ì›ƒ
       </button>
     </div>
   </header>
@@ -254,30 +253,30 @@
       <div class="pool-search">
         <div class="search-row">
           <input id="search-input" class="search-input" type="text"
-                 placeholder="Áö¿ª¸í ÀÔ·Â (¿¹: °­³², È«´ë)" />
-          <button class="search-btn" onclick="searchByKeyword()">°Ë»ö</button>
+                 placeholder="ì§€ì—­ëª… ì…ë ¥ (ì˜ˆ: ê°•ë‚¨, í™ëŒ€)" />
+          <button class="search-btn" onclick="searchByKeyword()">ê²€ìƒ‰</button>
         </div>
         <button class="location-btn" onclick="moveToMyLocation()">
-          ?? ³» À§Ä¡·Î
+          ğŸ“ ë‚´ ìœ„ì¹˜ë¡œ
         </button>
       </div>
 
       <div class="pool-tab-bar">
-        <button class="pool-tab-btn active" id="tab-nearby" onclick="switchPoolTab('nearby')">?? ÁÖº¯ ¼ö¿µÀå</button>
-        <button class="pool-tab-btn" id="tab-fav" onclick="switchPoolTab('fav')">? Áñ°ÜÃ£±â</button>
+        <button class="pool-tab-btn active" id="tab-nearby" onclick="switchPoolTab('nearby')">ğŸ“ ì£¼ë³€ ìˆ˜ì˜ì¥</button>
+        <button class="pool-tab-btn" id="tab-fav" onclick="switchPoolTab('fav')">â­ ì¦ê²¨ì°¾ê¸°</button>
       </div>
 
       <div class="pool-list-wrap" id="panel-nearby">
-        <div class="pool-list-title">ÁÖº¯ ¼ö¿µÀå (°Å¸®¼ø)</div>
+        <div class="pool-list-title">ì£¼ë³€ ìˆ˜ì˜ì¥ (ê±°ë¦¬ìˆœ)</div>
         <div id="pool-count" class="pool-count"></div>
         <div id="pool-list-body">
-          <div class="pool-loading">?? À§Ä¡¸¦ ºÒ·¯¿À´Â Áß...</div>
+          <div class="pool-loading">ğŸ“¡ ìœ„ì¹˜ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</div>
         </div>
       </div>
 
       <div class="fav-panel" id="panel-fav">
         <div id="fav-list-body">
-          <div class="pool-loading">Áñ°ÜÃ£±â¸¦ ºÒ·¯¿À´Â Áß...</div>
+          <div class="pool-loading">ì¦ê²¨ì°¾ê¸°ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</div>
         </div>
       </div>
     </div>
@@ -339,14 +338,14 @@ async function toggleFav(e, idx) {
     const d = await res.json();
     if (d.status === 'added') {
       favSet.add(p.id);
-      btn.textContent = '?';
+      btn.textContent = 'â­';
       btn.classList.add('fav-on');
-      btn.title = 'Áñ°ÜÃ£±â ÇØÁ¦';
+      btn.title = 'ì¦ê²¨ì°¾ê¸° í•´ì œ';
     } else {
       favSet.delete(p.id);
-      btn.textContent = '¡Ù';
+      btn.textContent = 'â˜†';
       btn.classList.remove('fav-on');
-      btn.title = 'Áñ°ÜÃ£±â Ãß°¡';
+      btn.title = 'ì¦ê²¨ì°¾ê¸° ì¶”ê°€';
     }
   } catch {}
 }
@@ -361,27 +360,27 @@ function switchPoolTab(tab) {
 
 async function renderFavList() {
   const body = document.getElementById('fav-list-body');
-  body.innerHTML = '<div class="pool-loading">Áñ°ÜÃ£±â¸¦ ºÒ·¯¿À´Â Áß...</div>';
+  body.innerHTML = '<div class="pool-loading">ì¦ê²¨ì°¾ê¸°ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</div>';
   try {
     const res = await fetch('/api/pool/favorites', { credentials: 'include' });
-    if (!res.ok) { body.innerHTML = '<div class="pool-empty">·Î±×ÀÎ ÈÄ ÀÌ¿ëÇÒ ¼ö ÀÖ½À´Ï´Ù.</div>'; return; }
+    if (!res.ok) { body.innerHTML = '<div class="pool-empty">ë¡œê·¸ì¸ í›„ ì´ìš©í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.</div>'; return; }
     const d = await res.json();
     const favs = d.favorites || [];
     if (!favs.length) {
-      body.innerHTML = '<div class="pool-empty">Áñ°ÜÃ£±âÇÑ ¼ö¿µÀåÀÌ ¾ø½À´Ï´Ù.<br>ÁÖº¯ ¼ö¿µÀå¿¡¼­ ¡ÙÀ» ´­·¯ Ãß°¡ÇØº¸¼¼¿ä!</div>';
+      body.innerHTML = '<div class="pool-empty">ì¦ê²¨ì°¾ê¸°í•œ ìˆ˜ì˜ì¥ì´ ì—†ìŠµë‹ˆë‹¤.<br>ì£¼ë³€ ìˆ˜ì˜ì¥ì—ì„œ â˜†ì„ ëˆŒëŸ¬ ì¶”ê°€í•´ë³´ì„¸ìš”!</div>';
       return;
     }
     body.innerHTML = favs.map(f => `
       <div class="fav-item" onclick="searchByFav(${JSON.stringify(f.pool_name).replace(/"/g,'&quot;')}, ${JSON.stringify(f.address).replace(/"/g,'&quot;')})">
         <div class="fav-item-top">
-          <span style="font-size: var(--fs-body);">?</span>
+          <span style="font-size: var(--fs-body);">â­</span>
           <span class="fav-item-name">${escHtmlPool(f.pool_name)}</span>
-          <button class="btn-fav-remove" onclick="removeFav(event, '${escHtmlPool(f.pool_id)}', this.closest('.fav-item'))" title="»èÁ¦">?</button>
+          <button class="btn-fav-remove" onclick="removeFav(event, '${escHtmlPool(f.pool_id)}', this.closest('.fav-item'))" title="ì‚­ì œ">âœ•</button>
         </div>
         <div class="fav-item-addr">${escHtmlPool(f.address || '')}</div>
       </div>`).join('');
   } catch {
-    body.innerHTML = '<div class="pool-empty">Áñ°ÜÃ£±â¸¦ ºÒ·¯¿ÀÁö ¸øÇß½À´Ï´Ù.</div>';
+    body.innerHTML = '<div class="pool-empty">ì¦ê²¨ì°¾ê¸°ë¥¼ ë¶ˆëŸ¬ì˜¤ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.</div>';
   }
 }
 
@@ -421,7 +420,7 @@ function initMap(lat, lng) {
   myMarker = new kakao.maps.Marker({
     position: new kakao.maps.LatLng(lat, lng),
     map,
-    title: 'ÇöÀç À§Ä¡',
+    title: 'í˜„ì¬ ìœ„ì¹˜',
     zIndex: 5
   });
 
@@ -434,7 +433,7 @@ function initMap(lat, lng) {
 }
 
 function searchPoolsByLocation(lat, lng) {
-  document.getElementById('pool-list-body').innerHTML = '<div class="pool-loading">?? ¼ö¿µÀå °Ë»ö Áß...</div>';
+  document.getElementById('pool-list-body').innerHTML = '<div class="pool-loading">ğŸ” ìˆ˜ì˜ì¥ ê²€ìƒ‰ ì¤‘...</div>';
   document.getElementById('pool-count').textContent = '';
   clearMarkers();
   if (infowindow) infowindow.close();
@@ -442,7 +441,7 @@ function searchPoolsByLocation(lat, lng) {
   _accumPages = [];
   const sid = ++_searchId;
 
-  ps.keywordSearch('¼ö¿µÀå', function(data, status, pagination) {
+  ps.keywordSearch('ìˆ˜ì˜ì¥', function(data, status, pagination) {
     if (sid !== _searchId) return;
     if (status === kakao.maps.services.Status.OK) {
       _accumPages = _accumPages.concat(data);
@@ -453,20 +452,20 @@ function searchPoolsByLocation(lat, lng) {
       poolData = _accumPages;
       displayMarkers(poolData);
       renderList(poolData);
-      document.getElementById('pool-count').textContent = `${poolData.length}°³ ¹ß°ß`;
+      document.getElementById('pool-count').textContent = `${poolData.length}ê°œ ë°œê²¬`;
     } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
       if (_accumPages.length > 0) {
         poolData = _accumPages;
         displayMarkers(poolData);
         renderList(poolData);
-        document.getElementById('pool-count').textContent = `${poolData.length}°³ ¹ß°ß`;
+        document.getElementById('pool-count').textContent = `${poolData.length}ê°œ ë°œê²¬`;
       } else {
         document.getElementById('pool-list-body').innerHTML =
-          '<div class="pool-empty">ÁÖº¯ 5km ÀÌ³»<br>¼ö¿µÀåÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.</div>';
+          '<div class="pool-empty">ì£¼ë³€ 5km ì´ë‚´<br>ìˆ˜ì˜ì¥ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.</div>';
       }
     } else {
       document.getElementById('pool-list-body').innerHTML =
-        '<div class="pool-empty">°Ë»ö Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.</div>';
+        '<div class="pool-empty">ê²€ìƒ‰ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.</div>';
     }
   }, {
     location: new kakao.maps.LatLng(lat, lng),
@@ -497,7 +496,7 @@ function displayMarkers(places) {
 
 function openInfoWindow(place, marker, idx) {
   const phone = place.phone
-    ? `<div style="font-size: var(--fs-caption);color:#90c4d4;margin-top:4px;">?? ${place.phone}</div>`
+    ? `<div style="font-size: var(--fs-caption);color:#90c4d4;margin-top:4px;">ğŸ“ ${place.phone}</div>`
     : '';
   const mapUrl = place.place_url || `https://map.kakao.com/link/map/${place.id}`;
   const addr = place.road_address_name || place.address_name;
@@ -515,7 +514,7 @@ function openInfoWindow(place, marker, idx) {
          style="display:inline-block;margin-top:10px;padding:5px 14px;
                 background:#00b4d8;color:#fff;border-radius: var(--radius-sm);
                 font-size: var(--fs-caption);text-decoration:none;font-weight:600;">
-        ?? Ä«Ä«¿À¸ÊÀ¸·Î º¸±â
+        ğŸ—º ì¹´ì¹´ì˜¤ë§µìœ¼ë¡œ ë³´ê¸°
       </a>
     </div>`);
 
@@ -526,7 +525,7 @@ function openInfoWindow(place, marker, idx) {
 function renderList(places) {
   if (!places.length) {
     document.getElementById('pool-list-body').innerHTML =
-      '<div class="pool-empty">ÁÖº¯ ¼ö¿µÀåÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.</div>';
+      '<div class="pool-empty">ì£¼ë³€ ìˆ˜ì˜ì¥ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -539,7 +538,7 @@ function renderList(places) {
           <span class="pool-rank">${i + 1}</span>
           <span class="pool-name">${p.place_name}</span>
           <span class="pool-dist">${dist}</span>
-          <button class="fav-btn${isFav ? ' fav-on' : ''}" onclick="toggleFav(event,${i})" title="${isFav ? 'Áñ°ÜÃ£±â ÇØÁ¦' : 'Áñ°ÜÃ£±â Ãß°¡'}">${isFav ? '?' : '¡Ù'}</button>
+          <button class="fav-btn${isFav ? ' fav-on' : ''}" onclick="toggleFav(event,${i})" title="${isFav ? 'ì¦ê²¨ì°¾ê¸° í•´ì œ' : 'ì¦ê²¨ì°¾ê¸° ì¶”ê°€'}">${isFav ? 'â­' : 'â˜†'}</button>
         </div>
         <div class="pool-addr">${p.road_address_name || p.address_name}</div>
       </div>`;
@@ -573,7 +572,7 @@ function searchByKeyword() {
   const query = document.getElementById('search-input').value.trim();
   if (!query) { searchPoolsByLocation(myLat, myLng); return; }
 
-  ps.keywordSearch(`${query} ¼ö¿µÀå`, (data, status) => {
+  ps.keywordSearch(`${query} ìˆ˜ì˜ì¥`, (data, status) => {
     if (status === kakao.maps.services.Status.OK) {
       const loc = data[0];
       const lat = Number(loc.y), lng = Number(loc.x);
@@ -582,7 +581,7 @@ function searchByKeyword() {
       map.setLevel(5);
       searchPoolsByLocation(lat, lng);
     } else {
-      // Áö¿ª¸íÀ¸·Î¸¸ Àç°Ë»ö
+      // ì§€ì—­ëª…ìœ¼ë¡œë§Œ ì¬ê²€ìƒ‰
       ps.keywordSearch(query, (data2, status2) => {
         if (status2 === kakao.maps.services.Status.OK) {
           const loc = data2[0];
@@ -592,7 +591,7 @@ function searchByKeyword() {
           map.setLevel(5);
           searchPoolsByLocation(lat, lng);
         } else {
-          alert('°Ë»ö °á°ú¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.');
+          alert('ê²€ìƒ‰ ê²°ê³¼ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
         }
       });
     }
@@ -601,11 +600,11 @@ function searchByKeyword() {
 
 function moveToMyLocation() {
   if (!map) {
-    alert('Áöµµ¸¦ ·ÎµåÇÏ´Â ÁßÀÔ´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØÁÖ¼¼¿ä.');
+    alert('ì§€ë„ë¥¼ ë¡œë“œí•˜ëŠ” ì¤‘ì…ë‹ˆë‹¤. ì ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ì£¼ì„¸ìš”.');
     return;
   }
   if (!navigator.geolocation) {
-    alert('ÀÌ ºê¶ó¿ìÀú´Â À§Ä¡ ¼­ºñ½º¸¦ Áö¿øÇÏÁö ¾Ê½À´Ï´Ù.');
+    alert('ì´ ë¸Œë¼ìš°ì €ëŠ” ìœ„ì¹˜ ì„œë¹„ìŠ¤ë¥¼ ì§€ì›í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.');
     return;
   }
   navigator.geolocation.getCurrentPosition(pos => {
@@ -617,7 +616,7 @@ function moveToMyLocation() {
     myMarker.setPosition(latlng);
     searchPoolsByLocation(myLat, myLng);
   }, () => {
-    alert('À§Ä¡ Á¤º¸¸¦ °¡Á®¿Ã ¼ö ¾ø½À´Ï´Ù.\nºê¶ó¿ìÀúÀÇ À§Ä¡ ±ÇÇÑÀ» È®ÀÎÇØÁÖ¼¼¿ä.');
+    alert('ìœ„ì¹˜ ì •ë³´ë¥¼ ê°€ì ¸ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\në¸Œë¼ìš°ì €ì˜ ìœ„ì¹˜ ê¶Œí•œì„ í™•ì¸í•´ì£¼ì„¸ìš”.');
   }, { timeout: 8000 });
 }
 
@@ -625,10 +624,10 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') searchByKeyword();
 });
 
-// ÃÊ±âÈ­: SDK ·Îµå È®ÀÎ ÈÄ geolocation ½ÃÀÛ
+// ì´ˆê¸°í™”: SDK ë¡œë“œ í™•ì¸ í›„ geolocation ì‹œì‘
 if (typeof kakao === 'undefined') {
   document.getElementById('pool-list-body').innerHTML =
-    '<div class="pool-empty">Ä«Ä«¿À¸Ê SDK¸¦ ºÒ·¯¿ÀÁö ¸øÇß½À´Ï´Ù.<br>ÆäÀÌÁö¸¦ »õ·Î°íÄ§ÇØ ÁÖ¼¼¿ä.</div>';
+    '<div class="pool-empty">ì¹´ì¹´ì˜¤ë§µ SDKë¥¼ ë¶ˆëŸ¬ì˜¤ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.<br>í˜ì´ì§€ë¥¼ ìƒˆë¡œê³ ì¹¨í•´ ì£¼ì„¸ìš”.</div>';
 } else {
   kakao.maps.load(function () {
     if (navigator.geolocation) {
