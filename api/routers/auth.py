@@ -1,6 +1,6 @@
 """
-SwimTech — 인증 모듈
-JWT 기반 로컬 로그인 + Google / Kakao 소셜 로그인
+SwimTech ???몄쬆 紐⑤뱢
+JWT 湲곕컲 濡쒖뺄 濡쒓렇??+ Google / Kakao ?뚯뀥 濡쒓렇??
 """
 import json
 import logging
@@ -30,7 +30,7 @@ TOKEN_EXPIRE_HOURS        = 8
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 LOGIN_FAIL_MAX    = 5
-LOGIN_FAIL_EXPIRE = 900  # 15분 (초)
+LOGIN_FAIL_EXPIRE = 900  # 15遺?(珥?
 
 ADMIN_ID = os.getenv("ADMIN_ID", "admin")
 ADMIN_PW = os.getenv("ADMIN_PW", "swimtech1234")
@@ -48,8 +48,8 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/v2/auth")
 GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token")
 
-# BASE_URL: Cloudflare Tunnel 등 외부 도메인 사용 시 환경변수로 주입
-# 예) BASE_URL=https://wilderness-xxx.trycloudflare.com
+# BASE_URL: Cloudflare Tunnel ???몃? ?꾨찓???ъ슜 ???섍꼍蹂?섎줈 二쇱엯
+# ?? BASE_URL=https://wilderness-xxx.trycloudflare.com
 _BASE_URL = os.getenv("BASE_URL", "https://localhost").rstrip("/")
 GOOGLE_REDIRECT_URI = f"{_BASE_URL}/auth/google/callback"
 KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
@@ -57,10 +57,10 @@ KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9]{4,20}$')
 _PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$')
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
-_NICKNAME_RE = re.compile(r'^[가-힣a-zA-Z0-9]{2,20}$')
+_NICKNAME_RE = re.compile(r'^[媛-?즑-zA-Z0-9]{2,20}$')
 
 
-# ── DB / Redis helpers ────────────────────────────────────────────────────────
+# ?? DB / Redis helpers ????????????????????????????????????????????????????????
 
 def get_db():
     return psycopg2.connect(DATABASE_URL)
@@ -86,7 +86,7 @@ def _strip_tags(text: str) -> str:
     return _HTML_TAG_RE.sub("", text) if text else ""
 
 
-# ── 로그인 실패 추적 ──────────────────────────────────────────────────────────
+# ?? 濡쒓렇???ㅽ뙣 異붿쟻 ??????????????????????????????????????????????????????????
 
 def _check_login_blocked(ip: str):
     r = _get_redis()
@@ -95,7 +95,7 @@ def _check_login_blocked(ip: str):
     try:
         count = r.get(f"login_fail:{ip}")
         if count and int(count) >= LOGIN_FAIL_MAX:
-            raise HTTPException(429, "너무 많은 로그인 시도. 15분 후 다시 시도하세요.")
+            raise HTTPException(429, "?덈Т 留롮? 濡쒓렇???쒕룄. 15遺????ㅼ떆 ?쒕룄?섏꽭??")
     except HTTPException:
         raise
     except Exception:
@@ -126,7 +126,7 @@ def _clear_login_fail(ip: str):
         pass
 
 
-# ── 소셜 컬럼 마이그레이션 ────────────────────────────────────────────────────
+# ?? ?뚯뀥 而щ읆 留덉씠洹몃젅?댁뀡 ????????????????????????????????????????????????????
 
 def _ensure_social_columns():
     try:
@@ -145,7 +145,7 @@ def _ensure_social_columns():
 _ensure_social_columns()
 
 
-# ── Pydantic 모델 ─────────────────────────────────────────────────────────────
+# ?? Pydantic 紐⑤뜽 ?????????????????????????????????????????????????????????????
 
 class LoginRequest(BaseModel):
     username: str
@@ -163,7 +163,7 @@ class NicknameRequest(BaseModel):
     nickname: str
 
 
-# ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
+# ?? ?좏겙 ?좏떥 ?????????????????????????????????????????????????????????????????
 
 def create_token(username: str, customer_id: int | None = None) -> str:
     expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
@@ -182,7 +182,7 @@ def create_refresh_token(username: str, customer_id: int | None = None) -> str:
 
 
 def verify_token(token: str) -> str:
-    """토큰 검증 → 유저명 반환, 실패 시 None"""
+    """?좏겙 寃利????좎?紐?諛섑솚, ?ㅽ뙣 ??None"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get("sub")
@@ -191,7 +191,7 @@ def verify_token(token: str) -> str:
 
 
 def decode_token(token: str) -> dict:
-    """토큰 디코딩 → payload dict 반환, 실패 시 {}"""
+    """?좏겙 ?붿퐫????payload dict 諛섑솚, ?ㅽ뙣 ??{}"""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
@@ -220,7 +220,7 @@ def _set_refresh_cookie(response: Response, token: str):
     )
 
 
-# ── 소셜 사용자 조회/생성 ─────────────────────────────────────────────────────
+# ?? ?뚯뀥 ?ъ슜??議고쉶/?앹꽦 ?????????????????????????????????????????????????????
 
 def _find_or_create_social_user(
     provider: str,
@@ -228,7 +228,7 @@ def _find_or_create_social_user(
     email: str,
     name: str,
 ) -> tuple[int, str, bool]:
-    """기존 사용자 → (id, username, False), 신규 가입 → (id, username, True)"""
+    """湲곗〈 ?ъ슜????(id, username, False), ?좉퇋 媛????(id, username, True)"""
     conn = get_db()
     cur = conn.cursor()
 
@@ -275,26 +275,26 @@ def _find_or_create_social_user(
     return customer_id, username, True
 
 
-# ── 로컬 인증 ─────────────────────────────────────────────────────────────────
+# ?? 濡쒖뺄 ?몄쬆 ?????????????????????????????????????????????????????????????????
 
 @router.post("/register")
 def register(body: RegisterRequest):
     name = _strip_tags(body.name.strip())
     if not name:
-        raise HTTPException(400, "이름을 입력해주세요.")
+        raise HTTPException(400, "?대쫫???낅젰?댁＜?몄슂.")
     if len(name) > 50:
-        raise HTTPException(400, "이름은 최대 50자까지 허용됩니다.")
+        raise HTTPException(400, "?대쫫? 理쒕? 50?먭퉴吏 ?덉슜?⑸땲??")
 
     try:
         validate_email(body.email, check_deliverability=False)
     except EmailNotValidError:
-        raise HTTPException(400, "유효하지 않은 이메일 형식입니다.")
+        raise HTTPException(400, "?좏슚?섏? ?딆? ?대찓???뺤떇?낅땲??")
 
     if not _USERNAME_RE.match(body.username):
-        raise HTTPException(400, "아이디는 영문/숫자 4~20자여야 합니다.")
+        raise HTTPException(400, "?꾩씠?붾뒗 ?곷Ц/?レ옄 4~20?먯뿬???⑸땲??")
 
     if not _PASSWORD_RE.match(body.password):
-        raise HTTPException(400, "비밀번호는 최소 8자 이상, 영문과 숫자를 포함해야 합니다.")
+        raise HTTPException(400, "鍮꾨?踰덊샇??理쒖냼 8???댁긽, ?곷Ц怨??レ옄瑜??ы븿?댁빞 ?⑸땲??")
 
     try:
         conn = get_db()
@@ -303,12 +303,12 @@ def register(body: RegisterRequest):
         cur.execute("SELECT id FROM customers WHERE username = %s", (body.username,))
         if cur.fetchone():
             cur.close(); conn.close()
-            raise HTTPException(400, "이미 사용 중인 아이디입니다.")
+            raise HTTPException(400, "?대? ?ъ슜 以묒씤 ?꾩씠?붿엯?덈떎.")
 
         cur.execute("SELECT id FROM customers WHERE email = %s", (body.email,))
         if cur.fetchone():
             cur.close(); conn.close()
-            raise HTTPException(400, "이미 사용 중인 이메일입니다.")
+            raise HTTPException(400, "?대? ?ъ슜 以묒씤 ?대찓?쇱엯?덈떎.")
 
         password_bytes = body.password.encode("utf-8")[:72]
         password_hash  = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
@@ -324,7 +324,7 @@ def register(body: RegisterRequest):
         raise
     except Exception:
         logger.error("register: DB error", exc_info=True)
-        raise HTTPException(500, "내부 오류가 발생했습니다.")
+        raise HTTPException(500, "?대? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.")
 
 
 @router.post("/login")
@@ -347,26 +347,26 @@ def login(request: Request, body: LoginRequest, response: Response):
         conn.close()
     except Exception:
         logger.error("login: DB error", exc_info=True)
-        raise HTTPException(500, "내부 오류가 발생했습니다.")
+        raise HTTPException(500, "?대? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.")
 
     if row:
         db_id, password_hash = row
         pw_bytes = body.password.encode("utf-8")[:72]
         if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
             _increment_login_fail(ip)
-            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+            raise HTTPException(401, "?꾩씠???먮뒗 鍮꾨?踰덊샇媛 ?щ컮瑜댁? ?딆뒿?덈떎.")
         customer_id = db_id
     else:
         if body.username != ADMIN_ID or body.password != ADMIN_PW:
             _increment_login_fail(ip)
-            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+            raise HTTPException(401, "?꾩씠???먮뒗 鍮꾨?踰덊샇媛 ?щ컮瑜댁? ?딆뒿?덈떎.")
 
     _clear_login_fail(ip)
     token   = create_token(body.username, customer_id)
     refresh = create_refresh_token(body.username, customer_id)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, refresh)
-    return {"status": "ok", "message": f"{body.username}님 환영합니다!"}
+    return {"status": "ok", "message": f"{body.username}???섏쁺?⑸땲??"}
 
 
 @router.post("/refresh")
@@ -375,35 +375,35 @@ def refresh_token_endpoint(
     swimtech_refresh_token: str = Cookie(default=None),
 ):
     if not swimtech_refresh_token:
-        raise HTTPException(401, "리프레시 토큰이 없습니다.")
+        raise HTTPException(401, "由ы봽?덉떆 ?좏겙???놁뒿?덈떎.")
     try:
         payload = jwt.decode(swimtech_refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
-        raise HTTPException(401, "리프레시 토큰이 만료되었습니다.")
+        raise HTTPException(401, "由ы봽?덉떆 ?좏겙??留뚮즺?섏뿀?듬땲??")
     if payload.get("type") != "refresh":
-        raise HTTPException(401, "유효하지 않은 토큰 타입입니다.")
+        raise HTTPException(401, "?좏슚?섏? ?딆? ?좏겙 ??낆엯?덈떎.")
     username    = payload.get("sub")
     customer_id = payload.get("customer_id")
     token = create_token(username, customer_id)
     _set_auth_cookie(response, token)
-    return {"status": "ok", "message": "토큰이 갱신되었습니다."}
+    return {"status": "ok", "message": "?좏겙??媛깆떊?섏뿀?듬땲??"}
 
 
 @router.post("/logout")
 def logout(response: Response):
     response.delete_cookie("swimtech_token")
     response.delete_cookie("swimtech_refresh_token")
-    return {"status": "ok", "message": "로그아웃 완료"}
+    return {"status": "ok", "message": "濡쒓렇?꾩썐 ?꾨즺"}
 
 
 @router.get("/me")
 def me(swimtech_token: str = Cookie(default=None)):
     if not swimtech_token:
-        raise HTTPException(401, "로그인이 필요합니다.")
+        raise HTTPException(401, "濡쒓렇?몄씠 ?꾩슂?⑸땲??")
     payload = decode_token(swimtech_token)
     username = payload.get("sub")
     if not username:
-        raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
+        raise HTTPException(401, "?몄뀡??留뚮즺?섏뿀?듬땲?? ?ㅼ떆 濡쒓렇?명빐二쇱꽭??")
 
     customer_id     = payload.get("customer_id")
     nickname        = None
@@ -437,17 +437,17 @@ def me(swimtech_token: str = Cookie(default=None)):
 @router.post("/nickname")
 def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=None)):
     if not swimtech_token:
-        raise HTTPException(401, "로그인이 필요합니다.")
+        raise HTTPException(401, "濡쒓렇?몄씠 ?꾩슂?⑸땲??")
     payload = decode_token(swimtech_token)
     if not payload.get("sub"):
-        raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
+        raise HTTPException(401, "?몄뀡??留뚮즺?섏뿀?듬땲?? ?ㅼ떆 濡쒓렇?명빐二쇱꽭??")
     customer_id = payload.get("customer_id")
     if not customer_id:
-        raise HTTPException(400, "닉네임 설정은 소셜 로그인 계정만 가능합니다.")
+        raise HTTPException(400, "?됰꽕???ㅼ젙? ?뚯뀥 濡쒓렇??怨꾩젙留?媛?ν빀?덈떎.")
 
     nickname = body.nickname.strip()
     if not _NICKNAME_RE.match(nickname):
-        raise HTTPException(400, "닉네임은 2~20자, 한글·영문·숫자만 사용 가능합니다.")
+        raise HTTPException(400, "?됰꽕?꾩? 2~20?? ?쒓?쨌?곷Ц쨌?レ옄留??ъ슜 媛?ν빀?덈떎.")
 
     try:
         conn = get_db()
@@ -458,7 +458,7 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
         )
         if cur.fetchone():
             cur.close(); conn.close()
-            raise HTTPException(400, "이미 사용 중인 닉네임입니다.")
+            raise HTTPException(400, "?대? ?ъ슜 以묒씤 ?됰꽕?꾩엯?덈떎.")
         cur.execute(
             "UPDATE customers SET nickname = %s WHERE id = %s",
             (nickname, customer_id),
@@ -470,10 +470,10 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
         raise
     except Exception:
         logger.error("set_nickname: DB error", exc_info=True)
-        raise HTTPException(500, "내부 오류가 발생했습니다.")
+        raise HTTPException(500, "?대? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.")
 
 
-# ── Google OAuth ──────────────────────────────────────────────────────────────
+# ?? Google OAuth ??????????????????????????????????????????????????????????????
 
 def _load_google_client() -> dict:
     if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
@@ -520,7 +520,7 @@ def google_callback(code: str):
     token_data   = token_resp.json()
     access_token = token_data.get("access_token")
     if not access_token:
-        raise HTTPException(400, "Google 토큰 교환 실패")
+        raise HTTPException(400, "Google ?좏겙 援먰솚 ?ㅽ뙣")
 
     userinfo_resp = httpx.get(
         "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -533,7 +533,7 @@ def google_callback(code: str):
     social_id = userinfo.get("sub", "")
 
     if not social_id:
-        raise HTTPException(400, "Google 사용자 정보를 가져올 수 없습니다.")
+        raise HTTPException(400, "Google ?ъ슜???뺣낫瑜?媛?몄삱 ???놁뒿?덈떎.")
 
     customer_id, username, is_new = _find_or_create_social_user("google", social_id, email, name)
     token   = create_token(username, customer_id)
@@ -546,12 +546,12 @@ def google_callback(code: str):
     return resp
 
 
-# ── Kakao OAuth ───────────────────────────────────────────────────────────────
+# ?? Kakao OAuth ???????????????????????????????????????????????????????????????
 
 @router.get("/kakao")
 def kakao_login():
     if not KAKAO_CLIENT_ID:
-        raise HTTPException(503, "카카오 로그인이 설정되지 않았습니다.")
+        raise HTTPException(503, "移댁뭅??濡쒓렇?몄씠 ?ㅼ젙?섏? ?딆븯?듬땲??")
     params = {
         "client_id":     KAKAO_CLIENT_ID,
         "redirect_uri":  KAKAO_REDIRECT_URI,
@@ -563,7 +563,7 @@ def kakao_login():
 @router.get("/kakao/callback")
 def kakao_callback(code: str):
     if not KAKAO_CLIENT_SECRET:
-        raise HTTPException(503, "KAKAO_CLIENT_SECRET 환경변수가 설정되지 않았습니다.")
+        raise HTTPException(503, "KAKAO_CLIENT_SECRET ?섍꼍蹂?섍? ?ㅼ젙?섏? ?딆븯?듬땲??")
 
     token_resp = httpx.post(
         "https://kauth.kakao.com/oauth/token",
@@ -580,7 +580,7 @@ def kakao_callback(code: str):
     token_data   = token_resp.json()
     access_token = token_data.get("access_token")
     if not access_token:
-        raise HTTPException(400, "카카오 토큰 교환 실패")
+        raise HTTPException(400, "移댁뭅???좏겙 援먰솚 ?ㅽ뙣")
 
     userinfo_resp = httpx.get(
         "https://kapi.kakao.com/v2/user/me",
@@ -595,7 +595,7 @@ def kakao_callback(code: str):
     name          = profile.get("nickname") or email or f"kakao_{social_id}"
 
     if not social_id:
-        raise HTTPException(400, "카카오 사용자 정보를 가져올 수 없습니다.")
+        raise HTTPException(400, "移댁뭅???ъ슜???뺣낫瑜?媛?몄삱 ???놁뒿?덈떎.")
 
     customer_id, username, is_new = _find_or_create_social_user("kakao", social_id, email, name)
     token   = create_token(username, customer_id)
