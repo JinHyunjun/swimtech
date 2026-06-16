@@ -1,0 +1,351 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 나의 뱃지</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.badge-page {
+  padding: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.badge-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.back-btn {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .2s;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.badge-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
+.badge-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+
+/* 진행 카드 */
+.progress-card {
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 24px;
+}
+.progress-label {
+  font-size: var(--fs-body);
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.progress-count {
+  font-size: var(--fs-display);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.progress-count span { color: var(--blue); }
+.progress-bar-bg {
+  height: 8px;
+  background: rgba(255,255,255,.06);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #00b4d8, #48cae4);
+  transition: width .8s ease;
+}
+
+/* 뱃지 그리드 */
+.badge-section-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.badge-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+  position: relative;
+}
+.badge-card.earned {
+  border-color: rgba(0,180,216,.35);
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+}
+.badge-card.earned:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,180,216,.15);
+  border-color: var(--blue);
+}
+.badge-card.locked {
+  opacity: 0.45;
+}
+.badge-card.locked:hover {
+  opacity: 0.6;
+  transform: translateY(-1px);
+}
+
+.badge-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: var(--fs-body);
+}
+
+.badge-emoji {
+  font-size: var(--fs-display);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.badge-name {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.badge-desc {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.badge-mini-progress {
+  margin-top: 10px;
+  height: 4px;
+  background: rgba(255,255,255,.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.badge-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00b4d8, #48cae4);
+  border-radius: 2px;
+  transition: width .6s ease;
+}
+.badge-mini-label {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* 팝업 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: var(--fs-title);
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-emoji { font-size: var(--fs-display); margin-bottom: 14px; }
+.modal-name  { font-size: var(--fs-title); font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.modal-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+.modal-status {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+.modal-status.earned { background: rgba(74,222,128,.12); color: var(--green); border: 0.5px solid rgba(74,222,128,.3); }
+.modal-status.locked { background: rgba(255,255,255,.06); color: var(--muted); border: 0.5px solid var(--border); }
+
+@media (max-width: 500px) {
+  .badge-page { padding: 16px; }
+  .badge-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-left">
+      <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+      <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
+      <span class="logo-sub">나의 뱃지</span>
+    </div>
+    <div class="header-right">
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="badge-page">
+    <div class="badge-topbar">
+      <div>
+        <div class="badge-title">🏅 나의 뱃지</div>
+        <div class="badge-sub">수영 여정의 성과를 모아보세요</div>
+      </div>
+    </div>
+
+    <!-- 진행 현황 -->
+    <div class="progress-card">
+      <div class="progress-label">획득한 뱃지</div>
+      <div class="progress-count" id="prog-count"><span id="prog-earned">—</span> / <span id="prog-total">—</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- 획득 뱃지 -->
+    <div class="badge-section-title">✅ 획득한 뱃지</div>
+    <div id="earned-grid" class="badge-grid"></div>
+
+    <!-- 미획득 뱃지 -->
+    <div class="badge-section-title">🔒 도전 중인 뱃지</div>
+    <div id="locked-grid" class="badge-grid"></div>
+  </div>
+
+</div>
+
+<!-- 뱃지 상세 팝업 -->
+<div id="modal" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+    <div class="modal-emoji" id="m-emoji"></div>
+    <div class="modal-name"  id="m-name"></div>
+    <div class="modal-desc"  id="m-desc"></div>
+    <span class="modal-status" id="m-status"></span>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+let _badges = [];
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('open');
+}
+
+function openModal(badge) {
+  document.getElementById('m-emoji').textContent  = badge.emoji;
+  document.getElementById('m-name').textContent   = badge.name;
+  document.getElementById('m-desc').textContent   = badge.description;
+  const st = document.getElementById('m-status');
+  if (badge.earned) {
+    st.textContent  = '✅ 획득 완료';
+    st.className    = 'modal-status earned';
+  } else {
+    st.textContent  = `🔒 조건: ${badge.condition_label}`;
+    st.className    = 'modal-status locked';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function renderBadge(b) {
+  const p = b.progress;
+  const pctBar = b.earned ? 100 : p.percent;
+  return `
+    <div class="badge-card ${b.earned ? 'earned' : 'locked'}" onclick='openModal(${JSON.stringify(b)})'>
+      ${b.earned ? '<div class="badge-check">✅</div>' : ''}
+      <div class="badge-emoji">${b.emoji}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.description}</div>
+      ${!b.earned ? `
+        <div class="badge-mini-progress">
+          <div class="badge-mini-fill" style="width:${pctBar}%"></div>
+        </div>
+        <div class="badge-mini-label">${p.current} / ${p.target}</div>
+      ` : ''}
+    </div>`;
+}
+
+async function loadBadges() {
+  try {
+    const res = await fetch('/api/badges', { credentials: 'include' });
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    _badges = data.badges;
+
+    document.getElementById('prog-earned').textContent = data.earned_count;
+    document.getElementById('prog-total').textContent  = data.total_count;
+    const pct = data.total_count ? Math.round(data.earned_count / data.total_count * 100) : 0;
+    document.getElementById('prog-bar').style.width = pct + '%';
+
+    const earned = _badges.filter(b => b.earned);
+    const locked = _badges.filter(b => !b.earned);
+
+    document.getElementById('earned-grid').innerHTML =
+      earned.length ? earned.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">아직 획득한 뱃지가 없어요. 첫 분석을 시작해보세요!</div>';
+    document.getElementById('locked-grid').innerHTML =
+      locked.length ? locked.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">🎉 모든 뱃지를 획득했습니다!</div>';
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+(async () => {
+  try {
+    const r = await fetch('/auth/me', { credentials: 'include' });
+    if (!r.ok) { window.location.href = '/login'; return; }
+  } catch { window.location.href = '/login'; return; }
+  loadBadges();
+})();
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>
+
+
