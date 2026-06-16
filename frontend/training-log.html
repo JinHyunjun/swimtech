@@ -1,0 +1,855 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 훈련 일지</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+.tl-page { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+.tl-topbar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+}
+.tl-back {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: var(--radius-sm); padding: 6px 14px; font-size: var(--fs-caption); cursor: pointer;
+  transition: all .2s; text-decoration: none;
+}
+.tl-back:hover { border-color: var(--blue); color: var(--blue); }
+.tl-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+.tl-month-nav {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+}
+.tl-month-btn {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: var(--radius-sm); padding: 5px 10px; font-size: var(--fs-body); cursor: pointer; transition: all .2s;
+}
+.tl-month-btn:hover { border-color: var(--blue); color: var(--blue); }
+.tl-month-label { font-size: var(--fs-body); font-weight: 600; color: var(--text); min-width: 72px; text-align: center; }
+
+/* ── 통계 카드 ── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 16px; text-align: center;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.stat-card:hover { transform: translateY(-4px); border-color: var(--accent-secondary); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
+.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; color: var(--accent-secondary); }
+.stat-value { font-size: clamp(24px, 4.5vw, 34px); font-style: italic; font-weight: 900; letter-spacing: -0.03em; color: var(--blue); line-height: 1.1; }
+.stat-value.energy { color: var(--energy); }
+.stat-label { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
+
+/* ── 캘린더 ── */
+.cal-wrap {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 16px; margin-bottom: 24px;
+}
+.cal-head {
+  display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+  font-size: var(--fs-caption); font-weight: 600; color: var(--muted); margin-bottom: 8px;
+}
+.cal-body { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-day {
+  aspect-ratio: 1; border-radius: var(--radius-sm); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-size: var(--fs-caption); color: var(--muted);
+  position: relative; cursor: default;
+}
+.cal-day.has-log { cursor: pointer; }
+.cal-day-num { font-size: var(--fs-caption); line-height: 1; }
+.cal-dot {
+  width: 6px; height: 6px; border-radius: 50%; margin-top: 2px;
+}
+.cal-day.intensity-쉬움 .cal-dot  { background: var(--green); }
+.cal-day.intensity-보통 .cal-dot  { background: var(--blue); }
+.cal-day.intensity-힘듦 .cal-dot  { background: var(--red); }
+.cal-day.today .cal-day-num {
+  background: var(--blue); color: var(--bg); width: 20px; height: 20px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.cal-day.other-month { opacity: .3; }
+
+/* ── 차트 ── */
+.chart-wrap {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 16px; margin-bottom: 24px;
+}
+.chart-title { font-size: var(--fs-body); font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+.chart-canvas-wrap { height: 180px; }
+
+/* ── 기록 목록 ── */
+.log-list-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.log-list-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.btn-add-log {
+  background: var(--blue); color: var(--bg); border: none; border-radius: var(--radius-sm);
+  padding: 8px 18px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
+}
+.btn-add-log:hover { opacity: .85; }
+
+.log-item {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.log-item:hover { transform: translateY(-3px); border-color: var(--accent-secondary); box-shadow: 0 10px 24px rgba(0,150,180,.14); }
+.log-date-col { min-width: 44px; text-align: center; }
+.log-date-day { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -0.02em; color: var(--blue); line-height: 1; }
+.log-date-wd  { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+.log-body { flex: 1; }
+.log-row1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.log-stroke { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.log-badge {
+  font-size: var(--fs-caption); padding: 2px 8px; border-radius: var(--radius-md);
+  background: rgba(0,180,216,.15); color: var(--blue);
+}
+.log-badge.intensity-쉬움  { background: rgba(74,222,128,.15); color: var(--green); }
+.log-badge.intensity-보통  { background: rgba(0,180,216,.15);  color: var(--blue); }
+.log-badge.intensity-힘듦  { background: rgba(248,113,113,.15); color: var(--red); }
+.log-badge.mood-최고 { background: rgba(72,202,228,.15); color: var(--purple); }
+.log-badge.mood-좋음 { background: rgba(74,222,128,.15);  color: var(--green); }
+.log-badge.mood-보통 { background: rgba(0,180,216,.15);   color: var(--blue); }
+.log-badge.mood-나쁨 { background: rgba(248,113,113,.15); color: var(--red); }
+.log-row2 { font-size: var(--fs-caption); color: var(--muted); }
+.log-memo { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.log-actions { display: flex; gap: 6px; margin-left: auto; }
+.btn-log-edit, .btn-log-del {
+  background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--fs-caption); cursor: pointer; transition: all .2s;
+}
+.btn-log-edit:hover { border-color: var(--blue); color: var(--blue); }
+.btn-log-del:hover  { border-color: var(--red);  color: var(--red); }
+
+.log-empty {
+  text-align: center; padding: 48px 20px; color: var(--muted); font-size: var(--fs-body);
+}
+
+/* ── 모달 ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-backdrop.hidden { display: none; }
+.modal-box {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+  padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+}
+.modal-title {
+  font-size: var(--fs-body-lg); font-weight: 700; color: var(--text); margin-bottom: 20px;
+}
+.form-row { margin-bottom: 14px; }
+.form-label { font-size: var(--fs-caption); color: var(--muted); margin-bottom: 5px; display: block; }
+.form-control {
+  width: 100%; background: var(--surface); border: 0.5px solid var(--border);
+  color: var(--text); border-radius: var(--radius-sm); padding: 9px 12px; font-size: var(--fs-body); outline: none;
+  transition: border-color .2s;
+}
+.form-control:focus { border-color: var(--blue); }
+select.form-control option { background: var(--surface); }
+.form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-submit {
+  flex: 1; background: var(--blue); color: var(--bg); border: none; border-radius: var(--radius-sm);
+  padding: 11px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
+}
+.btn-submit:hover { opacity: .85; }
+.btn-cancel {
+  flex: 1; background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: var(--radius-sm); padding: 11px; font-size: var(--fs-body); cursor: pointer; transition: all .2s;
+}
+.btn-cancel:hover { border-color: var(--blue); color: var(--blue); }
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .tl-month-nav { display: none; }
+}
+
+/* ── 월간 목표 ── */
+.goal-section {
+  background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 14px 16px; margin-bottom: 18px;
+}
+.goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.goal-label { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
+.btn-set-goal {
+  background: none; border: 0.5px solid var(--blue); color: var(--blue);
+  border-radius: var(--radius-sm); padding: 4px 12px; font-size: var(--fs-caption); cursor: pointer; transition: all .2s;
+}
+.btn-set-goal:hover { background: rgba(0,180,216,.1); }
+.goal-progress-wrap {
+  height: 8px; background: var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 6px;
+}
+.goal-progress-bar {
+  height: 100%; background: var(--blue); border-radius: var(--radius-sm); transition: width .5s ease; width: 0%;
+}
+.goal-progress-bar.done { background: #4ade80; }
+.goal-progress-label { font-size: var(--fs-caption); color: var(--muted); }
+.goal-congrats { font-size: var(--fs-body); color: #4ade80; font-weight: 600; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
+    <span class="logo">SwimTech</span>
+    <span class="logo-sub">훈련 일지</span>
+  </div>
+  <div id="header-right" class="header-right"></div>
+</div>
+
+<div class="tl-page">
+
+  <!-- 상단 네비 -->
+  <div class="tl-topbar">
+    <h1 class="tl-title">훈련 일지</h1>
+    <div class="tl-month-nav">
+      <button class="tl-month-btn" id="prev-month">&#8249;</button>
+      <span class="tl-month-label" id="month-label"></span>
+      <button class="tl-month-btn" id="next-month">&#8250;</button>
+    </div>
+  </div>
+
+  <!-- 월간 목표 -->
+  <div class="goal-section" id="goal-section">
+    <div class="goal-header">
+      <span class="goal-label">이번 달 목표 거리</span>
+      <button class="btn-set-goal" id="btn-set-goal" onclick="openGoalModal()">목표 설정</button>
+    </div>
+    <div id="goal-body" style="display:none;">
+      <div class="goal-progress-wrap">
+        <div class="goal-progress-bar" id="goal-progress-bar"></div>
+      </div>
+      <div class="goal-progress-label">
+        <span id="goal-achieved">0</span>m / <span id="goal-target">0</span>m
+        (<span id="goal-pct">0</span>%)
+      </div>
+      <div class="goal-congrats" id="goal-congrats" style="display:none;">🎉 이번 달 목표를 달성했어요!</div>
+    </div>
+  </div>
+
+  <!-- 이번 달 통계 -->
+  <div class="stats-grid st-stagger" id="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
+      <div class="stat-value" id="stat-count">—</div>
+      <div class="stat-label">훈련 횟수</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg></div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">총 거리 (m)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-report"/></svg></div>
+      <div class="stat-value" id="stat-avg">—</div>
+      <div class="stat-label">평균 거리 (m)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
+      <div class="stat-value energy" id="stat-streak">—</div>
+      <div class="stat-label">연속 출석 (일)</div>
+    </div>
+  </div>
+
+  <!-- 캘린더 뷰 -->
+  <div class="cal-wrap">
+    <div class="cal-head">
+      <div>일</div><div>월</div><div>화</div><div>수</div>
+      <div>목</div><div>금</div><div>토</div>
+    </div>
+    <div class="cal-body" id="cal-body"></div>
+  </div>
+
+  <!-- 주간 거리 차트 -->
+  <div class="chart-wrap">
+    <div class="chart-title">이번 달 누적 거리 추이 (m)</div>
+    <div class="chart-canvas-wrap">
+      <canvas id="dist-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- 기록 목록 -->
+  <div class="log-list-head">
+    <div class="log-list-title" id="log-list-title">기록 목록</div>
+    <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
+  </div>
+  <div id="log-list"></div>
+
+</div>
+
+<!-- 목표 설정 모달 -->
+<div class="modal-backdrop hidden" id="goal-modal-backdrop">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-title">월간 목표 거리 설정</div>
+    <div class="form-row">
+      <label class="form-label">목표 거리 (m)</label>
+      <input class="form-control" type="number" id="f-goal-distance"
+             min="1" max="1000000" placeholder="예: 50000">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeGoalModal()">취소</button>
+      <button class="btn-submit" onclick="saveGoal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 기록 추가/수정 모달 -->
+<div class="modal-backdrop hidden" id="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">훈련 기록 추가</div>
+    <input type="hidden" id="edit-id" value="">
+
+    <div class="form-row">
+      <label class="form-label" for="f-date">날짜</label>
+      <input class="form-control" type="date" id="f-date">
+    </div>
+
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label" for="f-stroke">영법</label>
+        <select class="form-control" id="f-stroke">
+          <option>자유형</option>
+          <option>배영</option>
+          <option>평영</option>
+          <option>접영</option>
+          <option>혼영</option>
+          <option>자유수영</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-pool">레인 길이</label>
+        <select class="form-control" id="f-pool">
+          <option value="25">25m</option>
+          <option value="50">50m</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label" for="f-distance">총 거리 (m)</label>
+        <input class="form-control" type="number" id="f-distance" min="1" max="100000" placeholder="예: 2000">
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-duration">훈련 시간 (분)</label>
+        <input class="form-control" type="number" id="f-duration" min="1" max="1440" placeholder="예: 60">
+      </div>
+    </div>
+
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label" for="f-intensity">강도</label>
+        <select class="form-control" id="f-intensity">
+          <option>쉬움</option>
+          <option selected>보통</option>
+          <option>힘듦</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="f-mood">컨디션</label>
+        <select class="form-control" id="f-mood">
+          <option value="">선택 안 함</option>
+          <option>최고</option>
+          <option>좋음</option>
+          <option>보통</option>
+          <option>나쁨</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label" for="f-memo">메모 (선택)</label>
+      <textarea class="form-control" id="f-memo" rows="3" placeholder="오늘 훈련 메모를 남겨보세요" style="resize:vertical;"></textarea>
+    </div>
+
+    <div id="modal-error" style="color:var(--red);font-size: var(--fs-caption);margin-top:6px;display:none;"></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-modal-cancel">취소</button>
+      <button class="btn-submit" id="btn-modal-submit">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ── 상태 ──────────────────────────────────────────────────
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let logsCache    = [];
+let chartInst    = null;
+
+const WEEKDAYS = ['일','월','화','수','목','금','토'];
+
+// ── 인증 확인 ──────────────────────────────────────────────
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const me = await res.json();
+    document.getElementById('header-right').innerHTML = `
+      <span style="font-size: var(--fs-caption);color:var(--muted);">${me.username || me.name || ''}</span>
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);
+        color:var(--muted);border-radius: var(--radius-sm);padding:5px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
+    `;
+  } catch { window.location.href = '/login'; }
+})();
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+// ── 날짜 유틸 ─────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtDate(y, m, d) { return `${y}-${pad(m)}-${pad(d)}`; }
+function todayStr() {
+  const t = new Date();
+  return fmtDate(t.getFullYear(), t.getMonth()+1, t.getDate());
+}
+
+// ── 월 이동 ───────────────────────────────────────────────
+document.getElementById('prev-month').onclick = () => {
+  currentMonth--;
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  refresh();
+};
+document.getElementById('next-month').onclick = () => {
+  currentMonth++;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  refresh();
+};
+
+// ── 전체 새로 고침 ────────────────────────────────────────
+async function refresh() {
+  updateMonthLabel();
+  await Promise.all([loadStats(), loadLogs(), loadStreak(), loadGoal()]);
+}
+
+function updateMonthLabel() {
+  document.getElementById('month-label').textContent =
+    `${currentYear}.${pad(currentMonth)}`;
+}
+
+// ── 통계 로드 ─────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch(`/api/training-log/stats?year=${currentYear}&month=${currentMonth}`,
+      { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('stat-count').textContent = d.count.toLocaleString();
+    document.getElementById('stat-total').textContent = d.total_distance.toLocaleString();
+    document.getElementById('stat-avg').textContent   = (d.avg_distance || 0).toLocaleString();
+  } catch {}
+}
+
+// ── 연속 출석 ─────────────────────────────────────────────
+async function loadStreak() {
+  try {
+    const r = await fetch('/api/training-log/streak', { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('stat-streak').textContent = d.streak;
+  } catch {}
+}
+
+// ── 기록 목록 + 캘린더 + 차트 ────────────────────────────
+async function loadLogs() {
+  try {
+    const r = await fetch(`/api/training-log?year=${currentYear}&month=${currentMonth}`,
+      { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    logsCache = d.logs || [];
+    renderCalendar(logsCache);
+    renderLogList(logsCache);
+    renderChart(logsCache);
+  } catch {}
+}
+
+// ── 캘린더 렌더링 ─────────────────────────────────────────
+function renderCalendar(logs) {
+  const body = document.getElementById('cal-body');
+  body.innerHTML = '';
+
+  const logMap = {};
+  logs.forEach(l => {
+    const day = parseInt(l.log_date.split('-')[2]);
+    if (!logMap[day]) logMap[day] = [];
+    logMap[day].push(l);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+  const lastDate = new Date(currentYear, currentMonth, 0).getDate();
+  const today = new Date();
+
+  // 이전 달 빈 칸
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    body.appendChild(el);
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    const isToday = (today.getFullYear() === currentYear &&
+                     today.getMonth() + 1 === currentMonth &&
+                     today.getDate() === d);
+    if (isToday) el.classList.add('today');
+
+    const numEl = document.createElement('div');
+    numEl.className = 'cal-day-num';
+    numEl.textContent = d;
+    el.appendChild(numEl);
+
+    if (logMap[d]) {
+      el.classList.add('has-log');
+      const strongest = logMap[d].reduce((a, b) => {
+        const order = {쉬움:0, 보통:1, 힘듦:2};
+        return (order[b.intensity] || 0) > (order[a.intensity] || 0) ? b : a;
+      });
+      el.classList.add(`intensity-${strongest.intensity}`);
+      const dot = document.createElement('div');
+      dot.className = 'cal-dot';
+      el.appendChild(dot);
+      el.title = logMap[d].map(l => `${l.stroke_type} ${l.total_distance}m`).join(', ');
+      el.onclick = () => scrollToDate(fmtDate(currentYear, currentMonth, d));
+    }
+
+    body.appendChild(el);
+  }
+}
+
+function scrollToDate(dateStr) {
+  const el = document.querySelector(`[data-log-date="${dateStr}"]`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── 기록 목록 렌더링 ──────────────────────────────────────
+function renderLogList(logs) {
+  const container = document.getElementById('log-list');
+  const title = document.getElementById('log-list-title');
+  title.textContent = `${currentYear}년 ${currentMonth}월 기록 (${logs.length}건)`;
+
+  if (!logs.length) {
+    container.innerHTML = '<div class="log-empty">이번 달 훈련 기록이 없습니다.<br>기록을 추가해보세요! 🏊</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  const groups = {};
+  logs.forEach(l => {
+    if (!groups[l.log_date]) groups[l.log_date] = [];
+    groups[l.log_date].push(l);
+  });
+
+  Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(dateStr => {
+    const dayLogs = groups[dateStr];
+    const dt = new Date(dateStr + 'T00:00:00');
+    const wd = WEEKDAYS[dt.getDay()];
+    const dayNum = dt.getDate();
+
+    dayLogs.forEach((l, idx) => {
+      const item = document.createElement('div');
+      item.className = 'log-item';
+      item.setAttribute('data-log-date', dateStr);
+
+      const moodHtml = l.mood
+        ? `<span class="log-badge mood-${l.mood}">${l.mood}</span>` : '';
+      const memoHtml = l.memo
+        ? `<div class="log-memo">${escHtml(l.memo)}</div>` : '';
+
+      item.innerHTML = `
+        ${idx === 0 ? `
+        <div class="log-date-col">
+          <div class="log-date-day">${dayNum}</div>
+          <div class="log-date-wd">${wd}요일</div>
+        </div>` : '<div class="log-date-col"></div>'}
+        <div class="log-body">
+          <div class="log-row1">
+            <span class="log-stroke">${escHtml(l.stroke_type)}</span>
+            <span class="log-badge intensity-${l.intensity}">${l.intensity}</span>
+            ${moodHtml}
+          </div>
+          <div class="log-row2">
+            ${l.total_distance.toLocaleString()}m &nbsp;·&nbsp;
+            ${l.pool_length}m 레인 &nbsp;·&nbsp;
+            ${l.duration_minutes}분
+          </div>
+          ${memoHtml}
+        </div>
+        <div class="log-actions">
+          <button class="btn-log-edit" data-id="${l.id}">수정</button>
+          <button class="btn-log-del" data-id="${l.id}">삭제</button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+  });
+
+  container.querySelectorAll('.btn-log-edit').forEach(btn => {
+    btn.onclick = () => openEditModal(parseInt(btn.dataset.id));
+  });
+  container.querySelectorAll('.btn-log-del').forEach(btn => {
+    btn.onclick = () => deleteLog(parseInt(btn.dataset.id));
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── 차트 ─────────────────────────────────────────────────
+function renderChart(logs) {
+  const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+  const labels = Array.from({length: lastDay}, (_, i) => i + 1);
+  const distByDay = new Array(lastDay).fill(0);
+
+  logs.forEach(l => {
+    const d = parseInt(l.log_date.split('-')[2]) - 1;
+    if (d >= 0 && d < lastDay) distByDay[d] += l.total_distance;
+  });
+
+  // 누적
+  const cumData = distByDay.reduce((acc, v, i) => {
+    acc.push((acc[i - 1] || 0) + v);
+    return acc;
+  }, []);
+
+  const ctx = document.getElementById('dist-chart');
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '누적 거리 (m)',
+        data: cumData,
+        borderColor: '#00b4d8',
+        backgroundColor: 'rgba(0,180,216,.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2,
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: 'var(--border)' } },
+        y: { ticks: { color: '#90c4d4', font: { size: 10 } }, grid: { color: 'var(--border)' } },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+// ── 모달 열기/닫기 ────────────────────────────────────────
+document.getElementById('btn-open-modal').onclick = () => openAddModal();
+document.getElementById('btn-modal-cancel').onclick = closeModal;
+document.getElementById('modal-backdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+});
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = '훈련 기록 추가';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-date').value = todayStr();
+  document.getElementById('f-stroke').value = '자유형';
+  document.getElementById('f-pool').value = '25';
+  document.getElementById('f-distance').value = '';
+  document.getElementById('f-duration').value = '';
+  document.getElementById('f-intensity').value = '보통';
+  document.getElementById('f-mood').value = '';
+  document.getElementById('f-memo').value = '';
+  clearModalError();
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+  const log = logsCache.find(l => l.id === id);
+  if (!log) return;
+  document.getElementById('modal-title').textContent = '훈련 기록 수정';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-date').value = log.log_date;
+  document.getElementById('f-stroke').value = log.stroke_type;
+  document.getElementById('f-pool').value = log.pool_length;
+  document.getElementById('f-distance').value = log.total_distance;
+  document.getElementById('f-duration').value = log.duration_minutes;
+  document.getElementById('f-intensity').value = log.intensity;
+  document.getElementById('f-mood').value = log.mood || '';
+  document.getElementById('f-memo').value = log.memo || '';
+  clearModalError();
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.add('hidden');
+}
+
+function clearModalError() {
+  const el = document.getElementById('modal-error');
+  el.textContent = ''; el.style.display = 'none';
+}
+
+function showModalError(msg) {
+  const el = document.getElementById('modal-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ── 저장 ─────────────────────────────────────────────────
+document.getElementById('btn-modal-submit').onclick = saveLog;
+
+async function saveLog() {
+  clearModalError();
+  const editId = document.getElementById('edit-id').value;
+  const body = {
+    log_date:         document.getElementById('f-date').value,
+    stroke_type:      document.getElementById('f-stroke').value,
+    pool_length:      parseInt(document.getElementById('f-pool').value),
+    total_distance:   parseInt(document.getElementById('f-distance').value),
+    duration_minutes: parseInt(document.getElementById('f-duration').value),
+    intensity:        document.getElementById('f-intensity').value,
+    mood:             document.getElementById('f-mood').value || null,
+    memo:             document.getElementById('f-memo').value.trim() || null,
+  };
+
+  if (!body.log_date) { showModalError('날짜를 입력해주세요.'); return; }
+  if (!body.total_distance || body.total_distance < 1) { showModalError('거리를 입력해주세요.'); return; }
+  if (!body.duration_minutes || body.duration_minutes < 1) { showModalError('훈련 시간을 입력해주세요.'); return; }
+
+  const url    = editId ? `/api/training-log/${editId}` : '/api/training-log';
+  const method = editId ? 'PUT' : 'POST';
+
+  try {
+    const r = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) { showModalError(d.detail || '저장 실패'); return; }
+    closeModal();
+    refresh();
+    showReportToast(body.log_date);
+  } catch { showModalError('네트워크 오류가 발생했습니다.'); }
+}
+
+function showReportToast(logDate) {
+  const existing = document.getElementById('report-toast');
+  if (existing) existing.remove();
+  const ym = logDate ? logDate.slice(0, 7) : '';
+  const toast = document.createElement('div');
+  toast.id = 'report-toast';
+  toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--surface);border:0.5px solid var(--blue);border-radius: var(--radius-md);
+    padding:12px 18px;font-size: var(--fs-body);color:var(--text);z-index:9999;
+    display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);
+    animation:slideUp .3s ease;`;
+  toast.innerHTML = `
+    <span>📊 월간 리포트가 자동으로 업데이트됩니다.</span>
+    <a href="/report" style="color:var(--blue);font-weight:600;text-decoration:none;white-space:nowrap;">리포트 보기 →</a>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size: var(--fs-body-lg);padding:0;line-height:1;">✕</button>`;
+  const style = document.createElement('style');
+  style.textContent = '@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(style);
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+}
+
+// ── 삭제 ─────────────────────────────────────────────────
+async function deleteLog(id) {
+  if (!confirm('이 훈련 기록을 삭제할까요?')) return;
+  try {
+    const r = await fetch(`/api/training-log/${id}`, {
+      method: 'DELETE', credentials: 'include',
+    });
+    if (!r.ok) { alert('삭제 실패'); return; }
+    refresh();
+  } catch { alert('네트워크 오류'); }
+}
+
+// ── 월간 목표 ─────────────────────────────────────────────
+let _goalData = { goal_distance: 0, achieved_distance: 0 };
+
+async function loadGoal() {
+  try {
+    const r = await fetch(
+      `/api/training-log/goal?year=${currentYear}&month=${currentMonth}`,
+      { credentials: 'include' }
+    );
+    if (!r.ok) return;
+    _goalData = await r.json();
+    renderGoal();
+  } catch {}
+}
+
+function renderGoal() {
+  const { goal_distance, achieved_distance } = _goalData;
+  const body = document.getElementById('goal-body');
+  if (!goal_distance) { body.style.display = 'none'; return; }
+  body.style.display = 'block';
+  document.getElementById('goal-achieved').textContent = achieved_distance.toLocaleString();
+  document.getElementById('goal-target').textContent   = goal_distance.toLocaleString();
+  const pct = Math.min(Math.round(achieved_distance / goal_distance * 100), 100);
+  document.getElementById('goal-pct').textContent = pct;
+  const bar = document.getElementById('goal-progress-bar');
+  bar.style.width  = pct + '%';
+  bar.className    = 'goal-progress-bar' + (pct >= 100 ? ' done' : '');
+  document.getElementById('goal-congrats').style.display = pct >= 100 ? 'block' : 'none';
+}
+
+function openGoalModal() {
+  document.getElementById('f-goal-distance').value = _goalData.goal_distance || '';
+  document.getElementById('goal-modal-backdrop').classList.remove('hidden');
+}
+
+function closeGoalModal() {
+  document.getElementById('goal-modal-backdrop').classList.add('hidden');
+}
+
+async function saveGoal() {
+  const dist = parseInt(document.getElementById('f-goal-distance').value);
+  if (!dist || dist < 1) { alert('목표 거리를 입력해주세요.'); return; }
+  try {
+    const r = await fetch('/api/training-log/goal', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year: currentYear, month: currentMonth, goal_distance: dist }),
+    });
+    if (!r.ok) { alert('저장 실패'); return; }
+    _goalData.goal_distance = dist;
+    renderGoal();
+    closeGoalModal();
+  } catch { alert('네트워크 오류'); }
+}
+
+// ── 초기 로드 ─────────────────────────────────────────────
+refresh();
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>
+
+
+
