@@ -57,7 +57,7 @@ KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9]{4,20}$')
 _PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$')
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
-_NICKNAME_RE = re.compile(r'^[媛-?즑-zA-Z0-9]{2,20}$')
+_NICKNAME_RE = re.compile(r"^[\uac00-\ud7a3a-zA-Z0-9]{2,20}$")
 
 
 # ?? DB / Redis helpers ????????????????????????????????????????????????????????
@@ -484,8 +484,10 @@ def _load_google_client() -> dict:
             "token_uri": GOOGLE_TOKEN_URI,
         }
 
-    with open(GOOGLE_OAUTH_FILE) as f:
-        return json.load(f)["web"]
+    raise HTTPException(
+        status_code=503,
+        detail="Google OAuth environment variables GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET are not set on Render."
+    )
 
 
 @router.get("/google")
