@@ -1,18 +1,18 @@
-﻿{
+{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/api/(.*)",       "destination": "https://swimtech-api.onrender.com/api/$1" },
-    { "source": "/auth/(.*)",      "destination": "https://swimtech-api.onrender.com/auth/$1" },
-    { "source": "/customers/(.*)", "destination": "https://swimtech-api.onrender.com/customers/$1" },
+    { "source": "/api/:path*",       "destination": "https://swimtech-api.onrender.com/api/:path*" },
+    { "source": "/auth/:path*",      "destination": "https://swimtech-api.onrender.com/auth/:path*" },
+    { "source": "/customers/:path*", "destination": "https://swimtech-api.onrender.com/customers/:path*" },
 
-    { "source": "/pool",           "destination": "https://swimtech-api.onrender.com/pool" },
+    { "source": "/pool",             "destination": "https://swimtech-api.onrender.com/pool" },
 
-    { "source": "/share/(.*)",     "destination": "/share.html" },
-    { "source": "/badges",         "destination": "/badge.html" },
-    { "source": "/training-log",   "destination": "/training_log.html" },
-    { "source": "/app",            "destination": "/landing.html" },
-    { "source": "/",               "destination": "/landing.html" }
+    { "source": "/share/:path*",     "destination": "/share.html" },
+    { "source": "/badges",           "destination": "/badge.html" },
+    { "source": "/training-log",     "destination": "/training_log.html" },
+    { "source": "/app",              "destination": "/landing.html" },
+    { "source": "/",                 "destination": "/landing.html" }
   ]
 }
