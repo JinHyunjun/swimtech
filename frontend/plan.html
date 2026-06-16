@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1952,6 +1952,79 @@ async function sharePlan(key, title) {
 })();
 </script>
 <script src="/static/theme.js"></script>
+<style id="plan-category-scroll-fix">
+  .plan-category-scroll-fix {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+  }
+
+  .plan-category-scroll-fix > * {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  .plan-category-scroll-fix::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .plan-category-scroll-fix::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.45);
+    border-radius: 999px;
+  }
+
+  .plan-category-scroll-fix::-webkit-scrollbar-track {
+    background: transparent;
+  }
+</style>
+
+<script id="plan-category-scroll-fix-script">
+document.addEventListener('DOMContentLoaded', () => {
+  const labels = [
+    '기록 단축',
+    '건강하게 오래',
+    '영법 교정',
+    '취미/건강유지',
+    '다이어트',
+    '접영 마스터',
+    '마스터즈',
+    '체력 향상',
+    '교정 집중',
+    '랜덤 생성',
+    '직접 구성',
+    '내 플랜'
+  ];
+
+  const clickableItems = Array.from(
+    document.querySelectorAll('button, a, [role="button"], .tab, .chip')
+  );
+
+  const matchedItems = clickableItems.filter((el) => {
+    const text = (el.textContent || '').trim();
+    return labels.some((label) => text.includes(label));
+  });
+
+  const parentCount = new Map();
+
+  for (const item of matchedItems) {
+    const parent = item.parentElement;
+    if (!parent) continue;
+    parentCount.set(parent, (parentCount.get(parent) || 0) + 1);
+  }
+
+  for (const [parent, count] of parentCount.entries()) {
+    if (count >= 4) {
+      parent.classList.add('plan-category-scroll-fix');
+    }
+  }
+});
+</script>
 </body>
 </html>
 
