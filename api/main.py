@@ -416,6 +416,15 @@ def serve_home(request: Request):
     return _serve("landing.html")
 
 # 영상 분석 메타 선택 페이지
+# 관리자 슈퍼 대시보드
+@app.get("/admin")
+def serve_admin(request: Request):  # admin-only
+    redir = _auth_redirect(request)
+    if redir: return redir
+    if not _is_admin(request):
+        return RedirectResponse(url="/landing")
+    return _serve("admin.html")
+
 @app.get("/meta")
 def serve_meta(request: Request):  # admin-only
     redir = _auth_redirect(request)
