@@ -18,6 +18,7 @@ from jose import jwt
 from pydantic import BaseModel
 import psycopg2
 import bcrypt
+from activity_log import log_activity
 
 from rate_limit import limiter
 
@@ -326,6 +327,8 @@ def register(body: RegisterRequest):
         )
 
         conn.commit()
+        log_activity(username=body.username, event_type="register",
+                     action="register_success", metadata={"provider": "local"})
         return {"status": "ok"}
 
     except HTTPException:
@@ -375,6 +378,8 @@ def login(request: Request, body: LoginRequest, response: Response):
         pw_bytes = body.password.encode("utf-8")[:72]
         if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
             _increment_login_fail(ip)
+            log_activity(username=body.username, event_type="login_fail",
+                         action="login", ip_address=ip)
             raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
         customer_id = db_id
     else:
@@ -383,6 +388,9 @@ def login(request: Request, body: LoginRequest, response: Response):
             raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
 
     _clear_login_fail(ip)
+    log_activity(customer_id=customer_id, username=body.username,
+                 event_type="login_success", action="login",
+                 ip_address=ip)
     token   = create_token(body.username, customer_id)
     refresh = create_refresh_token(body.username, customer_id)
     _set_auth_cookie(response, token)
@@ -411,7 +419,14 @@ def refresh_token_endpoint(
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(response: Response, swimtech_token: str = Cookie(default=None)):
+    if swimtech_token:
+        try:
+            payload = decode_token(swimtech_token)
+            log_activity(customer_id=payload.get("customer_id"), username=payload.get("sub"),
+                         event_type="logout", action="logout")
+        except Exception:
+            pass
     response.delete_cookie("swimtech_token")
     response.delete_cookie("swimtech_refresh_token")
     return {"status": "ok", "message": "로그아웃 완료"}

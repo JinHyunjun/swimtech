@@ -11,8 +11,9 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat
-from routers.auth import verify_token
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin
+from activity_log import log_activity, resolve_menu_name
+from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
 
@@ -224,7 +225,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def _log_page_views(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        path = request.url.path
+        if request.method == "GET" and not any(
+            path.startswith(p) for p in _API_PREFIXES
+        ) and not path.startswith("/static"):
+            menu = resolve_menu_name(path)
+            if menu:
+                token = request.cookies.get("swimtech_token")
+                username = None
+                customer_id = None
+                if token:
+                    try:
+                        payload = decode_token(token)
+                        username = payload.get("sub")
+                        customer_id = payload.get("customer_id")
+                    except Exception:
+                        pass
+                log_activity(
+                    customer_id=customer_id, username=username,
+                    event_type="page_view", page=path, menu_name=menu,
+                    method=request.method, path=path,
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                )
+    except Exception:
+        pass
+    return response
+
 app.include_router(auth.router,      prefix="/auth",      tags=["인증"])
+app.include_router(admin.router,     prefix="/api/admin", tags=["관리자"])
 app.include_router(videos.router,    prefix="/videos",    tags=["영상"])
 app.include_router(customers.router, prefix="/customers", tags=["고객"])
 app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
@@ -346,11 +379,27 @@ def _auth_redirect(request: Request):
     return None
 
 def _is_admin(request: Request) -> bool:
-    """관리자 계정 여부 확인."""
+    """관리자 계정 여부 확인. role='admin' 컬럼 우선, ADMIN_ID는 과도기 호환 폴백."""
     token = request.cookies.get("swimtech_token")
     if not token:
         return False
-    username = verify_token(token)
+    from routers.auth import decode_token
+    payload = decode_token(token)
+    username = payload.get("sub")
+    customer_id = payload.get("customer_id")
+    if not username:
+        return False
+    if customer_id:
+        try:
+            conn = psycopg2.connect(os.getenv("DATABASE_URL", ""))
+            cur = conn.cursor()
+            cur.execute("SELECT role FROM customers WHERE id = %s", (customer_id,))
+            row = cur.fetchone()
+            cur.close(); conn.close()
+            if row and row[0] == "admin":
+                return True
+        except Exception:
+            pass
     return username == os.getenv("ADMIN_ID", "admin")
 
 def _serve(filename: str):
