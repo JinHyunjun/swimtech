@@ -591,7 +591,7 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
         )
         if cur.fetchone():
             cur.close(); conn.close()
-        raise HTTPException(400, "이미 사용 중인 닉네임입니다.")
+            raise HTTPException(400, "이미 사용 중인 닉네임입니다.")
         cur.execute(
             "UPDATE customers SET nickname = %s WHERE id = %s",
             (nickname, customer_id),
@@ -606,7 +606,7 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
         raise HTTPException(500, "이미 오류가 발생했습니다.")
 
 
-# ?? Google OAuth ??????????????????????????????????????????????????????????????
+# ── Google OAuth ─────────────────────────────────────────────────────────────
 
 def _load_google_client() -> dict:
     if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
