@@ -279,53 +279,74 @@ def _find_or_create_social_user(
 
 @router.post("/register")
 def register(body: RegisterRequest):
-    name = _strip_tags(body.name.strip())
+    name = _strip_tags((body.name or "").strip())
+    email = (body.email or "").strip()
+    username = (body.username or "").strip()
+    password = body.password or ""
+
     if not name:
-        raise HTTPException(400, "?대쫫???낅젰?댁＜?몄슂.")
+        raise HTTPException(400, "이름을 입력해주세요.")
+
     if len(name) > 50:
-        raise HTTPException(400, "?대쫫? 理쒕? 50?먭퉴吏 ?덉슜?⑸땲??")
+        raise HTTPException(400, "이름은 최대 50자까지 허용됩니다.")
 
     try:
-        validate_email(body.email, check_deliverability=False)
+        validate_email(email, check_deliverability=False)
     except EmailNotValidError:
-        raise HTTPException(400, "?좏슚?섏? ?딆? ?대찓???뺤떇?낅땲??")
+        raise HTTPException(400, "유효하지 않은 이메일 형식입니다.")
 
-    if not _USERNAME_RE.match(body.username):
-        raise HTTPException(400, "?꾩씠?붾뒗 ?곷Ц/?レ옄 4~20?먯뿬???⑸땲??")
+    if not _USERNAME_RE.match(username):
+        raise HTTPException(400, "아이디는 영문/숫자 4~20자여야 합니다.")
 
-    if not _PASSWORD_RE.match(body.password):
-        raise HTTPException(400, "鍮꾨?踰덊샇??理쒖냼 8???댁긽, ?곷Ц怨??レ옄瑜??ы븿?댁빞 ?⑸땲??")
+    if not _PASSWORD_RE.match(password):
+        raise HTTPException(400, "비밀번호는 최소 8자 이상, 영문과 숫자를 포함해야 합니다.")
+
+    conn = None
+    cur = None
 
     try:
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("SELECT id FROM customers WHERE username = %s", (body.username,))
+        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
         if cur.fetchone():
-            cur.close(); conn.close()
-            raise HTTPException(400, "?대? ?ъ슜 以묒씤 ?꾩씠?붿엯?덈떎.")
+            raise HTTPException(400, "이미 사용 중인 아이디입니다.")
 
-        cur.execute("SELECT id FROM customers WHERE email = %s", (body.email,))
+        cur.execute("SELECT id FROM customers WHERE email = %s", (email,))
         if cur.fetchone():
-            cur.close(); conn.close()
-            raise HTTPException(400, "?대? ?ъ슜 以묒씤 ?대찓?쇱엯?덈떎.")
+            raise HTTPException(400, "이미 사용 중인 이메일입니다.")
 
-        password_bytes = body.password.encode("utf-8")[:72]
-        password_hash  = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
+        password_bytes = password.encode("utf-8")[:72]
+        password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
+
         cur.execute(
             "INSERT INTO customers (name, email, username, password_hash, social_provider)"
             " VALUES (%s, %s, %s, %s, 'local')",
-            (name, body.email, body.username, password_hash),
+            (name, email, username, password_hash),
         )
+
         conn.commit()
-        cur.close(); conn.close()
         return {"status": "ok"}
+
     except HTTPException:
         raise
+
     except Exception:
         logger.error("register: DB error", exc_info=True)
-        raise HTTPException(500, "?대? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.")
+        raise HTTPException(500, "내부 오류가 발생했습니다.")
 
+    finally:
+        if cur is not None:
+            try:
+                cur.close()
+            except Exception:
+                pass
+
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 @router.post("/login")
 @limiter.limit("30/minute")
