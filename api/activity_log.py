@@ -12,7 +12,11 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 
 def _get_db():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SET TIME ZONE 'Asia/Seoul'")
+    cur.close()
+    return conn
 
 
 def log_activity(

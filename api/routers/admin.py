@@ -13,7 +13,11 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 
 def _get_db():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SET TIME ZONE 'Asia/Seoul'")
+    cur.close()
+    return conn
 
 
 def _ensure_table():
@@ -105,7 +109,8 @@ def get_dashboard(swimtech_token: str = Cookie(default=None)):
     by_provider = {row[0]: row[1] for row in cur.fetchall()}
 
     cur.execute("""
-        SELECT id, name, username, COALESCE(social_provider,'local'), created_at
+        SELECT id, name, username, COALESCE(social_provider,'local'),
+               created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at
         FROM customers
         WHERE COALESCE(status,'active') <> 'deleted'
         ORDER BY created_at DESC
@@ -142,7 +147,9 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
         like = f"%{q}%"
         cur.execute("""
             SELECT id, name, email, username, nickname,
-                   COALESCE(social_provider,'local'), created_at, last_login_at,
+                   COALESCE(social_provider,'local'),
+                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
+                   last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
                    COALESCE(status,'active')
             FROM customers
             WHERE (name ILIKE %s OR email ILIKE %s OR username ILIKE %s OR nickname ILIKE %s)
@@ -152,7 +159,9 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
     else:
         cur.execute("""
             SELECT id, name, email, username, nickname,
-                   COALESCE(social_provider,'local'), created_at, last_login_at,
+                   COALESCE(social_provider,'local'),
+                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
+                   last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
                    COALESCE(status,'active')
             FROM customers
             ORDER BY created_at DESC
