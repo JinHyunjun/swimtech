@@ -1,5 +1,5 @@
 """
-SwimTech ???몄쬆 紐⑤뱢
+SwimTech — 인증 모듈
 JWT 기반 로컬 로그인 + Google / Kakao 소셜 로그인
 """
 import json
@@ -49,7 +49,7 @@ GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oa
 GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token")
 
 # BASE_URL: Cloudflare Tunnel 등 외부 도메인 사용 시 환경변수로 주입
-# ?? BASE_URL=https://wilderness-xxx.trycloudflare.com
+# 예) BASE_URL=https://wilderness-xxx.trycloudflare.com
 _BASE_URL = os.getenv("BASE_URL", "https://localhost").rstrip("/")
 GOOGLE_REDIRECT_URI = f"{_BASE_URL}/auth/google/callback"
 KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
@@ -57,10 +57,10 @@ KAKAO_REDIRECT_URI  = f"{_BASE_URL}/auth/kakao/callback"
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9]{4,20}$')
 _PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d).{8,}$')
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
-_NICKNAME_RE = re.compile(r"^[\uac00-\ud7a3a-zA-Z0-9]{2,20}$")
+_NICKNAME_RE = re.compile(r'^[가-힣a-zA-Z0-9]{2,20}$')
 
 
-# ?? DB / Redis helpers ????????????????????????????????????????????????????????
+# ── DB / Redis helpers ────────────────────────────────────────────────────────
 
 def get_db():
     return psycopg2.connect(DATABASE_URL)
@@ -86,7 +86,7 @@ def _strip_tags(text: str) -> str:
     return _HTML_TAG_RE.sub("", text) if text else ""
 
 
-# ── 로그인 실패 추적 ──────────────────────────────────────────────────
+# ── 로그인 실패 추적 ──────────────────────────────────────────────────────────
 
 def _check_login_blocked(ip: str):
     r = _get_redis()
@@ -126,7 +126,7 @@ def _clear_login_fail(ip: str):
         pass
 
 
-# ── 소셜 컬럼 마이그레이션 ────────────────────────────────────────────
+# ── 소셜 컬럼 마이그레이션 ────────────────────────────────────────────────────
 
 def _ensure_social_columns():
     try:
@@ -145,7 +145,7 @@ def _ensure_social_columns():
 _ensure_social_columns()
 
 
-# ?? Pydantic 紐⑤뜽 ?????????????????????????????????????????????????????????????
+# ── Pydantic 모델 ─────────────────────────────────────────────────────────────
 
 class LoginRequest(BaseModel):
     username: str
@@ -163,7 +163,7 @@ class NicknameRequest(BaseModel):
     nickname: str
 
 
-# ?? ?좏겙 ?좏떥 ?????????????????????????????????????????????????????????????????
+# ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
 
 def create_token(username: str, customer_id: int | None = None) -> str:
     expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
@@ -220,7 +220,7 @@ def _set_refresh_cookie(response: Response, token: str):
     )
 
 
-# ── 소셜 사용자 조회/생성 ───────────────────────────────────────────
+# ── 소셜 사용자 조회/생성 ─────────────────────────────────────────────────────
 
 def _find_or_create_social_user(
     provider: str,
@@ -275,7 +275,7 @@ def _find_or_create_social_user(
     return customer_id, username, True
 
 
-# ── 로컬 인증 ───────────────────────────────────────────────────────
+# ── 로컬 인증 ─────────────────────────────────────────────────────────────────
 
 @router.post("/register")
 def register(body: RegisterRequest):
@@ -368,26 +368,26 @@ def login(request: Request, body: LoginRequest, response: Response):
         conn.close()
     except Exception:
         logger.error("login: DB error", exc_info=True)
-        raise HTTPException(500, "이미 오류가 발생했습니다.")
+        raise HTTPException(500, "내부 오류가 발생했습니다.")
 
     if row:
         db_id, password_hash = row
         pw_bytes = body.password.encode("utf-8")[:72]
         if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
             _increment_login_fail(ip)
-        raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
+            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
         customer_id = db_id
     else:
         if body.username != ADMIN_ID or body.password != ADMIN_PW:
             _increment_login_fail(ip)
-        raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
+            raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
 
     _clear_login_fail(ip)
     token   = create_token(body.username, customer_id)
     refresh = create_refresh_token(body.username, customer_id)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, refresh)
-    return {"status": "ok", "message": f"{body.username}???섏쁺?⑸땲??"}
+    return {"status": "ok", "message": f"{body.username}님 환영합니다!"}
 
 
 @router.post("/refresh")
