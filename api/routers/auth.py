@@ -395,7 +395,21 @@ def login(request: Request, body: LoginRequest, response: Response):
     refresh = create_refresh_token(body.username, customer_id)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, refresh)
-    return {"status": "ok", "message": f"{body.username}님 환영합니다!"}
+
+    is_admin = (body.username == ADMIN_ID)
+    if not is_admin and customer_id:
+        try:
+            conn2 = get_db()
+            cur2 = conn2.cursor()
+            cur2.execute("SELECT role FROM customers WHERE id = %s", (customer_id,))
+            row2 = cur2.fetchone()
+            cur2.close(); conn2.close()
+            if row2 and row2[0] == "admin":
+                is_admin = True
+        except Exception:
+            pass
+
+    return {"status": "ok", "message": f"{body.username}님 환영합니다!", "is_admin": is_admin}
 
 
 @router.post("/refresh")
