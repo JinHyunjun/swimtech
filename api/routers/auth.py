@@ -542,20 +542,26 @@ def me(swimtech_token: str = Cookie(default=None)):
     nickname        = None
     social_provider = None
 
-    if customer_id:
-        try:
-            conn = get_db()
-            cur = conn.cursor()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        if customer_id:
             cur.execute(
                 "SELECT nickname, social_provider FROM customers WHERE id = %s",
                 (customer_id,),
             )
-            row = cur.fetchone()
-            cur.close(); conn.close()
-            if row:
-                nickname, social_provider = row
-        except Exception:
-            logger.warning("me: DB lookup failed", exc_info=True)
+        else:
+            # local 로그인은 토큰에 customer_id가 없으므로 username으로 조회
+            cur.execute(
+                "SELECT nickname, social_provider FROM customers WHERE username = %s",
+                (username,),
+            )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        if row:
+            nickname, social_provider = row
+    except Exception:
+        logger.warning("me: DB lookup failed", exc_info=True)
 
     return {
         "username":        username,
@@ -563,7 +569,7 @@ def me(swimtech_token: str = Cookie(default=None)):
         "status":          "authenticated",
         "nickname":        nickname,
         "social_provider": social_provider,
-        "needs_nickname":  nickname is None and social_provider not in (None, "local"),
+        "needs_nickname":  nickname is None,
     }
 
 
@@ -572,11 +578,10 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
     if not swimtech_token:
         raise HTTPException(401, "로그인이 필요합니다.")
     payload = decode_token(swimtech_token)
-    if not payload.get("sub"):
+    username_in_token = payload.get("sub")
+    if not username_in_token:
         raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
     customer_id = payload.get("customer_id")
-    if not customer_id:
-        raise HTTPException(400, "닉네임 설정은 소셜 로그인 계정만 가능합니다.")
 
     nickname = body.nickname.strip()
     if not _NICKNAME_RE.match(nickname):
@@ -585,6 +590,20 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
     try:
         conn = get_db()
         cur = conn.cursor()
+
+        # 소셜 로그인은 토큰에 customer_id가 있고, 일반(local) 로그인은 없음.
+        # local 계정도 username으로 자기 customers row를 찾아 동일하게 처리.
+        if not customer_id:
+            cur.execute(
+                "SELECT id FROM customers WHERE username = %s",
+                (username_in_token,),
+            )
+            row0 = cur.fetchone()
+            if not row0:
+                cur.close(); conn.close()
+                raise HTTPException(404, "계정 정보를 찾을 수 없습니다.")
+            customer_id = row0[0]
+
         cur.execute(
             "SELECT id FROM customers WHERE nickname = %s AND id != %s",
             (nickname, customer_id),
@@ -681,7 +700,7 @@ def google_callback(code: str):
     return resp
 
 
-# ?? Kakao OAuth ???????????????????????????????????????????????????????????????
+# ── Kakao OAuth ──────────────────────────────────────────────────────────────
 
 @router.get("/kakao")
 def kakao_login():
