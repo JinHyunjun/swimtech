@@ -417,6 +417,89 @@ def logout(response: Response):
     return {"status": "ok", "message": "濡쒓렇?꾩썐 ?꾨즺"}
 
 
+
+@router.delete("/me")
+def delete_me(response: Response, swimtech_token: str = Cookie(default=None)):
+    if not swimtech_token:
+        raise HTTPException(401, '\ub85c\uadf8\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.')
+
+    payload = decode_token(swimtech_token)
+    username = payload.get("sub")
+    customer_id = payload.get("customer_id")
+
+    if not username:
+        raise HTTPException(401, '\uc138\uc158\uc774 \ub9cc\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \ub85c\uadf8\uc778\ud574\uc8fc\uc138\uc694.')
+
+    if not customer_id:
+        raise HTTPException(400, '\uad00\ub9ac\uc790 \uacc4\uc815\uc740 \ud68c\uc6d0 \ud0c8\ud1f4\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.')
+
+    conn = None
+    cur = None
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ")
+
+        cur.execute(
+            "SELECT id FROM customers WHERE id = %s AND COALESCE(status, 'active') <> 'deleted'",
+            (customer_id,),
+        )
+
+        if not cur.fetchone():
+            raise HTTPException(404, '\uc774\ubbf8 \ud0c8\ud1f4\ud588\uac70\ub098 \uc874\uc7ac\ud558\uc9c0 \uc54a\ub294 \uacc4\uc815\uc785\ub2c8\ub2e4.')
+
+        cur.execute(
+            """
+            UPDATE customers
+               SET status = 'deleted',
+                   deleted_at = NOW(),
+                   last_login_at = NULL,
+                   name = 'withdrawn_user',
+                   email = 'deleted_' || id || '_' || EXTRACT(EPOCH FROM NOW())::bigint || '@deleted.local',
+                   username = 'deleted_' || id || '_' || EXTRACT(EPOCH FROM NOW())::bigint,
+                   nickname = NULL,
+                   password_hash = NULL,
+                   social_provider = NULL,
+                   social_id = NULL
+             WHERE id = %s
+            """,
+            (customer_id,),
+        )
+
+        conn.commit()
+
+        response.delete_cookie("swimtech_token")
+        response.delete_cookie("swimtech_refresh_token")
+
+        return {"status": "ok", "message": '\ud68c\uc6d0 \ud0c8\ud1f4\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4.'}
+
+    except HTTPException:
+        if conn is not None:
+            conn.rollback()
+        raise
+
+    except Exception:
+        if conn is not None:
+            conn.rollback()
+        logger.error("delete_me: DB error", exc_info=True)
+        raise HTTPException(500, '\ud68c\uc6d0 \ud0c8\ud1f4 \ucc98\ub9ac \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.')
+
+    finally:
+        if cur is not None:
+            try:
+                cur.close()
+            except Exception:
+                pass
+
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
 @router.get("/me")
 def me(swimtech_token: str = Cookie(default=None)):
     if not swimtech_token:

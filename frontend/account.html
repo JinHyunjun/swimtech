@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SwimTech — 계정 관리</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/theme.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #304b60;
+      color: #eaf6ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    .card {
+      background: rgba(20, 45, 68, 0.9);
+      border: 1px solid rgba(130, 210, 230, 0.25);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 30px;
+    }
+
+    p {
+      line-height: 1.7;
+      color: #cce8f3;
+    }
+
+    .warning {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255, 120, 120, 0.8);
+      background: rgba(255, 80, 80, 0.08);
+      color: #ffd0d0;
+      border-radius: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+
+    button, a.button {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 16px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .back {
+      background: #14b8d0;
+      color: white;
+    }
+
+    .danger {
+      background: #ff5a5f;
+      color: white;
+    }
+
+    .danger:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 18px;
+      min-height: 24px;
+      color: #ffb3b3;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <h1>계정 관리</h1>
+      <p>현재 로그인된 SwimTech 계정을 탈퇴할 수 있습니다.</p>
+
+      <div class="warning">
+        회원 탈퇴를 진행하면 계정은 비활성화되고, 이메일/아이디/소셜 로그인 정보는 익명화됩니다.
+        탈퇴 후에는 현재 계정으로 다시 로그인할 수 없습니다.
+      </div>
+
+      <div class="actions">
+        <a class="button back" href="/">홈으로 돌아가기</a>
+        <button id="deleteBtn" class="danger" type="button">회원 탈퇴</button>
+      </div>
+
+      <div id="message"></div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = 'https://swimtech-api.onrender.com';
+    const deleteBtn = document.getElementById('deleteBtn');
+    const message = document.getElementById('message');
+
+    function showMessage(text) {
+      message.textContent = text || '';
+    }
+
+    deleteBtn.addEventListener('click', async () => {
+      const firstConfirm = confirm('정말 회원 탈퇴를 진행하시겠습니까?');
+      if (!firstConfirm) return;
+
+      const typed = prompt('회원 탈퇴를 진행하려면 "탈퇴"를 입력해주세요.');
+      if (typed !== '탈퇴') {
+        showMessage('회원 탈퇴가 취소되었습니다.');
+        return;
+      }
+
+      deleteBtn.disabled = true;
+      showMessage('회원 탈퇴 처리 중입니다...');
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (e) {}
+
+        if (!res.ok) {
+          throw new Error(data.detail || data.message || '회원 탈퇴에 실패했습니다.');
+        }
+
+        alert(data.message || '회원 탈퇴가 완료되었습니다.');
+        location.href = '/login.html';
+      } catch (err) {
+        showMessage(err.message || '회원 탈퇴 처리 중 오류가 발생했습니다.');
+        deleteBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
