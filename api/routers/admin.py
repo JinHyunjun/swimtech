@@ -7,6 +7,7 @@ import os
 import psycopg2
 from fastapi import APIRouter, Request, HTTPException, Cookie
 from routers.auth import decode_token
+from activity_log import log_activity, resolve_menu_name
 
 router = APIRouter()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
@@ -76,6 +77,37 @@ def _require_admin(swimtech_token: str):
     if not is_admin:
         raise HTTPException(403, "관리자 권한이 필요합니다.")
     return username
+
+
+@router.post("/track")
+def track_page_view(request: Request, swimtech_token: str = Cookie(default=None)):
+    """프론트(theme.js)에서 호출하는 페이지뷰 추적. 인증 불필요(비로그인 방문도 기록 가능)."""
+    try:
+        page = request.query_params.get("page")
+        menu = resolve_menu_name(page) if page else None
+        if not menu:
+            return {"status": "skipped"}
+
+        username = None
+        customer_id = None
+        if swimtech_token:
+            try:
+                payload = decode_token(swimtech_token)
+                username = payload.get("sub")
+                customer_id = payload.get("customer_id")
+            except Exception:
+                pass
+
+        log_activity(
+            customer_id=customer_id, username=username,
+            event_type="page_view", page=page, menu_name=menu,
+            method="GET", path=page,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+        return {"status": "ok"}
+    except Exception:
+        return {"status": "error"}
 
 
 @router.get("/dashboard")
