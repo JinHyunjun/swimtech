@@ -1,0 +1,37 @@
+# 정기 자동 QA — qa_runner.py 로 핵심 기능 회귀 검증
+# 공개 레포 기준 무료. 결과는 Actions 로그 + 아티팩트(qa_report.json)로 확인.
+name: qa
+
+on:
+  schedule:
+    - cron: "0 0 * * *"       # 매일 09:00 KST (UTC 00:00)
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Run QA
+        env:
+          # 고정 QA 계정 (DB 누적 방지). Secrets로 관리.
+          QA_USERNAME: ${{ secrets.QA_USERNAME }}
+          QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+          QA_EMAIL:    ${{ secrets.QA_EMAIL }}
+        run: |
+          python scripts/qa_runner.py --no-admin
+
+      - name: Upload QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report
+          path: qa_report.json
