@@ -580,3 +580,56 @@ def serve_icon(filename: str):
 
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+
+# --- SwimTech safe HTTP error messages ---
+from fastapi import Request as _SwimTechRequest, HTTPException as _SwimTechHTTPException
+from fastapi.responses import JSONResponse as _SwimTechJSONResponse
+
+
+def _swimtech_looks_mojibake(value):
+    if not isinstance(value, str):
+        return False
+
+    bad_count = 0
+    for ch in value:
+        code = ord(ch)
+        if ch == "\ufffd" or code == 0x80 or (0x4E00 <= code <= 0x9FFF):
+            bad_count += 1
+
+    markers = [
+        "\ufffd", "\u5a9b", "\u7b4c", "\u56a5", "\u75ab",
+        "\u7374", "\u63f6", "\u938c", "\uf9cf", "\u6f61"
+    ]
+
+    return bad_count >= 1 or any(marker in value for marker in markers)
+
+
+def _swimtech_default_error_message(status_code):
+    messages = {
+        400: "\uc785\ub825\uac12\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.",
+        401: "\ub85c\uadf8\uc778\uc774 \ud544\uc694\ud558\uac70\ub098 \uc778\uc99d \uc815\ubcf4\uac00 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.",
+        403: "\uc811\uadfc \uad8c\ud55c\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.",
+        404: "\uc694\uccad\ud55c \uc815\ubcf4\ub97c \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.",
+        409: "\uc774\ubbf8 \uc874\uc7ac\ud558\ub294 \ub370\uc774\ud130\uc785\ub2c8\ub2e4.",
+        422: "\uc694\uccad \ud615\uc2dd\uc774 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.",
+        429: "\uc694\uccad\uc774 \ub108\ubb34 \ub9ce\uc2b5\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.",
+        500: "\uc11c\ubc84 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.",
+        503: "\uc11c\ube44\uc2a4 \uc124\uc815\uc774 \uc644\ub8cc\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4.",
+    }
+    return messages.get(status_code, "\uc694\uccad\uc744 \ucc98\ub9ac\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.")
+
+
+@app.exception_handler(_SwimTechHTTPException)
+async def _swimtech_http_exception_handler(request: _SwimTechRequest, exc: _SwimTechHTTPException):
+    detail = exc.detail
+
+    if isinstance(detail, str) and _swimtech_looks_mojibake(detail):
+        detail = _swimtech_default_error_message(exc.status_code)
+
+    return _SwimTechJSONResponse(
+        status_code=exc.status_code,
+        content={"detail": detail},
+        headers=getattr(exc, "headers", None),
+    )
+
