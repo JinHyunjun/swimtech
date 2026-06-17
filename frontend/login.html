@@ -254,7 +254,10 @@ async function doLogin() {
     });
 
     if (res.ok) {
-      if (!localStorage.getItem('onboarding_done')) {
+      const loginData = await res.json();
+      if (loginData.is_admin) {
+        window.location.href = '/admin';
+      } else if (!localStorage.getItem('onboarding_done')) {
         window.location.href = '/onboarding';
       } else {
         window.location.href = '/';
