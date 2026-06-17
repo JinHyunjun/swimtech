@@ -285,21 +285,21 @@ def register(body: RegisterRequest):
     password = body.password or ""
 
     if not name:
-        raise HTTPException(400, "이름을 입력해주세요.")
+        raise HTTPException(400, "\uc774\ub984\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694.")
 
     if len(name) > 50:
-        raise HTTPException(400, "이름은 최대 50자까지 허용됩니다.")
+        raise HTTPException(400, "\uc774\ub984\uc740 \ucd5c\ub300 50\uc790\uae4c\uc9c0 \ud5c8\uc6a9\ub429\ub2c8\ub2e4.")
 
     try:
         validate_email(email, check_deliverability=False)
     except EmailNotValidError:
-        raise HTTPException(400, "유효하지 않은 이메일 형식입니다.")
+        raise HTTPException(400, "\uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 \uc774\uba54\uc77c \ud615\uc2dd\uc785\ub2c8\ub2e4.")
 
     if not _USERNAME_RE.match(username):
-        raise HTTPException(400, "아이디는 영문/숫자 4~20자여야 합니다.")
+        raise HTTPException(400, "\uc544\uc774\ub514\ub294 \uc601\ubb38/\uc22b\uc790 4~20\uc790\uc5ec\uc57c \ud569\ub2c8\ub2e4.")
 
     if not _PASSWORD_RE.match(password):
-        raise HTTPException(400, "비밀번호는 최소 8자 이상, 영문과 숫자를 포함해야 합니다.")
+        raise HTTPException(400, "\ube44\ubc00\ubc88\ud638\ub294 \ucd5c\uc18c 8\uc790 \uc774\uc0c1, \uc601\ubb38\uacfc \uc22b\uc790\ub97c \ud3ec\ud568\ud574\uc57c \ud569\ub2c8\ub2e4.")
 
     conn = None
     cur = None
@@ -310,11 +310,11 @@ def register(body: RegisterRequest):
 
         cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
         if cur.fetchone():
-            raise HTTPException(400, "이미 사용 중인 아이디입니다.")
+            raise HTTPException(400, "\uc774\ubbf8 \uc0ac\uc6a9 \uc911\uc778 \uc544\uc774\ub514\uc785\ub2c8\ub2e4.")
 
         cur.execute("SELECT id FROM customers WHERE email = %s", (email,))
         if cur.fetchone():
-            raise HTTPException(400, "이미 사용 중인 이메일입니다.")
+            raise HTTPException(400, "\uc774\ubbf8 \uc0ac\uc6a9 \uc911\uc778 \uc774\uba54\uc77c\uc785\ub2c8\ub2e4.")
 
         password_bytes = password.encode("utf-8")[:72]
         password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
@@ -333,7 +333,7 @@ def register(body: RegisterRequest):
 
     except Exception:
         logger.error("register: DB error", exc_info=True)
-        raise HTTPException(500, "내부 오류가 발생했습니다.")
+        raise HTTPException(500, "\ub0b4\ubd80 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.")
 
     finally:
         if cur is not None:
