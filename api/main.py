@@ -452,6 +452,13 @@ def serve_viewer(request: Request):  # admin-only
     return _serve("viewer.html")
 
 # 대시보드 페이지
+@app.get("/profile")
+def serve_profile(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("profile.html")
+
+
 @app.get("/dashboard")
 def serve_dashboard(request: Request):
     redir = _auth_redirect(request)

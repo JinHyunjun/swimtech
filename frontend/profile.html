@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimTech — 프로필</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SwimTech">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.profile-page {
+  padding: 24px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.profile-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.profile-title {
+  font-size: var(--fs-title);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.panel {
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.panel-title {
+  font-size: var(--fs-body-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: var(--fs-caption); color: var(--muted); }
+.info-value { font-size: var(--fs-body); color: var(--text); font-weight: 600; }
+
+.pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+.pill.local  { background: rgba(72,202,228,.12); color: var(--cyan); }
+.pill.kakao  { background: rgba(255,205,0,.14);  color: #ffd400; }
+.pill.google { background: rgba(255,255,255,.10); color: var(--text); }
+
+.input-row { margin-bottom: 14px; }
+.input-label { display: block; font-size: var(--fs-caption); color: var(--muted); margin-bottom: 6px; }
+.text-input {
+  width: 100%;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 11px 14px;
+  font-size: var(--fs-body);
+}
+.text-input:focus { outline: none; border-color: var(--accent-primary); }
+.input-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.btn-primary {
+  width: 100%;
+  background: var(--accent-primary);
+  color: #06121c;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-primary:hover { opacity: .9; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-danger-outline {
+  width: 100%;
+  background: none;
+  border: 0.5px solid var(--status-danger);
+  color: var(--status-danger);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-danger-outline:hover { background: rgba(248,113,113,.08); }
+
+.feedback {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.error   { background: rgba(248,113,113,.10); color: var(--status-danger); }
+.feedback.success { background: rgba(74,222,128,.10);  color: var(--status-success); }
+
+.danger-zone-desc {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* 탈퇴 확인 모달 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  max-width: 380px;
+  width: 100%;
+}
+.modal-title { font-size: var(--fs-body-lg); font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.modal-desc { font-size: var(--fs-body); color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+.modal-confirm-input { margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions button { flex: 1; }
+.btn-secondary {
+  background: none;
+  border: 0.5px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 11px;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-danger {
+  background: var(--status-danger);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-danger:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="profile-page">
+
+  <div class="profile-topbar">
+    <a href="/dashboard" class="back-btn">← 대시보드</a>
+    <span class="profile-title">프로필</span>
+  </div>
+
+  <!-- 계정 정보 -->
+  <div class="panel">
+    <div class="panel-title">계정 정보</div>
+    <div class="info-row">
+      <span class="info-label">아이디</span>
+      <span class="info-value" id="p-username">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">닉네임</span>
+      <span class="info-value" id="p-nickname">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">가입 방식</span>
+      <span class="info-value" id="p-provider">—</span>
+    </div>
+  </div>
+
+  <!-- 닉네임 변경 -->
+  <div class="panel">
+    <div class="panel-title">닉네임 변경</div>
+    <div class="input-row">
+      <label class="input-label" for="nickname-input">새 닉네임</label>
+      <input type="text" class="text-input" id="nickname-input" maxlength="20" placeholder="2~20자, 한글·영문·숫자">
+      <div class="input-hint">한글·영문·숫자 2~20자 · 특수문자·공백 제외</div>
+    </div>
+    <button class="btn-primary" id="nickname-save-btn">닉네임 저장</button>
+    <div class="feedback" id="nickname-feedback"></div>
+  </div>
+
+  <!-- 회원 탈퇴 -->
+  <div class="panel">
+    <div class="panel-title" style="color: var(--status-danger);">회원 탈퇴</div>
+    <div class="danger-zone-desc">
+      탈퇴 시 계정 정보가 삭제되며 되돌릴 수 없습니다.<br>
+      작성한 훈련 일지·플랜·게시글은 별도로 보관되지 않습니다.
+    </div>
+    <button class="btn-danger-outline" id="withdraw-open-btn">회원 탈퇴</button>
+  </div>
+
+</div>
+
+<!-- 탈퇴 확인 모달 -->
+<div class="modal-overlay" id="withdraw-modal">
+  <div class="modal-box">
+    <div class="modal-title">정말 탈퇴하시겠어요?</div>
+    <div class="modal-desc">
+      이 작업은 되돌릴 수 없습니다.<br>
+      계속하려면 아래에 <strong>탈퇴</strong>를 입력해주세요.
+    </div>
+    <div class="modal-confirm-input">
+      <input type="text" class="text-input" id="withdraw-confirm-input" placeholder="탈퇴">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="withdraw-cancel-btn">취소</button>
+      <button class="btn-danger" id="withdraw-confirm-btn" disabled>탈퇴하기</button>
+    </div>
+    <div class="feedback" id="withdraw-feedback"></div>
+  </div>
+</div>
+
+<script>
+const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
+
+function showFeedback(elId, type, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.className = 'feedback show ' + type;
+}
+
+async function loadProfile() {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    document.getElementById('p-username').textContent = data.username || '-';
+    document.getElementById('p-nickname').textContent = data.nickname || '설정 안 함';
+    const provider = data.social_provider || 'local';
+    document.getElementById('p-provider').innerHTML =
+      `<span class="pill ${provider}">${PROVIDER_LABEL[provider] || provider}</span>`;
+
+    if (data.nickname) {
+      document.getElementById('nickname-input').value = data.nickname;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// 닉네임 변경
+document.getElementById('nickname-save-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('nickname-save-btn');
+  const nickname = document.getElementById('nickname-input').value.trim();
+  if (!nickname) {
+    showFeedback('nickname-feedback', 'error', '닉네임을 입력해주세요.');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+  try {
+    const res = await fetch('/auth/nickname', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ nickname }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showFeedback('nickname-feedback', 'success', '닉네임이 변경되었습니다.');
+      document.getElementById('p-nickname').textContent = nickname;
+    } else {
+      showFeedback('nickname-feedback', 'error', data.detail || '닉네임 변경에 실패했습니다.');
+    }
+  } catch (e) {
+    showFeedback('nickname-feedback', 'error', '네트워크 오류가 발생했습니다.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '닉네임 저장';
+  }
+});
+
+// 탈퇴 모달 열기/닫기
+const modal = document.getElementById('withdraw-modal');
+document.getElementById('withdraw-open-btn').addEventListener('click', () => {
+  modal.classList.add('show');
+});
+document.getElementById('withdraw-cancel-btn').addEventListener('click', () => {
+  modal.classList.remove('show');
+  document.getElementById('withdraw-confirm-input').value = '';
+  document.getElementById('withdraw-confirm-btn').disabled = true;
+});
+
+// "탈퇴" 입력해야 버튼 활성화
+document.getElementById('withdraw-confirm-input').addEventListener('input', (e) => {
+  document.getElementById('withdraw-confirm-btn').disabled = (e.target.value.trim() !== '탈퇴');
+});
+
+// 탈퇴 실행
+document.getElementById('withdraw-confirm-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('withdraw-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+  try {
+    const res = await fetch('/auth/me', { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/landing';
+    } else {
+      showFeedback('withdraw-feedback', 'error', data.detail || '탈퇴 처리에 실패했습니다.');
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
+    }
+  } catch (e) {
+    showFeedback('withdraw-feedback', 'error', '네트워크 오류가 발생했습니다.');
+    btn.disabled = false;
+    btn.textContent = '탈퇴하기';
+  }
+});
+
+loadProfile();
+</script>
+</body>
+</html>
