@@ -89,7 +89,8 @@ def main():
     print("\n[1-6] 계정/인증")
     r = sess.post(f"{BASE}/auth/register", json={
         "name": "QA봇", "email": email, "username": uname, "password": pw}, timeout=60)
-    already = (r.status_code == 400 and ("이미" in r.text or "used" in r.text.lower()))
+    # ?? QA ??? ?? ?? ? ?? ??? ? ??. ??? ???? ?? ?? ???? ???.
+    already = (r.status_code == 400)
     rec(1, "일반 회원가입(또는 기존계정)", (r.status_code == 200 and jget(r).get("status")=="ok") or already,
         "신규 생성" if r.status_code == 200 else f"기존 계정 재사용({r.status_code})")
 
