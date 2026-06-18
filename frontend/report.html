@@ -416,8 +416,9 @@ async function saveImage() {
   btn.disabled = true;
   try {
     const target = document.querySelector('.rp-page');
+    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#06121c';
     const canvas = await html2canvas(target, {
-      backgroundColor: 'var(--bg)', scale: 2, useCORS: true, logging: false,
+      backgroundColor: bgColor, scale: 2, useCORS: true, logging: false,
     });
     const link = document.createElement('a');
     link.download = `수영리포트_${curYear}년${curMonth}월.png`;
