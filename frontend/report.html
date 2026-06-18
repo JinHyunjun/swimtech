@@ -280,8 +280,8 @@ function showEmpty() {
 function render(d) {
   document.getElementById('stat-distance').textContent = d.total_distance.toLocaleString();
   document.getElementById('stat-count').textContent    = d.total_count;
-  document.getElementById('stat-time').textContent     = d.total_minutes.toLocaleString();
-  document.getElementById('stat-cal').textContent      = d.estimated_calories.toLocaleString();
+  document.getElementById('stat-time').textContent     = d.total_time.toLocaleString();
+  document.getElementById('stat-cal').textContent      = d.calories.toLocaleString();
 
   const gr = d.growth_rate;
   const rateEl = document.getElementById('growth-rate');
@@ -299,11 +299,11 @@ function render(d) {
     rateEl.className = 'growth-rate flat';
     arrowEl.textContent = '—';
   }
-  document.getElementById('growth-streak').textContent = `${d.max_streak}일`;
+  document.getElementById('growth-streak').textContent = `${d.streak}일`;
 
-  renderHeatmap(d.weekday_freq);
-  renderStrokeChart(d.stroke_dist);
-  renderWeeklyChart(d.weekly_dist);
+  renderHeatmap(d.by_day);
+  renderStrokeChart(d.by_stroke);
+  renderWeeklyChart(d.by_week);
 }
 
 function renderHeatmap(freq) {
