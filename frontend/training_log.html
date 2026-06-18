@@ -402,7 +402,7 @@ const WEEKDAYS = ['일','월','화','수','목','금','토'];
     if (!res.ok) { window.location.href = '/login'; return; }
     const me = await res.json();
     document.getElementById('header-right').innerHTML = `
-      <span style="font-size: var(--fs-caption);color:var(--muted);">${me.username || me.name || ''}</span>
+      <span style="font-size: var(--fs-caption);color:var(--muted);">${me.nickname || me.username || me.name || ''}</span>
       <button onclick="logout()" style="background:none;border:0.5px solid var(--border);
         color:var(--muted);border-radius: var(--radius-sm);padding:5px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
     `;
