@@ -9,10 +9,10 @@
 
     { "source": "/pool",             "destination": "https://swimtech-api.onrender.com/pool" },
 
-    { "source": "/share/:path*",     "destination": "/share.html" },
-    { "source": "/badges",           "destination": "/badge.html" },
-    { "source": "/training-log",     "destination": "/training_log.html" },
-    { "source": "/app",              "destination": "/landing.html" },
-    { "source": "/",                 "destination": "/landing.html" }
+    { "source": "/share/:path*",     "destination": "/share" },
+    { "source": "/badges",           "destination": "/badge" },
+    { "source": "/training-log",     "destination": "/training_log" },
+    { "source": "/app",              "destination": "/landing" },
+    { "source": "/",                 "destination": "/landing" }
   ]
 }
