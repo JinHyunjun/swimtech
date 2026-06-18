@@ -8,10 +8,10 @@
     { "source": "/customers/:path*", "destination": "https://swimtech-api.onrender.com/customers/:path*" },
 
     { "source": "/pool",             "destination": "https://swimtech-api.onrender.com/pool" },
+    { "source": "/training-log",     "destination": "https://swimtech-api.onrender.com/training-log" },
 
     { "source": "/share/:path*",     "destination": "/share.html" },
     { "source": "/badges",           "destination": "/badge.html" },
-    { "source": "/training-log",     "destination": "/training_log.html" },
     { "source": "/app",              "destination": "/landing.html" },
     { "source": "/",                 "destination": "/landing.html" }
   ]
