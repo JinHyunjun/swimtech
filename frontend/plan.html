@@ -986,7 +986,7 @@ function renderPlanTab(key, plan, containerId) {
     <div class="plan-card-footer">
       <a href="/upload" style="display:none" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
       <a href="/drill" class="plan-btn plan-btn-secondary"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg> 드릴 보기</a>
-      <button class="plan-btn plan-btn-secondary" onclick="addToTrainingLog('${key}')"
+      <button class="plan-btn plan-btn-secondary" onclick="addToTrainingLog('${key}', this)"
               style="border-color:var(--amber);color:var(--amber);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 일지에 추가</button>
       <button id="plan-fav-${key}" class="plan-btn plan-btn-secondary" onclick="togglePlanFav('${key}','${plan.title}',this)"
               style="border-color:var(--muted);color:var(--muted);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기</button>
@@ -1614,6 +1614,7 @@ async function loadMyPlans() {
 
   let cloudPlans = [];
   let localPlans = [];
+  let presetFavorites = [];
 
   try {
     const res = await fetch('/api/plans');
@@ -1627,10 +1628,30 @@ async function loadMyPlans() {
     localPlans = JSON.parse(localStorage.getItem('swimtech_plans') || '[]');
   } catch { /* ignore */ }
 
+  try {
+    const favRes = await fetch('/api/plans/preset/favorites', { credentials: 'include' });
+    if (favRes.ok) {
+      const favData = await favRes.json();
+      presetFavorites = favData.favorites || [];
+    }
+  } catch { /* 비로그인 시 무시 */ }
+
   const allPlans = [...cloudPlans, ...localPlans];
 
+  const presetFavHTML = presetFavorites.length ? `
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title" style="margin-bottom:10px;">⭐ 즐겨찾기한 추천 플랜</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${presetFavorites.map(f => `
+          <a href="/plan#${f.plan_key}" class="plan-btn plan-btn-secondary" style="border-color:var(--amber);color:var(--amber);text-decoration:none;">
+            ★ ${f.plan_title || f.plan_key}
+          </a>
+        `).join('')}
+      </div>
+    </div>` : '';
+
   if (allPlans.length === 0) {
-    container.innerHTML = `
+    container.innerHTML = presetFavHTML + `
       <div class="myplan-empty">
         <div class="myplan-empty-icon">🏊</div>
         <h3>아직 저장된 플랜이 없습니다</h3>
@@ -1640,7 +1661,7 @@ async function loadMyPlans() {
     return;
   }
 
-  container.innerHTML = `<div class="myplan-list" id="myplan-list"></div>`;
+  container.innerHTML = presetFavHTML + `<div class="myplan-list" id="myplan-list"></div>`;
   const list = document.getElementById('myplan-list');
   allPlans.forEach(p => list.appendChild(buildMyPlanCard(p)));
 }
@@ -1807,15 +1828,17 @@ if (location.hash) {
 }
 
 /* ── 훈련 일지에 추가 ───────────────────────── */
-async function addToTrainingLog(planId) {
+async function addToTrainingLog(planId, btn) {
   const plan = PLANS[planId];
   if (!plan) return;
   const today = new Date().toISOString().slice(0, 10);
+  const firstSession = plan.weeks?.[0]?.sessions?.[0];
+  const firstDistance = firstSession ? parseInt(String(firstSession.total).replace(/[^0-9]/g, ''), 10) || 0 : 0;
   const body = {
     plan_name: plan.title,
     log_date: today,
     notes: `[플랜] ${plan.title} — 1주차 시작`,
-    plan_data: { plan_key: planId }
+    plan_data: { plan_key: planId, total_distance: firstDistance }
   };
   try {
     const res = await fetch('/api/training-log/from-plan', {
@@ -1825,12 +1848,14 @@ async function addToTrainingLog(planId) {
       body: JSON.stringify(body)
     });
     if (res.ok) {
-      const btn = event.currentTarget;
-      btn.textContent = '✅ 추가됨';
-      btn.disabled = true;
-      setTimeout(() => { btn.textContent = '📓 일지에 추가'; btn.disabled = false; }, 2500);
+      if (btn) {
+        btn.textContent = '✅ 추가됨';
+        btn.disabled = true;
+        setTimeout(() => { btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 일지에 추가'; btn.disabled = false; }, 2500);
+      }
     } else {
-      alert('일지 추가 실패: ' + res.status);
+      const data = await res.json().catch(() => ({}));
+      alert('일지 추가 실패: ' + (data.detail || res.status));
     }
   } catch (e) {
     alert('네트워크 오류');

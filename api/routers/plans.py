@@ -326,9 +326,12 @@ def get_preset_plan_favorites(request: Request):
         _ensure_table()
         conn = _get_db()
         cur = conn.cursor()
-        cur.execute("SELECT plan_key FROM preset_plan_favorites WHERE username = %s", (username,))
-        keys = [r[0] for r in cur.fetchall()]
+        cur.execute("SELECT plan_key, plan_title FROM preset_plan_favorites WHERE username = %s ORDER BY created_at DESC", (username,))
+        rows = cur.fetchall()
         cur.close(); conn.close()
-        return {"plan_keys": keys}
+        return {
+            "plan_keys": [r[0] for r in rows],
+            "favorites": [{"plan_key": r[0], "plan_title": r[1]} for r in rows],
+        }
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
