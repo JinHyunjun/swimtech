@@ -48,6 +48,17 @@ def _ensure_table():
         )
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_plan_fav_user ON plan_favorites(username)")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS preset_plan_favorites (
+            id         SERIAL PRIMARY KEY,
+            username   VARCHAR(100) NOT NULL,
+            plan_key   VARCHAR(50) NOT NULL,
+            plan_title VARCHAR(200),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (username, plan_key)
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_preset_fav_user ON preset_plan_favorites(username)")
     conn.commit()
     cur.close()
     conn.close()
@@ -78,12 +89,14 @@ def list_plans(request: Request):
         conn = _get_db()
         cur = conn.cursor()
         cur.execute("""
-            SELECT id, plan_name, goal, sessions_per_week, session_duration,
-                   focus_stroke, level, plan_content, created_at
-            FROM custom_plans
-            WHERE username = %s
-            ORDER BY created_at DESC
-        """, (username,))
+            SELECT cp.id, cp.plan_name, cp.goal, cp.sessions_per_week, cp.session_duration,
+                   cp.focus_stroke, cp.level, cp.plan_content, cp.created_at,
+                   (pf.id IS NOT NULL) AS is_favorite
+            FROM custom_plans cp
+            LEFT JOIN plan_favorites pf ON pf.plan_id = cp.id AND pf.username = %s
+            WHERE cp.username = %s
+            ORDER BY cp.created_at DESC
+        """, (username, username))
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -99,6 +112,7 @@ def list_plans(request: Request):
                     "level": r[6],
                     "plan_content": r[7],
                     "created_at": str(r[8]),
+                    "is_favorite": r[9],
                 }
                 for r in rows
             ]
@@ -263,5 +277,58 @@ def get_plan_share(plan_id: int, request: Request):
         return {"plan_id": plan_id, "share_token": token, "share_url": f"/plan/share/{token}"}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+class PresetFavoriteRequest(BaseModel):
+    plan_title: str = ""
+
+
+@router.post("/preset/{plan_key}/favorite")
+def toggle_preset_plan_favorite(plan_key: str, body: PresetFavoriteRequest, request: Request):
+    """프리셋(빌트인) 플랜 즐겨찾기 — DB에 저장되지 않은 고정 플랜(speed/masters/fitness/correction 등) 전용."""
+    username = _get_username(request)
+    if username == "guest":
+        raise HTTPException(401, "로그인이 필요합니다")
+    try:
+        _ensure_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM preset_plan_favorites WHERE username = %s AND plan_key = %s",
+                    (username, plan_key))
+        existing = cur.fetchone()
+        if existing:
+            cur.execute("DELETE FROM preset_plan_favorites WHERE id = %s", (existing[0],))
+            conn.commit()
+            cur.close(); conn.close()
+            return {"status": "removed"}
+        else:
+            cur.execute(
+                "INSERT INTO preset_plan_favorites (username, plan_key, plan_title) VALUES (%s,%s,%s)",
+                (username, plan_key, body.plan_title),
+            )
+            conn.commit()
+            cur.close(); conn.close()
+            return {"status": "added"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"DB 오류: {e}")
+
+
+@router.get("/preset/favorites")
+def get_preset_plan_favorites(request: Request):
+    username = _get_username(request)
+    if username == "guest":
+        return {"plan_keys": []}
+    try:
+        _ensure_table()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT plan_key FROM preset_plan_favorites WHERE username = %s", (username,))
+        keys = [r[0] for r in cur.fetchall()]
+        cur.close(); conn.close()
+        return {"plan_keys": keys}
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")

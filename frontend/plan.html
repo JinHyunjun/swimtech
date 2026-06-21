@@ -1691,7 +1691,7 @@ function buildMyPlanCard(plan) {
     <div class="myplan-card-body">
       ${weeksHTML || '<div style="color:var(--muted);font-size: var(--fs-caption);">플랜 내용이 없습니다</div>'}
       <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
-        ${!plan._local ? `<button class="btn-fav-plan" data-id="${plan.id}">☆ 즐겨찾기</button>` : ''}
+        ${!plan._local ? `<button class="btn-fav-plan${plan.is_favorite ? ' active' : ''}" data-id="${plan.id}"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기</button>` : ''}
         ${!plan._local ? `<button class="btn-share-plan" data-id="${plan.id}">🔗 공유</button>` : ''}
         <button class="btn-del-plan" data-id="${plan.id}" data-local="${plan._local ? '1' : '0'}">🗑 삭제</button>
       </div>
@@ -1800,16 +1800,22 @@ initChips();
 renderPoolList('전체');
 loadPlanFavSet();
 
+// 공유 링크(#speed 등)로 들어왔을 때 해당 탭 자동 열기
+if (location.hash) {
+  const key = location.hash.slice(1);
+  if (document.querySelector(`[data-tab="${key}"]`)) switchTab(key);
+}
+
 /* ── 훈련 일지에 추가 ───────────────────────── */
 async function addToTrainingLog(planId) {
   const plan = PLANS[planId];
   if (!plan) return;
   const today = new Date().toISOString().slice(0, 10);
   const body = {
-    date: today,
-    plan_id: planId,
-    plan_title: plan.title,
-    note: `[플랜] ${plan.title} — 1주차 시작`
+    plan_name: plan.title,
+    log_date: today,
+    notes: `[플랜] ${plan.title} — 1주차 시작`,
+    plan_data: { plan_key: planId }
   };
   try {
     const res = await fetch('/api/training-log/from-plan', {
@@ -1836,10 +1842,10 @@ let planFavSet = new Set();
 
 async function loadPlanFavSet() {
   try {
-    const res = await fetch('/api/plans/favorites', { credentials: 'include' });
+    const res = await fetch('/api/plans/preset/favorites', { credentials: 'include' });
     if (!res.ok) return;
     const data = await res.json();
-    planFavSet = new Set((data.favorites || []).map(f => f.plan_key));
+    planFavSet = new Set(data.plan_keys || []);
     planFavSet.forEach(key => {
       const btn = document.getElementById('plan-fav-' + key);
       if (btn) { btn.textContent = '★ 즐겨찾기'; btn.style.borderColor = 'var(--amber)'; btn.style.color = 'var(--amber)'; }
@@ -1849,7 +1855,7 @@ async function loadPlanFavSet() {
 
 async function togglePlanFav(key, title, btn) {
   try {
-    const res = await fetch(`/api/plans/${key}/favorite`, {
+    const res = await fetch(`/api/plans/preset/${key}/favorite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -1873,13 +1879,10 @@ async function togglePlanFav(key, title, btn) {
 
 async function sharePlan(key, title) {
   try {
-    const res = await fetch(`/api/plans/${key}/share`, { credentials: 'include' });
-    if (!res.ok) { alert('로그인이 필요합니다.'); return; }
-    const data = await res.json();
-    const url = location.origin + data.share_url;
+    const url = `${location.origin}/plan#${key}`;
     await navigator.clipboard.writeText(url);
     alert(`공유 링크가 클립보드에 복사되었습니다!\n${url}`);
-  } catch (e) { alert('네트워크 오류 또는 클립보드 권한 없음'); }
+  } catch (e) { alert('클립보드 권한이 없어 복사하지 못했습니다.'); }
 }
 
 /* ── 터치 드래그앤드롭 폴리필 ─────────────── */
