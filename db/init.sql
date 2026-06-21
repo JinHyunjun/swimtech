@@ -252,3 +252,17 @@ CREATE TABLE IF NOT EXISTS training_logs (
 
 CREATE INDEX IF NOT EXISTS idx_training_logs_customer ON training_logs(customer_id);
 CREATE INDEX IF NOT EXISTS idx_training_logs_date     ON training_logs(customer_id, log_date DESC);
+
+-- ── 피드백 (개발자에게 한마디) ──────────────────────────────
+CREATE TABLE IF NOT EXISTS feedback (
+    id            SERIAL PRIMARY KEY,
+    feedback_type VARCHAR(20) NOT NULL,   -- 버그 신고/기능 요청/개선 제안/기타
+    page          TEXT,
+    title         TEXT NOT NULL,
+    content       TEXT NOT NULL,
+    email         TEXT,
+    created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback(feedback_type);
