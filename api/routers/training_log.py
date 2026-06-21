@@ -18,33 +18,6 @@ def _get_db():
     return psycopg2.connect(DATABASE_URL)
 
 
-def _ensure_table():
-    conn = _get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS training_logs (
-            id          SERIAL PRIMARY KEY,
-            username    VARCHAR(100) NOT NULL DEFAULT 'guest',
-            plan_name   VARCHAR(200),
-            log_date    DATE NOT NULL DEFAULT CURRENT_DATE,
-            notes       TEXT,
-            plan_data   JSONB,
-            distance_m  INTEGER NOT NULL DEFAULT 0,
-            created_at  TIMESTAMPTZ DEFAULT NOW()
-        )
-    """)
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS distance_m INTEGER NOT NULL DEFAULT 0")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS stroke_type VARCHAR(20)")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS pool_length INTEGER")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS duration_minutes INTEGER")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS intensity VARCHAR(10)")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS mood VARCHAR(10)")
-    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS memo TEXT")
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
 def _get_username(request: Request) -> str:
     token = request.cookies.get("swimtech_token")
     if not token:
@@ -257,7 +230,6 @@ def get_streak(request: Request):
 @router.post("/from-plan")
 def create_log_from_plan(req: FromPlanRequest, request: Request):
     try:
-        _ensure_table()
         username = _get_username(request)
         cid = _get_customer_id(request)
         if not cid:
