@@ -428,7 +428,9 @@ def refresh_token_endpoint(
     username    = payload.get("sub")
     customer_id = payload.get("customer_id")
     token = create_token(username, customer_id)
+    new_refresh = create_refresh_token(username, customer_id)
     _set_auth_cookie(response, token)
+    _set_refresh_cookie(response, new_refresh)
     return {"status": "ok", "message": "토큰이 갱신되었습니다."}
 
 
