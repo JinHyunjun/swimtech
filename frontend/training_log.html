@@ -669,17 +669,29 @@ document.getElementById('modal-backdrop').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-backdrop')) closeModal();
 });
 
-function openAddModal() {
+// 훈련 플랜에서 "일지에 추가" 클릭 후 넘어온 경우: 폼을 미리 채운 채로 모달 자동 오픈.
+// 실제로 저장(완료) 여부는 사용자가 확인 후 직접 "저장"을 눌러야 반영됨.
+(function checkPlanPrefill() {
+  try {
+    const raw = sessionStorage.getItem('swimtech_plan_prefill');
+    if (!raw) return;
+    sessionStorage.removeItem('swimtech_plan_prefill');
+    const prefill = JSON.parse(raw);
+    openAddModal(prefill);
+  } catch (e) { /* ignore */ }
+})();
+
+function openAddModal(prefill) {
   document.getElementById('modal-title').textContent = '훈련 기록 추가';
   document.getElementById('edit-id').value = '';
-  document.getElementById('f-date').value = todayStr();
-  document.getElementById('f-stroke').value = '자유형';
-  document.getElementById('f-pool').value = '25';
-  document.getElementById('f-distance').value = '';
-  document.getElementById('f-duration').value = '';
-  document.getElementById('f-intensity').value = '보통';
+  document.getElementById('f-date').value = prefill?.log_date || todayStr();
+  document.getElementById('f-stroke').value = prefill?.stroke_type || '자유형';
+  document.getElementById('f-pool').value = prefill?.pool_length || '25';
+  document.getElementById('f-distance').value = prefill?.total_distance || '';
+  document.getElementById('f-duration').value = prefill?.duration_minutes || '';
+  document.getElementById('f-intensity').value = prefill?.intensity || '보통';
   document.getElementById('f-mood').value = '';
-  document.getElementById('f-memo').value = '';
+  document.getElementById('f-memo').value = prefill?.memo || '';
   clearModalError();
   document.getElementById('modal-backdrop').classList.remove('hidden');
 }
