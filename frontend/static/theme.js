@@ -57,4 +57,12 @@
       credentials: 'include',
     }).catch(function () {});
   } catch (e) {}
+
+  // 자동 로그인: refresh token이 유효하면 조용히 access token을 갱신 (실패해도 화면에 영향 없음)
+  try {
+    fetch('/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(function () {});
+  } catch (e) {}
 })();
