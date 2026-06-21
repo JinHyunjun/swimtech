@@ -129,6 +129,58 @@ BADGES = {
         "description": "4가지 영법 모두 훈련 기록",
         "condition_label": "4영법 훈련 기록",
     },
+    # ── 플랜 활용 뱃지 ──
+    "plan_creator": {
+        "id": "plan_creator",
+        "name": "플랜 설계자",
+        "emoji": "🛠",
+        "description": "나만의 훈련 플랜 처음 생성",
+        "condition_label": "플랜 1개 생성",
+    },
+    "plan_collector": {
+        "id": "plan_collector",
+        "name": "플랜 컬렉터",
+        "emoji": "🗂",
+        "description": "나만의 훈련 플랜 5개 생성",
+        "condition_label": "플랜 5개 생성",
+    },
+    "fav_collector": {
+        "id": "fav_collector",
+        "name": "즐겨찾기 마니아",
+        "emoji": "💛",
+        "description": "플랜 3개 이상 즐겨찾기",
+        "condition_label": "즐겨찾기 3개",
+    },
+    # ── 챌린지 뱃지 ──
+    "challenge_joiner": {
+        "id": "challenge_joiner",
+        "name": "챌린지 입문",
+        "emoji": "🚩",
+        "description": "챌린지 첫 참여",
+        "condition_label": "챌린지 1개 참여",
+    },
+    "challenge_finisher": {
+        "id": "challenge_finisher",
+        "name": "챌린지 완주자",
+        "emoji": "🏁",
+        "description": "참여한 챌린지 목표 거리 달성",
+        "condition_label": "챌린지 목표 달성",
+    },
+    # ── 훈련 습관 뱃지 ──
+    "early_bird": {
+        "id": "early_bird",
+        "name": "얼리버드",
+        "emoji": "🌅",
+        "description": "오전 7시 이전 훈련 기록 3회",
+        "condition_label": "아침 7시 전 기록 3회",
+    },
+    "long_session": {
+        "id": "long_session",
+        "name": "장거리 입문",
+        "emoji": "🏊‍♂️",
+        "description": "한 번에 3,000m 이상 훈련",
+        "condition_label": "단일 훈련 3,000m 이상",
+    },
 }
 
 
@@ -150,8 +202,10 @@ def _require_auth(swimtech_token: str | None):
 
 
 def _calc_log_stats(username: str) -> dict:
+    empty = {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0,
+              "max_single_dist": 0, "early_bird_count": 0}
     if not username:
-        return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
+        return empty
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -159,10 +213,10 @@ def _calc_log_stats(username: str) -> dict:
         crow = cur.fetchone()
         if not crow:
             cur.close(); conn.close()
-            return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
+            return empty
         cid = crow[0]
         cur.execute("""
-            SELECT log_date, total_distance, stroke_type
+            SELECT log_date, total_distance, stroke_type, created_at
             FROM training_logs
             WHERE customer_id = %s
             ORDER BY log_date ASC
@@ -171,13 +225,23 @@ def _calc_log_stats(username: str) -> dict:
         cur.close()
         conn.close()
     except Exception:
-        return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
+        return empty
 
     if not rows:
-        return {"total_logs": 0, "total_dist_m": 0, "log_streak": 0, "unique_strokes": 0}
+        return empty
 
     total_dist = sum(int(r[1] or 0) for r in rows)
     date_set = set(r[0] for r in rows)
+    max_single_dist = max(int(r[1] or 0) for r in rows)
+    early_bird_count = 0
+    for r in rows:
+        ts = r[3]
+        if ts is not None:
+            try:
+                if ts.hour < 7:
+                    early_bird_count += 1
+            except Exception:
+                pass
 
     streak = 0
     today = date.today()
@@ -194,7 +258,60 @@ def _calc_log_stats(username: str) -> dict:
         "total_dist_m": total_dist,
         "log_streak": streak,
         "unique_strokes": len(found_strokes),
+        "max_single_dist": max_single_dist,
+        "early_bird_count": early_bird_count,
     }
+
+
+def _calc_plan_challenge_stats(username: str) -> dict:
+    """플랜 생성/즐겨찾기/챌린지 참여 현황 (뱃지용). 실패해도 전체 뱃지 조회가 죽지 않도록 항상 dict 반환."""
+    empty = {"plan_count": 0, "fav_count": 0, "challenge_joined": 0, "challenge_finished": False}
+    if not username:
+        return empty
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM custom_plans WHERE username = %s", (username,))
+        plan_count = cur.fetchone()[0]
+
+        fav_count = 0
+        try:
+            cur.execute("SELECT COUNT(*) FROM plan_favorites pf JOIN custom_plans cp ON cp.id = pf.plan_id WHERE pf.username = %s", (username,))
+            fav_count += cur.fetchone()[0]
+        except Exception:
+            pass
+        try:
+            cur.execute("SELECT COUNT(*) FROM preset_plan_favorites WHERE username = %s", (username,))
+            fav_count += cur.fetchone()[0]
+        except Exception:
+            pass
+
+        challenge_joined = 0
+        challenge_finished = False
+        try:
+            cur.execute("""
+                SELECT cp.current_distance, c.goal_distance
+                FROM challenge_participants cp
+                JOIN challenges c ON c.id = cp.challenge_id
+                WHERE cp.username = %s
+            """, (username,))
+            crows = cur.fetchall()
+            challenge_joined = len(crows)
+            challenge_finished = any(
+                (r[1] or 0) > 0 and (r[0] or 0) >= r[1] for r in crows
+            )
+        except Exception:
+            pass
+
+        cur.close(); conn.close()
+        return {
+            "plan_count": plan_count,
+            "fav_count": fav_count,
+            "challenge_joined": challenge_joined,
+            "challenge_finished": challenge_finished,
+        }
+    except Exception:
+        return empty
 
 def _calc_stats(customer_id):
     conn = get_db()
@@ -255,6 +372,7 @@ def _calc_stats(customer_id):
 
 def _is_earned(badge_id: str, stats: dict) -> bool:
     ls = stats.get("log_stats", {})
+    pc = stats.get("plan_stats", {})
     checks = {
         "first_analysis":  stats["total_analyses"] >= 1,
         "ten_analyses":    stats["total_analyses"] >= 10,
@@ -273,12 +391,20 @@ def _is_earned(badge_id: str, stats: dict) -> bool:
         "log_streak_7":    ls.get("log_streak", 0) >= 7,
         "log_streak_30":   ls.get("log_streak", 0) >= 30,
         "log_stroke_master": ls.get("unique_strokes", 0) >= 4,
+        "plan_creator":      pc.get("plan_count", 0) >= 1,
+        "plan_collector":    pc.get("plan_count", 0) >= 5,
+        "fav_collector":     pc.get("fav_count", 0) >= 3,
+        "challenge_joiner":  pc.get("challenge_joined", 0) >= 1,
+        "challenge_finisher": pc.get("challenge_finished", False),
+        "early_bird":        ls.get("early_bird_count", 0) >= 3,
+        "long_session":      ls.get("max_single_dist", 0) >= 3_000,
     }
     return checks.get(badge_id, False)
 
 
 def _progress(badge_id: str, stats: dict) -> dict:
     ls = stats.get("log_stats", {})
+    pc = stats.get("plan_stats", {})
     mapping = {
         "first_analysis":  (stats["total_analyses"], 1),
         "ten_analyses":    (stats["total_analyses"], 10),
@@ -297,6 +423,13 @@ def _progress(badge_id: str, stats: dict) -> dict:
         "log_streak_7":    (ls.get("log_streak", 0), 7),
         "log_streak_30":   (ls.get("log_streak", 0), 30),
         "log_stroke_master": (ls.get("unique_strokes", 0), 4),
+        "plan_creator":      (pc.get("plan_count", 0), 1),
+        "plan_collector":    (pc.get("plan_count", 0), 5),
+        "fav_collector":     (pc.get("fav_count", 0), 3),
+        "challenge_joiner":  (pc.get("challenge_joined", 0), 1),
+        "challenge_finisher": (1 if pc.get("challenge_finished") else 0, 1),
+        "early_bird":        (ls.get("early_bird_count", 0), 3),
+        "long_session":      (ls.get("max_single_dist", 0), 3_000),
     }
     current, target = mapping.get(badge_id, (0, 1))
     pct = min(100, round(current / target * 100)) if target else 0
@@ -312,6 +445,7 @@ def get_badges(swimtech_token: str = Cookie(default=None)):
     try:
         stats = _calc_stats(customer_id)
         stats["log_stats"] = _calc_log_stats(username)
+        stats["plan_stats"] = _calc_plan_challenge_stats(username)
         badges = []
         for badge_id, meta in BADGES.items():
             earned = _is_earned(badge_id, stats)

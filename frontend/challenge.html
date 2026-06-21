@@ -418,7 +418,7 @@ async function toggleRanking(id) {
         : `${(r.distance / 1000).toFixed(2)}km`;
       return `<tr class="${isMe ? 'me' : ''}">
         <td>${medal}</td>
-        <td>${isMe ? '나 (' + r.username + ')' : r.username}</td>
+        <td>${isMe ? '나 (' + (r.nickname || r.username) + ')' : (r.nickname || r.username)}</td>
         <td>${distLabel}</td>
         <td>${r.achievement_pct.toFixed(1)}%</td>
       </tr>`;

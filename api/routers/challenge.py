@@ -325,21 +325,24 @@ def get_ranking(challenge_id: int):
             raise HTTPException(404, "챌린지를 찾을 수 없습니다")
         goal = ch[1]
         cur.execute("""
-            SELECT username, current_distance, joined_at
-            FROM challenge_participants
-            WHERE challenge_id = %s
-            ORDER BY current_distance DESC
+            SELECT cp.username, COALESCE(c.nickname, cp.username) AS display_name,
+                   cp.current_distance, cp.joined_at
+            FROM challenge_participants cp
+            LEFT JOIN customers c ON c.username = cp.username
+            WHERE cp.challenge_id = %s
+            ORDER BY cp.current_distance DESC
             LIMIT 50
         """, (challenge_id,))
         rows = cur.fetchall()
         cur.close()
         conn.close()
         ranking = []
-        for i, (uname, dist, joined_at) in enumerate(rows, 1):
+        for i, (uname, display_name, dist, joined_at) in enumerate(rows, 1):
             achievement = round(dist / goal * 100, 1) if goal > 0 else 0
             ranking.append({
                 "rank": i,
                 "username": uname,
+                "nickname": display_name,
                 "distance": dist,
                 "achievement_pct": min(100.0, achievement),
                 "joined_at": str(joined_at),
