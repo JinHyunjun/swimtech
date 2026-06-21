@@ -70,3 +70,5 @@ fix_*.py
 trim_*.py
 /vercel.json
 /swimtech_pathA_deploy_runbook.md
+
+qa_report.json
