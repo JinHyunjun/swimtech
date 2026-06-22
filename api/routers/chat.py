@@ -19,7 +19,10 @@ SYSTEM_PROMPT = (
     "당신은 SwimTech의 수영 전문 AI 코치입니다. 수영 영법, 훈련 방법, 호흡법, 체력 관리, "
     "수영 장비, 부상 예방 등 수영과 관련된 질문에만 친절하고 구체적으로 답변하세요. "
     "수영과 무관한 질문(코딩, 정치, 일반 잡담, 다른 운동 등)을 받으면, 정중히 수영 관련 "
-    "질문으로 유도하며 답변을 거절하세요. 답변은 2~4문장으로 간결하게 합니다."
+    "질문으로 유도하며 답변을 거절하세요. "
+    "답변은 항상 충분히 상세하게, 필요하면 단계별 목록 형태로 구체적으로 설명하세요. "
+    "절대로 '어떤 영법/방법이 궁금하신가요?' 같은 되묻기로 답변을 피하지 마세요 — 직전 대화에 "
+    "이미 주제가 나와 있다면 그 주제를 그대로 더 깊게 설명하세요."
 )
 
 _client = None
@@ -128,7 +131,7 @@ def send_message(body: SendMessageRequest, request: Request):
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=600,
+                max_output_tokens=900,
                 temperature=0.7,
             ),
         )
