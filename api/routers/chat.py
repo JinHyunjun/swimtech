@@ -151,7 +151,11 @@ def send_message(body: SendMessageRequest, request: Request):
 
         if not reply:
             if last_error is not None and getattr(last_error, "code", None) == 429:
-                reply = "오늘 AI 코치 무료 사용량이 가득 찼어요. 내일 다시 이용해주시거나, 잠시 후 다시 시도해주세요."
+                detail_text = str(getattr(last_error, "message", "") or str(last_error)).lower()
+                if "minute" in detail_text or "perminute" in detail_text:
+                    reply = "지금 AI 코치에 질문이 몰려서 잠시 혼잡합니다. 1분 정도 후 다시 시도해주세요."
+                else:
+                    reply = "오늘 AI 코치 무료 사용량이 가득 찼어요. 내일 다시 이용해주시거나, 잠시 후 다시 시도해주세요."
             else:
                 reply = "죄송해요, 답변을 생성하지 못했어요. 다시 한 번 질문해주시겠어요?"
     except Exception:
