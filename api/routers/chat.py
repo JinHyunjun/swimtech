@@ -103,12 +103,32 @@ def send_message(body: SendMessageRequest, request: Request):
 
     try:
         client = _get_client()
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT role, content FROM chat_histories
+            WHERE username = %s
+            ORDER BY created_at DESC
+            LIMIT 12
+            """,
+            (username,),
+        )
+        recent = list(reversed(cur.fetchall()))
+        cur.close()
+        conn.close()
+
+        contents = [
+            {"role": "model" if r == "bot" else "user", "parts": [{"text": c}]}
+            for r, c in recent
+        ]
+
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
-            contents=user_text,
+            contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=400,
+                max_output_tokens=600,
                 temperature=0.7,
             ),
         )
