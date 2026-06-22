@@ -104,6 +104,8 @@ def send_message(body: SendMessageRequest, request: Request):
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
 
+    MODEL_FALLBACKS = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3-flash-preview"]
+    reply = None
     try:
         client = _get_client()
         conn = _get_db()
@@ -126,18 +128,32 @@ def send_message(body: SendMessageRequest, request: Request):
             for r, c in recent
         ]
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=900,
-                temperature=0.7,
-            ),
-        )
-        reply = (getattr(response, "text", "") or "").strip()
+        last_error = None
+        for model_name in MODEL_FALLBACKS:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        max_output_tokens=2048,
+                        temperature=0.7,
+                    ),
+                )
+                reply = (getattr(response, "text", "") or "").strip()
+                if reply:
+                    break
+            except genai.errors.APIError as e:
+                last_error = e
+                if getattr(e, "code", None) == 429:
+                    continue  # 이 모델의 오늘 무료 한도 소진 → 다음 모델로 전환
+                raise
+
         if not reply:
-            reply = "죄송해요, 답변을 생성하지 못했어요. 다시 한 번 질문해주시겠어요?"
+            if last_error is not None and getattr(last_error, "code", None) == 429:
+                reply = "오늘 AI 코치 무료 사용량이 가득 찼어요. 내일 다시 이용해주시거나, 잠시 후 다시 시도해주세요."
+            else:
+                reply = "죄송해요, 답변을 생성하지 못했어요. 다시 한 번 질문해주시겠어요?"
     except Exception:
         reply = "지금 AI 코치 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요."
 
