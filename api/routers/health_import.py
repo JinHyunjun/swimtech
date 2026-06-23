@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import csv
 import io
 import json
@@ -365,7 +366,7 @@ async def preview_import(request: Request, file: UploadFile = File(...), source:
     if source == "apple":
         if not filename.endswith(".zip"):
             raise HTTPException(400, "애플 건강 내보내기는 .zip 파일이어야 합니다")
-        items = _parse_apple_health_zip(content)
+        items = await asyncio.to_thread(_parse_apple_health_zip, content)
     elif source == "samsung":
         if filename.endswith(".zip"):
             try:
@@ -374,9 +375,10 @@ async def preview_import(request: Request, file: UploadFile = File(...), source:
                 raise HTTPException(400, "올바른 zip 파일이 아닙니다")
             csv_name = _find_samsung_exercise_csv(zf)
             with zf.open(csv_name) as f:
-                items = _parse_samsung_csv(f.read())
+                csv_bytes = f.read()
+            items = await asyncio.to_thread(_parse_samsung_csv, csv_bytes)
         elif filename.endswith(".csv"):
-            items = _parse_samsung_csv(content)
+            items = await asyncio.to_thread(_parse_samsung_csv, content)
         else:
             raise HTTPException(400, "지원하지 않는 파일 형식입니다 (.zip 또는 .csv만 가능)")
     else:
