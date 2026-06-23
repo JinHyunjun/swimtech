@@ -135,6 +135,11 @@
   border-radius: var(--radius-md); z-index: 600; box-shadow: 0 8px 32px rgba(0,0,0,.5);
 }
 .notif-dropdown.open { display: block; }
+@media (max-width: 480px) {
+  .notif-dropdown {
+    position: fixed; top: 64px; left: 12px; right: 12px; width: auto;
+  }
+}
 .notif-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 0.5px solid var(--border); }
 .notif-header-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
 .btn-mark-all { font-size: var(--fs-caption); color: var(--blue); background: none; border: none; cursor: pointer; }
@@ -223,6 +228,7 @@
   display: flex; align-items: center; gap: 6px; padding: 7px 16px;
   border-radius: var(--radius-pill); border: 0.5px solid var(--border); background: none;
   color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
+  touch-action: manipulation;
 }
 .btn-like.liked, .btn-like:hover { border-color: #f87171; color: #f87171; background: rgba(248,113,113,.08); }
 .btn-bookmark {
@@ -946,8 +952,13 @@ async function toggleBookmarkDetail(postId) {
 }
 
 // ── 좋아요 ───────────────────────────────────────────
+let _likeInFlight = false;
 async function toggleLike(postId) {
   if (!meInfo) { window.location.href = '/login'; return; }
+  if (_likeInFlight) return;
+  _likeInFlight = true;
+  const btn = document.getElementById('like-btn');
+  if (btn) btn.disabled = true;
   try {
     const res = await fetch(`/api/community/${postId}/like`, { method: 'POST', credentials: 'include' });
     if (!res.ok) throw new Error();
@@ -955,10 +966,17 @@ async function toggleLike(postId) {
     document.getElementById('like-count').textContent = likes;
     document.getElementById('like-btn').classList.toggle('liked', liked);
   } catch { alert('좋아요 처리 중 오류가 발생했습니다.'); }
+  finally {
+    _likeInFlight = false;
+    if (btn) btn.disabled = false;
+  }
 }
 
+const _commentLikeInFlight = new Set();
 async function toggleCommentLike(commentId) {
   if (!meInfo) { window.location.href = '/login'; return; }
+  if (_commentLikeInFlight.has(commentId)) return;
+  _commentLikeInFlight.add(commentId);
   try {
     const res = await fetch(`/api/community/comments/${commentId}/like`, { method: 'POST', credentials: 'include' });
     if (!res.ok) throw new Error();
@@ -966,6 +984,7 @@ async function toggleCommentLike(commentId) {
     document.getElementById(`cl-${commentId}`).textContent = likes;
     document.getElementById(`clbtn-${commentId}`).classList.toggle('liked', liked);
   } catch {}
+  finally { _commentLikeInFlight.delete(commentId); }
 }
 
 // ── 댓글 ─────────────────────────────────────────────
