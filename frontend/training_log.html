@@ -351,15 +351,17 @@ select.form-control option { background: var(--surface); }
 
     <div id="import-step-pick">
       <div class="import-source-tabs">
-        <button class="import-source-tab active" data-src="apple" id="import-tab-apple">애플 건강 (.zip)</button>
+        <button class="import-source-tab active" data-src="hae" id="import-tab-hae">⭐ Health Auto Export (.json)</button>
+        <button class="import-source-tab" data-src="apple" id="import-tab-apple">애플 전체 내보내기 (.zip)</button>
         <button class="import-source-tab" data-src="samsung" id="import-tab-samsung">삼성헬스 (.csv)</button>
       </div>
       <label class="import-drop" id="import-drop">
         <div id="import-drop-label">파일을 선택하거나 끌어다 놓으세요</div>
         <div style="font-size:var(--fs-caption);color:var(--muted);margin-top:6px;" id="import-drop-hint">
-          건강 앱 → 프로필 → 건강 데이터 모두 내보내기
+          "Health Auto Export" 앱(무료) 설치 → Workouts 선택 → JSON으로 내보내기<br>
+          애플 전체 내보내기보다 훨씬 빠르고 용량도 작습니다
         </div>
-        <input type="file" id="import-file-input" accept=".zip">
+        <input type="file" id="import-file-input" accept=".json">
       </label>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeImportModal()">취소</button>
@@ -761,8 +763,8 @@ document.getElementById('modal-backdrop').addEventListener('click', e => {
   } catch (e) { /* ignore */ }
 })();
 
-// ── 운동 데이터 가져오기 (애플 건강 / 삼성헬스) ──────────────
-let importSource = 'apple';
+// ── 운동 데이터 가져오기 (Health Auto Export / 애플 건강 / 삼성헬스) ──────────────
+let importSource = 'hae';
 let importPreviewItems = [];
 
 function openImportModal() {
@@ -770,6 +772,7 @@ function openImportModal() {
   document.getElementById('import-step-preview').classList.add('hidden');
   document.getElementById('import-file-input').value = '';
   importPreviewItems = [];
+  setImportSource('hae');
   document.getElementById('import-modal-backdrop').classList.remove('hidden');
 }
 function closeImportModal() {
@@ -777,13 +780,17 @@ function closeImportModal() {
 }
 function setImportSource(src) {
   importSource = src;
+  document.getElementById('import-tab-hae').classList.toggle('active', src === 'hae');
   document.getElementById('import-tab-apple').classList.toggle('active', src === 'apple');
   document.getElementById('import-tab-samsung').classList.toggle('active', src === 'samsung');
   const input = document.getElementById('import-file-input');
   const hint = document.getElementById('import-drop-hint');
-  if (src === 'apple') {
+  if (src === 'hae') {
+    input.accept = '.json';
+    hint.innerHTML = '"Health Auto Export" 앱(무료) 설치 → Workouts 선택 → JSON으로 내보내기<br>애플 전체 내보내기보다 훨씬 빠르고 용량도 작습니다';
+  } else if (src === 'apple') {
     input.accept = '.zip';
-    hint.textContent = '건강 앱 → 프로필 → 건강 데이터 모두 내보내기';
+    hint.textContent = '건강 앱 → 프로필 → 건강 데이터 모두 내보내기 (전체 데이터라 용량이 크고 시간이 걸려요)';
   } else {
     input.accept = '.zip,.csv';
     hint.textContent = '삼성헬스 데이터 다운로드로 받은 zip 또는 그 안의 exercise csv';
@@ -791,6 +798,7 @@ function setImportSource(src) {
 }
 
 document.getElementById('btn-open-import').onclick = openImportModal;
+document.getElementById('import-tab-hae').onclick = () => setImportSource('hae');
 document.getElementById('import-tab-apple').onclick = () => setImportSource('apple');
 document.getElementById('import-tab-samsung').onclick = () => setImportSource('samsung');
 document.getElementById('import-modal-backdrop').addEventListener('click', e => {
@@ -800,7 +808,7 @@ document.getElementById('import-modal-backdrop').addEventListener('click', e => 
 document.getElementById('import-file-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  document.getElementById('import-drop-label').textContent = `${file.name} 분석 중...`;
+  document.getElementById('import-drop-label').textContent = `${file.name} 업로드 중...`;
   const fd = new FormData();
   fd.append('file', file);
   fd.append('source', importSource);
@@ -810,13 +818,47 @@ document.getElementById('import-file-input').addEventListener('change', async (e
     });
     const data = await res.json();
     if (!res.ok) { alert(data.detail || '파일을 분석하지 못했습니다'); document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요'; return; }
-    importPreviewItems = data.items || [];
-    renderImportPreview();
+    pollImportJob(data.job_id);
   } catch (err) {
     alert('네트워크 오류');
     document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
   }
 });
+
+async function pollImportJob(jobId, attempt = 0) {
+  document.getElementById('import-drop-label').textContent =
+    `분석 중... (파일이 클수록 시간이 걸려요, ${attempt * 3}초 경과)`;
+  let res, data;
+  try {
+    res = await fetch(`/api/training-log/import/preview/status/${jobId}`, { credentials: 'include' });
+    data = await res.json();
+  } catch (err) {
+    alert('네트워크 오류로 분석 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+    return;
+  }
+  if (!res.ok) {
+    alert(data.detail || '분석 작업을 찾지 못했습니다. 다시 시도해주세요.');
+    document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+    return;
+  }
+  if (data.status === 'processing') {
+    if (attempt > 100) {  // 약 5분 넘게 끝나지 않으면 중단
+      alert('분석이 너무 오래 걸리고 있어요. 잠시 후 다시 시도해주세요.');
+      document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+      return;
+    }
+    setTimeout(() => pollImportJob(jobId, attempt + 1), 3000);
+    return;
+  }
+  if (data.status === 'error') {
+    alert(data.detail || '파일을 분석하지 못했습니다');
+    document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+    return;
+  }
+  importPreviewItems = data.items || [];
+  renderImportPreview();
+}
 
 function renderImportPreview() {
   document.getElementById('import-step-pick').classList.add('hidden');

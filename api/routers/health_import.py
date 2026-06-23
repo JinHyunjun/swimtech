@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import asyncio
 import csv
 import io
 import json
+import threading
+import time
+import uuid
 import zipfile
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -14,6 +16,20 @@ from pydantic import BaseModel
 from routers.training_log import _get_customer_id, _get_db
 
 router = APIRouter()
+
+# 업로드 파일이 커서 분석이 오래 걸릴 수 있어, 요청은 즉시 끝내고(게이트웨이 타임아웃 방지)
+# 실제 분석은 백그라운드 스레드에서 진행 → 프론트는 job_id로 상태를 폴링.
+# (인스턴스 재시작 시 사라지는 메모리 캐시이므로, 그 사이 끝내지 못한 작업은 다시 시도해야 함)
+_JOBS: dict = {}
+_JOBS_LOCK = threading.Lock()
+_JOB_TTL_SECONDS = 30 * 60
+
+
+def _cleanup_old_jobs():
+    cutoff = time.time() - _JOB_TTL_SECONDS
+    with _JOBS_LOCK:
+        for jid in [j for j, v in _JOBS.items() if v.get("created_at", 0) < cutoff]:
+            _JOBS.pop(jid, None)
 
 STROKE_LABELS = {
     "HKSwimmingStrokeStyleFreestyle": "자유형",
@@ -38,6 +54,13 @@ def _stroke_label(value: str) -> str:
     if value in STROKE_CODE_LABELS:
         return STROKE_CODE_LABELS[value]
     return STROKE_LABELS.get(value, "혼합")
+
+
+# "Health Auto Export" 앱의 strokeStyle 값(영어 문자열, 이미 깔끔하게 라벨링됨)
+HAE_STROKE_LABELS = {
+    "freestyle": "자유형", "backstroke": "배영", "breaststroke": "평영",
+    "butterfly": "접영", "mixed": "혼합", "kickboard": "혼합", "unknown": "혼합",
+}
 
 
 def _ensure_wearable_table():
@@ -92,7 +115,7 @@ class ImportItem(BaseModel):
     calories:         Optional[float] = None
     pool_length:      int = 25
     source_device:    Optional[str] = None
-    source:           str = "apple"   # apple | samsung
+    source:           str = "apple"   # apple | samsung | hae
 
 
 class ImportConfirmRequest(BaseModel):
@@ -100,11 +123,19 @@ class ImportConfirmRequest(BaseModel):
 
 
 def _provider_label(source: str) -> str:
-    return "애플 건강" if source == "apple" else "삼성헬스"
+    if source == "apple":
+        return "애플 건강"
+    if source == "hae":
+        return "Health Auto Export"
+    return "삼성헬스"
 
 
 def _provider_key(source: str) -> str:
-    return "apple_health" if source == "apple" else "samsung_health"
+    if source == "apple":
+        return "apple_health"
+    if source == "hae":
+        return "health_auto_export"
+    return "samsung_health"
 
 
 def _existing_external_ids(cid: int, provider: str) -> set:
@@ -346,6 +377,81 @@ def _parse_samsung_csv(file_bytes: bytes) -> List[dict]:
     return results
 
 
+def _hae_unit_to_meters(qty, unit) -> float:
+    if qty is None:
+        return 0.0
+    unit = (unit or "").lower()
+    qty = float(qty)
+    if unit in ("km", "kilometer", "kilometers"):
+        return qty * 1000
+    if unit in ("mi", "mile", "miles"):
+        return qty * 1609.34
+    if unit in ("yd", "yard", "yards"):
+        return qty * 0.9144
+    return qty  # m으로 간주
+
+
+def _parse_health_auto_export_json(file_bytes: bytes) -> List[dict]:
+    """'Health Auto Export' 앱(https://www.healthexportapp.com)에서 '운동(Workouts)'만 내보낸
+    JSON을 파싱. 애플 건강 전체 내보내기(800MB+)와 달리, 이 앱은 운동 데이터만 골라서
+    수 KB~수 MB 수준의 작은 파일로 바로 내보낼 수 있어 훨씬 가볍다."""
+    try:
+        payload = json.loads(file_bytes.decode("utf-8-sig"))
+    except Exception:
+        raise HTTPException(400, "올바른 JSON 파일이 아닙니다")
+
+    workouts = (payload.get("data") or {}).get("workouts") or payload.get("workouts") or []
+    if not isinstance(workouts, list):
+        raise HTTPException(400, "워크아웃 데이터를 찾을 수 없습니다 ('운동' 데이터 타입으로 내보냈는지 확인해주세요)")
+
+    results = []
+    for w in workouts:
+        name = (w.get("name") or "").strip()
+        if "swim" not in name.lower() and "수영" not in name:
+            continue
+
+        start_raw = w.get("start", "")
+        try:
+            dt = datetime.strptime(start_raw[:19], "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            continue
+
+        duration_min = round(float(w.get("duration") or 0) / 60)  # HAE는 duration이 '초' 단위
+
+        distance_obj = w.get("distance") or {}
+        distance_m = _hae_unit_to_meters(distance_obj.get("qty"), distance_obj.get("units"))
+
+        lap_obj = w.get("lapLength") or {}
+        pool_length = round(_hae_unit_to_meters(lap_obj.get("qty"), lap_obj.get("units"))) or 25
+
+        stroke_raw = (w.get("strokeStyle") or "").strip().lower()
+        stroke = HAE_STROKE_LABELS.get(stroke_raw, "자유형" if not stroke_raw else "혼합")
+
+        calories = None
+        for key in ("activeEnergyBurned", "totalEnergy", "activeEnergy"):
+            v = w.get(key)
+            if isinstance(v, dict) and v.get("qty") is not None:
+                calories = float(v["qty"])
+                break
+
+        external_id = str(w.get("id") or f"{start_raw}|{name}")
+
+        results.append({
+            "external_id": external_id,
+            "log_date": dt.date().isoformat(),
+            "started_at": start_raw,
+            "ended_at": w.get("end"),
+            "total_distance": round(distance_m),
+            "duration_minutes": duration_min,
+            "stroke_type": stroke,
+            "calories": calories,
+            "pool_length": pool_length,
+            "source_device": "Health Auto Export",
+            "source": "hae",
+        })
+    return results
+
+
 def _find_samsung_exercise_csv(zf: zipfile.ZipFile) -> str:
     candidates = [n for n in zf.namelist() if n.lower().endswith(".csv") and "exercise" in n.lower()]
     if not candidates:
@@ -353,47 +459,87 @@ def _find_samsung_exercise_csv(zf: zipfile.ZipFile) -> str:
     return sorted(candidates, key=len)[0]
 
 
+def _run_import_job(job_id: str, content: bytes, filename: str, source: str, cid: int):
+    """백그라운드 스레드에서 실행되는 실제 분석 작업."""
+    try:
+        if source == "apple":
+            if not filename.endswith(".zip"):
+                raise ValueError("애플 건강 내보내기는 .zip 파일이어야 합니다")
+            items = _parse_apple_health_zip(content)
+        elif source == "samsung":
+            if filename.endswith(".zip"):
+                try:
+                    zf = zipfile.ZipFile(io.BytesIO(content))
+                except zipfile.BadZipFile:
+                    raise ValueError("올바른 zip 파일이 아닙니다")
+                csv_name = _find_samsung_exercise_csv(zf)
+                with zf.open(csv_name) as f:
+                    items = _parse_samsung_csv(f.read())
+            elif filename.endswith(".csv"):
+                items = _parse_samsung_csv(content)
+            else:
+                raise ValueError("지원하지 않는 파일 형식입니다 (.zip 또는 .csv만 가능)")
+        elif source == "hae":
+            if not filename.endswith(".json"):
+                raise ValueError("Health Auto Export 내보내기는 .json 파일이어야 합니다")
+            items = _parse_health_auto_export_json(content)
+        else:
+            raise ValueError("알 수 없는 데이터 출처입니다")
+
+        if not items:
+            with _JOBS_LOCK:
+                _JOBS[job_id] = {"status": "done", "items": [], "created_at": _JOBS[job_id]["created_at"]}
+            return
+
+        existing_ids = _existing_external_ids(cid, _provider_key(source))
+        out = [
+            {**it, "is_duplicate": it["external_id"] in existing_ids}
+            for it in sorted(items, key=lambda x: x["started_at"] or x["log_date"], reverse=True)
+        ]
+        with _JOBS_LOCK:
+            _JOBS[job_id] = {"status": "done", "items": out, "created_at": _JOBS[job_id]["created_at"]}
+    except HTTPException as e:
+        with _JOBS_LOCK:
+            _JOBS[job_id] = {"status": "error", "detail": e.detail, "created_at": _JOBS[job_id]["created_at"]}
+    except Exception as e:
+        with _JOBS_LOCK:
+            _JOBS[job_id] = {"status": "error", "detail": str(e), "created_at": _JOBS[job_id]["created_at"]}
+
+
 @router.post("/preview")
 async def preview_import(request: Request, file: UploadFile = File(...), source: str = "apple"):
-    """파일만 분석해서 가져올 수영 기록 후보를 보여줌. 이 단계에서는 DB에 아무것도 저장하지 않음."""
+    """파일을 받아 백그라운드 분석 작업을 등록하고 즉시 job_id를 반환 (게이트웨이 타임아웃 방지).
+    실제 결과는 /preview/status/{job_id}로 따로 조회."""
     cid = _get_customer_id(request)
     if not cid:
         raise HTTPException(401, "로그인이 필요합니다")
 
+    _cleanup_old_jobs()
     content = await file.read()
     filename = (file.filename or "").lower()
 
-    if source == "apple":
-        if not filename.endswith(".zip"):
-            raise HTTPException(400, "애플 건강 내보내기는 .zip 파일이어야 합니다")
-        items = await asyncio.to_thread(_parse_apple_health_zip, content)
-    elif source == "samsung":
-        if filename.endswith(".zip"):
-            try:
-                zf = zipfile.ZipFile(io.BytesIO(content))
-            except zipfile.BadZipFile:
-                raise HTTPException(400, "올바른 zip 파일이 아닙니다")
-            csv_name = _find_samsung_exercise_csv(zf)
-            with zf.open(csv_name) as f:
-                csv_bytes = f.read()
-            items = await asyncio.to_thread(_parse_samsung_csv, csv_bytes)
-        elif filename.endswith(".csv"):
-            items = await asyncio.to_thread(_parse_samsung_csv, content)
-        else:
-            raise HTTPException(400, "지원하지 않는 파일 형식입니다 (.zip 또는 .csv만 가능)")
-    else:
-        raise HTTPException(400, "알 수 없는 데이터 출처입니다")
+    job_id = uuid.uuid4().hex
+    with _JOBS_LOCK:
+        _JOBS[job_id] = {"status": "processing", "created_at": time.time()}
 
-    if not items:
-        return {"items": []}
+    thread = threading.Thread(
+        target=_run_import_job, args=(job_id, content, filename, source, cid), daemon=True
+    )
+    thread.start()
 
-    existing_ids = _existing_external_ids(cid, _provider_key(source))
+    return {"job_id": job_id}
 
-    out = [
-        {**it, "is_duplicate": it["external_id"] in existing_ids}
-        for it in sorted(items, key=lambda x: x["started_at"] or x["log_date"], reverse=True)
-    ]
-    return {"items": out}
+
+@router.get("/preview/status/{job_id}")
+def preview_status(job_id: str, request: Request):
+    cid = _get_customer_id(request)
+    if not cid:
+        raise HTTPException(401, "로그인이 필요합니다")
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+    if not job:
+        raise HTTPException(404, "해당 작업을 찾을 수 없습니다 (서버가 재시작되었거나 만료됨)")
+    return job
 
 
 @router.post("/confirm")
