@@ -55,6 +55,14 @@
 .session-card:hover { transform: translateY(-3px); border-color: var(--accent-secondary); box-shadow: 0 12px 26px rgba(0,150,180,.16); }
 .session-day-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: rgba(0,180,216,.06); }
 .session-day { font-size: var(--fs-body); font-weight: 700; color: var(--blue); }
+.session-card.day-done { border-color: #4ade80; }
+.day-done-badge { font-size: var(--fs-caption); color: #4ade80; font-weight: 600; }
+.btn-day-complete {
+  width: 100%; margin-top: 10px; padding: 9px 12px; border-radius: var(--radius-sm);
+  border: 0.5px solid #4ade80; background: rgba(74,222,128,.08); color: #4ade80;
+  font-size: var(--fs-caption); font-weight: 600; cursor: pointer; transition: background .2s;
+}
+.btn-day-complete:hover { background: rgba(74,222,128,.16); }
 .session-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 .session-part { font-size: var(--fs-caption); }
 .part-label { font-size: var(--fs-caption); font-weight: 700; letter-spacing: .5px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
@@ -928,7 +936,7 @@ const INTENSITY_MAP = {
   hard:   '<span class="intensity intensity-hard">🔴 힘듦</span>',
 };
 
-function renderSession(s) {
+function renderSession(s, dayId, weekIntensity) {
   const mainsetHTML = s.mainset.map(m => `
     <div class="mainset-row">
       <span class="ms-dist">${m.dist}</span>
@@ -937,9 +945,13 @@ function renderSession(s) {
         <span class="ms-purpose">${m.purpose}</span>
       </span>
     </div>`).join('');
+  const done = dayId ? isDayCompleted(dayId) : false;
   return `
-  <div class="session-card">
-    <div class="session-day-header"><span class="session-day">${s.day}</span></div>
+  <div class="session-card${done ? ' day-done' : ''}" id="${dayId ? 'sess-' + dayId : ''}">
+    <div class="session-day-header">
+      <span class="session-day">${s.day}</span>
+      ${done ? '<span class="day-done-badge">✅ 완료</span>' : ''}
+    </div>
     <div class="session-body">
       <div class="session-part">
         <div class="part-label">🌊 웜업</div>
@@ -955,6 +967,10 @@ function renderSession(s) {
       </div>
       <div class="session-total">총 거리 <strong>${s.total}</strong></div>
       <div class="coach-tip">💡 ${s.tip}</div>
+      ${dayId ? `
+      <button class="btn-day-complete" onclick='completeSessionDay(${JSON.stringify(dayId)}, ${JSON.stringify(s.day)}, ${JSON.stringify(s.total)}, ${JSON.stringify(weekIntensity || "medium")})'>
+        ${done ? '✅ 완료 (다시 기록)' : '🏁 이 훈련 완료, 일지에 남기기'}
+      </button>` : ''}
     </div>
   </div>`;
 }
@@ -964,7 +980,7 @@ function renderPlanTab(key, plan, containerId) {
     `<button class="week-sel-btn${i === 0 ? ' active' : ''}" data-plan="${key}" data-week="${i}">${w.num}주</button>`
   ).join('');
   const weekPanels = plan.weeks.map((w, i) => {
-    const sessions = w.sessions.map(renderSession).join('');
+    const sessions = w.sessions.map((s, di) => renderSession(s, `${key}-w${i}-d${di}`, w.intensity)).join('');
     return `
     <div class="week-panel${i === 0 ? ' active' : ''}" id="${key}-week-${i}">
       <div class="week-meta">
@@ -1166,7 +1182,7 @@ document.getElementById('btn-gen-random').addEventListener('click', () => {
       <span style="font-size: var(--fs-caption);color:var(--muted);">${_generatedPlan.summary}</span>
     </div>` +
     _generatedPlan.weeks.map(w => {
-      const sessHTML = w.sessions.map(s => renderSession(s)).join('');
+      const sessHTML = w.sessions.map(s => renderSession(s, null, w.intensity)).join('');
       return `
       <div style="padding:14px 16px;border-bottom:0.5px solid var(--border);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -1831,6 +1847,35 @@ applyHashTab();
 window.addEventListener('hashchange', applyHashTab);
 
 /* ── 훈련 일지에 추가 ───────────────────────── */
+function _getCompletedDays() {
+  try { return JSON.parse(localStorage.getItem('swimtech_completed_days') || '[]'); }
+  catch { return []; }
+}
+function isDayCompleted(dayId) {
+  return _getCompletedDays().includes(dayId);
+}
+function _markDayCompleted(dayId) {
+  const set = new Set(_getCompletedDays());
+  set.add(dayId);
+  localStorage.setItem('swimtech_completed_days', JSON.stringify([...set]));
+}
+
+function completeSessionDay(dayId, dayLabel, totalStr, intensity) {
+  const distance = parseInt(String(totalStr).replace(/[^0-9]/g, ''), 10) || '';
+  const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[intensity] || '보통';
+  const prefill = {
+    log_date: new Date().toISOString().slice(0, 10),
+    total_distance: distance,
+    intensity: intensityLabel,
+    memo: `[훈련 플랜] ${dayLabel} 세션 완료 (실제로 한 만큼만 확인 후 저장해주세요)`,
+  };
+  try {
+    sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
+    _markDayCompleted(dayId);
+  } catch (e) { /* ignore */ }
+  window.location.href = '/training-log';
+}
+
 function addToTrainingLog(planId) {
   const plan = PLANS[planId];
   if (!plan) return;

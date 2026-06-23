@@ -128,6 +128,22 @@
     <path d="M12 12c0 2-2 3-2 5a2 2 0 0 0 4 0c0-2-2-3-2-5z"/>
   </symbol>
 
+  <symbol id="icon-freestyle" viewBox="0 0 24 24">
+    <circle cx="17.5" cy="5" r="2"/>
+    <path style="stroke-width:3" d="M3 8.5l8 3 6.5-5.5"/>
+    <path style="stroke-width:3" d="M11 11.5l3.5 3"/>
+    <path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>
+    <path d="M2 21c2-2 4-2 6 0s4 2 6 0 4-2 6 0" opacity="0.5"/>
+  </symbol>
+
+  <symbol id="icon-backstroke" viewBox="0 0 24 24">
+    <circle cx="4" cy="12" r="2"/>
+    <path style="stroke-width:3" d="M6.8 11.2L14 9 19 10.3"/>
+    <path style="stroke-width:3" d="M6.8 10L3.5 2.5"/>
+    <path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>
+    <path d="M2 21c2-2 4-2 6 0s4 2 6 0 4-2 6 0" opacity="0.5"/>
+  </symbol>
+
   <symbol id="icon-trash" viewBox="0 0 24 24">
     <polyline points="3 6 5 6 21 6"/>
     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>

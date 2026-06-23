@@ -46,6 +46,16 @@ def _get_customer_id(request: Request) -> Optional[int]:
     return payload.get("customer_id")
 
 
+def _ensure_log_columns():
+    """기존에 배포된 training_logs 테이블에 used_fins 컬럼이 없을 수 있어 추가 보장."""
+    conn = _get_db()
+    cur = conn.cursor()
+    cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS used_fins BOOLEAN DEFAULT FALSE")
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 def _ensure_goals_table():
     conn = _get_db()
     cur = conn.cursor()
@@ -81,6 +91,7 @@ class LogRequest(BaseModel):
     intensity:        str = "보통"
     mood:             Optional[str] = None
     memo:             Optional[str] = None
+    used_fins:        bool = False
 
 
 @router.post("")
@@ -99,11 +110,12 @@ def create_log(req: LogRequest, request: Request):
     conn = _get_db()
     cur = conn.cursor()
     try:
+        _ensure_log_columns()
         cur.execute("""INSERT INTO training_logs
-            (customer_id, log_date, stroke_type, total_distance, duration_minutes, pool_length, intensity, memo, mood)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (customer_id, log_date, stroke_type, total_distance, duration_minutes, pool_length, intensity, memo, mood, used_fins)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
             (cid, ld, req.stroke_type, dist, int(req.duration_minutes or 0),
-             int(req.pool_length or 25), req.intensity, memo, req.mood))
+             int(req.pool_length or 25), req.intensity, memo, req.mood, req.used_fins))
         nid = cur.fetchone()[0]
         conn.commit()
         return {"id": nid, "status": "created"}
@@ -130,6 +142,7 @@ def update_log(log_id: int, req: LogRequest, request: Request):
     conn = _get_db()
     cur = conn.cursor()
     try:
+        _ensure_log_columns()
         cur.execute("SELECT customer_id FROM training_logs WHERE id = %s", (log_id,))
         row = cur.fetchone()
         if not row:
@@ -138,10 +151,10 @@ def update_log(log_id: int, req: LogRequest, request: Request):
             raise HTTPException(403, "권한이 없습니다")
         cur.execute("""UPDATE training_logs SET
             log_date=%s, stroke_type=%s, total_distance=%s, duration_minutes=%s,
-            pool_length=%s, intensity=%s, memo=%s, mood=%s, updated_at=NOW()
+            pool_length=%s, intensity=%s, memo=%s, mood=%s, used_fins=%s, updated_at=NOW()
             WHERE id=%s""",
             (ld, req.stroke_type, dist, int(req.duration_minutes or 0),
-             int(req.pool_length or 25), req.intensity, memo, req.mood, log_id))
+             int(req.pool_length or 25), req.intensity, memo, req.mood, req.used_fins, log_id))
         conn.commit()
         return {"status": "updated"}
     except HTTPException:
@@ -343,16 +356,17 @@ def list_logs(request: Request, year: Optional[int] = None, month: Optional[int]
     conn = _get_db()
     cur = conn.cursor()
     try:
+        _ensure_log_columns()
         if year and month:
             cur.execute("""SELECT id, log_date, stroke_type, total_distance, duration_minutes,
-                       pool_length, intensity, mood, memo, created_at
+                       pool_length, intensity, mood, memo, created_at, used_fins
                 FROM training_logs WHERE customer_id=%s
                   AND EXTRACT(YEAR FROM log_date)=%s AND EXTRACT(MONTH FROM log_date)=%s
                 ORDER BY log_date DESC, created_at DESC""",
                 (cid, year, month))
         else:
             cur.execute("""SELECT id, log_date, stroke_type, total_distance, duration_minutes,
-                       pool_length, intensity, mood, memo, created_at
+                       pool_length, intensity, mood, memo, created_at, used_fins
                 FROM training_logs WHERE customer_id=%s
                 ORDER BY log_date DESC, created_at DESC LIMIT 100""",
                 (cid,))
@@ -370,6 +384,7 @@ def list_logs(request: Request, year: Optional[int] = None, month: Optional[int]
                 "mood": r[7],
                 "memo": r[8],
                 "created_at": str(r[9]),
+                "used_fins": r[10],
             }
             for r in rows
         ]}

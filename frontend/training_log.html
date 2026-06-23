@@ -98,6 +98,41 @@
   padding: 8px 18px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .btn-add-log:hover { opacity: .85; }
+.log-list-head-actions { display: flex; gap: 8px; }
+.btn-import-log {
+  background: none; color: var(--blue); border: 0.5px solid var(--blue); border-radius: var(--radius-sm);
+  padding: 8px 16px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: background .2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-import-log:hover { background: rgba(0,180,216,.1); }
+
+.import-item {
+  display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.04);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px;
+}
+.import-item.dup { opacity: .55; }
+.import-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); flex-shrink: 0; }
+.import-item-body { flex: 1; }
+.import-item-date { font-size: var(--fs-body); color: var(--text); }
+.import-item-meta { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+.import-tag {
+  font-size: var(--fs-caption); padding: 2px 8px; border-radius: var(--radius-md); flex-shrink: 0;
+}
+.import-tag.new { background: rgba(74,222,128,.15); color: var(--green); }
+.import-tag.dup { background: rgba(250,204,21,.15); color: #facc15; }
+.import-empty { text-align: center; padding: 24px; color: var(--muted); font-size: var(--fs-body); }
+.import-drop {
+  border: 1.5px dashed var(--border); border-radius: var(--radius-md); padding: 28px 16px;
+  text-align: center; cursor: pointer; transition: border-color .2s;
+}
+.import-drop:hover { border-color: var(--blue); }
+.import-drop input[type=file] { display: none; }
+.import-source-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.import-source-tab {
+  flex: 1; background: none; border: 0.5px solid var(--border); color: var(--muted);
+  border-radius: var(--radius-sm); padding: 8px; font-size: var(--fs-caption); cursor: pointer;
+}
+.import-source-tab.active { border-color: var(--blue); color: var(--blue); }
 
 .log-item {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
@@ -284,7 +319,10 @@ select.form-control option { background: var(--surface); }
   <!-- 기록 목록 -->
   <div class="log-list-head">
     <div class="log-list-title" id="log-list-title">기록 목록</div>
-    <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
+    <div class="log-list-head-actions">
+      <button class="btn-import-log" id="btn-open-import">⤓ 운동 데이터 가져오기</button>
+      <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
+    </div>
   </div>
   <div id="log-list"></div>
 
@@ -302,6 +340,38 @@ select.form-control option { background: var(--surface); }
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeGoalModal()">취소</button>
       <button class="btn-submit" onclick="saveGoal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 운동 데이터 가져오기 모달 -->
+<div class="modal-backdrop hidden" id="import-modal-backdrop">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-title">운동 데이터 가져오기</div>
+
+    <div id="import-step-pick">
+      <div class="import-source-tabs">
+        <button class="import-source-tab active" data-src="apple" id="import-tab-apple">애플 건강 (.zip)</button>
+        <button class="import-source-tab" data-src="samsung" id="import-tab-samsung">삼성헬스 (.csv)</button>
+      </div>
+      <label class="import-drop" id="import-drop">
+        <div id="import-drop-label">파일을 선택하거나 끌어다 놓으세요</div>
+        <div style="font-size:var(--fs-caption);color:var(--muted);margin-top:6px;" id="import-drop-hint">
+          건강 앱 → 프로필 → 건강 데이터 모두 내보내기
+        </div>
+        <input type="file" id="import-file-input" accept=".zip">
+      </label>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeImportModal()">취소</button>
+      </div>
+    </div>
+
+    <div id="import-step-preview" class="hidden">
+      <div id="import-list"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeImportModal()">취소</button>
+        <button class="btn-submit" id="btn-import-confirm">선택한 기록 일지에 추가</button>
+      </div>
     </div>
   </div>
 </div>
@@ -368,6 +438,13 @@ select.form-control option { background: var(--surface); }
           <option>나쁨</option>
         </select>
       </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="f-fins" style="width:16px; height:16px; accent-color: var(--blue);">
+        오리발 사용
+      </label>
     </div>
 
     <div class="form-row">
@@ -572,6 +649,8 @@ function renderLogList(logs) {
 
       const moodHtml = l.mood
         ? `<span class="log-badge mood-${l.mood}">${l.mood}</span>` : '';
+      const finsHtml = l.used_fins
+        ? `<span class="log-badge">🦶 오리발</span>` : '';
       const memoHtml = l.memo
         ? `<div class="log-memo">${escHtml(l.memo)}</div>` : '';
 
@@ -586,6 +665,7 @@ function renderLogList(logs) {
             <span class="log-stroke">${escHtml(l.stroke_type)}</span>
             <span class="log-badge intensity-${l.intensity}">${l.intensity}</span>
             ${moodHtml}
+            ${finsHtml}
           </div>
           <div class="log-row2">
             ${l.total_distance.toLocaleString()}m &nbsp;·&nbsp;
@@ -681,6 +761,104 @@ document.getElementById('modal-backdrop').addEventListener('click', e => {
   } catch (e) { /* ignore */ }
 })();
 
+// ── 운동 데이터 가져오기 (애플 건강 / 삼성헬스) ──────────────
+let importSource = 'apple';
+let importPreviewItems = [];
+
+function openImportModal() {
+  document.getElementById('import-step-pick').classList.remove('hidden');
+  document.getElementById('import-step-preview').classList.add('hidden');
+  document.getElementById('import-file-input').value = '';
+  importPreviewItems = [];
+  document.getElementById('import-modal-backdrop').classList.remove('hidden');
+}
+function closeImportModal() {
+  document.getElementById('import-modal-backdrop').classList.add('hidden');
+}
+function setImportSource(src) {
+  importSource = src;
+  document.getElementById('import-tab-apple').classList.toggle('active', src === 'apple');
+  document.getElementById('import-tab-samsung').classList.toggle('active', src === 'samsung');
+  const input = document.getElementById('import-file-input');
+  const hint = document.getElementById('import-drop-hint');
+  if (src === 'apple') {
+    input.accept = '.zip';
+    hint.textContent = '건강 앱 → 프로필 → 건강 데이터 모두 내보내기';
+  } else {
+    input.accept = '.zip,.csv';
+    hint.textContent = '삼성헬스 데이터 다운로드로 받은 zip 또는 그 안의 exercise csv';
+  }
+}
+
+document.getElementById('btn-open-import').onclick = openImportModal;
+document.getElementById('import-tab-apple').onclick = () => setImportSource('apple');
+document.getElementById('import-tab-samsung').onclick = () => setImportSource('samsung');
+document.getElementById('import-modal-backdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('import-modal-backdrop')) closeImportModal();
+});
+
+document.getElementById('import-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('import-drop-label').textContent = `${file.name} 분석 중...`;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('source', importSource);
+  try {
+    const res = await fetch('/api/training-log/import/preview', {
+      method: 'POST', credentials: 'include', body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || '파일을 분석하지 못했습니다'); document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요'; return; }
+    importPreviewItems = data.items || [];
+    renderImportPreview();
+  } catch (err) {
+    alert('네트워크 오류');
+    document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+  }
+});
+
+function renderImportPreview() {
+  document.getElementById('import-step-pick').classList.add('hidden');
+  document.getElementById('import-step-preview').classList.remove('hidden');
+  const list = document.getElementById('import-list');
+  if (!importPreviewItems.length) {
+    list.innerHTML = '<div class="import-empty">수영 운동 기록을 찾지 못했습니다.</div>';
+    return;
+  }
+  list.innerHTML = importPreviewItems.map((it, i) => `
+    <label class="import-item ${it.is_duplicate ? 'dup' : ''}">
+      <input type="checkbox" data-idx="${i}" ${it.is_duplicate ? 'disabled' : 'checked'}>
+      <div class="import-item-body">
+        <div class="import-item-date">${it.log_date} · ${it.stroke_type}</div>
+        <div class="import-item-meta">${it.total_distance.toLocaleString()}m · ${it.duration_minutes}분</div>
+      </div>
+      <span class="import-tag ${it.is_duplicate ? 'dup' : 'new'}">${it.is_duplicate ? '중복' : '신규'}</span>
+    </label>
+  `).join('');
+}
+
+document.getElementById('btn-import-confirm').onclick = async () => {
+  const checked = Array.from(document.querySelectorAll('#import-list input[type=checkbox]:checked'))
+    .map(cb => importPreviewItems[Number(cb.dataset.idx)]);
+  if (!checked.length) { closeImportModal(); return; }
+  try {
+    const res = await fetch('/api/training-log/import/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ items: checked }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || '가져오기에 실패했습니다'); return; }
+    closeImportModal();
+    alert(`${data.added}건을 일지에 추가했습니다.`);
+    refresh();
+  } catch (err) {
+    alert('네트워크 오류');
+  }
+};
+
 function openAddModal(prefill) {
   document.getElementById('modal-title').textContent = '훈련 기록 추가';
   document.getElementById('edit-id').value = '';
@@ -691,6 +869,7 @@ function openAddModal(prefill) {
   document.getElementById('f-duration').value = prefill?.duration_minutes || '';
   document.getElementById('f-intensity').value = prefill?.intensity || '보통';
   document.getElementById('f-mood').value = '';
+  document.getElementById('f-fins').checked = !!prefill?.used_fins;
   document.getElementById('f-memo').value = prefill?.memo || '';
   clearModalError();
   document.getElementById('modal-backdrop').classList.remove('hidden');
@@ -708,6 +887,7 @@ function openEditModal(id) {
   document.getElementById('f-duration').value = log.duration_minutes;
   document.getElementById('f-intensity').value = log.intensity;
   document.getElementById('f-mood').value = log.mood || '';
+  document.getElementById('f-fins').checked = !!log.used_fins;
   document.getElementById('f-memo').value = log.memo || '';
   clearModalError();
   document.getElementById('modal-backdrop').classList.remove('hidden');
@@ -741,6 +921,7 @@ async function saveLog() {
     duration_minutes: parseInt(document.getElementById('f-duration').value),
     intensity:        document.getElementById('f-intensity').value,
     mood:             document.getElementById('f-mood').value || null,
+    used_fins:        document.getElementById('f-fins').checked,
     memo:             document.getElementById('f-memo').value.trim() || null,
   };
 
