@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin
+from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin, health_import
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
@@ -161,6 +161,18 @@ CREATE TABLE IF NOT EXISTS user_badges (
 );
 CREATE INDEX IF NOT EXISTS idx_plan_fav_user  ON plan_favorites(username);
 CREATE INDEX IF NOT EXISTS idx_user_badges_user ON user_badges(username);
+ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS used_fins BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS plan_completions (
+    id           SERIAL PRIMARY KEY,
+    customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    plan_key     VARCHAR(50) NOT NULL,
+    week_index   INTEGER NOT NULL,
+    day_label    VARCHAR(20) NOT NULL,
+    training_log_id INTEGER REFERENCES training_logs(id) ON DELETE SET NULL,
+    completed_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (customer_id, plan_key, week_index, day_label)
+);
+CREATE INDEX IF NOT EXISTS idx_plan_completions_cid ON plan_completions(customer_id, plan_key);
 """
 
 app = FastAPI(
@@ -270,6 +282,7 @@ app.include_router(plans.router,      prefix="/api/plans",      tags=["훈련 �
 app.include_router(community.router,      prefix="/api/community",      tags=["커뮤니티"])
 app.include_router(notifications.router,  prefix="/api/notifications",  tags=["알림"])
 app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련 일지"])
+app.include_router(health_import.router,  prefix="/api/training-log/import", tags=["운동 데이터 가져오기"])
 app.include_router(report.router,         prefix="/api/report",          tags=["월간 리포트"])
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
 app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
