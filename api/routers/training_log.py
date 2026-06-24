@@ -348,6 +348,50 @@ def get_goal(year: int, month: int, request: Request):
         raise HTTPException(500, f"DB 오류: {e}")
 
 
+@router.get("/recent")
+def get_most_recent_log(request: Request):
+    """빠른 기록 작성에 사용할 가장 최근 훈련 기록을 반환한다."""
+    cid = _get_customer_id(request)
+    if not cid:
+        raise HTTPException(401, "로그인이 필요합니다")
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        _ensure_log_columns()
+        cur.execute(
+            """SELECT id, log_date, stroke_type, total_distance, duration_minutes,
+                      pool_length, intensity, mood, memo, created_at, used_fins
+                 FROM training_logs
+                WHERE customer_id = %s
+                ORDER BY log_date DESC, created_at DESC
+                LIMIT 1""",
+            (cid,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return {"log": None}
+        return {"log": {
+            "id": row[0],
+            "log_date": str(row[1]),
+            "stroke_type": row[2],
+            "total_distance": row[3],
+            "duration_minutes": row[4],
+            "pool_length": row[5],
+            "intensity": row[6],
+            "mood": row[7],
+            "memo": row[8],
+            "created_at": str(row[9]),
+            "used_fins": row[10],
+        }}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"최근 기록 조회 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+
 @router.get("")
 def list_logs(request: Request, year: Optional[int] = None, month: Optional[int] = None):
     cid = _get_customer_id(request)

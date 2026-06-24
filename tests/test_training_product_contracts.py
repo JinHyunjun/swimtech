@@ -34,3 +34,15 @@ def test_dashboard_reads_training_logs_not_analysis_results():
 def test_customer_routes_require_admin_authorization():
     customers = (ROOT / "api" / "routers" / "customers.py").read_text(encoding="utf-8")
     assert customers.count("_require_admin(swimtech_token)") == 3
+
+
+def test_quick_log_reuses_the_latest_training_record():
+    api = (ROOT / "api" / "routers" / "training_log.py").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    dashboard = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+
+    assert '@router.get("/recent")' in api
+    assert "ORDER BY log_date DESC, created_at DESC" in api
+    assert "openQuickLog" in page
+    assert "/api/training-log/recent" in page
+    assert "/training-log?quick=1" in dashboard

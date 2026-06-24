@@ -322,6 +322,7 @@ select.form-control option { background: var(--surface); }
     <div class="log-list-head-actions">
       <!-- 운동 데이터 가져오기(워치 연동) 기능은 현재 비활성화 — 추후 안정화되면 아래 버튼 주석만 해제 -->
       <!-- <button class="btn-import-log" id="btn-open-import">⤓ 운동 데이터 가져오기</button> -->
+      <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
       <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
     </div>
   </div>
@@ -747,6 +748,7 @@ function renderChart(logs) {
 
 // ── 모달 열기/닫기 ────────────────────────────────────────
 document.getElementById('btn-open-modal').onclick = () => openAddModal();
+document.getElementById('btn-quick-log').onclick = openQuickLog;
 document.getElementById('btn-modal-cancel').onclick = closeModal;
 document.getElementById('modal-backdrop').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-backdrop')) closeModal();
@@ -763,6 +765,35 @@ document.getElementById('modal-backdrop').addEventListener('click', e => {
     openAddModal(prefill);
   } catch (e) { /* ignore */ }
 })();
+
+async function openQuickLog() {
+  const button = document.getElementById('btn-quick-log');
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = '불러오는 중...';
+  try {
+    const response = await fetch('/api/training-log/recent', { credentials: 'include' });
+    if (response.status === 401) { window.location.href = '/login'; return; }
+    if (!response.ok) throw new Error('최근 기록을 불러오지 못했습니다.');
+    const recent = (await response.json()).log;
+    if (!recent) {
+      openAddModal();
+      return;
+    }
+    openAddModal({
+      ...recent,
+      log_date: todayStr(),
+      mood: '',
+      memo: '',
+    });
+    document.getElementById('modal-title').textContent = '최근 기록으로 빠르게 작성';
+  } catch (error) {
+    alert(error.message || '최근 기록을 불러오지 못했습니다.');
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
 
 // ── 운동 데이터 가져오기 (Health Auto Export / 애플 건강 / 삼성헬스) ──────────────
 let importSource = 'hae';
@@ -1083,10 +1114,13 @@ async function saveGoal() {
 
 // ── 초기 로드 ─────────────────────────────────────────────
 refresh();
+if (new URLSearchParams(window.location.search).get('quick') === '1') {
+  window.history.replaceState({}, '', '/training-log');
+  openQuickLog();
+}
 </script>
 <script src="/static/theme.js"></script>
 </body>
 </html>
-
 
 
