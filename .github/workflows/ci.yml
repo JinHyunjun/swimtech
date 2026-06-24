@@ -36,7 +36,32 @@ jobs:
         working-directory: api
         run: |
           python -m pytest ../tests/test_api_unit.py ../tests/test_training_product_contracts.py -v --tb=short \
-            --html=../tests/ci_report.html --self-contained-html
+            --html=../tests/ci_report.html --self-contained-html \
+            --junitxml=../tests/ci_results.xml
+
+      - name: Annotate test failure
+        if: failure()
+        working-directory: api
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path('../tests/ci_results.xml')
+          if not report.exists():
+              raise SystemExit('JUnit report was not created.')
+
+          for case in ET.parse(report).iter('testcase'):
+              failure = case.find('failure')
+              if failure is None:
+                  failure = case.find('error')
+              if failure is None:
+                  continue
+              name = f"{case.get('classname', '')}::{case.get('name', '')}"
+              detail = (failure.get('message') or failure.text or 'Test failed').strip()
+              detail = detail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::error title={name}::{detail[:1500]}")
+          PY
 
       - name: Upload test report
         if: always()
