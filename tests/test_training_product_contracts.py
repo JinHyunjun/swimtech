@@ -72,6 +72,7 @@ def test_plan_completion_is_saved_only_with_a_training_log():
     log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
 
     assert '@router.get("/plan-completions")' in api
+    assert api.index('@router.get("/plan-completions")') < api.index('@router.put("/{log_id}")')
     assert "INSERT INTO plan_completions" in api
     assert "DELETE FROM plan_completions WHERE training_log_id" in api
     assert "plan_completion" in plan

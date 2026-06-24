@@ -159,6 +159,41 @@ def create_log(req: LogRequest, request: Request):
         cur.close(); conn.close()
 
 
+@router.get("/plan-completions")
+def get_plan_completions(request: Request):
+    """Return preset-plan sessions completed through a saved training log."""
+    cid = _get_customer_id(request)
+    if not cid:
+        return {"completions": []}
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT plan_key, week_index, day_label, training_log_id, completed_at
+            FROM plan_completions
+            WHERE customer_id = %s
+            ORDER BY completed_at DESC
+            """,
+            (cid,),
+        )
+        return {"completions": [
+            {
+                "plan_key": row[0],
+                "week_index": row[1],
+                "day_label": row[2],
+                "training_log_id": row[3],
+                "completed_at": str(row[4]),
+            }
+            for row in cur.fetchall()
+        ]}
+    except Exception as e:
+        raise HTTPException(500, f"플랜 완료 기록 조회 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+
 @router.put("/{log_id}")
 def update_log(log_id: int, req: LogRequest, request: Request):
     cid = _get_customer_id(request)
@@ -423,41 +458,6 @@ def get_most_recent_log(request: Request):
         raise
     except Exception as e:
         raise HTTPException(500, f"최근 기록 조회 오류: {e}")
-    finally:
-        cur.close()
-        conn.close()
-
-
-@router.get("/plan-completions")
-def get_plan_completions(request: Request):
-    """Return preset-plan sessions completed through a saved training log."""
-    cid = _get_customer_id(request)
-    if not cid:
-        return {"completions": []}
-    conn = _get_db()
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            """
-            SELECT plan_key, week_index, day_label, training_log_id, completed_at
-            FROM plan_completions
-            WHERE customer_id = %s
-            ORDER BY completed_at DESC
-            """,
-            (cid,),
-        )
-        return {"completions": [
-            {
-                "plan_key": row[0],
-                "week_index": row[1],
-                "day_label": row[2],
-                "training_log_id": row[3],
-                "completed_at": str(row[4]),
-            }
-            for row in cur.fetchall()
-        ]}
-    except Exception as e:
-        raise HTTPException(500, f"플랜 완료 기록 조회 오류: {e}")
     finally:
         cur.close()
         conn.close()
