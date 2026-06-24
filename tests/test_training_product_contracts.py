@@ -46,3 +46,11 @@ def test_quick_log_reuses_the_latest_training_record():
     assert "openQuickLog" in page
     assert "/api/training-log/recent" in page
     assert "/training-log?quick=1" in dashboard
+
+
+def test_render_deploy_hook_is_triggered_for_backend_changes():
+    workflow = (ROOT / ".github" / "workflows" / "render-deploy.yml").read_text(encoding="utf-8")
+
+    assert "RENDER_DEPLOY_HOOK" in workflow
+    assert '"api/**"' in workflow
+    assert 'curl --fail --silent --show-error --request POST' in workflow
