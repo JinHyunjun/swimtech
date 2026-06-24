@@ -13,7 +13,7 @@ import psycopg2
 from fastapi import APIRouter, Cookie, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from minio import Minio
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from routers.auth import decode_token
 
@@ -178,12 +178,30 @@ class PostCreate(BaseModel):
     tags: Optional[List[str]] = []
     image_keys: Optional[List[str]] = []
 
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str) -> str:
+        category = value.strip()
+        if category not in VALID_CATEGORIES:
+            raise ValueError("올바르지 않은 카테고리입니다.")
+        return category
+
 class PostUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     image_keys: Optional[List[str]] = None
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        category = value.strip()
+        if category not in VALID_CATEGORIES:
+            raise ValueError("올바르지 않은 카테고리입니다.")
+        return category
 
 class CommentCreate(BaseModel):
     content: str

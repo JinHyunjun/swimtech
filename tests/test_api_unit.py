@@ -1,36 +1,11 @@
 """API unit tests — no browser, no DB, no MinIO required.
 Runs in CI via: pytest tests/test_api_unit.py
 """
-import sys
-import types
 import pytest
 
 # ---------------------------------------------------------------------------
 # Stub heavy optional deps so imports succeed without the real packages
 # ---------------------------------------------------------------------------
-def _stub(name):
-    m = types.ModuleType(name)
-    sys.modules[name] = m
-    return m
-
-for _n in [
-    "psycopg2", "psycopg2.extras",
-    "minio", "minio.error",
-    "mediapipe", "cv2", "anthropic", "notion_client",
-    "slowapi", "slowapi.errors", "slowapi.middleware",
-    "starlette", "starlette.exceptions",
-]:
-    if _n not in sys.modules:
-        _stub(_n)
-
-sys.modules["psycopg2"].connect = lambda *a, **kw: None
-sys.modules["slowapi"].Limiter = object
-sys.modules["slowapi.errors"].RateLimitExceeded = Exception
-sys.modules["slowapi.middleware"].SlowAPIMiddleware = object
-sys.modules["starlette.exceptions"].HTTPException = Exception
-sys.modules["minio.error"].S3Error = Exception
-
-
 # ---------------------------------------------------------------------------
 # 1. community router — constants & regex
 # ---------------------------------------------------------------------------
