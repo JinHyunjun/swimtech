@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import videos, customers, analysis, stream, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin, health_import
+from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin, health_import
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS user_badges (
 CREATE INDEX IF NOT EXISTS idx_plan_fav_user  ON plan_favorites(username);
 CREATE INDEX IF NOT EXISTS idx_user_badges_user ON user_badges(username);
 ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS used_fins BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS weekly_goal INTEGER NOT NULL DEFAULT 3;
 CREATE TABLE IF NOT EXISTS plan_completions (
     id           SERIAL PRIMARY KEY,
     customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -181,7 +182,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
-_API_PREFIXES = ("/api/", "/auth/", "/videos/", "/analysis/", "/stream/", "/customers/")
+_API_PREFIXES = ("/api/", "/auth/", "/customers/")
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -270,10 +271,7 @@ async def _log_page_views(request: Request, call_next):
 
 app.include_router(auth.router,      prefix="/auth",      tags=["인증"])
 app.include_router(admin.router,     prefix="/api/admin", tags=["관리자"])
-app.include_router(videos.router,    prefix="/videos",    tags=["영상"])
 app.include_router(customers.router, prefix="/customers", tags=["고객"])
-app.include_router(analysis.router,  prefix="/analysis",  tags=["분석"])
-app.include_router(stream.router,    prefix="/stream",    tags=["실시간 분석"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
 app.include_router(sheets.router,   prefix="/api/sheets",    tags=["Sheets"])
 app.include_router(badge.router,      prefix="/api/badges",     tags=["뱃지"])
@@ -296,18 +294,7 @@ def health():
 
 @app.post("/api/open-folder")
 def open_folder():
-    """Windows 탐색기에서 video 폴더 열기"""
-    import subprocess, platform
-    video_dir = "/app/video"
-    try:
-        if platform.system() == "Windows":
-            subprocess.Popen(["explorer", video_dir])
-        else:
-            # Docker 내부에서는 실행 불가 → 클라이언트에서 파일 선택 다이얼로그 열기
-            pass
-        return {"status": "ok"}
-    except Exception:
-        return {"status": "fallback"}
+    raise HTTPException(status_code=410, detail="영상 분석 기능은 현재 제공하지 않습니다.")
 
 FRONTEND_DIR = "/app/frontend"
 templates = Jinja2Templates(directory=FRONTEND_DIR)
@@ -428,7 +415,6 @@ def serve_home(request: Request):
     if redir: return redir
     return _serve("landing.html")
 
-# 영상 분석 메타 선택 페이지
 # 관리자 슈퍼 대시보드
 @app.get("/admin")
 def serve_admin(request: Request):  # admin-only
@@ -439,30 +425,11 @@ def serve_admin(request: Request):  # admin-only
     return _serve("admin.html")
 
 @app.get("/meta")
-def serve_meta(request: Request):  # admin-only
-    redir = _auth_redirect(request)
-    if redir: return redir
-    if not _is_admin(request):
-        return RedirectResponse(url="/landing")
-    return _serve("meta.html")
-
-# 업로드 페이지
 @app.get("/upload")
-def serve_upload(request: Request):  # admin-only
-    redir = _auth_redirect(request)
-    if redir: return redir
-    if not _is_admin(request):
-        return RedirectResponse(url="/landing")
-    return _serve("upload.html")
-
-# 분석 뷰어 페이지
 @app.get("/viewer")
-def serve_viewer(request: Request):  # admin-only
-    redir = _auth_redirect(request)
-    if redir: return redir
-    if not _is_admin(request):
-        return RedirectResponse(url="/landing")
-    return _serve("viewer.html")
+def retired_analysis_page():
+    """기존 영상 분석 주소를 안전하게 홈으로 돌린다."""
+    return RedirectResponse(url="/landing", status_code=307)
 
 # 대시보드 페이지
 @app.get("/profile")
@@ -566,56 +533,15 @@ def videos_page(request: Request):
     if redir: return redir
     return _serve("videos.html")
 
-# 공유 결과 페이지 (로그인 불필요)
+# 이전 영상 분석 공유 주소는 더 이상 제공하지 않는다.
 @app.get("/share/{token}")
-def share_page(token: str):
-    return _serve("share.html")
+def retired_analysis_share(token: str):
+    return RedirectResponse(url="/landing", status_code=307)
 
-# 공유 결과 데이터 API (인증 불필요)
+# 이전 영상 분석 공유 데이터 API
 @app.get("/api/share/{token}")
-def get_share_data(token: str):
-    DATABASE_URL = os.getenv("DATABASE_URL", "")
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT stroke_type, purpose, analyzed_at,
-                   arm_symmetry, kick_count, kick_freq_hz,
-                   head_angle_avg, head_rotation_score, overall_score,
-                   ai_feedback, drill_recommendations
-            FROM analysis_results
-            WHERE share_token = %s
-        """, (token,))
-        row = cur.fetchone()
-        cur.close(); conn.close()
-        if not row:
-            raise HTTPException(404, "공유된 분석 결과를 찾을 수 없습니다.")
-        (stroke_type, purpose, analyzed_at, arm_symmetry, kick_count,
-         kick_freq_hz, head_angle_avg, head_rotation_score, overall_score,
-         ai_feedback, drill_recommendations) = row
-
-        if overall_score is None:
-            sym  = float(arm_symmetry or 0)
-            head = float(head_rotation_score or 0)
-            freq = min(100.0, float(kick_freq_hz or 0) * 20)
-            overall_score = round(sym * 0.4 + head * 0.3 + freq * 0.3, 1)
-
-        return {
-            "stroke_type":  stroke_type,
-            "purpose":      purpose,
-            "analyzed_at":  str(analyzed_at) if analyzed_at else None,
-            "arm_symmetry": float(arm_symmetry) if arm_symmetry else 0,
-            "kick_count":   kick_count or 0,
-            "kick_freq_hz": float(kick_freq_hz) if kick_freq_hz else 0,
-            "head_angle_avg": float(head_angle_avg) if head_angle_avg else 0,
-            "overall_score":  float(overall_score),
-            "feedback":     ai_feedback or "",
-            "drills":       drill_recommendations or "",
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+def retired_analysis_share_data(token: str):
+    raise HTTPException(status_code=410, detail="영상 분석 공유 기능은 현재 제공하지 않습니다.")
 
 # 레거시 루트 (기존 index.html 직접 접근용)
 @app.get("/app")
@@ -624,18 +550,10 @@ def serve_index_legacy(request: Request):
     if redir: return redir
     return _serve("index.html")
 
-# 로컬 영상 파일 스트리밍 (뷰어 페이지에서 video.src로 사용)
+# 이전 로컬 영상 스트리밍 API
 @app.get("/api/video-stream/{filename}")
-async def stream_video_file(filename: str, request: Request):
-    token = request.cookies.get("swimtech_token")
-    if not token or not verify_token(token):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    # 경로 순회 공격 방지
-    safe_name = os.path.basename(filename)
-    video_path = os.path.join("/app/video", safe_name)
-    if not os.path.exists(video_path):
-        raise HTTPException(status_code=404, detail=f"영상 파일 없음: {safe_name}")
-    return FileResponse(video_path, media_type="video/mp4", headers={"Accept-Ranges": "bytes"})
+async def retired_video_stream(filename: str):
+    raise HTTPException(status_code=410, detail="영상 분석 기능은 현재 제공하지 않습니다.")
 
 # PWA 필수 파일
 @app.get("/manifest.json")
@@ -710,4 +628,3 @@ async def _swimtech_http_exception_handler(request: _SwimTechRequest, exc: _Swim
         content={"detail": detail},
         headers=getattr(exc, "headers", None),
     )
-

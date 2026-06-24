@@ -322,7 +322,7 @@ async function loadBadges() {
     const locked = _badges.filter(b => !b.earned);
 
     document.getElementById('earned-grid').innerHTML =
-      earned.length ? earned.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">아직 획득한 뱃지가 없어요. 첫 분석을 시작해보세요!</div>';
+      earned.length ? earned.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">아직 획득한 뱃지가 없어요. 첫 훈련을 기록해보세요!</div>';
     document.getElementById('locked-grid').innerHTML =
       locked.length ? locked.map(renderBadge).join('') : '<div style="color:var(--muted);font-size: var(--fs-body);padding:20px 0;">🎉 모든 뱃지를 획득했습니다!</div>';
 

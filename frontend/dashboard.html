@@ -1,875 +1,189 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SwimTech — 대시보드</title>
+<title>SwimTech — 훈련 대시보드</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SwimTech">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
-.dash-page {
-  padding: 24px;
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.dash-topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.back-btn {
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  transition: all .2s;
-  text-decoration: none;
-}
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-.dash-title {
-  font-size: var(--fs-title);
-  font-style: italic;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-
-/* 숫자 카드 4개 */
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.summary-card {
-  background: linear-gradient(var(--surface), var(--surface)) padding-box,
-              linear-gradient(135deg, #00b4d8, var(--border)) border-box;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  transition: transform .22s ease, box-shadow .22s ease;
-}
-.summary-card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,150,180,.2); }
-/* 최고 점수 — 성취 에너지(코랄) */
-.summary-card.hot {
-  background: linear-gradient(var(--surface), var(--surface)) padding-box,
-              linear-gradient(135deg, var(--energy), var(--border)) border-box;
-}
-.summary-card.hot:hover { box-shadow: 0 14px 30px rgba(255,106,61,.2); }
-.summary-card-label {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
-}
-.summary-card-value {
-  font-size: clamp(32px, 5vw, 44px);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
-}
-.summary-card-value.blue   { color: var(--blue); }
-.summary-card-value.green  { color: var(--green); }
-.summary-card-value.amber  { color: var(--amber); }
-.summary-card-value.cyan   { color: var(--cyan); }
-.summary-card-value.energy { color: var(--energy); }
-.summary-card-unit {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-/* 차트 그리드 */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 24px;
-}
-.chart-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.chart-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(0,150,180,.16); }
-.chart-card-title {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-  margin-bottom: 14px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
-.chart-wrap {
-  position: relative;
-  height: 220px;
-}
-
-/* 테이블 */
-.table-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-}
-.table-card-title {
-  font-size: var(--fs-body);
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 14px;
-}
-.analysis-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--fs-body);
-}
-.analysis-table th {
-  text-align: left;
-  color: var(--muted);
-  font-weight: 400;
-  font-size: var(--fs-caption);
-  padding: 0 10px 10px 0;
-  border-bottom: 0.5px solid var(--border);
-}
-.analysis-table td {
-  padding: 10px 10px 10px 0;
-  border-bottom: 0.5px solid var(--border);
-  color: var(--text);
-}
-.analysis-table tr:last-child td { border-bottom: none; }
-.analysis-table tr:hover td { background: rgba(255,255,255,.02); }
-
-.badge {
-  display: inline-block;
-  font-size: var(--fs-caption);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-}
-.badge-blue   { background: rgba(0,180,216,.15); color: var(--blue); border: 0.5px solid rgba(0,180,216,.3); }
-.badge-green  { background: rgba(74,222,128,.12); color: var(--green); border: 0.5px solid rgba(74,222,128,.3); }
-.badge-amber  { background: rgba(245,158,11,.12); color: var(--amber); border: 0.5px solid rgba(245,158,11,.3); }
-.badge-purple { background: rgba(72,202,228,.12); color: var(--purple); border: 0.5px solid rgba(72,202,228,.3); }
-
-.empty-msg {
-  text-align: center;
-  color: var(--muted);
-  padding: 60px 0;
-  font-size: var(--fs-body);
-}
-
-.loading-overlay {
-  text-align: center;
-  color: var(--muted);
-  padding: 40px 0;
-  font-size: var(--fs-body);
-}
-
-/* 히스토리 타임라인 */
-.history-section {
-  margin-top: 20px;
-}
-.history-header {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.history-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: border-color .2s;
-}
-.history-card:hover { border-color: rgba(0,180,216,.35); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,150,180,.14); }
-.history-date {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-  white-space: nowrap;
-  min-width: 80px;
-}
-.history-body { flex: 1; min-width: 0; }
-.history-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-  flex-wrap: wrap;
-}
-.history-stroke {
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  color: var(--blue);
-  background: rgba(0,180,216,.1);
-  border: 0.5px solid rgba(0,180,216,.25);
-  border-radius: var(--radius-sm);
-  padding: 1px 7px;
-}
-.history-purpose {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-}
-.history-feedback {
-  font-size: var(--fs-caption);
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.history-score-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  min-width: 56px;
-}
-.history-score {
-  font-size: var(--fs-heading);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.history-diff {
-  font-size: var(--fs-caption);
-  font-weight: 600;
-}
-.history-diff.up   { color: var(--green); }
-.history-diff.down { color: var(--red); }
-.history-diff.same { color: var(--muted); }
-.history-view-btn {
-  padding: 6px 14px;
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: border-color .2s, color .2s;
-}
-.history-view-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-/* 주간 목표 */
-.weekly-card {
-  background: linear-gradient(135deg, var(--surface2), var(--surface));
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  margin-bottom: 20px;
-}
-.weekly-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.weekly-title { font-size: var(--fs-body); font-weight: 600; color: var(--text); }
-.weekly-stats { font-size: var(--fs-body); color: var(--muted); }
-.weekly-stats strong { color: var(--blue); font-size: var(--fs-body-lg); }
-.weekly-bar-bg {
-  height: 8px;
-  background: rgba(255,255,255,.06);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-.weekly-bar-fill {
-  height: 100%;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, #00b4d8, #48cae4);
-  transition: width .7s ease;
-}
-.weekly-bar-fill.done { background: linear-gradient(90deg, #4ade80, #22d3ee); }
-.weekly-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.weekly-msg { font-size: var(--fs-caption); color: var(--muted); }
-.weekly-msg.done { color: var(--green); font-weight: 600; }
-.weekly-goal-btn {
-  font-size: var(--fs-caption);
-  padding: 4px 12px;
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: border-color .2s, color .2s;
-}
-.weekly-goal-btn:hover { border-color: var(--blue); color: var(--blue); }
-.weekly-goal-select {
-  background: var(--surface);
-  border: 0.5px solid var(--blue);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  display: none;
-}
-
-/* 미니 뱃지 */
-.mini-badge-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  margin-bottom: 20px;
-}
-.mini-badge-label { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
-.mini-badge-emojis { display: flex; gap: 6px; font-size: var(--fs-heading); flex: 1; }
-.mini-badge-link {
-  font-size: var(--fs-caption);
-  color: var(--blue);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: opacity .2s;
-}
-.mini-badge-link:hover { opacity: .75; }
-
-@media (max-width: 900px) {
-  .summary-cards { grid-template-columns: repeat(2, 1fr); }
-  .charts-grid   { grid-template-columns: 1fr; }
-}
-@media (max-width: 500px) {
-  .summary-cards { grid-template-columns: 1fr 1fr; }
-}
+.dash-page { max-width: 1120px; margin: 0 auto; padding: 24px 16px 72px; }
+.dash-topbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.back-btn { background:none; border:.5px solid var(--border); color:var(--muted); border-radius:var(--radius-sm); padding:6px 14px; font-size:var(--fs-caption); text-decoration:none; cursor:pointer; }
+.back-btn:hover { border-color:var(--blue); color:var(--blue); }
+.dash-title { font-size:var(--fs-title); font-style:italic; font-weight:800; letter-spacing:-.02em; color:var(--text); }
+.dash-subtitle { margin:4px 0 0; color:var(--muted); font-size:var(--fs-caption); }
+.quick-actions { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
+.quick-action { padding:9px 14px; border-radius:var(--radius-sm); border:.5px solid var(--border); color:var(--text); background:var(--surface); text-decoration:none; font-size:var(--fs-caption); }
+.quick-action.primary { background:var(--blue); border-color:var(--blue); color:var(--bg); font-weight:700; }
+.weekly-card { background:linear-gradient(135deg,var(--surface2),var(--surface)); border:.5px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:20px; }
+.weekly-header,.weekly-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.weekly-title { color:var(--text); font-size:var(--fs-body); font-weight:700; }
+.weekly-stats { color:var(--muted); font-size:var(--fs-body); }
+.weekly-stats strong { color:var(--blue); font-size:var(--fs-body-lg); }
+.weekly-bar-bg { height:8px; margin:12px 0 8px; border-radius:var(--radius-sm); overflow:hidden; background:rgba(255,255,255,.07); }
+.weekly-bar-fill { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#00b4d8,#48cae4); transition:width .6s ease; }
+.weekly-bar-fill.done { background:linear-gradient(90deg,#4ade80,#22d3ee); }
+.weekly-msg { color:var(--muted); font-size:var(--fs-caption); }
+.weekly-msg.done { color:var(--green); font-weight:700; }
+.weekly-goal-btn,.weekly-goal-select { border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--muted); padding:5px 10px; font-size:var(--fs-caption); cursor:pointer; }
+.weekly-goal-select { display:none; border-color:var(--blue); color:var(--text); }
+.summary-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.summary-card { padding:18px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
+.summary-card-label { color:var(--muted); font-size:var(--fs-caption); margin-bottom:8px; }
+.summary-card-value { color:var(--blue); font-size:clamp(28px,4vw,40px); line-height:1; font-style:italic; font-weight:900; letter-spacing:-.03em; }
+.summary-card-value.green { color:var(--green); }.summary-card-value.energy { color:var(--energy); }.summary-card-value.cyan { color:var(--cyan); }
+.summary-card-unit { color:var(--muted); font-size:var(--fs-caption); margin-top:5px; }
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+.chart-card,.history-section,.mini-badge-row { background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; }
+.chart-card-title,.history-header { color:var(--text); font-size:var(--fs-body); font-weight:700; margin-bottom:14px; }
+.chart-wrap { position:relative; height:220px; }
+.mini-badge-row { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.mini-badge-label { color:var(--muted); font-size:var(--fs-caption); white-space:nowrap; }
+.mini-badge-emojis { display:flex; gap:6px; font-size:var(--fs-heading); flex:1; }
+.mini-badge-link { color:var(--blue); font-size:var(--fs-caption); text-decoration:none; white-space:nowrap; }
+.history-list { display:flex; flex-direction:column; gap:10px; }
+.history-card { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:.5px solid var(--border); }
+.history-card:last-child { border-bottom:0; padding-bottom:0; }
+.history-date { color:var(--muted); font-size:var(--fs-caption); min-width:74px; }
+.history-body { flex:1; min-width:0; }.history-top { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+.history-stroke { background:rgba(0,180,216,.1); border:.5px solid rgba(0,180,216,.25); border-radius:var(--radius-sm); color:var(--blue); font-size:var(--fs-caption); font-weight:700; padding:2px 7px; }
+.history-meta { color:var(--muted); font-size:var(--fs-caption); margin-top:5px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.history-distance { color:var(--text); font-size:var(--fs-body-lg); font-style:italic; font-weight:900; text-align:right; }
+.history-change { color:var(--muted); font-size:var(--fs-caption); text-align:right; margin-top:3px; }.history-change.up { color:var(--green); }.history-change.down { color:var(--red); }
+.empty-msg { color:var(--muted); font-size:var(--fs-body); text-align:center; padding:34px 0; }
+@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; } }
+@media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); } }
 </style>
 </head>
 <body>
 <div class="app">
-
   <header class="header">
     <div class="header-left">
-      <button onclick="history.back()" class="back-btn" style="margin-right:8px;">← 뒤로</button>
-      <a href="/" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
-      <span class="logo-sub">대시보드</span>
+      <a href="/landing" class="back-btn" style="margin-right:8px;">← 홈</a>
+      <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimTech</span></a>
+      <span class="logo-sub">훈련 대시보드</span>
     </div>
-    <div class="header-right">
-      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
-    </div>
+    <div class="header-right"><button onclick="logout()" class="back-btn">로그아웃</button></div>
   </header>
 
-  <div class="dash-page">
+  <main class="dash-page">
     <div class="dash-topbar">
-      <a href="/" class="back-btn">← 홈으로</a>
-      <div class="dash-title">내 현황</div>
+      <div><div class="dash-title">내 훈련 현황</div><p class="dash-subtitle">기록을 쌓고, 이번 주 목표를 완성해 보세요.</p></div>
     </div>
 
-    <!-- 주간 목표 -->
-    <div class="weekly-card" style="display:none">
+    <nav class="quick-actions" aria-label="빠른 작업">
+      <a class="quick-action primary" href="/training-log">+ 훈련 기록하기</a>
+      <a class="quick-action" href="/plan">훈련 플랜 보기</a>
+      <a class="quick-action" href="/report">월간 리포트</a>
+    </nav>
+
+    <section class="weekly-card" aria-labelledby="weekly-title">
       <div class="weekly-header">
-        <span class="weekly-title">📅 이번 주 목표</span>
-        <span class="weekly-stats" id="weekly-stats">— / — 회 달성</span>
+        <span class="weekly-title" id="weekly-title">📅 이번 주 훈련 목표</span>
+        <span class="weekly-stats" id="weekly-stats">불러오는 중...</span>
       </div>
-      <div class="weekly-bar-bg">
-        <div class="weekly-bar-fill" id="weekly-bar" style="width:0%"></div>
-      </div>
+      <div class="weekly-bar-bg"><div class="weekly-bar-fill" id="weekly-bar"></div></div>
       <div class="weekly-footer">
-        <span class="weekly-msg" id="weekly-msg">불러오는 중...</span>
+        <span class="weekly-msg" id="weekly-msg"></span>
         <div style="display:flex;align-items:center;gap:8px;">
-          <select id="goal-select" class="weekly-goal-select" onchange="saveGoal(this.value)">
-            <option>1</option><option>2</option><option selected>3</option>
-            <option>4</option><option>5</option><option>6</option><option>7</option>
-          </select>
+          <select id="goal-select" class="weekly-goal-select" onchange="saveGoal(this.value)"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           <button class="weekly-goal-btn" id="goal-edit-btn" onclick="toggleGoalEdit()">목표 변경</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 미니 뱃지 -->
-    <div class="mini-badge-row">
-      <span class="mini-badge-label">🏅 내 뱃지</span>
-      <div class="mini-badge-emojis" id="mini-badge-emojis">
-        <span style="color:var(--muted);font-size: var(--fs-body);">불러오는 중...</span>
-      </div>
-      <a href="/badges" class="mini-badge-link">전체 보기 →</a>
-    </div>
+    <section class="summary-cards" aria-label="훈련 요약">
+      <article class="summary-card"><div class="summary-card-label">누적 거리</div><div class="summary-card-value blue" id="card-total-distance">—</div><div class="summary-card-unit">m</div></article>
+      <article class="summary-card"><div class="summary-card-label">이번 달 거리</div><div class="summary-card-value green" id="card-month-distance">—</div><div class="summary-card-unit">m</div></article>
+      <article class="summary-card"><div class="summary-card-label">현재 연속 출석</div><div class="summary-card-value energy" id="card-streak">—</div><div class="summary-card-unit">일</div></article>
+      <article class="summary-card"><div class="summary-card-label">누적 훈련 시간</div><div class="summary-card-value cyan" id="card-total-hours">—</div><div class="summary-card-unit">시간</div></article>
+    </section>
 
-    <!-- AI 분석 기능 준비 중 안내 -->
-    <div id="analysis-coming-soon" style="background:var(--surface);border:0.5px solid var(--border);border-radius: var(--radius-md);padding:32px 20px;text-align:center;margin-bottom:20px;">
-      <div style="font-size: var(--fs-display);margin-bottom:12px;">&#x1F6A7;</div>
-      <div style="font-size: var(--fs-body-lg);font-weight:600;color:var(--text);margin-bottom:8px;">AI 분석 기능 준비 중</div>
-      <div style="font-size: var(--fs-body);color:var(--muted);line-height:1.7;">수영 영상 분석 및 자세 분석 기능이 곧 제공될 예정입니다.<br>업데이트 소식은 릴리즈 노트에서 확인하세요.</div>
-      <a href="/changelog" style="display:inline-block;margin-top:16px;padding:8px 20px;background:var(--blue);color:#fff;text-decoration:none;border-radius: var(--radius-sm);font-size: var(--fs-body);font-weight:600;">릴리즈 노트 보기</a>
-    </div>
+    <section class="charts-grid" aria-label="훈련 추이">
+      <article class="chart-card"><div class="chart-card-title">최근 훈련 거리</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></article>
+      <article class="chart-card"><div class="chart-card-title">영법별 훈련 분포</div><div class="chart-wrap"><canvas id="chart-stroke"></canvas></div></article>
+    </section>
 
-    <!-- 숫자 카드 -->
-    <div class="summary-cards st-stagger" style="display:none">
-      <div class="summary-card">
-        <div class="summary-card-label">총 분석 횟수</div>
-        <div class="summary-card-value blue" id="card-total">—</div>
-        <div class="summary-card-unit">회</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card-label">평균 종합점수</div>
-        <div class="summary-card-value green" id="card-avg-score">—</div>
-        <div class="summary-card-unit">점</div>
-      </div>
-      <div class="summary-card hot">
-        <div class="summary-card-label">최고 종합점수</div>
-        <div class="summary-card-value energy" id="card-max-score">—</div>
-        <div class="summary-card-unit">점 <span class="pill-energy" style="margin-left:4px">PB</span></div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card-label">총 발차기 횟수</div>
-        <div class="summary-card-value cyan" id="card-total-kicks">—</div>
-        <div class="summary-card-unit">회</div>
-      </div>
-    </div>
+    <section class="mini-badge-row" aria-label="획득 뱃지">
+      <span class="mini-badge-label">🏅 내 뱃지</span><div class="mini-badge-emojis" id="mini-badge-emojis"><span style="color:var(--muted);font-size:var(--fs-body);">불러오는 중...</span></div><a href="/badges" class="mini-badge-link">전체 보기 →</a>
+    </section>
 
-    <!-- 차트 2×2 -->
-    <div class="charts-grid st-stagger" style="display:none">
-      <div class="chart-card">
-        <div class="chart-card-title">회차별 종합점수 추이</div>
-        <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-title">회차별 팔꿈치 각도 변화</div>
-        <div class="chart-wrap"><canvas id="chart-elbow"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-title">발차기 횟수 증감</div>
-        <div class="chart-wrap"><canvas id="chart-kick"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-title">좌우 대칭 점수 추이</div>
-        <div class="chart-wrap"><canvas id="chart-sym"></canvas></div>
-      </div>
-    </div>
-
-    <!-- 최근 분석 목록 테이블 -->
-    <div class="table-card" style="display:none">
-      <div class="table-card-title">최근 분석 목록</div>
-      <div id="table-wrap">
-        <div class="loading-overlay">데이터 불러오는 중...</div>
-      </div>
-    </div>
-
-    <!-- 분석 히스토리 타임라인 -->
-    <div class="history-section" style="display:none">
-      <div class="history-header">📅 분석 히스토리</div>
-      <div id="history-list" class="history-list st-stagger">
-        <div class="loading-overlay">히스토리 불러오는 중...</div>
-      </div>
-    </div>
-  </div>
-
+    <section class="history-section"><div class="history-header">최근 훈련 기록</div><div id="history-list" class="history-list"><div class="empty-msg">훈련 기록을 불러오는 중...</div></div></section>
+  </main>
 </div>
 
 <script>
 "use strict";
+const chartDefaults = { color:'#e8f4f8', tick:'#90c4d4', grid:'rgba(0,180,216,.08)' };
+const charts = {};
 
-const CHART_DEFAULTS = {
-  color: '#e8f4f8',
-  grid: 'rgba(0,180,216,0.08)',
-  tick: '#90c4d4',
-};
+function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value == null ? '' : String(value); return el.innerHTML; }
+function formatDistance(value) { return new Intl.NumberFormat('ko-KR').format(Number(value || 0)); }
+function formatDate(value) { if (!value) return '—'; const [year, month, day] = String(value).slice(0, 10).split('-'); return `${Number(month)}.${Number(day)}`; }
+function strokeLabel(value) { return ({ freestyle:'자유형', backstroke:'배영', breaststroke:'평영', butterfly:'접영' })[value] || value || '미기록'; }
+function chartOptions() { return { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:chartDefaults.color, font:{size:11}, boxWidth:12 } } }, scales:{ x:{ ticks:{color:chartDefaults.tick,font:{size:10},maxTicksLimit:8},grid:{color:chartDefaults.grid} }, y:{ beginAtZero:true,ticks:{color:chartDefaults.tick,font:{size:10}},grid:{color:chartDefaults.grid} } } }; }
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function chartOpts(extra = {}) {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { labels: { color: CHART_DEFAULTS.color, font: { size: 11 }, boxWidth: 12 } } },
-    scales: {
-      x: {
-        ticks: { color: CHART_DEFAULTS.tick, font: { size: 10 }, maxTicksLimit: 8 },
-        grid:  { color: CHART_DEFAULTS.grid },
-      },
-      y: {
-        ticks: { color: CHART_DEFAULTS.tick, font: { size: 10 } },
-        grid:  { color: CHART_DEFAULTS.grid },
-        ...extra,
-      },
-    },
-  };
+function buildCharts(history) {
+  const chronological = [...history].reverse();
+  destroyChart('distance'); destroyChart('stroke');
+  charts.distance = new Chart(document.getElementById('chart-distance'), { type:'line', data:{ labels:chronological.map(item => formatDate(item.log_date)), datasets:[{ label:'거리 (m)', data:chronological.map(item => item.total_distance), borderColor:'#00b4d8', backgroundColor:'rgba(0,180,216,.14)', pointBackgroundColor:'#00b4d8', fill:true, tension:.3, pointRadius:4 }] }, options:chartOptions() });
+  const counts = chronological.reduce((acc, item) => { const key = strokeLabel(item.stroke_type); acc[key] = (acc[key] || 0) + item.total_distance; return acc; }, {});
+  charts.stroke = new Chart(document.getElementById('chart-stroke'), { type:'doughnut', data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:['#00b4d8','#48cae4','#4ade80','#f59e0b','#a78bfa','#fb7185'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:chartDefaults.color,font:{size:11},boxWidth:12} } } } });
 }
 
-function fmtDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${mm}/${dd}`;
-}
-
-function strokeLabel(s) {
-  const map = {
-    freestyle: '자유형', backstroke: '배영', breaststroke: '평영',
-    butterfly: '접영', unknown: '미상', start: '스타트',
-    flip_turn: '플립턴', touch_turn: '터치턴',
-  };
-  return map[s] || s || '—';
-}
-
-function strokeBadge(s) {
-  const cls = { freestyle: 'blue', backstroke: 'cyan', breaststroke: 'green',
-                butterfly: 'purple', start: 'amber', flip_turn: 'amber',
-                touch_turn: 'amber' }[s] || 'blue';
-  return `<span class="badge badge-${cls}">${strokeLabel(s)}</span>`;
-}
-
-let charts = {};
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-function buildScoreChart(labels, scores) {
-  destroyChart('score');
-  const ctx = document.getElementById('chart-score').getContext('2d');
-  charts['score'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: '종합점수',
-        data: scores,
-        borderColor: '#00b4d8',
-        backgroundColor: 'rgba(0,180,216,0.12)',
-        pointBackgroundColor: '#00b4d8',
-        tension: 0.3,
-        fill: true,
-        pointRadius: 4,
-      }],
-    },
-    options: {
-      ...chartOpts({ min: 0, max: 100 }),
-    },
-  });
-}
-
-function buildElbowChart(labels, leftAngles, rightAngles) {
-  destroyChart('elbow');
-  const ctx = document.getElementById('chart-elbow').getContext('2d');
-  charts['elbow'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: '좌측 팔꿈치 각도(°)',
-          data: leftAngles,
-          borderColor: '#48cae4',
-          backgroundColor: 'rgba(72,202,228,0.08)',
-          pointBackgroundColor: '#48cae4',
-          tension: 0.3,
-          fill: false,
-          pointRadius: 4,
-        },
-        {
-          label: '우측 팔꿈치 각도(°)',
-          data: rightAngles,
-          borderColor: '#0096c7',
-          backgroundColor: 'rgba(0,150,199,0.08)',
-          pointBackgroundColor: '#0096c7',
-          tension: 0.3,
-          fill: false,
-          pointRadius: 4,
-        },
-      ],
-    },
-    options: chartOpts(),
-  });
-}
-
-function buildKickChart(labels, kicks) {
-  destroyChart('kick');
-  const ctx = document.getElementById('chart-kick').getContext('2d');
-  charts['kick'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: '발차기 횟수',
-        data: kicks,
-        backgroundColor: 'rgba(0,180,216,0.6)',
-        borderColor: '#00b4d8',
-        borderWidth: 1,
-        borderRadius: 4,
-      }],
-    },
-    options: {
-      ...chartOpts({ min: 0 }),
-    },
-  });
-}
-
-function buildSymChart(labels, symScores) {
-  destroyChart('sym');
-  const ctx = document.getElementById('chart-sym').getContext('2d');
-  charts['sym'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: '좌우 대칭 점수',
-        data: symScores,
-        borderColor: '#48cae4',
-        backgroundColor: 'rgba(72,202,228,0.12)',
-        pointBackgroundColor: '#48cae4',
-        tension: 0.3,
-        fill: true,
-        pointRadius: 4,
-      }],
-    },
-    options: {
-      ...chartOpts({ min: 0, max: 100 }),
-    },
-  });
-}
-
-function buildTable(analyses) {
-  const wrap = document.getElementById('table-wrap');
-  if (!analyses.length) {
-    wrap.innerHTML = '<div class="empty-msg">아직 분석 데이터가 없습니다.</div>';
-    return;
-  }
-  const recent = [...analyses].reverse().slice(0, 20);
-  const rows = recent.map(a => `
-    <tr>
-      <td>${fmtDate(a.created_at)}</td>
-      <td>${strokeBadge(a.stroke_type)}</td>
-      <td style="font-weight:500;color:${scoreColor(a.overall_score)}">${a.overall_score != null ? a.overall_score.toFixed(1) : '—'}</td>
-      <td>${a.kick_count != null ? a.kick_count : '—'}</td>
-    </tr>
-  `).join('');
-  wrap.innerHTML = `
-    <table class="analysis-table">
-      <thead>
-        <tr>
-          <th>날짜</th>
-          <th>영법</th>
-          <th>종합점수</th>
-          <th>발차기 횟수</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-function scoreColor(v) {
-  if (v == null) return 'var(--muted)';
-  if (v >= 80) return 'var(--green)';
-  if (v >= 60) return 'var(--amber)';
-  return 'var(--red)';
-}
-
-function avg(arr) {
-  const clean = arr.filter(v => v != null);
-  if (!clean.length) return null;
-  return clean.reduce((s, v) => s + v, 0) / clean.length;
+function renderHistory(history) {
+  const wrap = document.getElementById('history-list');
+  if (!history.length) { wrap.innerHTML = '<div class="empty-msg">아직 훈련 기록이 없어요. 오늘의 수영을 기록해 보세요.</div>'; return; }
+  wrap.innerHTML = history.map(item => {
+    const change = item.distance_change;
+    const changeClass = change > 0 ? 'up' : change < 0 ? 'down' : '';
+    const changeText = change == null ? '' : `${change > 0 ? '↑' : change < 0 ? '↓' : '→'} ${formatDistance(Math.abs(change))}m`;
+    const memo = item.memo ? ` · ${escapeHtml(item.memo)}` : '';
+    return `<article class="history-card"><div class="history-date">${formatDate(item.log_date)}</div><div class="history-body"><div class="history-top"><span class="history-stroke">${escapeHtml(strokeLabel(item.stroke_type))}</span><span style="color:var(--muted);font-size:var(--fs-caption);">${escapeHtml(item.intensity || '보통')}</span></div><div class="history-meta">${item.duration_minutes || 0}분${memo}</div></div><div><div class="history-distance">${formatDistance(item.total_distance)}m</div><div class="history-change ${changeClass}">${changeText}</div></div></article>`;
+  }).join('');
 }
 
 async function loadDashboard() {
-  try {
-    const res = await fetch('/api/dashboard/summary', { credentials: 'include' });
-    if (res.status === 401) { window.location.href = '/login'; return; }
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    const analyses = data.analyses || [];
-
-    // 숫자 카드
-    const scores  = analyses.map(a => a.overall_score);
-    const kicks   = analyses.map(a => a.kick_count);
-    const validScores = scores.filter(v => v != null);
-    document.getElementById('card-total').textContent       = analyses.length;
-    document.getElementById('card-avg-score').textContent   = validScores.length ? (validScores.reduce((s,v)=>s+v,0)/validScores.length).toFixed(1) : '—';
-    document.getElementById('card-max-score').textContent   = validScores.length ? Math.max(...validScores).toFixed(1) : '—';
-    document.getElementById('card-total-kicks').textContent = kicks.reduce((s,v)=>s+(v||0), 0);
-
-    const labels = analyses.map((a, i) => {
-      const d = fmtDate(a.created_at);
-      return d !== '—' ? d : `#${i+1}`;
-    });
-
-    buildScoreChart(labels, scores);
-    buildElbowChart(labels, analyses.map(a => a.left_arm_angle_avg), analyses.map(a => a.right_arm_angle_avg));
-    buildKickChart(labels, kicks);
-    buildSymChart(labels, analyses.map(a => a.arm_symmetry_score));
-    buildTable(analyses);
-
-  } catch (e) {
-    console.error(e);
-    document.getElementById('table-wrap').innerHTML =
-      `<div class="empty-msg" style="color:var(--red)">데이터를 불러오지 못했습니다: ${e.message}</div>`;
-  }
+  const [summaryRes, historyRes] = await Promise.all([fetch('/api/dashboard/summary', {credentials:'include'}), fetch('/api/dashboard/history', {credentials:'include'})]);
+  if (summaryRes.status === 401 || historyRes.status === 401) { window.location.href = '/login'; return; }
+  if (!summaryRes.ok || !historyRes.ok) throw new Error('훈련 현황을 불러오지 못했습니다.');
+  const summary = await summaryRes.json(); const history = (await historyRes.json()).history || [];
+  document.getElementById('card-total-distance').textContent = formatDistance(summary.total_distance);
+  document.getElementById('card-month-distance').textContent = formatDistance(summary.monthly_distance);
+  document.getElementById('card-streak').textContent = summary.current_streak || 0;
+  document.getElementById('card-total-hours').textContent = (Number(summary.total_minutes || 0) / 60).toFixed(1);
+  renderHistory(history); buildCharts(history);
 }
 
 async function loadWeekly() {
-  try {
-    const res = await fetch('/api/dashboard/weekly', { credentials: 'include' });
-    if (!res.ok) return;
-    const d = await res.json();
-    document.getElementById('weekly-stats').innerHTML =
-      `<strong>${d.achieved}</strong> / ${d.goal}회 달성 (${d.percentage}%)`;
-    const bar = document.getElementById('weekly-bar');
-    bar.style.width = d.percentage + '%';
-    if (d.percentage >= 100) bar.classList.add('done');
-    const msg = document.getElementById('weekly-msg');
-    if (d.percentage >= 100) {
-      msg.textContent = '🎉 이번 주 목표 달성!';
-      msg.className = 'weekly-msg done';
-    } else {
-      msg.textContent = `${d.remaining}회 남았어요!`;
-    }
-    // 목표 select 현재값 세팅
-    const sel = document.getElementById('goal-select');
-    for (let opt of sel.options) {
-      if (parseInt(opt.value) === d.goal) { opt.selected = true; break; }
-    }
-  } catch { /* 무시 */ }
+  const response = await fetch('/api/dashboard/weekly', {credentials:'include'}); if (!response.ok) return;
+  const data = await response.json();
+  document.getElementById('weekly-stats').innerHTML = `<strong>${data.achieved}</strong> / ${data.goal}일 훈련 · ${formatDistance(data.distance)}m`;
+  const bar = document.getElementById('weekly-bar'); bar.style.width = `${data.percentage}%`; bar.classList.toggle('done', data.percentage >= 100);
+  const message = document.getElementById('weekly-msg');
+  message.textContent = data.percentage >= 100 ? '🎉 이번 주 목표를 달성했어요!' : `이번 주 ${data.remaining}일 더 훈련하면 목표를 달성해요.`;
+  message.className = data.percentage >= 100 ? 'weekly-msg done' : 'weekly-msg';
+  for (const option of document.getElementById('goal-select').options) option.selected = Number(option.value) === data.goal;
 }
 
-function toggleGoalEdit() {
-  const sel = document.getElementById('goal-select');
-  const btn = document.getElementById('goal-edit-btn');
-  const showing = sel.style.display === 'block';
-  sel.style.display = showing ? 'none' : 'block';
-  btn.textContent = showing ? '목표 변경' : '닫기';
-}
-
-async function saveGoal(val) {
-  try {
-    await fetch('/api/dashboard/goal', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goal: parseInt(val) }),
-    });
-    toggleGoalEdit();
-    loadWeekly();
-  } catch { /* 무시 */ }
-}
+function toggleGoalEdit() { const select = document.getElementById('goal-select'); const button = document.getElementById('goal-edit-btn'); const open = select.style.display === 'block'; select.style.display = open ? 'none' : 'block'; button.textContent = open ? '목표 변경' : '닫기'; }
+async function saveGoal(value) { const response = await fetch('/api/dashboard/goal', {method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:Number(value)})}); if (response.ok) { toggleGoalEdit(); loadWeekly(); } }
 
 async function loadBadgeMini() {
-  try {
-    const res = await fetch('/api/badges', { credentials: 'include' });
-    if (!res.ok) return;
-    const data = await res.json();
-    const earned = (data.badges || []).filter(b => b.earned);
-    const wrap = document.getElementById('mini-badge-emojis');
-    if (!earned.length) {
-      wrap.innerHTML = '<span style="color:var(--muted);font-size: var(--fs-body);">아직 없어요 — 첫 분석을 시작해보세요!</span>';
-    } else {
-      const show = earned.slice(0, 3);
-      const rest = earned.length > 3 ? `<span style="font-size: var(--fs-body);color:var(--muted);margin-left:2px;">+${earned.length - 3}</span>` : '';
-      wrap.innerHTML = show.map(b => `<span title="${b.name}">${b.emoji}</span>`).join('') + rest;
-    }
-  } catch { /* 무시 */ }
+  const response = await fetch('/api/badges', {credentials:'include'}); if (!response.ok) return;
+  const earned = ((await response.json()).badges || []).filter(badge => badge.earned); const wrap = document.getElementById('mini-badge-emojis');
+  wrap.innerHTML = earned.length ? earned.slice(0, 4).map(badge => `<span title="${escapeHtml(badge.name)}">${badge.emoji}</span>`).join('') : '<span style="color:var(--muted);font-size:var(--fs-body);">첫 훈련 기록으로 첫 뱃지를 받아보세요.</span>';
 }
+async function logout() { await fetch('/auth/logout', {method:'POST',credentials:'include'}); window.location.href = '/login'; }
 
-async function loadHistory() {
-  const wrap = document.getElementById('history-list');
-  try {
-    const res = await fetch('/api/dashboard/history', { credentials: 'include' });
-    if (!res.ok) { wrap.innerHTML = ''; return; }
-    const data = await res.json();
-    const list = data.history || [];
-    if (!list.length) {
-      wrap.innerHTML = '<div class="empty-msg">아직 분석 기록이 없습니다.</div>';
-      return;
-    }
-    wrap.innerHTML = list.map(h => {
-      const date = h.analyzed_at ? h.analyzed_at.slice(0, 10).replace(/-/g, '.') : '—';
-      const score = h.score != null ? h.score.toFixed(1) : '—';
-      const scoreColor = h.score == null ? 'var(--muted)' : h.score >= 80 ? 'var(--green)' : h.score >= 60 ? 'var(--amber)' : 'var(--red)';
-      const diffClass = h.trend === '↑' ? 'up' : h.trend === '↓' ? 'down' : 'same';
-      const diffText = h.score_diff != null ? `${h.trend}${Math.abs(h.score_diff)}점` : '—';
-      const purpose = h.purpose ? ` · ${h.purpose}` : '';
-      const preview = h.feedback ? h.feedback.slice(0, 60) + (h.feedback.length > 60 ? '…' : '') : '';
-      return `
-        <div class="history-card">
-          <div class="history-date">${date}</div>
-          <div class="history-body">
-            <div class="history-top">
-              <span class="history-stroke">${h.stroke_type || '—'}</span>
-              <span class="history-purpose">${purpose}</span>
-            </div>
-            <div class="history-feedback">${preview}</div>
-          </div>
-          <div class="history-score-wrap">
-            <div class="history-score" style="color:${scoreColor}">${score}</div>
-            <div class="history-diff ${diffClass}">${diffText}</div>
-          </div>
-          <a href="/viewer?id=${h.id}" class="history-view-btn">결과 보기</a>
-        </div>`;
-    }).join('');
-  } catch {
-    wrap.innerHTML = '<div class="empty-msg" style="color:var(--red)">히스토리를 불러오지 못했습니다.</div>';
-  }
-}
-
-async function logout() {
-  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
-  window.location.href = '/login';
-}
-
-// 인증 확인 후 데이터 로드
-(async () => {
-  try {
-    const r = await fetch('/auth/me', { credentials: 'include' });
-    if (!r.ok) { window.location.href = '/login'; return; }
-  } catch { window.location.href = '/login'; return; }
-  if (sessionStorage.getItem('dashboard_refresh') === 'true') {
-    sessionStorage.removeItem('dashboard_refresh');
-  }
-  loadDashboard();
-  loadHistory();
-  loadWeekly();
-  loadBadgeMini();
-})();
+(async () => { try { const response = await fetch('/auth/me', {credentials:'include'}); if (!response.ok) { window.location.href = '/login'; return; } await Promise.all([loadDashboard(), loadWeekly(), loadBadgeMini()]); } catch (error) { console.error(error); document.getElementById('history-list').innerHTML = '<div class="empty-msg">훈련 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>'; } })();
 </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js')
-        .then(function(reg) { console.log('SW registered'); })
-        .catch(function(err) { console.log('SW registration skipped:', err.message); });
-    });
-  }
-</script>
+<script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 <script src="/static/theme.js"></script>
 </body>
 </html>
-
-

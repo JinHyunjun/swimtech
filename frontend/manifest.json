@@ -1,5 +1,5 @@
 {
-  "name": "SwimTech — 수영 영법 AI 분석",
+  "name": "SwimTech — 수영 훈련 관리",
   "short_name": "SwimTech",
   "description": "수영 영상을 업로드하면 AI가 실시간으로 영법을 분석해드립니다",
   "start_url": "/",

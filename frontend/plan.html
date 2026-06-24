@@ -1000,7 +1000,6 @@ function renderPlanTab(key, plan, containerId) {
     <div class="week-selector">${weekBtns}</div>
     <div class="week-panels">${weekPanels}</div>
     <div class="plan-card-footer">
-      <a href="/upload" style="display:none" class="plan-btn plan-btn-primary">🎬 분석 시작하기</a>
       <a href="/drill" class="plan-btn plan-btn-secondary"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg> 드릴 보기</a>
       <button class="plan-btn plan-btn-secondary" onclick="addToTrainingLog('${key}')"
               style="border-color:var(--amber);color:var(--amber);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 일지에 추가</button>
@@ -2087,5 +2086,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
 

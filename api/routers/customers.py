@@ -1,10 +1,13 @@
+import logging
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import psycopg2
+from routers.admin import _require_admin
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
@@ -21,7 +24,9 @@ class CustomerCreate(BaseModel):
 
 
 @router.get("/")
-def list_customers():
+def list_customers(swimtech_token: str = Cookie(default=None)):
+    """관리자 전용 고객 목록. 개인 연락처 정보가 포함된다."""
+    _require_admin(swimtech_token)
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -37,12 +42,15 @@ def list_customers():
              "created_at": str(r[6])}
             for r in rows
         ]}
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("list_customers: DB error")
+        raise HTTPException(500, "고객 정보를 불러오지 못했습니다.")
 
 
 @router.get("/{customer_id}")
-def get_customer(customer_id: int):
+def get_customer(customer_id: int, swimtech_token: str = Cookie(default=None)):
+    """관리자 전용 고객 상세."""
+    _require_admin(swimtech_token)
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -59,12 +67,15 @@ def get_customer(customer_id: int):
                 "sheets_url": row[6], "created_at": str(row[7])}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("get_customer: DB error")
+        raise HTTPException(500, "고객 정보를 불러오지 못했습니다.")
 
 
 @router.post("/")
-def create_customer(body: CustomerCreate):
+def create_customer(body: CustomerCreate, swimtech_token: str = Cookie(default=None)):
+    """관리자 전용 수동 고객 등록."""
+    _require_admin(swimtech_token)
     try:
         conn = get_db()
         cur = conn.cursor()
@@ -75,5 +86,6 @@ def create_customer(body: CustomerCreate):
         new_id = cur.fetchone()[0]
         conn.commit(); cur.close(); conn.close()
         return {"id": new_id, "message": f"고객 '{body.name}' 등록 완료"}
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("create_customer: DB error")
+        raise HTTPException(500, "고객 정보를 저장하지 못했습니다.")

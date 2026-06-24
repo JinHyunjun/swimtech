@@ -1,14 +1,16 @@
-# -*- coding: utf-8 -*-
+"""훈련 기록 중심 대시보드 API."""
+import logging
 import os
 from datetime import date, timedelta
-from fastapi import APIRouter, HTTPException, Cookie
-from pydantic import BaseModel, Field
-import psycopg2
 
-from routers.auth import verify_token, decode_token
+import psycopg2
+from fastapi import APIRouter, Cookie, HTTPException
+from pydantic import BaseModel, Field
+
+from routers.auth import decode_token, verify_token
 
 router = APIRouter()
-
+logger = logging.getLogger(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 
@@ -16,237 +18,185 @@ def get_db():
     return psycopg2.connect(DATABASE_URL)
 
 
-def _require_auth(swimtech_token: str | None):
+def _customer_id(swimtech_token: str | None) -> int:
     if not swimtech_token or not verify_token(swimtech_token):
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    customer_id = decode_token(swimtech_token).get("customer_id")
+    if not customer_id:
+        raise HTTPException(status_code=403, detail="훈련 기록이 연결된 계정으로 로그인해주세요.")
+    return int(customer_id)
+
+
+def _current_streak(dates: list[date]) -> int:
+    recorded = set(dates)
+    if not recorded:
+        return 0
+    today = date.today()
+    cursor = today if today in recorded else today - timedelta(days=1)
+    streak = 0
+    while cursor in recorded:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
 
 
 @router.get("/summary")
 def dashboard_summary(swimtech_token: str = Cookie(default=None)):
-    _require_auth(swimtech_token)
-    payload = decode_token(swimtech_token) if swimtech_token else {}
-    customer_id = payload.get("customer_id")  # admin이면 None
+    """누적·이번 달 훈련 현황과 출석 스트릭을 반환한다."""
+    customer_id = _customer_id(swimtech_token)
     try:
         conn = get_db()
         cur = conn.cursor()
-        if customer_id is not None:
-            cur.execute("""
-                SELECT id, customer_id, stroke_type, overall_score,
-                       l_elbow_avg, r_elbow_avg,
-                       arm_symmetry, kick_count, kick_freq_hz,
-                       head_angle_avg, analyzed_at
-                FROM analysis_results
-                WHERE customer_id = %s
-                ORDER BY analyzed_at ASC
-            """, (customer_id,))
-        else:
-            cur.execute("""
-                SELECT id, customer_id, stroke_type, overall_score,
-                       l_elbow_avg, r_elbow_avg,
-                       arm_symmetry, kick_count, kick_freq_hz,
-                       head_angle_avg, analyzed_at
-                FROM analysis_results
-                ORDER BY analyzed_at ASC
-            """)
-        rows = cur.fetchall()
+        cur.execute(
+            """
+            SELECT
+                COUNT(*),
+                COALESCE(SUM(total_distance), 0),
+                COALESCE(SUM(duration_minutes), 0),
+                COALESCE(SUM(CASE
+                    WHEN date_trunc('month', log_date) = date_trunc('month', CURRENT_DATE)
+                    THEN total_distance ELSE 0 END), 0)
+            FROM training_logs
+            WHERE customer_id = %s
+            """,
+            (customer_id,),
+        )
+        total_logs, total_distance, total_minutes, monthly_distance = cur.fetchone()
+        cur.execute(
+            "SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s",
+            (customer_id,),
+        )
+        streak = _current_streak([row[0] for row in cur.fetchall()])
         cur.close()
         conn.close()
         return {
-            "analyses": [
-                {
-                    "id": r[0],
-                    "customer_id": r[1],
-                    "stroke_type": r[2],
-                    "overall_score": r[3],
-                    "l_elbow_avg": r[4],
-                    "r_elbow_avg": r[5],
-                    "arm_symmetry": r[6],
-                    "kick_count": r[7],
-                    "kick_freq_hz": r[8],
-                    "head_angle_avg": r[9],
-                    "analyzed_at": str(r[10]),
-                }
-                for r in rows
-            ]
+            "total_logs": int(total_logs or 0),
+            "total_distance": int(total_distance or 0),
+            "total_minutes": int(total_minutes or 0),
+            "monthly_distance": int(monthly_distance or 0),
+            "current_streak": streak,
         }
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("dashboard_summary: DB error")
+        raise HTTPException(500, "훈련 현황을 불러오지 못했습니다.")
 
 
 @router.get("/history")
 def dashboard_history(swimtech_token: str = Cookie(default=None)):
-    _require_auth(swimtech_token)
-    payload = decode_token(swimtech_token) if swimtech_token else {}
-    customer_id = payload.get("customer_id")
+    """최근 훈련 기록과 거리 변화량을 반환한다."""
+    customer_id = _customer_id(swimtech_token)
     try:
         conn = get_db()
         cur = conn.cursor()
-        if customer_id is not None:
-            cur.execute("""
-                SELECT id, stroke_type, purpose, overall_score, ai_feedback, analyzed_at
-                FROM analysis_results
-                WHERE customer_id = %s
-                ORDER BY analyzed_at DESC
-                LIMIT 10
-            """, (customer_id,))
-        else:
-            cur.execute("""
-                SELECT id, stroke_type, purpose, overall_score, ai_feedback, analyzed_at
-                FROM analysis_results
-                ORDER BY analyzed_at DESC
-                LIMIT 10
-            """)
+        cur.execute(
+            """
+            SELECT id, log_date, stroke_type, total_distance, duration_minutes,
+                   intensity, mood, memo, created_at
+            FROM training_logs
+            WHERE customer_id = %s
+            ORDER BY log_date DESC, created_at DESC
+            LIMIT 12
+            """,
+            (customer_id,),
+        )
         rows = cur.fetchall()
         cur.close()
         conn.close()
 
-        results = []
-        for i, r in enumerate(rows):
-            curr_score = float(r[3]) if r[3] is not None else None
-            prev_score = float(rows[i + 1][3]) if i + 1 < len(rows) and rows[i + 1][3] is not None else None
-            if curr_score is not None and prev_score is not None:
-                diff = round(curr_score - prev_score, 1)
-                trend = "↑" if diff > 0 else ("↓" if diff < 0 else "→")
-            else:
-                diff = None
-                trend = "→"
-            results.append({
-                "id": r[0],
-                "stroke_type": r[1],
-                "purpose": r[2],
-                "score": curr_score,
-                "score_diff": diff,
-                "trend": trend,
-                "feedback": (r[4] or "")[:200],
-                "analyzed_at": str(r[5]) if r[5] else None,
+        history = []
+        for index, row in enumerate(rows):
+            previous = rows[index + 1][3] if index + 1 < len(rows) else None
+            distance = int(row[3] or 0)
+            change = distance - int(previous or 0) if previous is not None else None
+            history.append({
+                "id": row[0],
+                "log_date": str(row[1]),
+                "stroke_type": row[2],
+                "total_distance": distance,
+                "duration_minutes": int(row[4] or 0),
+                "intensity": row[5],
+                "mood": row[6],
+                "memo": row[7],
+                "created_at": str(row[8]) if row[8] else None,
+                "distance_change": change,
             })
-        return {"history": results}
+        return {"history": history}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("dashboard_history: DB error")
+        raise HTTPException(500, "최근 훈련 기록을 불러오지 못했습니다.")
 
 
 class GoalBody(BaseModel):
     goal: int = Field(..., ge=1, le=7)
 
 
-def _ensure_weekly_goal_column(conn):
-    cur = conn.cursor()
-    cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS weekly_goal INTEGER DEFAULT 3")
-    conn.commit()
-    cur.close()
-
-
 @router.get("/weekly")
 def dashboard_weekly(swimtech_token: str = Cookie(default=None)):
-    _require_auth(swimtech_token)
-    payload = decode_token(swimtech_token) if swimtech_token else {}
-    customer_id = payload.get("customer_id")
+    """이번 주 운동 일수와 거리 목표 진행률을 반환한다."""
+    customer_id = _customer_id(swimtech_token)
+    week_start = date.today() - timedelta(days=date.today().weekday())
+    week_end = week_start + timedelta(days=6)
     try:
         conn = get_db()
-        _ensure_weekly_goal_column(conn)
         cur = conn.cursor()
-
-        today = date.today()
-        week_start = today - timedelta(days=today.weekday())  # 이번 주 월요일
-        week_end   = week_start + timedelta(days=6)           # 이번 주 일요일
-
-        if customer_id is not None:
-            cur.execute("""
-                SELECT COUNT(*) FROM analysis_results
-                WHERE customer_id = %s
-                  AND analyzed_at::date BETWEEN %s AND %s
-            """, (customer_id, week_start, week_end))
-        else:
-            cur.execute("""
-                SELECT COUNT(*) FROM analysis_results
-                WHERE analyzed_at::date BETWEEN %s AND %s
-            """, (week_start, week_end))
-        achieved = cur.fetchone()[0]
-
-        goal = 3
-        if customer_id is not None:
-            cur.execute("SELECT weekly_goal FROM customers WHERE id = %s", (customer_id,))
-            row = cur.fetchone()
-            if row and row[0] is not None:
-                goal = row[0]
-
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT log_date), COALESCE(SUM(total_distance), 0)
+            FROM training_logs
+            WHERE customer_id = %s AND log_date BETWEEN %s AND %s
+            """,
+            (customer_id, week_start, week_end),
+        )
+        achieved, distance = cur.fetchone()
+        cur.execute("SELECT weekly_goal FROM customers WHERE id = %s", (customer_id,))
+        row = cur.fetchone()
         cur.close()
         conn.close()
-        pct = min(100, round(achieved / goal * 100)) if goal else 0
+
+        goal = int(row[0]) if row and row[0] else 3
+        achieved = int(achieved or 0)
         return {
             "goal": goal,
             "achieved": achieved,
-            "percentage": pct,
+            "distance": int(distance or 0),
+            "percentage": min(100, round(achieved / goal * 100)) if goal else 0,
             "remaining": max(0, goal - achieved),
         }
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("dashboard_weekly: DB error")
+        raise HTTPException(500, "주간 목표를 불러오지 못했습니다.")
 
 
 @router.post("/goal")
 def dashboard_set_goal(body: GoalBody, swimtech_token: str = Cookie(default=None)):
-    _require_auth(swimtech_token)
-    payload = decode_token(swimtech_token) if swimtech_token else {}
-    customer_id = payload.get("customer_id")
-    if customer_id is None:
-        raise HTTPException(403, "관리자 계정은 목표를 설정할 수 없습니다.")
+    customer_id = _customer_id(swimtech_token)
     try:
         conn = get_db()
-        _ensure_weekly_goal_column(conn)
         cur = conn.cursor()
-        cur.execute("UPDATE customers SET weekly_goal = %s WHERE id = %s", (body.goal, customer_id))
+        cur.execute(
+            "UPDATE customers SET weekly_goal = %s WHERE id = %s RETURNING weekly_goal",
+            (body.goal, customer_id),
+        )
+        row = cur.fetchone()
         conn.commit()
         cur.close()
         conn.close()
-        return {"goal": body.goal}
+        if not row:
+            raise HTTPException(404, "사용자를 찾을 수 없습니다.")
+        return {"goal": int(row[0])}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+    except Exception:
+        logger.exception("dashboard_set_goal: DB error")
+        raise HTTPException(500, "주간 목표를 저장하지 못했습니다.")
 
 
 @router.get("/frames/{analysis_id}")
-def dashboard_frames(analysis_id: int, swimtech_token: str = Cookie(default=None)):
-    _require_auth(swimtech_token)
-    try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT id, frame_number, timestamp_sec,
-                   left_elbow_angle, right_elbow_angle,
-                   hip_angle, shoulder_angle,
-                   body_roll_angle, kick_detected
-            FROM frame_metrics
-            WHERE analysis_id = %s
-            ORDER BY frame_number ASC
-        """, (analysis_id,))
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        return {
-            "analysis_id": analysis_id,
-            "frames": [
-                {
-                    "id": r[0],
-                    "frame_number": r[1],
-                    "timestamp_sec": r[2],
-                    "left_elbow_angle": r[3],
-                    "right_elbow_angle": r[4],
-                    "hip_angle": r[5],
-                    "shoulder_angle": r[6],
-                    "body_roll_angle": r[7],
-                    "kick_detected": r[8],
-                }
-                for r in rows
-            ],
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, f"DB 오류: {e}")
+def retired_analysis_frames(analysis_id: int):
+    raise HTTPException(status_code=410, detail="영상 분석 기능은 현재 제공하지 않습니다.")

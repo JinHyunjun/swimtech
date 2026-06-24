@@ -2,10 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/meta", "destination": "/landing", "permanent": false },
+    { "source": "/upload", "destination": "/landing", "permanent": false },
+    { "source": "/viewer", "destination": "/landing", "permanent": false },
+    { "source": "/share/:path*", "destination": "/landing", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/api/:path*",       "destination": "https://swimtech-api.onrender.com/api/:path*" },
     { "source": "/auth/:path*",      "destination": "https://swimtech-api.onrender.com/auth/:path*" },
-    { "source": "/customers/:path*", "destination": "https://swimtech-api.onrender.com/customers/:path*" },
 
     { "source": "/pool",             "destination": "https://swimtech-api.onrender.com/pool" },
 
