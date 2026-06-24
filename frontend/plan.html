@@ -936,7 +936,8 @@ const INTENSITY_MAP = {
   hard:   '<span class="intensity intensity-hard">🔴 힘듦</span>',
 };
 
-function renderSession(s, dayId, weekIntensity) {
+function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity) {
+  const dayId = `${planKey}-w${weekIndex}-d${dayIndex}`;
   const mainsetHTML = s.mainset.map(m => `
     <div class="mainset-row">
       <span class="ms-dist">${m.dist}</span>
@@ -967,10 +968,9 @@ function renderSession(s, dayId, weekIntensity) {
       </div>
       <div class="session-total">총 거리 <strong>${s.total}</strong></div>
       <div class="coach-tip">💡 ${s.tip}</div>
-      ${dayId ? `
-      <button class="btn-day-complete" onclick='completeSessionDay(${JSON.stringify(dayId)}, ${JSON.stringify(s.day)}, ${JSON.stringify(s.total)}, ${JSON.stringify(weekIntensity || "medium")})'>
+      <button class="btn-day-complete" onclick='completeSessionDay(${JSON.stringify(planKey)}, ${weekIndex}, ${JSON.stringify(s.day)}, ${JSON.stringify(s.total)}, ${JSON.stringify(weekIntensity || "medium")})'>
         ${done ? '✅ 완료 (다시 기록)' : '🏁 이 훈련 완료, 일지에 남기기'}
-      </button>` : ''}
+      </button>
     </div>
   </div>`;
 }
@@ -980,7 +980,7 @@ function renderPlanTab(key, plan, containerId) {
     `<button class="week-sel-btn${i === 0 ? ' active' : ''}" data-plan="${key}" data-week="${i}">${w.num}주</button>`
   ).join('');
   const weekPanels = plan.weeks.map((w, i) => {
-    const sessions = w.sessions.map((s, di) => renderSession(s, `${key}-w${i}-d${di}`, w.intensity)).join('');
+    const sessions = w.sessions.map((s, di) => renderSession(s, key, i, di, w.intensity)).join('');
     return `
     <div class="week-panel${i === 0 ? ' active' : ''}" id="${key}-week-${i}">
       <div class="week-meta">
@@ -1822,19 +1822,24 @@ async function sharePlan(planId) {
 /* ══════════════════════════════════════════════
    초기화
 ══════════════════════════════════════════════ */
-renderPlanTab('speed',            PLANS.speed,            'tab-speed');
-renderPlanTab('health',           PLANS.health,           'tab-health');
-renderPlanTab('form',             PLANS.form,             'tab-form');
-renderPlanTab('hobby',            PLANS.hobby,            'tab-hobby');
-renderPlanTab('diet',             PLANS.diet,             'tab-diet');
-renderPlanTab('butterfly_master', PLANS.butterfly_master, 'tab-butterfly_master');
-renderPlanTab('masters',          PLANS.masters,          'tab-masters');
-renderPlanTab('fitness',          PLANS.fitness,          'tab-fitness');
-renderPlanTab('correction',       PLANS.correction,       'tab-correction');
+function renderPresetPlans() {
+  renderPlanTab('speed',            PLANS.speed,            'tab-speed');
+  renderPlanTab('health',           PLANS.health,           'tab-health');
+  renderPlanTab('form',             PLANS.form,             'tab-form');
+  renderPlanTab('hobby',            PLANS.hobby,            'tab-hobby');
+  renderPlanTab('diet',             PLANS.diet,             'tab-diet');
+  renderPlanTab('butterfly_master', PLANS.butterfly_master, 'tab-butterfly_master');
+  renderPlanTab('masters',          PLANS.masters,          'tab-masters');
+  renderPlanTab('fitness',          PLANS.fitness,          'tab-fitness');
+  renderPlanTab('correction',       PLANS.correction,       'tab-correction');
+}
+
+renderPresetPlans();
 initTabs();
 initChips();
 renderPoolList('전체');
 loadPlanFavSet();
+loadPlanCompletions();
 
 // 공유/즐겨찾기 링크(#speed 등)로 들어왔을 때 해당 탭 자동 열기
 function applyHashTab() {
@@ -1846,20 +1851,49 @@ applyHashTab();
 window.addEventListener('hashchange', applyHashTab);
 
 /* ── 훈련 일지에 추가 ───────────────────────── */
-function _getCompletedDays() {
-  try { return JSON.parse(localStorage.getItem('swimtech_completed_days') || '[]'); }
-  catch { return []; }
-}
+let completedPlanDays = new Set();
+
 function isDayCompleted(dayId) {
-  return _getCompletedDays().includes(dayId);
-}
-function _markDayCompleted(dayId) {
-  const set = new Set(_getCompletedDays());
-  set.add(dayId);
-  localStorage.setItem('swimtech_completed_days', JSON.stringify([...set]));
+  return completedPlanDays.has(dayId);
 }
 
-function completeSessionDay(dayId, dayLabel, totalStr, intensity) {
+function completionDayId(planKey, weekIndex, dayLabel) {
+  const sessions = PLANS[planKey]?.weeks?.[weekIndex]?.sessions || [];
+  const dayIndex = sessions.findIndex(session => session.day === dayLabel);
+  return dayIndex < 0 ? null : `${planKey}-w${weekIndex}-d${dayIndex}`;
+}
+
+function updatePlanCompletionUI() {
+  document.querySelectorAll('.session-card[id^="sess-"]').forEach(card => {
+    const done = isDayCompleted(card.id.slice(5));
+    card.classList.toggle('day-done', done);
+    const header = card.querySelector('.session-day-header');
+    const existingBadge = header.querySelector('.day-done-badge');
+    if (done && !existingBadge) {
+      header.insertAdjacentHTML('beforeend', '<span class="day-done-badge">✅ 완료</span>');
+    } else if (!done && existingBadge) {
+      existingBadge.remove();
+    }
+    const button = card.querySelector('.btn-day-complete');
+    if (button) button.textContent = done ? '✅ 완료 (다시 기록)' : '🏁 이 훈련 완료, 일지에 남기기';
+  });
+}
+
+async function loadPlanCompletions() {
+  try {
+    const response = await fetch('/api/training-log/plan-completions', { credentials: 'include' });
+    if (!response.ok) return;
+    const data = await response.json();
+    completedPlanDays = new Set(
+      (data.completions || [])
+        .map(item => completionDayId(item.plan_key, item.week_index, item.day_label))
+        .filter(Boolean)
+    );
+    updatePlanCompletionUI();
+  } catch (e) { /* 비로그인 상태에서는 완료 표시를 숨긴다. */ }
+}
+
+function completeSessionDay(planKey, weekIndex, dayLabel, totalStr, intensity) {
   const distance = parseInt(String(totalStr).replace(/[^0-9]/g, ''), 10) || '';
   const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[intensity] || '보통';
   const prefill = {
@@ -1867,10 +1901,14 @@ function completeSessionDay(dayId, dayLabel, totalStr, intensity) {
     total_distance: distance,
     intensity: intensityLabel,
     memo: `[훈련 플랜] ${dayLabel} 세션 완료 (실제로 한 만큼만 확인 후 저장해주세요)`,
+    plan_completion: {
+      plan_key: planKey,
+      week_index: weekIndex,
+      day_label: dayLabel,
+    },
   };
   try {
     sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
-    _markDayCompleted(dayId);
   } catch (e) { /* ignore */ }
   window.location.href = '/training-log';
 }
@@ -2086,4 +2124,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-

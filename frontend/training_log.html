@@ -473,6 +473,7 @@ let currentYear  = new Date().getFullYear();
 let currentMonth = new Date().getMonth() + 1;
 let logsCache    = [];
 let chartInst    = null;
+let pendingPlanCompletion = null;
 
 const WEEKDAYS = ['일','월','화','수','목','금','토'];
 
@@ -937,6 +938,7 @@ document.getElementById('btn-import-confirm').onclick = async () => {
 function openAddModal(prefill) {
   document.getElementById('modal-title').textContent = '훈련 기록 추가';
   document.getElementById('edit-id').value = '';
+  pendingPlanCompletion = prefill?.plan_completion || null;
   document.getElementById('f-date').value = prefill?.log_date || todayStr();
   document.getElementById('f-stroke').value = prefill?.stroke_type || '자유형';
   document.getElementById('f-pool').value = prefill?.pool_length || '25';
@@ -955,6 +957,7 @@ function openEditModal(id) {
   if (!log) return;
   document.getElementById('modal-title').textContent = '훈련 기록 수정';
   document.getElementById('edit-id').value = id;
+  pendingPlanCompletion = null;
   document.getElementById('f-date').value = log.log_date;
   document.getElementById('f-stroke').value = log.stroke_type;
   document.getElementById('f-pool').value = log.pool_length;
@@ -969,6 +972,7 @@ function openEditModal(id) {
 }
 
 function closeModal() {
+  pendingPlanCompletion = null;
   document.getElementById('modal-backdrop').classList.add('hidden');
 }
 
@@ -999,6 +1003,7 @@ async function saveLog() {
     used_fins:        document.getElementById('f-fins').checked,
     memo:             document.getElementById('f-memo').value.trim() || null,
   };
+  if (!editId && pendingPlanCompletion) body.plan_completion = pendingPlanCompletion;
 
   if (!body.log_date) { showModalError('날짜를 입력해주세요.'); return; }
   if (!body.total_distance || body.total_distance < 1) { showModalError('거리를 입력해주세요.'); return; }
@@ -1016,13 +1021,14 @@ async function saveLog() {
     });
     const d = await r.json();
     if (!r.ok) { showModalError(d.detail || '저장 실패'); return; }
+    const planCompleted = Boolean(d.plan_completed);
     closeModal();
     refresh();
-    showReportToast(body.log_date);
+    showReportToast(body.log_date, planCompleted);
   } catch { showModalError('네트워크 오류가 발생했습니다.'); }
 }
 
-function showReportToast(logDate) {
+function showReportToast(logDate, planCompleted = false) {
   const existing = document.getElementById('report-toast');
   if (existing) existing.remove();
   const ym = logDate ? logDate.slice(0, 7) : '';
@@ -1034,7 +1040,7 @@ function showReportToast(logDate) {
     display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);
     animation:slideUp .3s ease;`;
   toast.innerHTML = `
-    <span>📊 월간 리포트가 자동으로 업데이트됩니다.</span>
+    <span>${planCompleted ? '✅ 훈련 기록과 플랜 완료 상태가 함께 저장되었습니다.' : '📊 월간 리포트가 자동으로 업데이트됩니다.'}</span>
     <a href="/report" style="color:var(--blue);font-weight:600;text-decoration:none;white-space:nowrap;">리포트 보기 →</a>
     <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size: var(--fs-body-lg);padding:0;line-height:1;">✕</button>`;
   const style = document.createElement('style');
@@ -1122,5 +1128,4 @@ if (new URLSearchParams(window.location.search).get('quick') === '1') {
 <script src="/static/theme.js"></script>
 </body>
 </html>
-
 

@@ -38,6 +38,13 @@ class GoalRequest(BaseModel):
     goal_distance: int
 
 
+class PlanCompletionRequest(BaseModel):
+    """A preset-plan session that was saved as an actual training log."""
+    plan_key: str
+    week_index: int
+    day_label: str
+
+
 def _get_customer_id(request: Request) -> Optional[int]:
     token = request.cookies.get("swimtech_token")
     if not token:
@@ -92,6 +99,7 @@ class LogRequest(BaseModel):
     mood:             Optional[str] = None
     memo:             Optional[str] = None
     used_fins:        bool = False
+    plan_completion:  Optional[PlanCompletionRequest] = None
 
 
 @router.post("")
@@ -117,8 +125,33 @@ def create_log(req: LogRequest, request: Request):
             (cid, ld, req.stroke_type, dist, int(req.duration_minutes or 0),
              int(req.pool_length or 25), req.intensity, memo, req.mood, req.used_fins))
         nid = cur.fetchone()[0]
+
+        # A plan session is complete only after its training log has been saved.
+        # Keeping this relation in the DB makes it consistent across devices.
+        if req.plan_completion:
+            completion = req.plan_completion
+            plan_key = completion.plan_key.strip()
+            day_label = completion.day_label.strip()
+            if not plan_key or len(plan_key) > 50 or not day_label or len(day_label) > 20:
+                raise HTTPException(400, "플랜 완료 정보가 올바르지 않습니다.")
+            if completion.week_index < 0 or completion.week_index > 51:
+                raise HTTPException(400, "플랜 주차 정보가 올바르지 않습니다.")
+            cur.execute(
+                """
+                INSERT INTO plan_completions
+                    (customer_id, plan_key, week_index, day_label, training_log_id)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (customer_id, plan_key, week_index, day_label)
+                DO UPDATE SET training_log_id = EXCLUDED.training_log_id,
+                              completed_at = NOW()
+                """,
+                (cid, plan_key, completion.week_index, day_label, nid),
+            )
         conn.commit()
-        return {"id": nid, "status": "created"}
+        return {"id": nid, "status": "created", "plan_completed": bool(req.plan_completion)}
+    except HTTPException:
+        conn.rollback()
+        raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(500, f"저장 오류: {e}")
@@ -180,6 +213,9 @@ def delete_log(log_id: int, request: Request):
             raise HTTPException(404, "기록을 찾을 수 없습니다")
         if row[0] != cid:
             raise HTTPException(403, "권한이 없습니다")
+        # A completion represents this saved log; deleting the log should not
+        # leave a completed-looking plan session behind.
+        cur.execute("DELETE FROM plan_completions WHERE training_log_id = %s", (log_id,))
         cur.execute("DELETE FROM training_logs WHERE id = %s", (log_id,))
         conn.commit()
         return {"status": "deleted"}
@@ -387,6 +423,41 @@ def get_most_recent_log(request: Request):
         raise
     except Exception as e:
         raise HTTPException(500, f"최근 기록 조회 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.get("/plan-completions")
+def get_plan_completions(request: Request):
+    """Return preset-plan sessions completed through a saved training log."""
+    cid = _get_customer_id(request)
+    if not cid:
+        return {"completions": []}
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT plan_key, week_index, day_label, training_log_id, completed_at
+            FROM plan_completions
+            WHERE customer_id = %s
+            ORDER BY completed_at DESC
+            """,
+            (cid,),
+        )
+        return {"completions": [
+            {
+                "plan_key": row[0],
+                "week_index": row[1],
+                "day_label": row[2],
+                "training_log_id": row[3],
+                "completed_at": str(row[4]),
+            }
+            for row in cur.fetchall()
+        ]}
+    except Exception as e:
+        raise HTTPException(500, f"플랜 완료 기록 조회 오류: {e}")
     finally:
         cur.close()
         conn.close()

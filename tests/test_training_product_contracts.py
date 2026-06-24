@@ -64,3 +64,17 @@ def test_render_deploy_hook_is_triggered_for_backend_changes():
     assert "RENDER_DEPLOY_HOOK" in workflow
     assert '"api/**"' in workflow
     assert 'curl --fail --silent --show-error --request POST' in workflow
+
+
+def test_plan_completion_is_saved_only_with_a_training_log():
+    api = (ROOT / "api" / "routers" / "training_log.py").read_text(encoding="utf-8")
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+
+    assert '@router.get("/plan-completions")' in api
+    assert "INSERT INTO plan_completions" in api
+    assert "DELETE FROM plan_completions WHERE training_log_id" in api
+    assert "plan_completion" in plan
+    assert "loadPlanCompletions" in plan
+    assert "swimtech_completed_days" not in plan
+    assert "pendingPlanCompletion" in log
