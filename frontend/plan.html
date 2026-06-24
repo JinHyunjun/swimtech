@@ -342,7 +342,7 @@
         <div class="random-panel-header">
           <div class="plan-card-icon">🎲</div>
           <div class="plan-card-title">랜덤 플랜 자동 생성</div>
-          <div class="plan-card-desc">목표·영법·실력을 선택하면 4주 훈련 플랜을 자동으로 만들어드립니다.</div>
+          <div class="plan-card-desc">목표·영법·세션 구성을 선택하면 4주 훈련 플랜을 자동으로 만들어드립니다.</div>
         </div>
         <div class="form-section">
           <div class="form-group">
@@ -386,6 +386,15 @@
               <button class="chip" data-val="25">25 m 풀</button>
               <button class="chip" data-val="50">50 m 풀</button>
             </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">세션 구성</div>
+            <div class="chip-group" id="r-chips-style">
+              <button class="chip selected" data-val="balanced">⚖️ 밸런스</button>
+              <button class="chip" data-val="drill">🎯 드릴 중심</button>
+              <button class="chip" data-val="dash">⚡ 대시·스피드</button>
+            </div>
+            <div style="font-size:var(--fs-caption);color:var(--muted);line-height:1.5;">밸런스는 드릴과 메인셋을 섞고, 대시·스피드는 충분한 회복을 포함한 고강도 세트를 제안합니다.</div>
           </div>
           <div class="form-group">
             <div class="form-label">중점 영법</div>
@@ -435,6 +444,11 @@
               <button class="pool-filter-btn" data-filter="배영">배영</button>
               <button class="pool-filter-btn" data-filter="평영">평영</button>
               <button class="pool-filter-btn" data-filter="접영">접영</button>
+            </div>
+            <div class="pool-filters" id="pool-type-filters" style="margin-top:8px;">
+              <button class="pool-filter-btn active" data-type-filter="전체">전체 구성</button>
+              <button class="pool-filter-btn" data-type-filter="drills">🎯 드릴</button>
+              <button class="pool-filter-btn" data-type-filter="mainset">⚡ 대시·메인셋</button>
             </div>
           </div>
           <div class="pool-custom-pin" id="pool-custom-pin" draggable="true"
@@ -1287,6 +1301,7 @@ const WEEK_THEMES = {
 };
 const WEEK_INTENSITIES = ['easy', 'medium', 'hard', 'easy'];
 const GOAL_MAINSET_COUNT = { 기록단축: 3, 건강: 2, 영법교정: 2, 취미: 1 };
+const SESSION_STYLE_LABELS = { balanced: '밸런스', drill: '드릴 중심', dash: '대시·스피드' };
 
 function pickRandom(arr, exclude) {
   const pool = exclude ? arr.filter(x => x !== exclude) : arr;
@@ -1299,8 +1314,52 @@ function getStrokes(focusStroke) {
   return [focusStroke, ...all.filter(s => s !== focusStroke)];
 }
 
+function pickUnique(items, count, keyField = 'drill') {
+  const picked = [];
+  const used = new Set();
+  while (picked.length < count && picked.length < items.length) {
+    const available = items.filter(item => !used.has(item[keyField] || item.note || item.dist));
+    const item = pickRandom(available.length ? available : items);
+    const key = item[keyField] || item.note || item.dist;
+    if (used.has(key)) break;
+    picked.push(item);
+    used.add(key);
+  }
+  return picked;
+}
+
+function isDashSet(item) {
+  return /대시|스프린트|스피드|인터벌|가속|레이스|페이스|타임|최대|피라미드|네거티브|템포/.test(`${item.drill || ''} ${item.purpose || ''}`);
+}
+
+function pickDashSets(pool, count) {
+  const mainsets = pool.mainset || [];
+  const dashSets = mainsets.filter(isDashSet);
+  const picked = pickUnique(dashSets.length ? dashSets : mainsets, count);
+  if (picked.length >= count) return picked;
+  const used = new Set(picked.map(item => item.drill || item.note || item.dist));
+  return [
+    ...picked,
+    ...pickUnique(mainsets.filter(item => !used.has(item.drill || item.note || item.dist)), count - picked.length),
+  ];
+}
+
+function pickSessionSets(pool, sessionStyle, count, variantIndex) {
+  const drills = pool.drills || [];
+
+  if (sessionStyle === 'drill') return pickUnique(drills, count);
+  if (sessionStyle === 'dash') return pickDashSets(pool, count);
+
+  if (count === 1) {
+    return (variantIndex % 2 === 0) ? pickUnique(drills, 1) : pickDashSets(pool, 1);
+  }
+  const drillCount = Math.ceil(count / 2);
+  const dashCount = count - drillCount;
+  return [...pickUnique(drills, drillCount), ...pickDashSets(pool, dashCount)];
+}
+
 function generatePlan(params) {
-  const { goal, sessions_per_week, session_duration, focus_stroke, level, pool_length } = params;
+  const { goal, sessions_per_week, session_duration, focus_stroke, level, pool_length, session_style } = params;
   const strokes = getStrokes(focus_stroke);
   const days = WEEK_DAYS[sessions_per_week] || WEEK_DAYS[3];
   const themes = WEEK_THEMES[goal] || WEEK_THEMES['건강'];
@@ -1314,21 +1373,14 @@ function generatePlan(params) {
       const pool = SESSION_POOL[strokeKey] || SESSION_POOL['자유형'];
 
       const warmup = pickRandom(pool.warmup);
-      const drills = [];
-      const usedDrills = new Set();
-      for (let i = 0; i < mainsetCount; i++) {
-        const available = pool.drills.filter(d => !usedDrills.has(d.drill));
-        const picked = pickRandom(available.length ? available : pool.drills);
-        drills.push(picked);
-        usedDrills.add(picked.drill);
-      }
+      const sessionSets = pickSessionSets(pool, session_style, mainsetCount, wi + di);
       const cooldown = pickRandom(pool.cooldown);
-      const tip = drills[0]?.tip || '꾸준히 반복하면 폼이 좋아집니다';
+      const tip = sessionSets[0]?.tip || (session_style === 'dash' ? '대시 세트는 폼이 무너지기 전 충분히 쉬어가며 진행하세요' : '꾸준히 반복하면 폼이 좋아집니다');
 
       return {
         day: day + '요일',
         warmup: { dist: warmup.dist, note: warmup.note },
-        mainset: drills.map(d => {
+        mainset: sessionSets.map(d => {
           const set = getPoolAdjustedSet(d);
           return {
             dist: set.dist,
@@ -1347,11 +1399,12 @@ function generatePlan(params) {
   });
 
   const summaryParts = [
-    `${goal} 목표`, `${pool_length}m 풀`, `주 ${sessions_per_week}회`, `${session_duration}분`, `${focus_stroke} 위주`, level
+    `${goal} 목표`, `${SESSION_STYLE_LABELS[session_style] || SESSION_STYLE_LABELS.balanced}`, `${pool_length}m 풀`, `주 ${sessions_per_week}회`, `${session_duration}분`, `${focus_stroke} 위주`, level
   ];
 
   return {
     pool_length,
+    session_style,
     summary: summaryParts.join(' · '),
     weeks,
   };
@@ -1379,7 +1432,8 @@ function getRChip(groupId) {
 function isRFormValid() {
   return document.getElementById('r-name').value.trim() &&
     getRChip('r-chips-goal') && getRChip('r-chips-sessions') &&
-    getRChip('r-chips-duration') && getRChip('r-chips-pool') && getRChip('r-chips-stroke') && getRChip('r-chips-level');
+    getRChip('r-chips-duration') && getRChip('r-chips-pool') && getRChip('r-chips-style') &&
+    getRChip('r-chips-stroke') && getRChip('r-chips-level');
 }
 
 function updateGenBtn() {
@@ -1425,6 +1479,7 @@ document.getElementById('btn-gen-random').addEventListener('click', () => {
     sessions_per_week: +getRChip('r-chips-sessions'),
     session_duration: +getRChip('r-chips-duration'),
     pool_length: +getRChip('r-chips-pool'),
+    session_style: getRChip('r-chips-style'),
     focus_stroke: getRChip('r-chips-stroke'),
     level: getRChip('r-chips-level'),
   };
@@ -1516,6 +1571,7 @@ let _dragCustom = false;
 let _cmTargetDay = null;
 let _itemIdSeq = 0;
 let _currentFilter = '전체';
+let _currentTypeFilter = '전체';
 let _currentQuery = '';
 
 function parseDistNum(distStr) {
@@ -1526,8 +1582,9 @@ function parseDistNum(distStr) {
 }
 
 /* ── 풀 렌더링 (필터 + 검색 적용) ── */
-function renderPoolList(filter, query) {
+function renderPoolList(filter, query, typeFilter) {
   if (filter !== undefined) _currentFilter = filter;
+  if (typeFilter !== undefined) _currentTypeFilter = typeFilter;
   if (query !== undefined) _currentQuery = query;
 
   const list = document.getElementById('pool-list');
@@ -1541,13 +1598,14 @@ function renderPoolList(filter, query) {
     });
   });
 
+  const typedItems = _currentTypeFilter === '전체' ? allItems : allItems.filter(item => item.type === _currentTypeFilter);
   const q = _currentQuery.trim().toLowerCase();
-  const items = q ? allItems.filter(item =>
+  const items = q ? typedItems.filter(item =>
     (item.drill || item.note || '').toLowerCase().includes(q) ||
     (item.purpose || '').toLowerCase().includes(q) ||
     item.stroke.toLowerCase().includes(q) ||
     (POOL_TYPE_LABEL[item.type] || '').toLowerCase().includes(q)
-  ) : allItems;
+  ) : typedItems;
 
   window._poolItems = items;
 
@@ -1853,9 +1911,17 @@ function updateWeekTotal() {
 document.getElementById('pool-filters').addEventListener('click', e => {
   const btn = e.target.closest('.pool-filter-btn');
   if (!btn) return;
-  document.querySelectorAll('.pool-filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#pool-filters .pool-filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderPoolList(btn.dataset.filter); // _currentQuery preserved
+});
+
+document.getElementById('pool-type-filters').addEventListener('click', e => {
+  const btn = e.target.closest('.pool-filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('#pool-type-filters .pool-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPoolList(undefined, undefined, btn.dataset.typeFilter);
 });
 
 document.getElementById('pool-search').addEventListener('input', e => {
@@ -1977,7 +2043,8 @@ function buildMyPlanCard(plan) {
 
   const dateStr = plan.created_at ? plan.created_at.split('T')[0].split(' ')[0] : '';
   const poolLength = Number(plan.plan_content?.pool_length) || 25;
-  const metaParts = [plan.goal, plan.focus_stroke ? `${plan.focus_stroke} 위주` : '', `${poolLength}m 풀`, plan.level].filter(Boolean);
+  const sessionStyleLabel = SESSION_STYLE_LABELS[plan.plan_content?.session_style] || '';
+  const metaParts = [plan.goal, plan.focus_stroke ? `${plan.focus_stroke} 위주` : '', sessionStyleLabel, `${poolLength}m 풀`, plan.level].filter(Boolean);
   const badge = plan._local
     ? '<span class="myplan-source-badge badge-local">로컬</span>'
     : '<span class="myplan-source-badge badge-cloud">클라우드</span>';
