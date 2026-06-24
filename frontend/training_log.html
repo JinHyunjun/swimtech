@@ -320,7 +320,8 @@ select.form-control option { background: var(--surface); }
   <div class="log-list-head">
     <div class="log-list-title" id="log-list-title">기록 목록</div>
     <div class="log-list-head-actions">
-      <button class="btn-import-log" id="btn-open-import">⤓ 운동 데이터 가져오기</button>
+      <!-- 운동 데이터 가져오기(워치 연동) 기능은 현재 비활성화 — 추후 안정화되면 아래 버튼 주석만 해제 -->
+      <!-- <button class="btn-import-log" id="btn-open-import">⤓ 운동 데이터 가져오기</button> -->
       <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
     </div>
   </div>
@@ -797,7 +798,8 @@ function setImportSource(src) {
   }
 }
 
-document.getElementById('btn-open-import').onclick = openImportModal;
+const _importBtn = document.getElementById('btn-open-import');
+if (_importBtn) _importBtn.onclick = openImportModal;
 document.getElementById('import-tab-hae').onclick = () => setImportSource('hae');
 document.getElementById('import-tab-apple').onclick = () => setImportSource('apple');
 document.getElementById('import-tab-samsung').onclick = () => setImportSource('samsung');
