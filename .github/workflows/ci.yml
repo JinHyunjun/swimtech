@@ -27,15 +27,15 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install API dependencies
-        run: pip install -r api/requirements.txt
+        run: python -m pip install -r api/requirements.txt
 
       - name: Install test dependencies
-        run: pip install pytest pytest-html
+        run: python -m pip install pytest pytest-html
 
       - name: Run unit tests (no Playwright)
         working-directory: api
         run: |
-          pytest ../tests/test_api_unit.py -v --tb=short \
+          python -m pytest ../tests/test_api_unit.py ../tests/test_training_product_contracts.py -v --tb=short \
             --html=../tests/ci_report.html --self-contained-html
 
       - name: Upload test report

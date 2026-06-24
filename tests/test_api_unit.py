@@ -4,9 +4,6 @@ Runs in CI via: pytest tests/test_api_unit.py
 import pytest
 
 # ---------------------------------------------------------------------------
-# Stub heavy optional deps so imports succeed without the real packages
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 # 1. community router — constants & regex
 # ---------------------------------------------------------------------------
 class TestCommunityConstants:
