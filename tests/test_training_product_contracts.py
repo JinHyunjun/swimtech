@@ -15,7 +15,8 @@ def test_analysis_routers_are_not_publicly_registered():
 
 def test_legacy_analysis_urls_are_redirected_or_retired():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
-    for config_path in (ROOT / "vercel.json", ROOT / "frontend" / "vercel.json"):
+    # Vercel serves the frontend directory; its tracked config is the deploy source.
+    for config_path in (ROOT / "frontend" / "vercel.json",):
         config = json.loads(config_path.read_text(encoding="utf-8"))
         redirect_sources = {item["source"] for item in config["redirects"]}
         assert {"/meta", "/upload", "/viewer", "/share/:path*"} <= redirect_sources
