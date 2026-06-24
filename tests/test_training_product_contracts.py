@@ -48,6 +48,13 @@ def test_quick_log_reuses_the_latest_training_record():
     assert "/training-log?quick=1" in dashboard
 
 
+def test_training_dashboard_is_visible_from_the_landing_page():
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+
+    assert 'href="/dashboard"' in landing
+    assert "훈련 대시보드" in landing
+
+
 def test_render_deploy_hook_is_triggered_for_backend_changes():
     workflow = (ROOT / ".github" / "workflows" / "render-deploy.yml").read_text(encoding="utf-8")
 
