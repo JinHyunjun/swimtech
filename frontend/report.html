@@ -212,6 +212,25 @@
       <div class="heatmap-grid" id="heatmap"></div>
     </div>
 
+    <!-- 연속 출석 히트맵 (최근 1년) -->
+    <div class="chart-section">
+      <div class="chart-title">
+        연속 출석 히트맵
+        <span style="font-size:var(--fs-caption);color:var(--muted);font-weight:400;margin-left:8px;" id="streak-summary"></span>
+      </div>
+      <div id="year-heatmap-wrap" style="overflow-x:auto;padding-bottom:6px;">
+        <div id="year-heatmap" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;width:max-content;"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:8px;font-size:var(--fs-caption);color:var(--muted);">
+        <span>적음</span>
+        <span style="width:11px;height:11px;border-radius:2px;background:rgba(255,255,255,.06);"></span>
+        <span style="width:11px;height:11px;border-radius:2px;background:#0e4a52;"></span>
+        <span style="width:11px;height:11px;border-radius:2px;background:#0a7d8c;"></span>
+        <span style="width:11px;height:11px;border-radius:2px;background:#00b4d8;"></span>
+        <span>많음</span>
+      </div>
+    </div>
+
     <!-- 공유 버튼 -->
     <div class="share-bar">
       <button class="share-btn save"  id="btn-save"  onclick="saveImage()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 이미지로 저장</button>
@@ -237,6 +256,7 @@ let shareToken = "";
   curYear  = now.getFullYear();
   curMonth = now.getMonth() + 1;
   await loadReport();
+  loadYearHeatmap();
 })();
 
 async function logout() {
@@ -304,6 +324,56 @@ function render(d) {
   renderHeatmap(d.by_day);
   renderStrokeChart(d.by_stroke);
   renderWeeklyChart(d.by_week);
+}
+
+async function loadYearHeatmap() {
+  try {
+    const res = await fetch('/api/report/heatmap?days=365', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderYearHeatmap(data);
+  } catch { /* 조용히 무시 */ }
+}
+
+function renderYearHeatmap(data) {
+  const days = data.days || {};
+  const summary = document.getElementById('streak-summary');
+  if (summary) {
+    summary.textContent = `현재 연속 ${data.current_streak || 0}일 · 최장 ${data.longest_streak || 0}일 · 총 ${data.total_days || 0}일 출석`;
+  }
+
+  const values = Object.values(days);
+  const maxVal = values.length ? Math.max(...values) : 0;
+  const colorFor = (v) => {
+    if (!v) return 'rgba(255,255,255,.06)';
+    const ratio = maxVal > 0 ? v / maxVal : 0;
+    if (ratio > 0.66) return '#00b4d8';
+    if (ratio > 0.33) return '#0a7d8c';
+    return '#0e4a52';
+  };
+
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - 364);
+  const lead = start.getDay();
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push(null);
+  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+    cells.push(new Date(d));
+  }
+
+  const grid = document.getElementById('year-heatmap');
+  if (!grid) return;
+  grid.innerHTML = cells.map(d => {
+    if (!d) return `<div style="width:11px;height:11px;"></div>`;
+    const key = d.toISOString().slice(0, 10);
+    const v = days[key] || 0;
+    const label = `${key} · ${v.toLocaleString()}m`;
+    return `<div title="${label}" style="width:11px;height:11px;border-radius:2px;background:${colorFor(v)};"></div>`;
+  }).join('');
+
+  const wrap = document.getElementById('year-heatmap-wrap');
+  if (wrap) wrap.scrollLeft = wrap.scrollWidth;
 }
 
 function renderHeatmap(freq) {

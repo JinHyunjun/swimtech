@@ -15,7 +15,7 @@ router = APIRouter()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-SYSTEM_PROMPT = (
+SYSTEM_PROMPT_BASE = (
     "당신은 SwimTech의 수영 전문 AI 코치입니다. 수영 영법, 훈련 방법, 호흡법, 체력 관리, "
     "수영 장비, 부상 예방 등 수영과 관련된 질문에만 친절하고 구체적으로 답변하세요. "
     "수영과 무관한 질문(코딩, 정치, 일반 잡담, 다른 운동 등)을 받으면, 정중히 수영 관련 "
@@ -24,6 +24,61 @@ SYSTEM_PROMPT = (
     "절대로 '어떤 영법/방법이 궁금하신가요?' 같은 되묻기로 답변을 피하지 마세요 — 직전 대화에 "
     "이미 주제가 나와 있다면 그 주제를 그대로 더 깊게 설명하세요."
 )
+
+
+def _get_training_summary(username: str) -> str:
+    """사용자의 최근 훈련 일지를 요약해서, AI 코치가 맞춤 답변을 줄 수 있도록 컨텍스트로 제공.
+    실패해도 챗봇 자체가 죽으면 안 되므로 빈 문자열 반환으로 안전하게 처리."""
+    try:
+        conn = _get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+        row = cur.fetchone()
+        if not row:
+            cur.close(); conn.close()
+            return ""
+        cid = row[0]
+
+        cur.execute("""
+            SELECT log_date, stroke_type, total_distance, duration_minutes, intensity
+            FROM training_logs
+            WHERE customer_id = %s
+            ORDER BY log_date DESC
+            LIMIT 8
+        """, (cid,))
+        recent_rows = cur.fetchall()
+
+        cur.execute("""
+            SELECT COUNT(*), COALESCE(SUM(total_distance),0)
+            FROM training_logs
+            WHERE customer_id = %s
+              AND log_date >= date_trunc('month', CURRENT_DATE)
+        """, (cid,))
+        month_count, month_distance = cur.fetchone()
+        cur.close(); conn.close()
+
+        if not recent_rows:
+            return ""
+
+        lines = [
+            f"- {d.isoformat()} {stroke} {dist}m {dur}분 (강도:{intensity or '-'})"
+            for d, stroke, dist, dur, intensity in recent_rows
+        ]
+        stroke_counts: dict = {}
+        for _, stroke, *_ in recent_rows:
+            stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1
+        main_stroke = max(stroke_counts, key=stroke_counts.get) if stroke_counts else "정보 없음"
+
+        return (
+            "\n\n[참고: 이 사용자의 최근 훈련 일지 데이터입니다 — 사용자가 본인의 기록, 페이스, "
+            "진행 상황, 맞춤 추천을 물으면 이 데이터를 적극 활용해 구체적으로 답변하세요. "
+            "이 데이터와 무관한 일반적인 질문에는 굳이 언급하지 마세요.]\n"
+            f"이번 달 누적: {month_count}회, {month_distance}m\n"
+            f"최근 주력 영법: {main_stroke}\n"
+            "최근 훈련 기록(최신순):\n" + "\n".join(lines)
+        )
+    except Exception:
+        return ""
 
 _client = None
 
@@ -128,6 +183,9 @@ def send_message(body: SendMessageRequest, request: Request):
             for r, c in recent
         ]
 
+        training_summary = _get_training_summary(username)
+        system_instruction = SYSTEM_PROMPT_BASE + training_summary
+
         last_error = None
         for model_name in MODEL_FALLBACKS:
             try:
@@ -135,7 +193,7 @@ def send_message(body: SendMessageRequest, request: Request):
                     model=model_name,
                     contents=contents,
                     config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
+                        system_instruction=system_instruction,
                         max_output_tokens=2048,
                         temperature=0.7,
                     ),

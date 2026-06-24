@@ -139,6 +139,62 @@ def _parse_share_token(token: str) -> Optional[dict]:
         return None
 
 
+@router.get("/heatmap")
+def get_training_heatmap(request: Request, days: int = Query(365, le=730)):
+    """최근 N일간의 일자별 훈련 거리 — 깃허브 커밋 그래프 스타일 히트맵용."""
+    username = _get_username(request)
+    if not username:
+        raise HTTPException(401, "로그인이 필요합니다")
+
+    conn = _get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+    crow = cur.fetchone()
+    if not crow:
+        cur.close(); conn.close()
+        return {"days": {}, "current_streak": 0, "longest_streak": 0, "total_days": 0}
+    cid = crow[0]
+
+    cur.execute("""
+        SELECT log_date, SUM(total_distance)
+        FROM training_logs
+        WHERE customer_id = %s AND log_date >= CURRENT_DATE - %s::int
+        GROUP BY log_date
+        ORDER BY log_date
+    """, (cid, days))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    day_map = {str(r[0]): int(r[1] or 0) for r in rows}
+    date_set = set(r[0] for r in rows)
+
+    # 연속 출석일(현재/최장) 계산
+    longest = current = 0
+    prev = None
+    today = date.today()
+    sorted_dates = sorted(date_set)
+    for d in sorted_dates:
+        if prev is not None and (d - prev).days == 1:
+            current += 1
+        else:
+            current = 1
+        longest = max(longest, current)
+        prev = d
+    current_streak = 0
+    cursor_day = today if today in date_set else today.fromordinal(today.toordinal() - 1)
+    while cursor_day in date_set:
+        current_streak += 1
+        cursor_day = cursor_day.fromordinal(cursor_day.toordinal() - 1)
+
+    return {
+        "days": day_map,
+        "current_streak": current_streak,
+        "longest_streak": longest,
+        "total_days": len(date_set),
+    }
+
+
 @router.get("/monthly")
 def get_monthly_report(
     request: Request,
