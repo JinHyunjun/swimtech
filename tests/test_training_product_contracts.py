@@ -50,9 +50,12 @@ def test_quick_log_reuses_the_latest_training_record():
 
 def test_training_dashboard_is_visible_from_the_landing_page():
     landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    icons = (ROOT / "frontend" / "static" / "icons.svg").read_text(encoding="utf-8")
 
     assert 'href="/dashboard"' in landing
     assert "훈련 대시보드" in landing
+    assert "#icon-dashboard" in landing
+    assert 'id="icon-dashboard"' in icons
 
 
 def test_render_deploy_hook_is_triggered_for_backend_changes():
