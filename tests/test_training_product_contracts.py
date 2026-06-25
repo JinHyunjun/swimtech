@@ -147,6 +147,8 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "customer_id = _get_customer_id(request)" in report_api
     assert "_calc_monthly_stats(customer_id, year, month)" in report_api
     assert '"avg_distance"' in report_api
+    assert "LIKE '%@%'" not in report_api
+    assert "POSITION('@' IN COALESCE(tl.memo, ''))" in report_api
     assert "stat-avg" in report_page
     assert "평균 거리 (m)" in report_page
 

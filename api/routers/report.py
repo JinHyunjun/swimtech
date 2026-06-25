@@ -125,7 +125,7 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
         cur.execute("""
             SELECT COUNT(DISTINCT pc.id),
                    COALESCE(SUM(tl.total_distance), 0),
-                   COUNT(DISTINCT CASE WHEN COALESCE(tl.memo, '') LIKE '%@%' THEN pc.id END)
+                   COUNT(DISTINCT CASE WHEN POSITION('@' IN COALESCE(tl.memo, '')) > 0 THEN pc.id END)
             FROM plan_completions pc
             JOIN training_logs tl ON tl.id = pc.training_log_id
             WHERE pc.customer_id = %s
