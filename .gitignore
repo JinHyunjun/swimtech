@@ -61,7 +61,7 @@ logs/
 node_modules/
 frontend/dist/
 
-# ¹èÆ÷ ÇïÆÛ ½ºÅ©¸³Æ®
+# ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®
 *.patch
 add_*.py
 apply_*.py
@@ -72,3 +72,5 @@ trim_*.py
 /swimtech_pathA_deploy_runbook.md
 
 qa_report.json
+qa_ui_report.json
+qa_ui_screenshots/

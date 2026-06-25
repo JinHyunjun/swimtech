@@ -35,3 +35,34 @@ jobs:
         with:
           name: qa-report
           path: qa_report.json
+
+  qa-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Run UI QA (click-through + console error capture)
+        env:
+          # 고정 QA 계정 — qa_runner.py(API 체크)와 동일한 계정/시크릿 재사용
+          QA_USERNAME: ${{ secrets.QA_USERNAME }}
+          QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+        run: |
+          python scripts/qa_ui_crawler.py
+
+      - name: Upload UI QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-ui-report
+          path: |
+            qa_ui_report.json
+            qa_ui_screenshots/
