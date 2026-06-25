@@ -3,7 +3,7 @@
 import os
 import random
 import string
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import psycopg2
 from fastapi import APIRouter, HTTPException, Request
@@ -112,6 +112,7 @@ class FeedbackRequest(BaseModel):
 class PlanRequest(BaseModel):
     student_id: int
     content:    str
+    plan_meta:  Optional[Dict[str, Any]] = None
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -780,9 +781,19 @@ def send_coach_plan(req: PlanRequest, request: Request):
             (coach_id, req.student_id, req.content.strip()),
         )
         row = cur.fetchone()
+        cur.execute("SELECT to_regclass('public.notifications')")
+        if cur.fetchone()[0]:
+            meta = req.plan_meta or {}
+            goal = str(meta.get("goal") or "훈련")
+            pool = meta.get("pool_length")
+            suffix = f" · {pool}m 풀" if pool else ""
+            cur.execute(
+                "INSERT INTO notifications (customer_id, type, message, target_id) VALUES (%s,%s,%s,%s)",
+                (req.student_id, "coach_plan", f"코치가 {goal} 플랜을 보냈어요{suffix}", row[0]),
+            )
         conn.commit()
         cur.close()
-        return {"plan_id": row[0], "created_at": str(row[1])}
+        return {"plan_id": row[0], "created_at": str(row[1]), "plan_meta": req.plan_meta or {}}
     except HTTPException:
         raise
     except Exception as e:

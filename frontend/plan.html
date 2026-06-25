@@ -101,6 +101,22 @@
 .cycle-input { width: 62px; box-sizing: border-box; border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 4px 6px; background: rgba(0,0,0,.22); color: var(--text); font: inherit; font-size: var(--fs-caption); text-align: center; outline: none; }
 .cycle-input:focus { border-color: var(--blue); }
 .cycle-input::placeholder { color: var(--muted); opacity: .85; }
+.pace-helper-panel, .feedback-loop-panel { margin: -6px 0 18px; padding: 12px; border: 0.5px solid rgba(0,180,216,.24); border-radius: var(--radius-md); background: rgba(0,180,216,.045); }
+.pace-helper-title, .feedback-loop-title { font-size: var(--fs-caption); font-weight: 800; color: var(--cyan); margin-bottom: 8px; }
+.pace-helper-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; align-items: end; }
+.pace-helper-field { display: flex; flex-direction: column; gap: 4px; }
+.pace-helper-field label { font-size: var(--fs-caption); color: var(--muted); font-weight: 600; }
+.pace-helper-input, .pace-helper-select { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.18); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 9px; color: var(--text); font: inherit; font-size: var(--fs-caption); outline: none; }
+.pace-helper-input:focus, .pace-helper-select:focus { border-color: var(--blue); }
+.pace-helper-result { margin-top: 9px; padding: 9px 10px; border-radius: var(--radius-sm); background: rgba(0,0,0,.12); font-size: var(--fs-caption); color: var(--muted); line-height: 1.55; }
+.pace-helper-result strong { color: var(--blue); }
+.feedback-loop-panel { display: none; }
+.feedback-loop-panel.visible { display: block; }
+.feedback-loop-body { font-size: var(--fs-caption); color: var(--muted); line-height: 1.65; }
+.feedback-loop-body strong { color: var(--text); }
+.set-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 5px; margin-top: 6px; }
+.set-detail-chip { padding: 4px 6px; border-radius: var(--radius-sm); background: rgba(0,0,0,.12); border: 0.5px solid rgba(255,255,255,.08); font-size: var(--fs-caption); color: var(--muted); }
+.set-detail-chip strong { color: var(--cyan); font-weight: 700; }
 
 /* ── 내 플랜 ── */
 .myplan-empty { text-align: center; padding: 60px 24px; color: var(--muted); }
@@ -238,6 +254,10 @@
 .builder-name-input:focus { border-color: var(--blue); }
 .btn-save-builder { padding: 9px 20px; border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600; background: var(--blue); color: #fff; border: none; cursor: pointer; transition: opacity .2s; }
 .btn-save-builder:hover { opacity: .88; }
+.builder-template-bar { width: 100%; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 2px; }
+.builder-template-select { min-width: 170px; flex: 1; background: rgba(0,0,0,.18); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 9px; color: var(--text); font: inherit; font-size: var(--fs-caption); outline: none; }
+.btn-template { padding: 7px 12px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 700; background: none; color: var(--cyan); border: 0.5px solid rgba(72,202,228,.35); cursor: pointer; }
+.btn-template:hover { background: rgba(72,202,228,.08); }
 
 /* ── 드래그 앤 드롭 ── */
 .pool-item { cursor: grab; user-select: none; }
@@ -342,6 +362,38 @@
     <div class="cycle-guide" id="cycle-guide">
       <strong>⏱ 목적별 권장 사이클</strong>
       <span>기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>
+    </div>
+    <div class="pace-helper-panel" id="pace-helper-panel">
+      <div class="pace-helper-title">🔁 25m / 50m 페이스 변환 보조</div>
+      <div class="pace-helper-grid">
+        <div class="pace-helper-field">
+          <label for="pace-distance">거리(m)</label>
+          <input class="pace-helper-input" id="pace-distance" type="number" min="25" step="25" value="100">
+        </div>
+        <div class="pace-helper-field">
+          <label for="pace-time">기록</label>
+          <input class="pace-helper-input" id="pace-time" type="text" inputmode="numeric" placeholder="예: 1:40" value="1:40">
+        </div>
+        <div class="pace-helper-field">
+          <label for="pace-source-pool">기준 풀</label>
+          <select class="pace-helper-select" id="pace-source-pool">
+            <option value="25">25m 풀</option>
+            <option value="50">50m 풀</option>
+          </select>
+        </div>
+        <div class="pace-helper-field">
+          <label for="pace-target-pool">변환 풀</label>
+          <select class="pace-helper-select" id="pace-target-pool">
+            <option value="50">50m 풀</option>
+            <option value="25">25m 풀</option>
+          </select>
+        </div>
+      </div>
+      <div class="pace-helper-result" id="pace-helper-result"></div>
+    </div>
+    <div class="feedback-loop-panel" id="feedback-loop-panel">
+      <div class="feedback-loop-title">📈 최근 일지 기반 다음 플랜 추천</div>
+      <div class="feedback-loop-body" id="feedback-loop-body"></div>
     </div>
 
     <div id="tab-speed"   class="tab-content active"></div>
@@ -497,6 +549,14 @@
           <div class="editor-footer">
             <input type="text" class="builder-name-input" id="builder-name" placeholder="플랜 이름 입력..." maxlength="50">
             <button class="btn-save-builder" id="btn-save-builder"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 저장</button>
+            <div class="builder-template-bar">
+              <select class="builder-template-select" id="builder-template-select">
+                <option value="">저장된 템플릿 선택</option>
+              </select>
+              <button type="button" class="btn-template" id="btn-save-template">템플릿 저장</button>
+              <button type="button" class="btn-template" id="btn-load-template">불러오기</button>
+              <button type="button" class="btn-template" id="btn-delete-template">삭제</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1161,6 +1221,36 @@ function formatCycle(seconds) {
   return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+function parseTimeTextToSeconds(value) {
+  const text = String(value || '').trim();
+  if (!text) return 0;
+  const parts = text.split(':').map(v => Number(v));
+  if (parts.some(v => Number.isNaN(v))) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 1) return parts[0];
+  return 0;
+}
+
+function formatDurationText(seconds) {
+  if (!seconds || seconds < 0) return '-';
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}:${String(mins).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
+function formatMinutesText(minutes) {
+  if (!Number.isFinite(minutes) || minutes <= 0) return '-';
+  if (minutes < 1) return `${Math.round(minutes * 60)}초`;
+  return `${Math.round(minutes)}분`;
+}
+
 function getSetStructure(set) {
   const distText = String(set?.dist || '');
   const drillText = String(set?.drill || '');
@@ -1219,6 +1309,31 @@ function getSetDistance(set) {
   return parseDistNum(set?.dist || '');
 }
 
+function estimateSetSeconds(set, cycleValue) {
+  const structure = getSetStructure(set);
+  if (!structure) return 0;
+  const cycleSeconds = parseCycleSeconds(cycleValue || set?.cycle);
+  if (cycleSeconds) return cycleSeconds * structure.reps;
+  const recommended = getRecommendedCycle(set);
+  const recommendedSeconds = parseCycleSeconds(recommended.value);
+  return recommendedSeconds ? recommendedSeconds * structure.reps : 0;
+}
+
+function getSetIntensityLabel(set, weekIntensity = 'medium') {
+  const goalKey = getCycleGoal(set, set?.goal);
+  if (goalKey === 'speed') return '고강도';
+  if (goalKey === 'pace') return weekIntensity === 'hard' ? '고강도' : '중강도';
+  if (goalKey === 'technique') return '기술';
+  if (goalKey === 'recovery') return '회복';
+  return weekIntensity === 'easy' ? '저강도' : '중강도';
+}
+
+function getSetDetailTags(set) {
+  const tags = Array.isArray(set?.tags) ? set.tags : [];
+  if (tags.length) return tags.slice(0, 3).join(' · ');
+  return CYCLE_GOAL_PROFILES[getCycleGoal(set)]?.label || '기본';
+}
+
 function calculateSessionDistance(session) {
   let total = 0;
   total += getSetDistance(session?.warmup || {});
@@ -1227,6 +1342,103 @@ function calculateSessionDistance(session) {
   const statedTotal = parseDistNum(session?.total || '');
   if (statedTotal > total) total = statedTotal;
   return total;
+}
+
+function convertPoolTime(distance, seconds, sourcePool, targetPool) {
+  if (!distance || !seconds || sourcePool === targetPool) return seconds;
+  const sourceTurns = Math.max(0, Math.floor(distance / sourcePool) - 1);
+  const targetTurns = Math.max(0, Math.floor(distance / targetPool) - 1);
+  const turnBenefitSeconds = 0.85;
+  const turnDelta = sourceTurns - targetTurns;
+  return Math.max(1, seconds + turnDelta * turnBenefitSeconds);
+}
+
+function renderPaceHelper() {
+  const distance = Math.max(25, Number(document.getElementById('pace-distance')?.value || 0));
+  const seconds = parseTimeTextToSeconds(document.getElementById('pace-time')?.value);
+  const sourcePool = Number(document.getElementById('pace-source-pool')?.value || 25);
+  const targetPool = Number(document.getElementById('pace-target-pool')?.value || 50);
+  const result = document.getElementById('pace-helper-result');
+  if (!result) return;
+  if (!distance || !seconds) {
+    result.innerHTML = '거리와 기록을 입력하면 25m/50m 기준 참고 기록을 계산합니다.';
+    return;
+  }
+  const converted = convertPoolTime(distance, seconds, sourcePool, targetPool);
+  const sourcePace = seconds / (distance / 100);
+  const targetPace = converted / (distance / 100);
+  const directionText = `${sourcePool}m → ${targetPool}m`;
+  const turnDiff = Math.abs(Math.max(0, Math.floor(distance / 25) - 1) - Math.max(0, Math.floor(distance / 50) - 1));
+  result.innerHTML = `
+    <strong>${directionText} 참고 기록 ${formatDurationText(converted)}</strong>
+    · 100m 페이스 ${formatDurationText(targetPace)}<br>
+    입력 페이스는 100m ${formatDurationText(sourcePace)}입니다. 25m 풀은 턴/푸시오프가 더 많아 같은 거리에서도 체감이 다를 수 있어, 추가 턴 1회당 약 0.85초를 보정값으로 사용했습니다.
+    ${turnDiff ? `<br>참고: 이 거리에서는 25m/50m 기준 턴 수 차이가 ${turnDiff}회입니다.` : ''}
+  `;
+}
+
+function initPaceHelper() {
+  ['pace-distance', 'pace-time', 'pace-source-pool', 'pace-target-pool'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', renderPaceHelper);
+    if (el) el.addEventListener('change', renderPaceHelper);
+  });
+  renderPaceHelper();
+}
+
+function getNextPlanRecommendation(log) {
+  const distance = Number(log?.total_distance || 0);
+  const duration = Number(log?.duration_minutes || 0);
+  const intensity = String(log?.intensity || '');
+  const poolLength = Number(log?.pool_length || selectedPoolLength || 25);
+  const pacePer100 = distance && duration ? duration * 60 / (distance / 100) : 0;
+  let distanceHint = '현재 거리 유지';
+  let cycleHint = '권장 사이클 유지';
+  let intensityHint = '중강도 유지';
+
+  if (intensity.includes('힘') || (pacePer100 && pacePer100 > 150)) {
+    distanceHint = '다음 세션 총거리는 5~10% 줄이고 폼 유지';
+    cycleHint = '메인셋 사이클은 +5~10초 여유';
+    intensityHint = '저강도/기술 세션 우선';
+  } else if (intensity.includes('쉬') || (pacePer100 && pacePer100 < 105 && distance >= 1000)) {
+    distanceHint = '다음 세션 총거리는 5~10% 증가 가능';
+    cycleHint = '페이스 세트는 -5초 도전';
+    intensityHint = '중강도 인터벌 1세트 추가';
+  } else {
+    distanceHint = '다음 세션은 같은 거리에서 후반 페이스 안정';
+    cycleHint = '현재 사이클을 유지하고 마지막 25m만 가속';
+    intensityHint = '중강도 유지';
+  }
+
+  return {
+    paceText: pacePer100 ? formatDurationText(pacePer100) : '-',
+    poolLength,
+    distanceHint,
+    cycleHint,
+    intensityHint,
+  };
+}
+
+async function loadTrainingFeedbackLoop() {
+  const panel = document.getElementById('feedback-loop-panel');
+  const body = document.getElementById('feedback-loop-body');
+  if (!panel || !body) return;
+  try {
+    const response = await fetch('/api/training-log/recent', { credentials: 'include' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const log = data.log;
+    if (!log) return;
+    const rec = getNextPlanRecommendation(log);
+    panel.classList.add('visible');
+    body.innerHTML = `
+      최근 기록 <strong>${log.total_distance || 0}m · ${log.duration_minutes || 0}분 · ${log.intensity || '보통'}</strong>
+      (${rec.poolLength}m 풀, 100m 페이스 ${rec.paceText}) 기준입니다.<br>
+      · 거리: ${rec.distanceHint}<br>
+      · 사이클: ${rec.cycleHint}<br>
+      · 강도: ${rec.intensityHint}
+    `;
+  } catch (_) { /* 비로그인 또는 네트워크 오류에서는 조용히 숨김 */ }
 }
 
 function parseCycleSeconds(value) {
@@ -1357,6 +1569,29 @@ function saveGeneratedCycle(weekIndex, dayIndex, setIndex, input) {
   if (set) set.cycle = cycle;
 }
 
+function getDisplayCycle(set, context, setIndex) {
+  if (context?.type === 'preset') {
+    return getPresetCycle(context.planKey, context.weekIndex, context.dayIndex, setIndex) ||
+      getRecommendedCycle(set, selectedPoolLength, context.level || selectedCycleLevel, context.goal || '').value;
+  }
+  return normalizeCycleInput(set?.cycle) ||
+    getRecommendedCycle(set, selectedPoolLength, context?.level || selectedCycleLevel, context?.goal || '').value;
+}
+
+function buildSetDetailGrid(set, context, setIndex, weekIntensity) {
+  const cycle = getDisplayCycle(set, context, setIndex);
+  const estimatedSeconds = estimateSetSeconds(set, cycle);
+  const intensityLabel = getSetIntensityLabel(set, weekIntensity);
+  const tagText = getSetDetailTags(set);
+  return `
+    <div class="set-detail-grid">
+      <span class="set-detail-chip"><strong>목적</strong> ${set.purpose || '기본'}</span>
+      <span class="set-detail-chip"><strong>강도</strong> ${intensityLabel}</span>
+      <span class="set-detail-chip"><strong>예상</strong> ${formatMinutesText(estimatedSeconds / 60)}</span>
+      <span class="set-detail-chip"><strong>분류</strong> ${tagText}</span>
+    </div>`;
+}
+
 function buildCycleControl(set, context, setIndex) {
   const recommendation = getRecommendedCycle(set, selectedPoolLength, context?.level || selectedCycleLevel, context?.goal || '');
   const recommendedText = recommendation.value
@@ -1395,9 +1630,14 @@ function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options =
          <span class="ms-drill">${set.drill}</span>
          <span class="ms-purpose">${set.purpose}</span>
          ${buildCycleControl(set, cycleContext, setIndex)}
+         ${buildSetDetailGrid(set, cycleContext, setIndex, weekIntensity)}
        </span>
      </div>`;
   }).join('');
+  const estimatedSessionSeconds = (s.mainset || []).reduce((sum, mainset, setIndex) => {
+    const set = getPoolAdjustedSet(mainset);
+    return sum + estimateSetSeconds(set, getDisplayCycle(set, cycleContext, setIndex));
+  }, 0);
   const done = dayId ? isDayCompleted(dayId) : false;
   const completionButton = options.showCompletion === false ? '' : `
        <button class="btn-day-complete" onclick='completeSessionDay(${JSON.stringify(planKey)}, ${weekIndex}, ${JSON.stringify(s.day)}, ${JSON.stringify(s.total)}, ${JSON.stringify(weekIntensity || "medium")})'>
@@ -1422,7 +1662,7 @@ function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options =
         <div class="part-label">🧊 쿨다운</div>
         <div class="part-info"><span class="part-dist">${s.cooldown.dist}</span>${s.cooldown.note}</div>
       </div>
-      <div class="session-total">총 거리 <strong>${s.total}</strong></div>
+      <div class="session-total">총 거리 <strong>${s.total}</strong>${estimatedSessionSeconds ? ` · 메인셋 예상 ${formatMinutesText(estimatedSessionSeconds / 60)}` : ''}</div>
       <div class="coach-tip">💡 ${s.tip}</div>
       ${completionButton}
     </div>
@@ -1903,6 +2143,110 @@ let _itemIdSeq = 0;
 let _currentFilter = '전체';
 let _currentTypeFilter = '전체';
 let _currentQuery = '';
+const BUILDER_TEMPLATE_KEY = 'swimtech_plan_builder_templates';
+
+function getBuilderTemplates() {
+  try { return JSON.parse(localStorage.getItem(BUILDER_TEMPLATE_KEY) || '[]'); }
+  catch (_) { return []; }
+}
+
+function saveBuilderTemplates(templates) {
+  localStorage.setItem(BUILDER_TEMPLATE_KEY, JSON.stringify(templates));
+}
+
+function hasBuilderItems() {
+  return Object.values(builderPlan).some(days => Object.values(days).some(items => items.length));
+}
+
+function cloneBuilderPlanForTemplate() {
+  const cloned = {};
+  for (let week = 1; week <= 4; week++) {
+    cloned[week] = {};
+    BUILDER_DAYS.forEach(day => {
+      cloned[week][day] = (builderPlan[week][day] || []).map(item => ({
+        ...item,
+        equipment: [...(item.equipment || [])],
+        tags: [...(item.tags || [])],
+        goals: [...(item.goals || [])],
+      }));
+    });
+  }
+  return cloned;
+}
+
+function applyBuilderTemplate(template) {
+  if (!template?.plan) return;
+  _itemIdSeq = 0;
+  for (let week = 1; week <= 4; week++) {
+    BUILDER_DAYS.forEach(day => {
+      builderPlan[week][day] = ((template.plan[week] || {})[day] || []).map(item => ({
+        ...item,
+        id: ++_itemIdSeq,
+        equipment: [...(item.equipment || [])],
+        tags: [...(item.tags || [])],
+        goals: [...(item.goals || [])],
+      }));
+    });
+  }
+  if (template.pool_length === 25 || template.pool_length === 50) selectedPoolLength = template.pool_length;
+  if (['입문','초급','중급','고급'].includes(template.cycle_level)) selectedCycleLevel = template.cycle_level;
+  try {
+    localStorage.setItem('swimtech_plan_pool_length', String(selectedPoolLength));
+    localStorage.setItem('swimtech_plan_cycle_level', selectedCycleLevel);
+  } catch (_) { /* ignore */ }
+  syncPoolLengthControls();
+  renderPresetPlans();
+  refreshPresetFavoriteButtons();
+  renderPoolList();
+  renderBuilderEditor();
+}
+
+function renderBuilderTemplates() {
+  const select = document.getElementById('builder-template-select');
+  if (!select) return;
+  const templates = getBuilderTemplates();
+  select.innerHTML = '<option value="">저장된 템플릿 선택</option>' +
+    templates.map(t => `<option value="${t.id}">${t.name} · ${t.pool_length || 25}m · ${t.cycle_level || '중급'}</option>`).join('');
+}
+
+function saveCurrentBuilderTemplate() {
+  if (!hasBuilderItems()) { alert('템플릿으로 저장할 훈련 구성을 먼저 추가하세요.'); return; }
+  const defaultName = document.getElementById('builder-name').value.trim() || `커스텀 템플릿 ${new Date().toISOString().slice(5, 10)}`;
+  const name = prompt('템플릿 이름을 입력하세요.', defaultName);
+  if (!name) return;
+  const templates = getBuilderTemplates();
+  templates.unshift({
+    id: 'tpl_' + Date.now(),
+    name: name.trim(),
+    pool_length: selectedPoolLength,
+    cycle_level: selectedCycleLevel,
+    created_at: new Date().toISOString(),
+    plan: cloneBuilderPlanForTemplate(),
+  });
+  saveBuilderTemplates(templates.slice(0, 20));
+  renderBuilderTemplates();
+  alert('템플릿으로 저장했습니다.');
+}
+
+function loadSelectedBuilderTemplate() {
+  const select = document.getElementById('builder-template-select');
+  const id = select?.value;
+  if (!id) { alert('불러올 템플릿을 선택하세요.'); return; }
+  const template = getBuilderTemplates().find(t => t.id === id);
+  if (!template) { alert('템플릿을 찾을 수 없습니다.'); return; }
+  if (hasBuilderItems() && !confirm('현재 직접 구성 내용을 템플릿으로 교체할까요?')) return;
+  applyBuilderTemplate(template);
+  if (template.name) document.getElementById('builder-name').value = template.name + ' 복제';
+}
+
+function deleteSelectedBuilderTemplate() {
+  const select = document.getElementById('builder-template-select');
+  const id = select?.value;
+  if (!id) { alert('삭제할 템플릿을 선택하세요.'); return; }
+  if (!confirm('선택한 템플릿을 삭제할까요?')) return;
+  saveBuilderTemplates(getBuilderTemplates().filter(t => t.id !== id));
+  renderBuilderTemplates();
+}
 
 function parseDistNum(distStr) {
   const structure = getSetStructure({ dist: distStr });
@@ -2267,6 +2611,9 @@ document.getElementById('pool-search').addEventListener('input', e => {
 });
 
 document.getElementById('builder-weeks').addEventListener('change', renderBuilderEditor);
+document.getElementById('btn-save-template').addEventListener('click', saveCurrentBuilderTemplate);
+document.getElementById('btn-load-template').addEventListener('click', loadSelectedBuilderTemplate);
+document.getElementById('btn-delete-template').addEventListener('click', deleteSelectedBuilderTemplate);
 
 function sumBuilderItems(items) {
   return (items || []).reduce((sum, item) => sum + item.reps * item.distValue, 0);
@@ -2511,14 +2858,21 @@ function buildMyPlanCard(plan) {
   let weeksHTML = '';
   if (plan.plan_content && plan.plan_content.weeks) {
     plan.plan_content.weeks.forEach(w => {
-      const sessionsHTML = (w.sessions || []).map(s => `
+      const sessionsHTML = (w.sessions || []).map(s => {
+        const mainDetail = (s.mainset || []).map(m => {
+          const estimated = estimateSetSeconds(m, m.cycle);
+          return `${m.drill}${m.purpose ? ' · ' + m.purpose : ''}${m.cycle ? ' · 사이클 ' + m.cycle : ''}${estimated ? ' · 예상 ' + formatMinutesText(estimated / 60) : ''}`;
+        }).join('<br>');
+        return `
         <div class="myplan-session">
           <div class="myplan-session-day">${s.day}</div>
-          <div style="font-size: var(--fs-caption);color:var(--muted);">
-            🌊 ${s.warmup?.dist || ''} · 💪 ${(s.mainset||[]).map(m => `${m.drill}${m.cycle ? ' · 사이클 ' + m.cycle : ''}`).join(', ')} · 🧊 ${s.cooldown?.dist||''}
+          <div style="font-size: var(--fs-caption);color:var(--muted);line-height:1.55;">
+            🌊 ${s.warmup?.dist || ''} · 🧊 ${s.cooldown?.dist||''}<br>
+            💪 ${mainDetail || '메인셋 없음'}
           </div>
           ${s.tip ? `<div class="coach-tip" style="margin-top:6px;">💡 ${s.tip}</div>` : ''}
-        </div>`).join('');
+        </div>`;
+      }).join('');
       weeksHTML += `
         <div class="myplan-week-header">
           <span style="display:inline-block;font-size: var(--fs-caption);font-weight:700;padding:2px 8px;border-radius: var(--radius-sm);background:rgba(0,180,216,.12);color:var(--blue);border:0.5px solid rgba(0,180,216,.3);">${w.week}주</span>
@@ -2664,12 +3018,15 @@ function renderPresetPlans() {
 }
 
 initPoolLengthControl();
+initPaceHelper();
 renderPresetPlans();
 initTabs();
 initChips();
 renderPoolList('전체');
+renderBuilderTemplates();
 loadPlanFavSet();
 loadPlanCompletions();
+loadTrainingFeedbackLoop();
 
 // 공유/즐겨찾기 링크(#speed 등)로 들어왔을 때 해당 탭 자동 열기
 function applyHashTab() {

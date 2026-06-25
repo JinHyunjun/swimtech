@@ -95,3 +95,20 @@ def test_plan_p0_improvements_are_kept():
     assert "buildTrainingMemo" in plan
     assert "shareCustomPlan" in plan and "sharePresetPlan" in plan
     assert "## P0 — 완료" in checklist
+
+
+def test_plan_p1_improvements_are_kept():
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    coach_page = (ROOT / "frontend" / "coach.html").read_text(encoding="utf-8")
+    coach_api = (ROOT / "api" / "routers" / "coach.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert "pace-helper-panel" in plan
+    assert "convertPoolTime" in plan
+    assert "BUILDER_TEMPLATE_KEY" in plan
+    assert "saveCurrentBuilderTemplate" in plan
+    assert "set-detail-grid" in plan
+    assert "loadTrainingFeedbackLoop" in plan
+    assert "generateCoachPlanDraft" in coach_page
+    assert "plan_meta" in coach_api
+    assert "## P1 — 완료" in checklist

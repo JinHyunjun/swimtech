@@ -151,6 +151,10 @@
 }
 .plan-content { font-size: var(--fs-body); color: var(--text); line-height: 1.6; white-space: pre-wrap; }
 .plan-meta    { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; }
+.coach-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.coach-plan-hint { font-size: var(--fs-caption); color: var(--muted); line-height: 1.5; margin-top: -5px; margin-bottom: 10px; }
+.coach-plan-generate { padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 700; background: rgba(250,204,21,.12); color: #facc15; border: 0.5px solid rgba(250,204,21,.35); cursor: pointer; }
+.coach-plan-generate:hover { background: rgba(250,204,21,.2); }
 
 /* ── 상태 배지 ── */
 .badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
@@ -443,6 +447,38 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
     <div class="modal-title">📋 훈련 플랜 전달</div>
     <input type="hidden" id="plan-student-id">
     <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="plan-student-name"></strong></div>
+    <div class="coach-plan-grid">
+      <div class="c-field">
+        <div class="c-label">목적</div>
+        <select id="plan-goal" class="c-input">
+          <option value="기록단축">기록단축</option>
+          <option value="건강">건강</option>
+          <option value="영법교정">영법교정</option>
+          <option value="취미">취미</option>
+        </select>
+      </div>
+      <div class="c-field">
+        <div class="c-label">수영장</div>
+        <select id="plan-pool" class="c-input">
+          <option value="25">25m 풀</option>
+          <option value="50">50m 풀</option>
+        </select>
+      </div>
+      <div class="c-field">
+        <div class="c-label">구성</div>
+        <select id="plan-style" class="c-input">
+          <option value="밸런스">밸런스</option>
+          <option value="드릴 중심">드릴 중심</option>
+          <option value="대시·스피드">대시·스피드</option>
+        </select>
+      </div>
+      <div class="c-field">
+        <div class="c-label">대표 사이클</div>
+        <input id="plan-cycle" class="c-input" placeholder="예: 1:50" maxlength="5">
+      </div>
+    </div>
+    <div class="coach-plan-hint">목적·수영장 길이·사이클이 포함된 전달 문안을 자동으로 만들 수 있습니다.</div>
+    <button type="button" class="coach-plan-generate" onclick="generateCoachPlanDraft()">추천 문안 만들기</button>
     <div class="c-field">
       <div class="c-label">플랜 내용</div>
       <textarea id="plan-content" class="c-textarea" placeholder="수강생에게 전달할 훈련 플랜을 작성하세요." style="min-height:120px;"></textarea>
@@ -712,19 +748,60 @@ async function submitFeedback() {
 function openPlan(studentId, name) {
   document.getElementById("plan-student-id").value = studentId;
   document.getElementById("plan-student-name").textContent = name;
+  document.getElementById("plan-goal").value = "기록단축";
+  document.getElementById("plan-pool").value = "25";
+  document.getElementById("plan-style").value = "밸런스";
+  document.getElementById("plan-cycle").value = "";
   document.getElementById("plan-content").value = "";
   openModal("modal-plan");
+}
+
+function generateCoachPlanDraft() {
+  const studentName = document.getElementById("plan-student-name").textContent || "수강생";
+  const goal = document.getElementById("plan-goal").value;
+  const pool = document.getElementById("plan-pool").value;
+  const style = document.getElementById("plan-style").value;
+  const cycle = document.getElementById("plan-cycle").value.trim() || "컨디션 기준 조정";
+  const mainHint = goal === "영법교정"
+    ? "드릴 2세트 + 통합 수영 1세트"
+    : goal === "건강"
+      ? "지구력 세트 + 회복 수영"
+      : style === "대시·스피드"
+        ? "대시 세트 + 충분한 회복"
+        : "드릴 1세트 + 페이스 세트 1세트";
+  document.getElementById("plan-content").value = [
+    `[코치 플랜] ${studentName}님`,
+    `목적: ${goal}`,
+    `수영장: ${pool}m 풀`,
+    `구성: ${style}`,
+    `대표 사이클: ${cycle}`,
+    "",
+    "이번 주 진행:",
+    `- 웜업 300~500m`,
+    `- 메인: ${mainHint}`,
+    `- 쿨다운 100~200m`,
+    "",
+    "피드백:",
+    "- 실제 수행 거리와 체감 강도를 훈련 일지에 남겨주세요.",
+    "- 다음 플랜은 기록된 페이스와 컨디션을 보고 조정하겠습니다.",
+  ].join("\n");
 }
 
 async function submitPlan() {
   const studentId = parseInt(document.getElementById("plan-student-id").value);
   const content   = document.getElementById("plan-content").value.trim();
   if (!content) { toast("플랜 내용을 입력해주세요.", false); return; }
+  const plan_meta = {
+    goal: document.getElementById("plan-goal").value,
+    pool_length: parseInt(document.getElementById("plan-pool").value, 10),
+    session_style: document.getElementById("plan-style").value,
+    representative_cycle: document.getElementById("plan-cycle").value.trim() || null,
+  };
   try {
     const r = await fetch(`${API}/api/coach/plan`, {
       method: "POST", credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: studentId, content }),
+      body: JSON.stringify({ student_id: studentId, content, plan_meta }),
     });
     const data = await r.json();
     if (r.ok) { toast("플랜 전달 완료!"); closeModal("modal-plan"); }
