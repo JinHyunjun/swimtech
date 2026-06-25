@@ -178,7 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_plan_completions_cid ON plan_completions(customer
 
 app = FastAPI(
     title="SwimTech API",
-    description="수영 영법 분석 플랫폼 백엔드",
+    description="수영 훈련 도우미 플랫폼 백엔드",
     version="0.1.0"
 )
 

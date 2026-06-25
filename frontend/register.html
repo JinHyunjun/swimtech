@@ -50,22 +50,25 @@
   }
 
   .logo-icon {
-    font-size: var(--fs-display);
+    font-size: clamp(48px, 12vw, 64px);
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .logo-title {
-    font-size: var(--fs-heading);
-    font-weight: 700;
+    font-size: clamp(34px, 8vw, 44px);
+    font-weight: 900;
     color: #00b4d8;
-    letter-spacing: -0.5px;
+    letter-spacing: -1px;
+    line-height: 1;
   }
 
   .logo-sub {
-    font-size: var(--fs-caption);
+    font-size: var(--fs-body);
     color: #90c4d4;
-    margin-top: 4px;
+    margin-top: 10px;
+    font-weight: 600;
+    line-height: 1.45;
   }
 
   .form-group {
@@ -190,7 +193,7 @@
   <div class="logo">
     <span class="logo-icon">🏊</span>
     <div class="logo-title">SwimTech</div>
-    <div class="logo-sub">회원가입</div>
+    <div class="logo-sub">수영 훈련을 함께 설계해볼까요?</div>
   </div>
 
   <div class="form-group">

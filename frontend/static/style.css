@@ -143,8 +143,9 @@ body { background: radial-gradient(1200px 620px at 88% -10%, rgba(0,198,221,.10)
 /* ── 헤더 ─────────────────────────────────── */
 .header { display: flex; justify-content: space-between; align-items: center;
   padding: 14px 20px; border-bottom: 0.5px solid var(--border); background: var(--surface); }
-.logo { font-size: var(--fs-body-lg); font-weight: 600; color: var(--blue); }
-.logo-sub { margin-left: 10px; font-size: var(--fs-caption); color: var(--muted); }
+.logo { font-size: clamp(22px, 2.2vw, 30px); font-weight: 900; color: var(--blue); letter-spacing: -0.04em; line-height: 1; }
+.logo-img { height: 42px; width: auto; display: block; }
+.logo-sub { margin-left: 12px; font-size: var(--fs-body); color: var(--muted); font-weight: 600; }
 .header-right { display: flex; align-items: center; gap: 8px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .status-dot.ready  { background: var(--blue); }
@@ -477,8 +478,8 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 /* ── 480px 이하 (소형 스마트폰) ──────────────── */
 @media (max-width: 480px) {
   /* 헤더 로고 크기 축소 */
-  .logo { font-size: var(--fs-body-lg); }
-  .logo-img { height: 28px; }
+  .logo { font-size: 22px; }
+  .logo-img { height: 34px; }
 
   /* 바디 기본 폰트 축소 */
   body { font-size: var(--fs-body); }

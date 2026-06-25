@@ -136,3 +136,19 @@ def test_plan_p2_improvements_are_kept():
     assert "plan_performance" in report_api
     assert "renderPlanPerformance" in report_page
     assert "## P2 — 완료" in checklist
+
+
+def test_swimtech_branding_is_training_helper_focused():
+    login = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
+    register = (ROOT / "frontend" / "register.html").read_text(encoding="utf-8")
+    logo = (ROOT / "frontend" / "static" / "icons" / "logo.svg").read_text(encoding="utf-8")
+    style = (ROOT / "frontend" / "style.css").read_text(encoding="utf-8")
+    api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+
+    assert "나만의 수영 훈련 도우미" in login
+    assert "수영 훈련을 함께 설계해볼까요?" in register
+    assert "수영 훈련 도우미" in logo
+    assert "수영 훈련 도우미 플랫폼 백엔드" in api_main
+    assert "수영 영법 분석 플랫폼" not in login + logo + api_main
+    assert ".logo-img { height: 42px" in style
+    assert ".logo { font-size: clamp(22px" in style

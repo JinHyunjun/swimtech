@@ -34,9 +34,9 @@
   <!-- Brand name -->
   <text x="80" y="39"
         font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif"
-        font-size="27" font-weight="700" fill="#00b4d8" letter-spacing="-0.5">SwimTech</text>
+        font-size="29" font-weight="800" fill="#00b4d8" letter-spacing="-0.8">SwimTech</text>
   <!-- Sub-label -->
   <text x="81" y="59"
         font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif"
-        font-size="13" fill="#90c4d4" letter-spacing="0.4">수영 영법 분석 플랫폼</text>
+        font-size="14" font-weight="600" fill="#90c4d4" letter-spacing="0.1">수영 훈련 도우미</text>
 </svg>
