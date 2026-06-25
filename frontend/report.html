@@ -69,6 +69,19 @@
 .growth-streak { margin-left: auto; text-align: center; }
 .growth-streak-num { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -0.02em; color: var(--energy); }
 .growth-streak-lbl { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+.plan-performance {
+  background: linear-gradient(135deg, rgba(0,180,216,.08), rgba(72,202,228,.04));
+  border: 0.5px solid rgba(72,202,228,.28); border-radius: var(--radius-md);
+  padding: 18px 20px; margin-bottom: 24px;
+}
+.plan-performance-title { font-size: var(--fs-body); font-weight: 800; color: var(--text); margin-bottom: 12px; }
+.plan-performance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 760px) { .plan-performance-grid { grid-template-columns: repeat(2, 1fr); } }
+.plan-performance-card { background: rgba(0,0,0,.12); border: 0.5px solid rgba(255,255,255,.08); border-radius: var(--radius-sm); padding: 12px; }
+.plan-performance-value { font-size: var(--fs-heading); font-weight: 900; font-style: italic; color: var(--cyan); line-height: 1.1; }
+.plan-performance-label { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; line-height: 1.45; }
+.plan-progress-bar { height: 7px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 8px; }
+.plan-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--cyan)); border-radius: inherit; transition: width .35s ease; }
 
 /* ── 차트 섹션 ── */
 .chart-section {
@@ -190,6 +203,32 @@
       </div>
     </div>
 
+    <!-- 플랜 수행률 -->
+    <div class="plan-performance" id="plan-performance">
+      <div class="plan-performance-title">📋 플랜 수행률</div>
+      <div class="plan-performance-grid">
+        <div class="plan-performance-card">
+          <div class="plan-performance-value" id="plan-completed-sessions">0회</div>
+          <div class="plan-performance-label">플랜 완료 세션</div>
+        </div>
+        <div class="plan-performance-card">
+          <div class="plan-performance-value" id="plan-distance-rate">0%</div>
+          <div class="plan-performance-label">전체 거리 중 플랜 기반 수행</div>
+          <div class="plan-progress-bar"><div class="plan-progress-fill" id="plan-distance-fill"></div></div>
+        </div>
+        <div class="plan-performance-card">
+          <div class="plan-performance-value" id="plan-cycle-rate">0%</div>
+          <div class="plan-performance-label">사이클 기록 포함률</div>
+          <div class="plan-progress-bar"><div class="plan-progress-fill" id="plan-cycle-fill"></div></div>
+        </div>
+        <div class="plan-performance-card">
+          <div class="plan-performance-value" id="plan-goal-rate">0%</div>
+          <div class="plan-performance-label" id="plan-goal-label">월간 목표 달성률</div>
+          <div class="plan-progress-bar"><div class="plan-progress-fill" id="plan-goal-fill"></div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- 차트: 영법별 도넛 -->
     <div class="chart-section">
       <div class="chart-title">영법별 거리 분포</div>
@@ -295,6 +334,7 @@ function showEmpty() {
   renderHeatmap([0,0,0,0,0,0,0]);
   renderStrokeChart({freestyle:0,backstroke:0,breaststroke:0,butterfly:0,other:0});
   renderWeeklyChart([0,0,0,0,0]);
+  renderPlanPerformance({});
 }
 
 function render(d) {
@@ -324,6 +364,39 @@ function render(d) {
   renderHeatmap(d.by_day);
   renderStrokeChart(d.by_stroke);
   renderWeeklyChart(d.by_week);
+  renderPlanPerformance(d.plan_performance || {});
+}
+
+function clampRate(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function setProgress(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = `${clampRate(value)}%`;
+}
+
+function renderPlanPerformance(perf) {
+  const completed = Number(perf.completed_sessions || 0);
+  const planDistance = Number(perf.plan_distance || 0);
+  const planDistanceRate = clampRate(perf.plan_distance_rate);
+  const cycleRate = clampRate(perf.cycle_adherence_rate);
+  const goalRate = clampRate(perf.goal_achievement_rate);
+  const goalDistance = Number(perf.goal_distance || 0);
+
+  document.getElementById('plan-completed-sessions').textContent = `${completed}회`;
+  document.getElementById('plan-distance-rate').textContent = `${planDistanceRate}%`;
+  document.getElementById('plan-cycle-rate').textContent = completed ? `${cycleRate}%` : '0%';
+  document.getElementById('plan-goal-rate').textContent = goalDistance ? `${goalRate}%` : '목표 없음';
+  document.getElementById('plan-goal-label').textContent = goalDistance
+    ? `월간 목표 ${goalDistance.toLocaleString()}m 기준`
+    : '훈련 일지에서 월간 목표를 설정하세요';
+  document.getElementById('plan-distance-rate').title = `플랜 완료로 기록된 거리 ${planDistance.toLocaleString()}m`;
+  setProgress('plan-distance-fill', planDistanceRate);
+  setProgress('plan-cycle-fill', completed ? cycleRate : 0);
+  setProgress('plan-goal-fill', goalDistance ? goalRate : 0);
 }
 
 async function loadYearHeatmap() {
@@ -504,5 +577,3 @@ async function saveImage() {
 <script src="/static/theme.js"></script>
 </body>
 </html>
-
-

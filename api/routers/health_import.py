@@ -23,6 +23,16 @@ router = APIRouter()
 _JOBS: dict = {}
 _JOBS_LOCK = threading.Lock()
 _JOB_TTL_SECONDS = 30 * 60
+_MAX_UPLOAD_BYTES = {
+    "hae": 30 * 1024 * 1024,
+    "apple": 100 * 1024 * 1024,
+    "samsung": 80 * 1024 * 1024,
+}
+_ALLOWED_EXTENSIONS = {
+    "hae": (".json",),
+    "apple": (".zip",),
+    "samsung": (".zip", ".csv"),
+}
 
 
 def _cleanup_old_jobs():
@@ -30,6 +40,20 @@ def _cleanup_old_jobs():
     with _JOBS_LOCK:
         for jid in [j for j, v in _JOBS.items() if v.get("created_at", 0) < cutoff]:
             _JOBS.pop(jid, None)
+
+
+def _validate_preview_upload(content: bytes, filename: str, source: str):
+    if source not in _ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "지원하지 않는 가져오기 형식입니다")
+    lower_name = (filename or "").lower()
+    if not lower_name.endswith(_ALLOWED_EXTENSIONS[source]):
+        allowed = ", ".join(_ALLOWED_EXTENSIONS[source])
+        raise HTTPException(400, f"{_provider_label(source)} 가져오기는 {allowed} 파일만 지원합니다")
+    if not content:
+        raise HTTPException(400, "빈 파일은 가져올 수 없습니다")
+    if len(content) > _MAX_UPLOAD_BYTES[source]:
+        limit_mb = _MAX_UPLOAD_BYTES[source] // 1024 // 1024
+        raise HTTPException(400, f"파일이 너무 큽니다. {limit_mb}MB 이하 파일을 사용해주세요")
 
 STROKE_LABELS = {
     "HKSwimmingStrokeStyleFreestyle": "자유형",
@@ -488,7 +512,7 @@ def _run_import_job(job_id: str, content: bytes, filename: str, source: str, cid
 
         if not items:
             with _JOBS_LOCK:
-                _JOBS[job_id] = {"status": "done", "items": [], "created_at": _JOBS[job_id]["created_at"]}
+                _JOBS[job_id] = {**_JOBS.get(job_id, {}), "status": "done", "items": []}
             return
 
         existing_ids = _existing_external_ids(cid, _provider_key(source))
@@ -497,13 +521,13 @@ def _run_import_job(job_id: str, content: bytes, filename: str, source: str, cid
             for it in sorted(items, key=lambda x: x["started_at"] or x["log_date"], reverse=True)
         ]
         with _JOBS_LOCK:
-            _JOBS[job_id] = {"status": "done", "items": out, "created_at": _JOBS[job_id]["created_at"]}
+            _JOBS[job_id] = {**_JOBS.get(job_id, {}), "status": "done", "items": out}
     except HTTPException as e:
         with _JOBS_LOCK:
-            _JOBS[job_id] = {"status": "error", "detail": e.detail, "created_at": _JOBS[job_id]["created_at"]}
+            _JOBS[job_id] = {**_JOBS.get(job_id, {}), "status": "error", "detail": e.detail}
     except Exception as e:
         with _JOBS_LOCK:
-            _JOBS[job_id] = {"status": "error", "detail": str(e), "created_at": _JOBS[job_id]["created_at"]}
+            _JOBS[job_id] = {**_JOBS.get(job_id, {}), "status": "error", "detail": str(e)}
 
 
 @router.post("/preview")
@@ -517,10 +541,18 @@ async def preview_import(request: Request, file: UploadFile = File(...), source:
     _cleanup_old_jobs()
     content = await file.read()
     filename = (file.filename or "").lower()
+    source = (source or "").strip().lower()
+    _validate_preview_upload(content, filename, source)
 
     job_id = uuid.uuid4().hex
     with _JOBS_LOCK:
-        _JOBS[job_id] = {"status": "processing", "created_at": time.time()}
+        _JOBS[job_id] = {
+            "status": "processing",
+            "created_at": time.time(),
+            "customer_id": cid,
+            "source": source,
+            "filename": filename,
+        }
 
     thread = threading.Thread(
         target=_run_import_job, args=(job_id, content, filename, source, cid), daemon=True
@@ -539,6 +571,8 @@ def preview_status(job_id: str, request: Request):
         job = _JOBS.get(job_id)
     if not job:
         raise HTTPException(404, "해당 작업을 찾을 수 없습니다 (서버가 재시작되었거나 만료됨)")
+    if job.get("customer_id") != cid:
+        raise HTTPException(404, "해당 작업을 찾을 수 없습니다")
     return job
 
 
@@ -548,6 +582,8 @@ def confirm_import(body: ImportConfirmRequest, request: Request):
     cid = _get_customer_id(request)
     if not cid:
         raise HTTPException(401, "로그인이 필요합니다")
+    if len(body.items) > 200:
+        raise HTTPException(400, "한 번에 최대 200건까지만 가져올 수 있습니다")
 
     _ensure_wearable_table()
     conn = _get_db()

@@ -320,8 +320,7 @@ select.form-control option { background: var(--surface); }
   <div class="log-list-head">
     <div class="log-list-title" id="log-list-title">기록 목록</div>
     <div class="log-list-head-actions">
-      <!-- 운동 데이터 가져오기(워치 연동) 기능은 현재 비활성화 — 추후 안정화되면 아래 버튼 주석만 해제 -->
-      <!-- <button class="btn-import-log" id="btn-open-import">⤓ 운동 데이터 가져오기</button> -->
+      <button class="btn-import-log" id="btn-open-import">⤓ 워치 데이터 가져오기</button>
       <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
       <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
     </div>
@@ -830,6 +829,30 @@ function setImportSource(src) {
   }
 }
 
+function getImportSourceLabel(src) {
+  return { hae: 'Health Auto Export', apple: '애플 건강', samsung: '삼성헬스' }[src] || src;
+}
+
+function validateImportFile(file, source) {
+  const name = (file?.name || '').toLowerCase();
+  const sizeMB = file ? file.size / 1024 / 1024 : 0;
+  const maxBySource = { hae: 30, apple: 100, samsung: 80 };
+  const allowed = {
+    hae: ['.json'],
+    apple: ['.zip'],
+    samsung: ['.zip', '.csv'],
+  }[source] || [];
+  const maxMB = maxBySource[source] || 50;
+  if (!file) return '파일을 선택해주세요.';
+  if (!allowed.some(ext => name.endsWith(ext))) {
+    return `${getImportSourceLabel(source)} 가져오기는 ${allowed.join(', ')} 파일만 지원합니다.`;
+  }
+  if (sizeMB > maxMB) {
+    return `파일이 너무 큽니다. ${getImportSourceLabel(source)} 기준 ${maxMB}MB 이하 파일을 사용해주세요.`;
+  }
+  return '';
+}
+
 const _importBtn = document.getElementById('btn-open-import');
 if (_importBtn) _importBtn.onclick = openImportModal;
 document.getElementById('import-tab-hae').onclick = () => setImportSource('hae');
@@ -839,9 +862,34 @@ document.getElementById('import-modal-backdrop').addEventListener('click', e => 
   if (e.target === document.getElementById('import-modal-backdrop')) closeImportModal();
 });
 
+const importDrop = document.getElementById('import-drop');
+importDrop.addEventListener('dragover', e => {
+  e.preventDefault();
+  importDrop.style.borderColor = 'var(--blue)';
+});
+importDrop.addEventListener('dragleave', () => {
+  importDrop.style.borderColor = '';
+});
+importDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  importDrop.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file) handleImportFile(file);
+});
+
 document.getElementById('import-file-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
+  if (file) handleImportFile(file);
+});
+
+async function handleImportFile(file) {
   if (!file) return;
+  const validation = validateImportFile(file, importSource);
+  if (validation) {
+    alert(validation);
+    document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
+    return;
+  }
   document.getElementById('import-drop-label').textContent = `${file.name} 업로드 중...`;
   const fd = new FormData();
   fd.append('file', file);
@@ -857,7 +905,7 @@ document.getElementById('import-file-input').addEventListener('change', async (e
     alert('네트워크 오류');
     document.getElementById('import-drop-label').textContent = '파일을 선택하거나 끌어다 놓으세요';
   }
-});
+}
 
 async function pollImportJob(jobId, attempt = 0) {
   document.getElementById('import-drop-label').textContent =
@@ -1128,4 +1176,3 @@ if (new URLSearchParams(window.location.search).get('quick') === '1') {
 <script src="/static/theme.js"></script>
 </body>
 </html>
-

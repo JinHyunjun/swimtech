@@ -112,3 +112,27 @@ def test_plan_p1_improvements_are_kept():
     assert "generateCoachPlanDraft" in coach_page
     assert "plan_meta" in coach_api
     assert "## P1 — 완료" in checklist
+
+
+def test_plan_p2_improvements_are_kept():
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    report_page = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+    report_api = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
+    health_import = (ROOT / "api" / "routers" / "health_import.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert 'data-tab="analysis"' in plan
+    assert "ANALYSIS_ISSUES" in plan
+    assert "generateAnalysisRecommendationPlan" in plan
+    assert 'data-tab="race"' in plan
+    assert "RACE_EVENT_PROFILES" in plan
+    assert "generateRacePreparationPlan" in plan
+    assert "mobile-add-day" in plan
+    assert "moveCardInDay" in plan
+    assert "btn-open-import" in log and "validateImportFile" in log
+    assert "_validate_preview_upload" in health_import
+    assert '"customer_id": cid' in health_import
+    assert "plan_performance" in report_api
+    assert "renderPlanPerformance" in report_page
+    assert "## P2 — 완료" in checklist

@@ -25,6 +25,18 @@ def _get_username(request: Request) -> Optional[str]:
     return verify_token(token)
 
 
+def _empty_plan_performance() -> dict:
+    return {
+        "completed_sessions": 0,
+        "plan_distance": 0,
+        "plan_distance_rate": 0,
+        "cycle_logs": 0,
+        "cycle_adherence_rate": 0,
+        "goal_distance": 0,
+        "goal_achievement_rate": 0,
+    }
+
+
 def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
     conn = _get_db()
     cur = conn.cursor()
@@ -39,6 +51,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
             "by_stroke": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
             "by_day": [0]*7, "by_week": [0]*5, "prev_distance": 0,
             "growth_rate": 0.0, "streak": 0,
+            "plan_performance": _empty_plan_performance(),
         }
     cid = crow[0]
 
@@ -65,6 +78,39 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
 
     cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s ORDER BY log_date", (cid,))
     all_dates = [r[0] for r in cur.fetchall()]
+
+    plan_performance = _empty_plan_performance()
+    cur.execute("SELECT to_regclass('public.plan_completions'), to_regclass('public.training_goals')")
+    has_plan_completions, has_training_goals = cur.fetchone()
+    if has_plan_completions:
+        cur.execute("""
+            SELECT COUNT(DISTINCT pc.id),
+                   COALESCE(SUM(tl.total_distance), 0),
+                   COUNT(DISTINCT CASE WHEN COALESCE(tl.memo, '') LIKE '%@%' THEN pc.id END)
+            FROM plan_completions pc
+            JOIN training_logs tl ON tl.id = pc.training_log_id
+            WHERE pc.customer_id = %s
+              AND EXTRACT(YEAR FROM tl.log_date) = %s
+              AND EXTRACT(MONTH FROM tl.log_date) = %s
+        """, (cid, year, month))
+        prow = cur.fetchone() or (0, 0, 0)
+        completed_sessions = int(prow[0] or 0)
+        plan_distance = int(prow[1] or 0)
+        cycle_logs = int(prow[2] or 0)
+        plan_performance.update({
+            "completed_sessions": completed_sessions,
+            "plan_distance": plan_distance,
+            "cycle_logs": cycle_logs,
+            "cycle_adherence_rate": round(cycle_logs / completed_sessions * 100) if completed_sessions else 0,
+        })
+    if has_training_goals:
+        cur.execute("""
+            SELECT goal_distance FROM training_goals
+            WHERE customer_id = %s AND year = %s AND month = %s
+        """, (cid, year, month))
+        grow = cur.fetchone()
+        goal_distance = int(grow[0] or 0) if grow else 0
+        plan_performance["goal_distance"] = goal_distance
     cur.close()
     conn.close()
 
@@ -97,6 +143,11 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
     else:
         growth_rate = 0.0
 
+    if total_distance > 0:
+        plan_performance["plan_distance_rate"] = round(plan_performance["plan_distance"] / total_distance * 100)
+    if plan_performance["goal_distance"] > 0:
+        plan_performance["goal_achievement_rate"] = round(total_distance / plan_performance["goal_distance"] * 100)
+
     max_streak = cur_streak = 0
     prev_d = None
     for d in all_dates:
@@ -122,6 +173,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "prev_distance": int(prev_distance),
         "growth_rate": growth_rate,
         "streak": max_streak,
+        "plan_performance": plan_performance,
     }
 
 def _make_share_token(username: str, year: int, month: int) -> str:
@@ -223,6 +275,7 @@ def get_monthly_report(
             "by_day": {},
             "growth_rate": 0,
             "streak": 0,
+            "plan_performance": _empty_plan_performance(),
         }
 
 
