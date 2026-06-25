@@ -138,6 +138,21 @@ def test_plan_p2_improvements_are_kept():
     assert "## P2 — 완료" in checklist
 
 
+def test_plan_p3_improvements_are_kept():
+    dashboard_page = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    dashboard_api = (ROOT / "api" / "routers" / "dashboard.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert '@router.get("/training-advisor")' in dashboard_api
+    assert "_build_training_advisor" in dashboard_api
+    assert "plan_completions" in dashboard_api
+    assert "advisor-card" in dashboard_page
+    assert "renderTrainingAdvisor" in dashboard_page
+    assert "loadTrainingAdvisor" in dashboard_page
+    assert "/api/dashboard/training-advisor" in dashboard_page
+    assert "## P3 — 완료" in checklist
+
+
 def test_swimtech_branding_is_training_helper_focused():
     login = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
     register = (ROOT / "frontend" / "register.html").read_text(encoding="utf-8")

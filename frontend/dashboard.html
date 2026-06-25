@@ -31,6 +31,20 @@
 .weekly-msg.done { color:var(--green); font-weight:700; }
 .weekly-goal-btn,.weekly-goal-select { border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--muted); padding:5px 10px; font-size:var(--fs-caption); cursor:pointer; }
 .weekly-goal-select { display:none; border-color:var(--blue); color:var(--text); }
+.advisor-card { position:relative; overflow:hidden; background:linear-gradient(135deg,rgba(0,180,216,.16),rgba(14,165,233,.05) 48%,var(--surface)); border:.5px solid rgba(72,202,228,.32); border-radius:var(--radius-md); padding:20px; margin-bottom:20px; }
+.advisor-card::after { content:""; position:absolute; right:-60px; top:-70px; width:180px; height:180px; border-radius:50%; background:rgba(72,202,228,.13); pointer-events:none; }
+.advisor-kicker { color:var(--cyan); font-size:var(--fs-caption); font-weight:800; letter-spacing:.04em; text-transform:uppercase; margin-bottom:8px; }
+.advisor-head { position:relative; display:flex; justify-content:space-between; align-items:flex-start; gap:16px; z-index:1; }
+.advisor-title { margin:0; color:var(--text); font-size:var(--fs-heading); font-style:italic; font-weight:900; letter-spacing:-.02em; }
+.advisor-desc { margin:7px 0 0; color:var(--muted); font-size:var(--fs-body); line-height:1.55; }
+.advisor-pill { flex:0 0 auto; border:.5px solid rgba(72,202,228,.4); border-radius:999px; padding:7px 12px; color:var(--blue); background:rgba(0,180,216,.11); font-size:var(--fs-caption); font-weight:800; }
+.advisor-grid { position:relative; display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:10px; margin:16px 0; z-index:1; }
+.advisor-metric { min-width:0; border:.5px solid rgba(255,255,255,.08); border-radius:var(--radius-sm); padding:12px; background:rgba(2,14,24,.24); }
+.advisor-metric span { display:block; color:var(--muted); font-size:var(--fs-caption); margin-bottom:5px; }
+.advisor-metric strong { display:block; color:var(--text); font-size:var(--fs-body); line-height:1.35; }
+.advisor-actions { position:relative; display:flex; flex-wrap:wrap; gap:8px; z-index:1; }
+.advisor-action { display:inline-flex; align-items:center; gap:6px; color:var(--bg); background:var(--blue); border:.5px solid var(--blue); border-radius:var(--radius-sm); padding:8px 12px; font-size:var(--fs-caption); font-weight:800; text-decoration:none; }
+.advisor-action.secondary { color:var(--text); background:rgba(255,255,255,.05); border-color:var(--border); }
 .summary-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
 .summary-card { padding:18px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
 .summary-card-label { color:var(--muted); font-size:var(--fs-caption); margin-bottom:8px; }
@@ -55,8 +69,8 @@
 .history-distance { color:var(--text); font-size:var(--fs-body-lg); font-style:italic; font-weight:900; text-align:right; }
 .history-change { color:var(--muted); font-size:var(--fs-caption); text-align:right; margin-top:3px; }.history-change.up { color:var(--green); }.history-change.down { color:var(--red); }
 .empty-msg { color:var(--muted); font-size:var(--fs-body); text-align:center; padding:34px 0; }
-@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; } }
-@media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); } }
+@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; }.advisor-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); }.advisor-head { display:block; }.advisor-pill { display:inline-flex; margin-top:12px; }.advisor-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -96,6 +110,27 @@
       </div>
     </section>
 
+    <section class="advisor-card" aria-labelledby="advisor-title">
+      <div class="advisor-kicker">P3 Training Advisor</div>
+      <div class="advisor-head">
+        <div>
+          <h2 class="advisor-title" id="advisor-title">다음 훈련 추천을 준비 중...</h2>
+          <p class="advisor-desc" id="advisor-message">최근 기록과 주간 목표를 확인하고 있어요.</p>
+        </div>
+        <span class="advisor-pill" id="advisor-intensity">강도 계산 중</span>
+      </div>
+      <div class="advisor-grid" aria-label="추천 훈련 요약">
+        <div class="advisor-metric"><span>추천 세션</span><strong id="advisor-session">—</strong></div>
+        <div class="advisor-metric"><span>이번 주 진행</span><strong id="advisor-week">—</strong></div>
+        <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
+        <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
+      </div>
+      <div class="advisor-actions" id="advisor-actions">
+        <a class="advisor-action" href="/plan">추천 플랜 고르기</a>
+        <a class="advisor-action secondary" href="/training-log?quick=1">오늘 훈련 기록</a>
+      </div>
+    </section>
+
     <section class="summary-cards" aria-label="훈련 요약">
       <article class="summary-card"><div class="summary-card-label">누적 거리</div><div class="summary-card-value blue" id="card-total-distance">—</div><div class="summary-card-unit">m</div></article>
       <article class="summary-card"><div class="summary-card-label">이번 달 거리</div><div class="summary-card-value green" id="card-month-distance">—</div><div class="summary-card-unit">m</div></article>
@@ -124,6 +159,13 @@ const charts = {};
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value == null ? '' : String(value); return el.innerHTML; }
 function formatDistance(value) { return new Intl.NumberFormat('ko-KR').format(Number(value || 0)); }
 function formatDate(value) { if (!value) return '—'; const [year, month, day] = String(value).slice(0, 10).split('-'); return `${Number(month)}.${Number(day)}`; }
+function safeHref(value) { const href = String(value || '#'); return href.startsWith('/') ? href : '#'; }
+function relativeTrainingDate(value, days) {
+  if (!value) return '기록 없음';
+  if (Number(days) === 0) return '오늘';
+  if (Number(days) === 1) return '어제';
+  return `${formatDate(value)} · ${days}일 전`;
+}
 function strokeLabel(value) { return ({ freestyle:'자유형', backstroke:'배영', breaststroke:'평영', butterfly:'접영' })[value] || value || '미기록'; }
 function chartOptions() { return { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:chartDefaults.color, font:{size:11}, boxWidth:12 } } }, scales:{ x:{ ticks:{color:chartDefaults.tick,font:{size:10},maxTicksLimit:8},grid:{color:chartDefaults.grid} }, y:{ beginAtZero:true,ticks:{color:chartDefaults.tick,font:{size:10}},grid:{color:chartDefaults.grid} } } }; }
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
@@ -172,7 +214,31 @@ async function loadWeekly() {
 }
 
 function toggleGoalEdit() { const select = document.getElementById('goal-select'); const button = document.getElementById('goal-edit-btn'); const open = select.style.display === 'block'; select.style.display = open ? 'none' : 'block'; button.textContent = open ? '목표 변경' : '닫기'; }
-async function saveGoal(value) { const response = await fetch('/api/dashboard/goal', {method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:Number(value)})}); if (response.ok) { toggleGoalEdit(); loadWeekly(); } }
+async function saveGoal(value) { const response = await fetch('/api/dashboard/goal', {method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:Number(value)})}); if (response.ok) { toggleGoalEdit(); await Promise.all([loadWeekly(), loadTrainingAdvisor()]); } }
+
+function renderTrainingAdvisor(data) {
+  document.getElementById('advisor-title').textContent = data.focus || '다음 훈련 추천';
+  document.getElementById('advisor-message').textContent = data.message || '최근 기록을 바탕으로 다음 훈련 방향을 정리했어요.';
+  document.getElementById('advisor-intensity').textContent = `추천 강도 · ${data.recommended_intensity || '보통'}`;
+  document.getElementById('advisor-session').textContent = data.recommended_session || '훈련 플랜에서 오늘 세션을 골라보세요.';
+  const week = `${data.sessions_this_week || 0}/${data.goal || 3}회 · ${formatDistance(data.week_distance)}m`;
+  const plan = data.plan_completion_count ? ` · 플랜 ${data.plan_completion_count}개 완료` : '';
+  document.getElementById('advisor-week').textContent = `${week}${plan}`;
+  document.getElementById('advisor-pool').textContent = `${data.preferred_pool_length || 25}m 기준`;
+  document.getElementById('advisor-last').textContent = relativeTrainingDate(data.last_training_date, data.days_since_last);
+  const actions = Array.isArray(data.actions) && data.actions.length ? data.actions : [
+    {label:'추천 플랜 고르기', href:'/plan'},
+    {label:'오늘 훈련 기록', href:'/training-log?quick=1'}
+  ];
+  document.getElementById('advisor-actions').innerHTML = actions.map((action, index) => `<a class="advisor-action ${index ? 'secondary' : ''}" href="${escapeHtml(safeHref(action.href))}">${escapeHtml(action.label)}</a>`).join('');
+}
+
+async function loadTrainingAdvisor() {
+  const response = await fetch('/api/dashboard/training-advisor', {credentials:'include'});
+  if (response.status === 401) { window.location.href = '/login'; return; }
+  if (!response.ok) return;
+  renderTrainingAdvisor(await response.json());
+}
 
 async function loadBadgeMini() {
   const response = await fetch('/api/badges', {credentials:'include'}); if (!response.ok) return;
@@ -181,7 +247,7 @@ async function loadBadgeMini() {
 }
 async function logout() { await fetch('/auth/logout', {method:'POST',credentials:'include'}); window.location.href = '/login'; }
 
-(async () => { try { const response = await fetch('/auth/me', {credentials:'include'}); if (!response.ok) { window.location.href = '/login'; return; } await Promise.all([loadDashboard(), loadWeekly(), loadBadgeMini()]); } catch (error) { console.error(error); document.getElementById('history-list').innerHTML = '<div class="empty-msg">훈련 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>'; } })();
+(async () => { try { const response = await fetch('/auth/me', {credentials:'include'}); if (!response.ok) { window.location.href = '/login'; return; } await Promise.all([loadDashboard(), loadWeekly(), loadTrainingAdvisor(), loadBadgeMini()]); } catch (error) { console.error(error); document.getElementById('history-list').innerHTML = '<div class="empty-msg">훈련 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>'; } })();
 </script>
 <script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 <script src="/static/theme.js"></script>
