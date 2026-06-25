@@ -138,6 +138,19 @@ def test_plan_p2_improvements_are_kept():
     assert "## P2 — 완료" in checklist
 
 
+def test_monthly_report_uses_training_log_identity_and_average_distance():
+    report_api = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
+    report_page = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+
+    assert "from routers.auth import decode_token" in report_api
+    assert "def _get_customer_id" in report_api
+    assert "customer_id = _get_customer_id(request)" in report_api
+    assert "_calc_monthly_stats(customer_id, year, month)" in report_api
+    assert '"avg_distance"' in report_api
+    assert "stat-avg" in report_page
+    assert "평균 거리 (m)" in report_page
+
+
 def test_plan_p3_improvements_are_kept():
     dashboard_page = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
     dashboard_api = (ROOT / "api" / "routers" / "dashboard.py").read_text(encoding="utf-8")

@@ -40,7 +40,7 @@
 
 /* ── 통계 카드 ── */
 .stat-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px;
 }
 @media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 .stat-card {
@@ -177,6 +177,11 @@
         <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
         <div class="stat-value" id="stat-count">—</div>
         <div class="stat-label">총 훈련 횟수</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" id="stat-avg">—</div>
+        <div class="stat-label">평균 거리 (m)</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">⏱️</div>
@@ -325,6 +330,7 @@ async function loadReport() {
 function showEmpty() {
   document.getElementById('stat-distance').textContent = '0';
   document.getElementById('stat-count').textContent    = '0';
+  document.getElementById('stat-avg').textContent      = '0';
   document.getElementById('stat-time').textContent     = '0';
   document.getElementById('stat-cal').textContent      = '0';
   document.getElementById('growth-arrow').textContent  = '—';
@@ -340,6 +346,7 @@ function showEmpty() {
 function render(d) {
   document.getElementById('stat-distance').textContent = d.total_distance.toLocaleString();
   document.getElementById('stat-count').textContent    = d.total_count;
+  document.getElementById('stat-avg').textContent      = (d.avg_distance || 0).toLocaleString();
   document.getElementById('stat-time').textContent     = d.total_time.toLocaleString();
   document.getElementById('stat-cal').textContent      = d.calories.toLocaleString();
 

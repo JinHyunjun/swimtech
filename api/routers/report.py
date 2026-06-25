@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import logging
 import os
 from datetime import date
 from typing import Optional
@@ -8,21 +9,73 @@ from typing import Optional
 import psycopg2
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from routers.auth import verify_token
+from routers.auth import decode_token
 
 router = APIRouter()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
+logger = logging.getLogger(__name__)
 
 
 def _get_db():
     return psycopg2.connect(DATABASE_URL)
 
 
-def _get_username(request: Request) -> Optional[str]:
+def _get_token_payload(request: Request) -> Optional[dict]:
     token = request.cookies.get("swimtech_token")
     if not token:
         return None
-    return verify_token(token)
+    payload = decode_token(token)
+    return payload if payload.get("sub") else None
+
+
+def _get_username(request: Request) -> Optional[str]:
+    payload = _get_token_payload(request)
+    return payload.get("sub") if payload else None
+
+
+def _lookup_customer_id(username: str | None) -> Optional[int]:
+    if not username:
+        return None
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+        row = cur.fetchone()
+        return int(row[0]) if row else None
+    finally:
+        cur.close()
+        conn.close()
+
+
+def _get_customer_id(request: Request) -> Optional[int]:
+    payload = _get_token_payload(request)
+    if not payload:
+        return None
+    customer_id = payload.get("customer_id")
+    if customer_id:
+        return int(customer_id)
+    # Legacy tokens may only have "sub". Keep them working, but the primary
+    # report path should use the same customer_id identity as training logs.
+    return _lookup_customer_id(payload.get("sub"))
+
+
+def _empty_monthly_stats(year: int, month: int) -> dict:
+    return {
+        "year": year,
+        "month": month,
+        "total_distance": 0,
+        "total_count": 0,
+        "avg_distance": 0,
+        "total_time": 0,
+        "calories": 0,
+        "by_stroke": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
+        "by_day": [0] * 7,
+        "by_week": [0] * 5,
+        "prev_distance": 0,
+        "growth_rate": 0.0,
+        "streak": 0,
+        "plan_performance": _empty_plan_performance(),
+    }
 
 
 def _empty_plan_performance() -> dict:
@@ -37,23 +90,9 @@ def _empty_plan_performance() -> dict:
     }
 
 
-def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
+def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
     conn = _get_db()
     cur = conn.cursor()
-
-    cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
-    crow = cur.fetchone()
-    if not crow:
-        cur.close(); conn.close()
-        return {
-            "year": year, "month": month, "total_distance": 0, "total_count": 0,
-            "total_time": 0, "calories": 0,
-            "by_stroke": {"freestyle": 0, "backstroke": 0, "breaststroke": 0, "butterfly": 0, "other": 0},
-            "by_day": [0]*7, "by_week": [0]*5, "prev_distance": 0,
-            "growth_rate": 0.0, "streak": 0,
-            "plan_performance": _empty_plan_performance(),
-        }
-    cid = crow[0]
 
     cur.execute("""
         SELECT log_date, stroke_type, total_distance, duration_minutes
@@ -62,7 +101,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
           AND EXTRACT(YEAR FROM log_date) = %s
           AND EXTRACT(MONTH FROM log_date) = %s
         ORDER BY log_date
-    """, (cid, year, month))
+    """, (customer_id, year, month))
     rows = cur.fetchall()
 
     prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
@@ -72,11 +111,11 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         WHERE customer_id = %s
           AND EXTRACT(YEAR FROM log_date) = %s
           AND EXTRACT(MONTH FROM log_date) = %s
-    """, (cid, prev_year, prev_month))
+    """, (customer_id, prev_year, prev_month))
     prev_row = cur.fetchone()
     prev_distance = float(prev_row[0]) if prev_row else 0.0
 
-    cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s ORDER BY log_date", (cid,))
+    cur.execute("SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s ORDER BY log_date", (customer_id,))
     all_dates = [r[0] for r in cur.fetchall()]
 
     plan_performance = _empty_plan_performance()
@@ -92,7 +131,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
             WHERE pc.customer_id = %s
               AND EXTRACT(YEAR FROM tl.log_date) = %s
               AND EXTRACT(MONTH FROM tl.log_date) = %s
-        """, (cid, year, month))
+        """, (customer_id, year, month))
         prow = cur.fetchone() or (0, 0, 0)
         completed_sessions = int(prow[0] or 0)
         plan_distance = int(prow[1] or 0)
@@ -107,7 +146,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         cur.execute("""
             SELECT goal_distance FROM training_goals
             WHERE customer_id = %s AND year = %s AND month = %s
-        """, (cid, year, month))
+        """, (customer_id, year, month))
         grow = cur.fetchone()
         goal_distance = int(grow[0] or 0) if grow else 0
         plan_performance["goal_distance"] = goal_distance
@@ -165,6 +204,7 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "month": month,
         "total_distance": int(total_distance),
         "total_count": total_count,
+        "avg_distance": round(total_distance / total_count) if total_count else 0,
         "total_time": int(total_minutes),
         "calories": round(total_distance / 1000 * 400),
         "by_stroke": {k: int(v) for k, v in stroke_dist.items()},
@@ -176,8 +216,11 @@ def _calc_monthly_stats(username: str, year: int, month: int) -> dict:
         "plan_performance": plan_performance,
     }
 
-def _make_share_token(username: str, year: int, month: int) -> str:
-    payload = json.dumps({"u": username, "y": year, "m": month}, separators=(",", ":"))
+def _make_share_token(username: str, year: int, month: int, customer_id: int | None = None) -> str:
+    payload = {"u": username, "y": year, "m": month}
+    if customer_id:
+        payload["c"] = customer_id
+    payload = json.dumps(payload, separators=(",", ":"))
     return base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 
 
@@ -194,26 +237,19 @@ def _parse_share_token(token: str) -> Optional[dict]:
 @router.get("/heatmap")
 def get_training_heatmap(request: Request, days: int = Query(365, le=730)):
     """최근 N일간의 일자별 훈련 거리 — 깃허브 커밋 그래프 스타일 히트맵용."""
-    username = _get_username(request)
-    if not username:
+    customer_id = _get_customer_id(request)
+    if not customer_id:
         raise HTTPException(401, "로그인이 필요합니다")
 
     conn = _get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
-    crow = cur.fetchone()
-    if not crow:
-        cur.close(); conn.close()
-        return {"days": {}, "current_streak": 0, "longest_streak": 0, "total_days": 0}
-    cid = crow[0]
-
     cur.execute("""
         SELECT log_date, SUM(total_distance)
         FROM training_logs
         WHERE customer_id = %s AND log_date >= CURRENT_DATE - %s::int
         GROUP BY log_date
         ORDER BY log_date
-    """, (cid, days))
+    """, (customer_id, days))
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -253,30 +289,21 @@ def get_monthly_report(
     year: int = Query(...),
     month: int = Query(...),
 ):
-    username = _get_username(request)
-    if not username:
+    payload = _get_token_payload(request)
+    customer_id = _get_customer_id(request)
+    if not payload or not customer_id:
         raise HTTPException(401, "로그인이 필요합니다")
     if not (1 <= month <= 12):
         raise HTTPException(400, "month는 1-12 사이여야 합니다")
     try:
-        stats = _calc_monthly_stats(username, year, month)
-        stats["share_token"] = _make_share_token(username, year, month)
+        stats = _calc_monthly_stats(customer_id, year, month)
+        stats["share_token"] = _make_share_token(payload.get("sub"), year, month, customer_id)
         return stats
     except HTTPException:
         raise
     except Exception:
-        return {
-            "total_distance": 0,
-            "total_count": 0,
-            "total_time": 0,
-            "calories": 0,
-            "by_stroke": {},
-            "by_week": {},
-            "by_day": {},
-            "growth_rate": 0,
-            "streak": 0,
-            "plan_performance": _empty_plan_performance(),
-        }
+        logger.exception("get_monthly_report: failed")
+        return _empty_monthly_stats(year, month)
 
 
 @router.get("/share/{token}")
@@ -285,6 +312,9 @@ def get_shared_report(token: str):
     if not parsed or not all(k in parsed for k in ("u", "y", "m")):
         raise HTTPException(400, "유효하지 않은 공유 토큰입니다")
     try:
-        return _calc_monthly_stats(parsed["u"], parsed["y"], parsed["m"])
+        customer_id = int(parsed["c"]) if parsed.get("c") else _lookup_customer_id(parsed["u"])
+        if not customer_id:
+            return _empty_monthly_stats(int(parsed["y"]), int(parsed["m"]))
+        return _calc_monthly_stats(customer_id, int(parsed["y"]), int(parsed["m"]))
     except Exception as e:
         raise HTTPException(500, f"리포트 조회 오류: {e}")
