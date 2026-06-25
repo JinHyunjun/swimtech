@@ -80,3 +80,18 @@ def test_plan_completion_is_saved_only_with_a_training_log():
     assert "loadPlanCompletions" in plan
     assert "swimtech_completed_days" not in plan
     assert "pendingPlanCompletion" in log
+
+
+def test_plan_p0_improvements_are_kept():
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert "SESSION_LIBRARY_EXTRAS" in plan
+    assert "GOAL_TO_TAGS" in plan
+    assert "data-cycle-level" in plan
+    assert "validatePlanQuality" in plan
+    assert "myplan-filter-panel" in plan
+    assert "addSavedPlanToTrainingLog" in plan
+    assert "buildTrainingMemo" in plan
+    assert "shareCustomPlan" in plan and "sharePresetPlan" in plan
+    assert "## P0 — 완료" in checklist

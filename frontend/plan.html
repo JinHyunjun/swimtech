@@ -134,6 +134,19 @@
 .myplan-source-badge { font-size: var(--fs-caption); padding: 2px 8px; border-radius: var(--radius-sm); margin-left: 6px; }
 .badge-local { background: rgba(251,191,36,.12); color: #fbbf24; border: 0.5px solid rgba(251,191,36,.3); }
 .badge-cloud { background: rgba(74,222,128,.12); color: #4ade80; border: 0.5px solid rgba(74,222,128,.3); }
+.myplan-filter-panel { margin-bottom: 14px; padding: 12px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: rgba(0,0,0,.08); }
+.myplan-filter-title { font-size: var(--fs-caption); font-weight: 700; color: var(--cyan); margin-bottom: 8px; }
+.myplan-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.myplan-filter-select { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.18); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 7px 9px; color: var(--text); font: inherit; font-size: var(--fs-caption); outline: none; }
+.myplan-filter-select:focus { border-color: var(--blue); }
+.myplan-filter-summary { margin-top: 8px; font-size: var(--fs-caption); color: var(--muted); }
+.myplan-status-badge { display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:2px 7px; border-radius: var(--radius-sm); font-size: var(--fs-caption); border:0.5px solid rgba(144,196,212,.24); color:var(--muted); }
+.myplan-status-done { color:#4ade80; border-color:rgba(74,222,128,.3); background:rgba(74,222,128,.08); }
+.quality-panel { margin: 0 24px 12px; padding: 10px 12px; border-radius: var(--radius-sm); border: 0.5px solid rgba(251,191,36,.35); background: rgba(251,191,36,.07); color: var(--muted); font-size: var(--fs-caption); line-height: 1.55; display: none; }
+.quality-panel.visible { display: block; }
+.quality-panel strong { color: #fbbf24; }
+.quality-panel.ok { border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.07); }
+.quality-panel.ok strong { color: #4ade80; }
 
 /* ── 랜덤 생성 탭 ── */
 .random-panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
@@ -302,6 +315,11 @@
           <span class="pool-length-label">🏊 훈련 수영장</span>
           <button type="button" class="pool-length-option" data-pool-length="25">25 m 풀</button>
           <button type="button" class="pool-length-option" data-pool-length="50">50 m 풀</button>
+          <span class="pool-length-label" style="margin-left:8px;">⏱ 사이클 기준</span>
+          <button type="button" class="pool-length-option" data-cycle-level="입문">입문</button>
+          <button type="button" class="pool-length-option" data-cycle-level="초급">초급</button>
+          <button type="button" class="pool-length-option" data-cycle-level="중급">중급</button>
+          <button type="button" class="pool-length-option" data-cycle-level="고급">고급</button>
         </div>
       </div>
       <button class="btn-create-plan" id="open-modal-btn">🎲 내 플랜 만들기</button>
@@ -418,6 +436,7 @@
           <button class="btn-gen-random" id="btn-gen-random" disabled>🎲 플랜 생성</button>
         </div>
         <div class="gen-msg" id="gen-msg"></div>
+        <div class="quality-panel" id="r-quality"></div>
         <div class="plan-preview-box" id="r-preview">
           <div class="preview-header" id="r-preview-header"></div>
           <div class="preview-body" id="r-preview-body"></div>
@@ -694,6 +713,127 @@ const SESSION_POOL = {
     ],
   },
 };
+
+const SESSION_LIBRARY_EXTRAS = {
+  자유형: {
+    drills: [
+      { dist:'8×25m', drill:'자유형 스컬링 + 캐치', purpose:'초기 캐치 감각 강화', tip:'손바닥으로 물을 누르는 압력을 느끼며 천천히 진행합니다', tags:['드릴','테크닉','캐치'], goals:['영법교정','취미'], levels:['입문','초급','중급'], poolLengths:[25] },
+      { dist:'6×50m', drill:'3-5-7 호흡 패턴', purpose:'호흡 리듬과 좌우 균형', tip:'3회·5회·7회 스트로크마다 호흡하며 몸이 흔들리지 않게 유지합니다', tags:['드릴','호흡','밸런스'], goals:['건강','영법교정','취미'], levels:['초급','중급','고급'], poolLengths:[25,50] },
+      { dist:'6×50m', drill:'DPS 거리당 스트로크', purpose:'적은 스트로크로 효율 높이기', tip:'속도를 낮추고 한 번 당길 때 멀리 가는 감각을 찾습니다', tags:['드릴','효율','테크닉'], goals:['기록단축','영법교정'], levels:['초급','중급','고급'], poolLengths:[25,50] },
+      { dist:'4×100m', drill:'스트로크 카운트 자유형', purpose:'페이스 유지와 효율 점검', tip:'매 25m 스트로크 수를 기록하고 후반에도 유지합니다', tags:['테크닉','페이스'], goals:['기록단축','건강'], levels:['중급','고급'], poolLengths:[25,50] },
+    ],
+    mainset: [
+      { dist:'16×25m', drill:'25m 풀 대시 풀리커버리', purpose:'순간 출력과 출발 반응', tip:'매 25m 후 호흡이 돌아올 만큼 충분히 쉬고 폼이 무너지면 중단합니다', tags:['대시','스피드','회복'], goals:['기록단축'], levels:['초급','중급','고급'], poolLengths:[25] },
+      { dist:'8×50m', drill:'50m 빌드업 대시', purpose:'후반 가속 감각', tip:'초반 25m는 부드럽게, 후반 25m에서 속도를 올립니다', tags:['대시','가속','페이스'], goals:['기록단축','체력'], levels:['초급','중급','고급'], poolLengths:[25,50] },
+      { dist:'6×100m', drill:'임계 페이스 100m', purpose:'지속 가능한 빠른 페이스', tip:'마지막 2개도 같은 출발 간격을 지키는 것이 핵심입니다', tags:['인터벌','페이스','지구력'], goals:['기록단축','체력'], levels:['중급','고급'], poolLengths:[25,50] },
+      { dist:'3×300m', drill:'오픈 페이스 지구력', purpose:'편안한 유산소 지속', tip:'말을 짧게 할 수 있을 정도의 강도로 일정하게 갑니다', tags:['지구력','회복','건강'], goals:['건강','취미'], levels:['초급','중급'], poolLengths:[25,50] },
+      { dist:'4×50m', drill:'50m 롱코스 레이스 페이스', purpose:'50m 풀 페이스 적응', tip:'턴이 적은 만큼 중간 20m에서 리듬을 잃지 않는 데 집중합니다', tags:['대시','레이스','50m풀'], goals:['기록단축'], levels:['중급','고급'], poolLengths:[50] },
+    ],
+  },
+  배영: {
+    drills: [
+      { dist:'8×25m', drill:'배영 6킥 체인지', purpose:'바디롤과 팔 타이밍 연결', tip:'한쪽 어깨를 열고 6번 킥 후 반대쪽으로 전환합니다', tags:['드릴','바디롤','테크닉'], goals:['영법교정'], levels:['입문','초급','중급'], poolLengths:[25] },
+      { dist:'6×50m', drill:'배영 눈높이 고정 드릴', purpose:'머리 흔들림 줄이기', tip:'천장을 기준으로 시선을 고정하고 어깨만 회전합니다', tags:['드릴','자세','균형'], goals:['영법교정','취미'], levels:['입문','초급'], poolLengths:[25,50] },
+      { dist:'4×100m', drill:'배영 스트로크 카운트', purpose:'팔 회전 효율 점검', tip:'25m마다 스트로크 수가 급격히 늘지 않도록 조절합니다', tags:['테크닉','페이스'], goals:['기록단축','건강'], levels:['중급','고급'], poolLengths:[25,50] },
+    ],
+    mainset: [
+      { dist:'12×25m', drill:'배영 25m 대시', purpose:'빠른 회전과 킥 출력', tip:'벽을 차고 나온 후 첫 10m를 강하게 가져갑니다', tags:['대시','스피드'], goals:['기록단축'], levels:['초급','중급','고급'], poolLengths:[25] },
+      { dist:'8×50m', drill:'배영 페이스 50m', purpose:'일정한 속도 유지', tip:'1~8번 모두 비슷한 스트로크 수와 호흡 리듬을 유지합니다', tags:['페이스','인터벌'], goals:['기록단축','건강'], levels:['초급','중급','고급'], poolLengths:[25,50] },
+      { dist:'4×200m', drill:'배영 이지 롱셋', purpose:'등·코어 지구력', tip:'목과 허리가 꺾이지 않도록 수면 위 자세를 편하게 유지합니다', tags:['지구력','건강'], goals:['건강','취미'], levels:['초급','중급'], poolLengths:[25,50] },
+      { dist:'6×50m', drill:'롱코스 배영 템포', purpose:'50m 풀 리듬 유지', tip:'턴 도움 없이도 팔 회전 템포가 떨어지지 않게 유지합니다', tags:['50m풀','템포','페이스'], goals:['기록단축','체력'], levels:['중급','고급'], poolLengths:[50] },
+    ],
+  },
+  평영: {
+    drills: [
+      { dist:'8×25m', drill:'평영 킥 글라이드', purpose:'킥 후 뻗기 시간 확보', tip:'킥이 끝난 뒤 몸이 앞으로 미끄러지는 시간을 느낍니다', tags:['드릴','킥','글라이드'], goals:['영법교정','취미'], levels:['입문','초급'], poolLengths:[25] },
+      { dist:'6×50m', drill:'평영 풀-킥 분리', purpose:'팔과 킥 타이밍 정렬', tip:'팔을 당긴 뒤 킥이 늦게 따라오는 리듬을 의식합니다', tags:['드릴','타이밍','테크닉'], goals:['영법교정'], levels:['초급','중급'], poolLengths:[25,50] },
+      { dist:'4×100m', drill:'평영 DPS', purpose:'효율적인 글라이드 거리 늘리기', tip:'한 스트로크마다 길게 뻗고 무릎이 벌어지지 않게 합니다', tags:['테크닉','효율'], goals:['기록단축','영법교정'], levels:['중급','고급'], poolLengths:[25,50] },
+    ],
+    mainset: [
+      { dist:'12×25m', drill:'평영 킥 대시', purpose:'킥 파워와 반응 속도', tip:'상체는 안정시키고 킥 마무리를 빠르게 모읍니다', tags:['대시','킥','스피드'], goals:['기록단축'], levels:['초급','중급','고급'], poolLengths:[25] },
+      { dist:'8×50m', drill:'평영 레이스 템포', purpose:'호흡-킥-글라이드 템포 유지', tip:'처음부터 급하게 가지 말고 3번째부터 템포를 끌어올립니다', tags:['페이스','템포','레이스'], goals:['기록단축'], levels:['중급','고급'], poolLengths:[25,50] },
+      { dist:'3×200m', drill:'평영 이지 페이스', purpose:'무릎 부담 낮춘 지구력', tip:'무릎에 힘이 몰리면 강도를 낮추고 글라이드를 길게 가져갑니다', tags:['지구력','건강','회복'], goals:['건강','취미'], levels:['초급','중급'], poolLengths:[25,50] },
+      { dist:'4×50m', drill:'롱코스 평영 레이스 페이스', purpose:'50m 풀에서 글라이드 유지', tip:'턴이 줄어든 만큼 중간 25m에서 리듬이 늘어지지 않게 합니다', tags:['50m풀','레이스','페이스'], goals:['기록단축'], levels:['중급','고급'], poolLengths:[50] },
+    ],
+  },
+  접영: {
+    drills: [
+      { dist:'8×25m', drill:'접영 바디웨이브', purpose:'몸통 파형 감각 만들기', tip:'가슴을 누르고 엉덩이가 따라오는 순서를 느낍니다', tags:['드릴','파형','테크닉'], goals:['영법교정','취미'], levels:['입문','초급'], poolLengths:[25] },
+      { dist:'6×25m', drill:'접영 3킥 1풀', purpose:'킥 리듬과 팔 연결', tip:'무리하게 팔을 돌리지 말고 킥 리듬을 먼저 안정시킵니다', tags:['드릴','킥','리듬'], goals:['영법교정'], levels:['초급','중급'], poolLengths:[25] },
+      { dist:'6×50m', drill:'접영-자유형 전환 드릴', purpose:'피로 시 폼 유지', tip:'접영 25m 후 자유형 25m로 호흡을 정돈합니다', tags:['드릴','전환','체력'], goals:['건강','영법교정'], levels:['중급','고급'], poolLengths:[25,50] },
+    ],
+    mainset: [
+      { dist:'12×25m', drill:'접영 25m 대시', purpose:'짧은 거리 최대 출력', tip:'폼이 무너지기 전 멈추는 것이 더 좋은 훈련입니다', tags:['대시','스피드','파워'], goals:['기록단축'], levels:['초급','중급','고급'], poolLengths:[25] },
+      { dist:'8×50m', drill:'접영/자유형 25m 교대', purpose:'접영 체력과 회복 리듬', tip:'접영 25m는 강하게, 자유형 25m는 호흡 정돈에 집중합니다', tags:['인터벌','전환','체력'], goals:['건강','체력','취미'], levels:['초급','중급','고급'], poolLengths:[25,50] },
+      { dist:'6×50m', drill:'접영 레이스 페이스', purpose:'일정한 접영 템포', tip:'첫 15m를 과하게 쓰지 말고 후반까지 리듬을 유지합니다', tags:['페이스','레이스','템포'], goals:['기록단축'], levels:['중급','고급'], poolLengths:[25,50] },
+      { dist:'4×50m', drill:'롱코스 접영 템포', purpose:'50m 풀에서 파형 유지', tip:'벽 도움 없이도 호흡 타이밍이 늦어지지 않도록 합니다', tags:['50m풀','템포','고급'], goals:['기록단축','영법교정'], levels:['고급'], poolLengths:[50] },
+    ],
+  },
+};
+
+const GOAL_TO_TAGS = {
+  기록단축: ['대시','스피드','페이스','레이스','인터벌','템포'],
+  건강: ['지구력','건강','회복','체력'],
+  영법교정: ['드릴','테크닉','교정','자세','킥','호흡','타이밍'],
+  취미: ['드릴','건강','회복','효율','전환'],
+  직접구성: ['드릴','대시','지구력','건강','테크닉'],
+};
+
+function inferSetTags(item, type) {
+  const text = `${item.drill || ''} ${item.note || ''} ${item.purpose || ''}`;
+  const tags = new Set(item.tags || []);
+  if (type === 'drills') tags.add('드릴').add('테크닉');
+  if (type === 'warmup') tags.add('웜업').add('회복');
+  if (type === 'cooldown') tags.add('쿨다운').add('회복');
+  if (type === 'mainset') tags.add('메인셋');
+  if (/대시|스프린트|최대|폭발/.test(text)) tags.add('대시').add('스피드');
+  if (/인터벌|페이스|레이스|템포|가속|네거티브|피라미드/.test(text)) tags.add('페이스');
+  if (/지구력|유산소|연속|롱|오래/.test(text)) tags.add('지구력');
+  if (/교정|자세|캐치|호흡|킥|글라이드|바디롤|타이밍|감각/.test(text)) tags.add('교정').add('테크닉');
+  if (/회복|천천히|편안|이완|가볍게/.test(text)) tags.add('회복');
+  return Array.from(tags);
+}
+
+function inferSetGoals(item, tags) {
+  if (item.goals?.length) return item.goals;
+  const goals = [];
+  Object.entries(GOAL_TO_TAGS).forEach(([goal, goalTags]) => {
+    if (goal !== '직접구성' && goalTags.some(tag => tags.includes(tag))) goals.push(goal);
+  });
+  return goals.length ? goals : ['건강','취미'];
+}
+
+function inferSetLevels(item) {
+  if (item.levels?.length) return item.levels;
+  const structure = getSetStructure(item);
+  const total = structure ? structure.reps * structure.distance : parseDistNum(item.dist || '');
+  if (total >= 1200) return ['중급','고급'];
+  if (total >= 600) return ['초급','중급','고급'];
+  return ['입문','초급','중급','고급'];
+}
+
+function normalizeSessionLibrary() {
+  Object.entries(SESSION_LIBRARY_EXTRAS).forEach(([stroke, groups]) => {
+    if (!SESSION_POOL[stroke]) return;
+    ['warmup','drills','mainset','cooldown'].forEach(type => {
+      if (!groups[type]) return;
+      SESSION_POOL[stroke][type] = [...(SESSION_POOL[stroke][type] || []), ...groups[type]];
+    });
+  });
+
+  Object.entries(SESSION_POOL).forEach(([stroke, groups]) => {
+    ['warmup','drills','mainset','cooldown'].forEach(type => {
+      (groups[type] || []).forEach(item => {
+        item.stroke = item.stroke || stroke;
+        item.type = item.type || type;
+        item.poolLengths = item.poolLengths || [25, 50];
+        item.tags = inferSetTags(item, type);
+        item.goals = inferSetGoals(item, item.tags);
+        item.levels = inferSetLevels(item);
+      });
+    });
+  });
+}
 
 /* ══════════════════════════════════════════════
    기존 프리셋 플랜 데이터
@@ -991,20 +1131,23 @@ const INTENSITY_MAP = {
 };
 
 let selectedPoolLength = 25;
+let selectedCycleLevel = '중급';
 let planCycleOverrides = {};
 
 try {
   const savedPoolLength = Number(localStorage.getItem('swimtech_plan_pool_length'));
   if (savedPoolLength === 25 || savedPoolLength === 50) selectedPoolLength = savedPoolLength;
+  const savedCycleLevel = localStorage.getItem('swimtech_plan_cycle_level');
+  if (['입문','초급','중급','고급'].includes(savedCycleLevel)) selectedCycleLevel = savedCycleLevel;
   planCycleOverrides = JSON.parse(localStorage.getItem('swimtech_plan_cycle_overrides') || '{}');
 } catch (_) { /* 저장소를 사용할 수 없으면 기본값을 사용 */ }
 
 const CYCLE_GOAL_PROFILES = {
-  technique: { label: '기술·교정', secondsPer25: 35, rest: 20 },
-  endurance: { label: '지구력', secondsPer25: 30, rest: 12 },
-  pace:     { label: '페이스·인터벌', secondsPer25: 27, rest: 13 },
-  speed:    { label: '스피드', secondsPer25: 24, rest: 35 },
-  recovery: { label: '회복·적응', secondsPer25: 38, rest: 20 },
+  technique: { label: '기술·교정', rest: { 입문: 25, 초급: 22, 중급: 20, 고급: 18 }, secondsPer25: { 입문: 44, 초급: 39, 중급: 35, 고급: 31 } },
+  endurance: { label: '지구력', rest: { 입문: 18, 초급: 15, 중급: 12, 고급: 10 }, secondsPer25: { 입문: 39, 초급: 34, 중급: 30, 고급: 27 } },
+  pace:      { label: '페이스·인터벌', rest: { 입문: 18, 초급: 15, 중급: 13, 고급: 10 }, secondsPer25: { 입문: 36, 초급: 31, 중급: 27, 고급: 24 } },
+  speed:     { label: '스피드', rest: { 입문: 45, 초급: 40, 중급: 35, 고급: 30 }, secondsPer25: { 입문: 33, 초급: 28, 중급: 24, 고급: 21 } },
+  recovery:  { label: '회복·적응', rest: { 입문: 25, 초급: 22, 중급: 20, 고급: 18 }, secondsPer25: { 입문: 48, 초급: 43, 중급: 38, 고급: 34 } },
 };
 
 function normalizeCycleInput(value) {
@@ -1034,26 +1177,32 @@ function getSetStructure(set) {
   return null;
 }
 
-function getCycleGoal(set) {
+function getCycleGoal(set, contextGoal) {
   const text = `${set?.purpose || ''} ${set?.drill || ''}`;
   if (/회복|정리|천천히|이완|가볍게/.test(text)) return 'recovery';
   if (/스프린트|최대|폭발|최종 목표|기록/.test(text)) return 'speed';
   if (/인터벌|페이스|레이스|한계|가속/.test(text)) return 'pace';
   if (/드릴|교정|타이밍|자세|감각|캐치|킥|글라이드|호흡/.test(text)) return 'technique';
+  if (contextGoal === '기록단축') return 'pace';
+  if (contextGoal === '영법교정') return 'technique';
+  if (contextGoal === '건강') return 'endurance';
+  if (contextGoal === '취미') return 'recovery';
   return 'endurance';
 }
 
-function getRecommendedCycle(set, poolLength = selectedPoolLength) {
+function getRecommendedCycle(set, poolLength = selectedPoolLength, level = selectedCycleLevel, contextGoal = '') {
   const structure = getSetStructure(set);
-  const goalKey = getCycleGoal(set);
+  const goalKey = getCycleGoal(set, contextGoal || set?.goal);
   const profile = CYCLE_GOAL_PROFILES[goalKey];
   if (!structure) return { goalKey, label: profile.label, value: '' };
 
   const longCourseAdjustment = poolLength === 50 ? Math.ceil(structure.distance / 50) * 3 : 0;
-  const rawSeconds = structure.distance / 25 * profile.secondsPer25 + profile.rest + longCourseAdjustment;
+  const secondsPer25 = profile.secondsPer25[level] || profile.secondsPer25['중급'];
+  const rest = profile.rest[level] || profile.rest['중급'];
+  const rawSeconds = structure.distance / 25 * secondsPer25 + rest + longCourseAdjustment;
   return {
     goalKey,
-    label: profile.label,
+    label: `${profile.label} · ${level}`,
     value: formatCycle(Math.ceil(rawSeconds / 5) * 5),
   };
 }
@@ -1062,6 +1211,112 @@ function getPoolAdjustedSet(set) {
   const structure = getSetStructure(set);
   if (selectedPoolLength !== 50 || !structure || structure.distance !== 25 || structure.reps < 2 || structure.reps % 2 !== 0) return set;
   return { ...set, dist: `${structure.reps / 2}×50m`, _poolAdjusted: true };
+}
+
+function getSetDistance(set) {
+  const structure = getSetStructure(set);
+  if (structure) return structure.reps * structure.distance;
+  return parseDistNum(set?.dist || '');
+}
+
+function calculateSessionDistance(session) {
+  let total = 0;
+  total += getSetDistance(session?.warmup || {});
+  (session?.mainset || []).forEach(set => { total += getSetDistance(set); });
+  total += getSetDistance(session?.cooldown || {});
+  const statedTotal = parseDistNum(session?.total || '');
+  if (statedTotal > total) total = statedTotal;
+  return total;
+}
+
+function parseCycleSeconds(value) {
+  const cycle = normalizeCycleInput(value);
+  if (!cycle) return 0;
+  const [minutes, seconds] = cycle.split(':').map(Number);
+  return minutes * 60 + seconds;
+}
+
+function durationDistanceRange(duration, level) {
+  const base = {
+    30: [500, 1600],
+    45: [800, 2400],
+    60: [1000, 3400],
+    90: [1500, 5000],
+    120: [2000, 6800],
+    150: [2400, 8200],
+  };
+  const range = base[duration] || base[60];
+  const levelFactor = { 입문: .75, 초급: .9, 중급: 1, 고급: 1.18 }[level] || 1;
+  return [Math.round(range[0] * levelFactor), Math.round(range[1] * levelFactor)];
+}
+
+function validatePlanQuality(planContent, meta = {}) {
+  const warnings = [];
+  const blockers = [];
+  const duration = Number(meta.session_duration || 60);
+  const level = meta.level || selectedCycleLevel;
+  const [minDistance, maxDistance] = durationDistanceRange(duration, level);
+
+  (planContent?.weeks || []).forEach(week => {
+    (week.sessions || []).forEach(session => {
+      const label = `${week.week || week.num || '?'}주 ${session.day || '세션'}`;
+      const warmDistance = getSetDistance(session.warmup || {});
+      const mainDistance = (session.mainset || []).reduce((sum, set) => sum + getSetDistance(set), 0);
+      const coolDistance = getSetDistance(session.cooldown || {});
+      const total = calculateSessionDistance(session);
+      if (!total) {
+        warnings.push(`${label}: 총 거리를 계산하기 어렵습니다.`);
+        return;
+      }
+      if (total < minDistance * .55) warnings.push(`${label}: ${duration}분/${level} 기준으로 거리가 짧습니다. (${total}m)`);
+      if (total > maxDistance * 1.25) blockers.push(`${label}: ${duration}분/${level} 기준으로 거리가 과합니다. (${total}m)`);
+      const warmRatio = warmDistance / total;
+      const mainRatio = mainDistance / total;
+      const coolRatio = coolDistance / total;
+      if (warmDistance && (warmRatio < .08 || warmRatio > .4)) warnings.push(`${label}: 웜업 비율이 권장 범위(약 10~35%)를 벗어납니다.`);
+      if (!warmDistance) warnings.push(`${label}: 웜업이 없습니다.`);
+      if (mainRatio < .35 || mainRatio > .88) warnings.push(`${label}: 메인셋 비율을 확인하세요.`);
+      if (coolDistance && (coolRatio < .04 || coolRatio > .28)) warnings.push(`${label}: 쿨다운 비율이 권장 범위(약 5~25%)를 벗어납니다.`);
+      if (!coolDistance) warnings.push(`${label}: 쿨다운이 없습니다.`);
+
+      (session.mainset || []).forEach(set => {
+        const cycleSeconds = parseCycleSeconds(set.cycle);
+        const recommended = getRecommendedCycle(set, planContent.pool_length || selectedPoolLength, level, meta.goal || set.goal);
+        const recommendedSeconds = parseCycleSeconds(recommended.value);
+        if (!cycleSeconds) warnings.push(`${label} · ${set.drill}: 사이클이 비어 있습니다.`);
+        else if (recommendedSeconds && cycleSeconds < recommendedSeconds - 25) warnings.push(`${label} · ${set.drill}: 권장보다 사이클이 빠릅니다. (${set.cycle} / 권장 ${recommended.value})`);
+      });
+    });
+  });
+
+  return { ok: blockers.length === 0, blockers, warnings: Array.from(new Set(warnings)).slice(0, 8) };
+}
+
+function renderQualityPanel(targetId, quality) {
+  const panel = document.getElementById(targetId);
+  if (!panel) return;
+  if (!quality.blockers.length && !quality.warnings.length) {
+    panel.className = 'quality-panel visible ok';
+    panel.innerHTML = '<strong>✅ 플랜 점검 통과</strong><br>거리, 웜업/메인/쿨다운 비율, 사이클이 무난합니다.';
+    return;
+  }
+  panel.className = 'quality-panel visible';
+  panel.innerHTML = `
+    <strong>⚠️ 플랜 점검 필요</strong><br>
+    ${[...quality.blockers, ...quality.warnings].map(msg => `· ${msg}`).join('<br>')}
+  `;
+}
+
+function confirmPlanQuality(planContent, meta = {}) {
+  const quality = validatePlanQuality(planContent, meta);
+  if (quality.blockers.length) {
+    alert(`플랜 저장 전 조정이 필요합니다.\n\n${quality.blockers.join('\n')}`);
+    return false;
+  }
+  if (quality.warnings.length) {
+    return confirm(`플랜 점검 결과 확인할 점이 있습니다.\n\n${quality.warnings.join('\n')}\n\n그래도 저장할까요?`);
+  }
+  return true;
 }
 
 function presetCycleStorageKey(planKey, weekIndex, dayIndex, setIndex) {
@@ -1103,7 +1358,7 @@ function saveGeneratedCycle(weekIndex, dayIndex, setIndex, input) {
 }
 
 function buildCycleControl(set, context, setIndex) {
-  const recommendation = getRecommendedCycle(set);
+  const recommendation = getRecommendedCycle(set, selectedPoolLength, context?.level || selectedCycleLevel, context?.goal || '');
   const recommendedText = recommendation.value
     ? `${selectedPoolLength}m 풀 · ${recommendation.label} 권장 ${recommendation.value}`
     : `${recommendation.label} · 거리·강도에 맞춰 직접 설정`;
@@ -1130,7 +1385,7 @@ function buildCycleControl(set, context, setIndex) {
 
 function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options = {}) {
   const dayId = planKey ? `${planKey}-w${weekIndex}-d${dayIndex}` : '';
-  const cycleContext = options.cycleContext || (planKey ? { type: 'preset', planKey, weekIndex, dayIndex } : null);
+  const cycleContext = options.cycleContext || (planKey ? { type: 'preset', planKey, weekIndex, dayIndex, goal: getPlanGoalLabel(planKey), level: selectedCycleLevel } : null);
   const mainsetHTML = (s.mainset || []).map((mainset, setIndex) => {
     const set = getPoolAdjustedSet(mainset);
     return `
@@ -1174,6 +1429,14 @@ function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options =
   </div>`;
 }
 
+function getPlanGoalLabel(planKey) {
+  if (['speed','masters','butterfly_master'].includes(planKey)) return '기록단축';
+  if (['form','correction'].includes(planKey)) return '영법교정';
+  if (['health','diet','fitness'].includes(planKey)) return '건강';
+  if (planKey === 'hobby') return '취미';
+  return '';
+}
+
 function renderPlanTab(key, plan, containerId) {
   const weekBtns = plan.weeks.map((w, i) =>
     `<button class="week-sel-btn${i === 0 ? ' active' : ''}" data-plan="${key}" data-week="${i}">${w.num}주</button>`
@@ -1205,7 +1468,7 @@ function renderPlanTab(key, plan, containerId) {
               style="border-color:var(--amber);color:var(--amber);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 일지에 추가</button>
       <button id="plan-fav-${key}" class="plan-btn plan-btn-secondary" onclick="togglePlanFav('${key}','${plan.title}',this)"
               style="border-color:var(--muted);color:var(--muted);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기</button>
-      <button class="plan-btn plan-btn-secondary" onclick="sharePlan('${key}','${plan.title}')"
+      <button class="plan-btn plan-btn-secondary" onclick="sharePresetPlan('${key}','${plan.title}')"
               style="border-color:var(--muted);color:var(--muted);"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-link"/></svg> 공유</button>
       <span class="plan-hint">💡 Ctrl+P로 PDF 저장 가능</span>
     </div>
@@ -1236,14 +1499,20 @@ function syncPoolLengthControls() {
   document.querySelectorAll('[data-pool-length]').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.poolLength) === selectedPoolLength);
   });
+  document.querySelectorAll('[data-cycle-level]').forEach(button => {
+    button.classList.toggle('active', button.dataset.cycleLevel === selectedCycleLevel);
+  });
   document.querySelectorAll('#r-chips-pool .chip').forEach(button => {
     button.classList.toggle('selected', Number(button.dataset.val) === selectedPoolLength);
   });
+  document.querySelectorAll('#r-chips-level .chip').forEach(button => {
+    button.classList.toggle('selected', button.dataset.val === selectedCycleLevel);
+  });
   const builderContext = document.getElementById('builder-pool-context');
-  if (builderContext) builderContext.textContent = `🏊 ${selectedPoolLength}m 풀 기준`;
+  if (builderContext) builderContext.textContent = `🏊 ${selectedPoolLength}m 풀 · ${selectedCycleLevel} 사이클`;
   const guide = document.getElementById('cycle-guide');
   if (guide) {
-    guide.innerHTML = `<strong>⏱ 목적별 권장 사이클</strong><span>${selectedPoolLength}m 풀 기준으로 기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>`;
+    guide.innerHTML = `<strong>⏱ 목적별 권장 사이클</strong><span>${selectedPoolLength}m 풀 · ${selectedCycleLevel} 기준으로 기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>`;
   }
 }
 
@@ -1255,6 +1524,23 @@ function setSelectedPoolLength(poolLength) {
   renderPresetPlans();
   refreshPresetFavoriteButtons();
   if (_generatedPlan) renderGeneratedPreview();
+  renderPoolList();
+  renderBuilderEditor();
+}
+
+function setSelectedCycleLevel(level) {
+  if (!['입문','초급','중급','고급'].includes(level)) return;
+  selectedCycleLevel = level;
+  try { localStorage.setItem('swimtech_plan_cycle_level', level); } catch (_) { /* ignore */ }
+  syncPoolLengthControls();
+  renderPresetPlans();
+  refreshPresetFavoriteButtons();
+  if (_generatedPlan) {
+    _generatedParams.level = level;
+    _generatedPlan = generatePlan(_generatedParams);
+    renderGeneratedPreview();
+  }
+  renderPoolList();
   renderBuilderEditor();
 }
 
@@ -1262,9 +1548,16 @@ function initPoolLengthControl() {
   document.querySelectorAll('[data-pool-length]').forEach(button => {
     button.addEventListener('click', () => setSelectedPoolLength(Number(button.dataset.poolLength)));
   });
+  document.querySelectorAll('[data-cycle-level]').forEach(button => {
+    button.addEventListener('click', () => setSelectedCycleLevel(button.dataset.cycleLevel));
+  });
   document.getElementById('r-chips-pool').addEventListener('click', event => {
     const button = event.target.closest('.chip');
     if (button) setSelectedPoolLength(Number(button.dataset.val));
+  });
+  document.getElementById('r-chips-level').addEventListener('click', event => {
+    const button = event.target.closest('.chip');
+    if (button) setSelectedCycleLevel(button.dataset.val);
   });
   syncPoolLengthControls();
 }
@@ -1308,6 +1601,11 @@ function pickRandom(arr, exclude) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+function pickCompatible(items, poolLength = selectedPoolLength) {
+  const compatible = (items || []).filter(item => isPoolCompatible(item, poolLength));
+  return pickRandom(compatible.length ? compatible : (items || []));
+}
+
 function getStrokes(focusStroke) {
   const all = ['자유형', '배영', '평영', '접영'];
   if (focusStroke === '전체') return all;
@@ -1328,12 +1626,38 @@ function pickUnique(items, count, keyField = 'drill') {
   return picked;
 }
 
-function isDashSet(item) {
-  return /대시|스프린트|스피드|인터벌|가속|레이스|페이스|타임|최대|피라미드|네거티브|템포/.test(`${item.drill || ''} ${item.purpose || ''}`);
+function isPoolCompatible(item, poolLength = selectedPoolLength) {
+  return !item.poolLengths || item.poolLengths.includes(poolLength);
 }
 
-function pickDashSets(pool, count) {
-  const mainsets = pool.mainset || [];
+function levelRank(level) {
+  return { 입문: 0, 초급: 1, 중급: 2, 고급: 3 }[level] ?? 2;
+}
+
+function isLevelCompatible(item, level = selectedCycleLevel) {
+  if (!item.levels || !item.levels.length) return true;
+  if (item.levels.includes(level)) return true;
+  const target = levelRank(level);
+  return item.levels.some(itemLevel => Math.abs(levelRank(itemLevel) - target) <= 1);
+}
+
+function getGoalMatchedItems(items, goal, level, poolLength) {
+  const goalTags = GOAL_TO_TAGS[goal] || [];
+  const compatible = items.filter(item => isPoolCompatible(item, poolLength) && isLevelCompatible(item, level));
+  const matched = compatible.filter(item =>
+    (item.goals || []).includes(goal) ||
+    goalTags.some(tag => (item.tags || []).includes(tag))
+  );
+  return matched.length ? matched : compatible;
+}
+
+function isDashSet(item) {
+  return (item.tags || []).some(tag => ['대시','스피드','페이스','레이스','인터벌','템포'].includes(tag)) ||
+    /대시|스프린트|스피드|인터벌|가속|레이스|페이스|타임|최대|피라미드|네거티브|템포/.test(`${item.drill || ''} ${item.purpose || ''}`);
+}
+
+function pickDashSets(pool, count, goal, level, poolLength) {
+  const mainsets = getGoalMatchedItems(pool.mainset || [], goal, level, poolLength);
   const dashSets = mainsets.filter(isDashSet);
   const picked = pickUnique(dashSets.length ? dashSets : mainsets, count);
   if (picked.length >= count) return picked;
@@ -1344,18 +1668,18 @@ function pickDashSets(pool, count) {
   ];
 }
 
-function pickSessionSets(pool, sessionStyle, count, variantIndex) {
-  const drills = pool.drills || [];
+function pickSessionSets(pool, sessionStyle, count, variantIndex, goal, level, poolLength) {
+  const drills = getGoalMatchedItems(pool.drills || [], goal, level, poolLength);
 
   if (sessionStyle === 'drill') return pickUnique(drills, count);
-  if (sessionStyle === 'dash') return pickDashSets(pool, count);
+  if (sessionStyle === 'dash') return pickDashSets(pool, count, goal, level, poolLength);
 
   if (count === 1) {
-    return (variantIndex % 2 === 0) ? pickUnique(drills, 1) : pickDashSets(pool, 1);
+    return (variantIndex % 2 === 0) ? pickUnique(drills, 1) : pickDashSets(pool, 1, goal, level, poolLength);
   }
   const drillCount = Math.ceil(count / 2);
   const dashCount = count - drillCount;
-  return [...pickUnique(drills, drillCount), ...pickDashSets(pool, dashCount)];
+  return [...pickUnique(drills, drillCount), ...pickDashSets(pool, dashCount, goal, level, poolLength)];
 }
 
 function generatePlan(params) {
@@ -1372,12 +1696,12 @@ function generatePlan(params) {
       const strokeKey = strokes[di % strokes.length];
       const pool = SESSION_POOL[strokeKey] || SESSION_POOL['자유형'];
 
-      const warmup = pickRandom(pool.warmup);
-      const sessionSets = pickSessionSets(pool, session_style, mainsetCount, wi + di);
-      const cooldown = pickRandom(pool.cooldown);
+      const warmup = pickCompatible(pool.warmup, pool_length);
+      const sessionSets = pickSessionSets(pool, session_style, mainsetCount, wi + di, goal, level, pool_length);
+      const cooldown = pickCompatible(pool.cooldown, pool_length);
       const tip = sessionSets[0]?.tip || (session_style === 'dash' ? '대시 세트는 폼이 무너지기 전 충분히 쉬어가며 진행하세요' : '꾸준히 반복하면 폼이 좋아집니다');
 
-      return {
+      const session = {
         day: day + '요일',
         warmup: { dist: warmup.dist, note: warmup.note },
         mainset: sessionSets.map(d => {
@@ -1386,13 +1710,17 @@ function generatePlan(params) {
             dist: set.dist,
             drill: set.drill,
             purpose: set.purpose,
-            cycle: getRecommendedCycle(set, pool_length).value,
+            cycle: getRecommendedCycle(set, pool_length, level, goal).value,
+            tags: set.tags || [],
+            goal,
           };
         }),
         cooldown: { dist: cooldown.dist, note: cooldown.note },
         total: '측정 중',
         tip,
       };
+      session.total = `${calculateSessionDistance(session)}m`;
+      return session;
     });
 
     return { week: weekNum, theme: themes[wi] || `${weekNum}주차`, intensity, sessions };
@@ -1448,6 +1776,7 @@ function renderGeneratedPreview() {
   const preview = document.getElementById('r-preview');
   const previewBody = document.getElementById('r-preview-body');
   document.getElementById('r-preview-header').textContent = `✅ "${_generatedParams.plan_name}" 생성 완료!`;
+  renderQualityPanel('r-quality', validatePlanQuality(_generatedPlan, _generatedParams));
 
   previewBody.innerHTML = `
     <div style="padding:12px 16px;border-bottom:0.5px solid rgba(0,180,216,.15);">
@@ -1456,7 +1785,7 @@ function renderGeneratedPreview() {
     _generatedPlan.weeks.map((w, weekIndex) => {
       const sessHTML = w.sessions.map((session, dayIndex) => renderSession(
         session, null, weekIndex, dayIndex, w.intensity,
-        { showCompletion: false, cycleContext: { type: 'generated', weekIndex, dayIndex } }
+        { showCompletion: false, cycleContext: { type: 'generated', weekIndex, dayIndex, goal: _generatedParams.goal, level: _generatedParams.level } }
       )).join('');
       return `
       <div style="padding:14px 16px;border-bottom:0.5px solid var(--border);">
@@ -1498,6 +1827,7 @@ document.getElementById('btn-gen-random').addEventListener('click', () => {
 
 document.getElementById('btn-save-random').addEventListener('click', async () => {
   if (!_generatedPlan || !_generatedParams) return;
+  if (!confirmPlanQuality(_generatedPlan, _generatedParams)) return;
 
   const saveBtn = document.getElementById('btn-save-random');
   const msgBox = document.getElementById('gen-msg');
@@ -1581,6 +1911,8 @@ function parseDistNum(distStr) {
   return s ? parseInt(s[1]) : 0;
 }
 
+normalizeSessionLibrary();
+
 /* ── 풀 렌더링 (필터 + 검색 적용) ── */
 function renderPoolList(filter, query, typeFilter) {
   if (filter !== undefined) _currentFilter = filter;
@@ -1598,13 +1930,16 @@ function renderPoolList(filter, query, typeFilter) {
     });
   });
 
-  const typedItems = _currentTypeFilter === '전체' ? allItems : allItems.filter(item => item.type === _currentTypeFilter);
+  const poolCompatibleItems = allItems.filter(item => isPoolCompatible(item, selectedPoolLength));
+  const typedItems = _currentTypeFilter === '전체' ? poolCompatibleItems : poolCompatibleItems.filter(item => item.type === _currentTypeFilter);
   const q = _currentQuery.trim().toLowerCase();
   const items = q ? typedItems.filter(item =>
     (item.drill || item.note || '').toLowerCase().includes(q) ||
     (item.purpose || '').toLowerCase().includes(q) ||
     item.stroke.toLowerCase().includes(q) ||
-    (POOL_TYPE_LABEL[item.type] || '').toLowerCase().includes(q)
+    (POOL_TYPE_LABEL[item.type] || '').toLowerCase().includes(q) ||
+    (item.tags || []).join(' ').toLowerCase().includes(q) ||
+    (item.goals || []).join(' ').toLowerCase().includes(q)
   ) : typedItems;
 
   window._poolItems = items;
@@ -1622,6 +1957,7 @@ function renderPoolList(filter, query, typeFilter) {
       <span class="pool-item-type ${POOL_TYPE_CLASS[item.type]}">${POOL_TYPE_LABEL[item.type]}</span>
       <div class="pool-item-name">${item.drill || item.note || ''}</div>
       <div class="pool-item-meta">${item.stroke} · ${item.dist}${item.purpose ? ' · '+item.purpose : ''}</div>
+      <div class="pool-item-meta">#${(item.tags || []).slice(0, 4).join(' #')} · ${(item.levels || []).join('/')}</div>
     </div>`).join('');
 }
 
@@ -1689,6 +2025,8 @@ function addItemToDay(day, itemData) {
     distValue: structure.distance,
     reps: structure.reps,
     cycle: normalizeCycleInput(itemData.cycle) || getRecommendedCycle(set).value,
+    tags: itemData.tags || [],
+    goals: itemData.goals || [],
     equipment: [],
   });
   renderBuilderEditor();
@@ -1930,6 +2268,42 @@ document.getElementById('pool-search').addEventListener('input', e => {
 
 document.getElementById('builder-weeks').addEventListener('change', renderBuilderEditor);
 
+function sumBuilderItems(items) {
+  return (items || []).reduce((sum, item) => sum + item.reps * item.distValue, 0);
+}
+
+function builderItemsToPart(items, fallbackNote) {
+  const total = sumBuilderItems(items);
+  return {
+    dist: `${total}m`,
+    note: items.length ? items.map(item => item.name).join(' + ') : fallbackNote,
+  };
+}
+
+function buildBuilderSession(day, items) {
+  const warmItems = items.filter(item => item.type === 'warmup');
+  const coolItems = items.filter(item => item.type === 'cooldown');
+  let mainItems = items.filter(item => item.type !== 'warmup' && item.type !== 'cooldown');
+  if (!mainItems.length) mainItems = items;
+  const allEquipment = Array.from(new Set(items.flatMap(item => item.equipment || [])));
+  const total = sumBuilderItems(items);
+  return {
+    day,
+    warmup: builderItemsToPart(warmItems, warmItems.length ? '' : '직접 구성 — 필요 시 웜업을 추가하세요'),
+    mainset: mainItems.map(item => ({
+      dist: `${item.reps}×${item.distValue}m`,
+      drill: item.name,
+      purpose: item.purpose,
+      cycle: item.cycle || '',
+      tags: item.tags || [],
+      goal: '직접구성',
+    })),
+    cooldown: builderItemsToPart(coolItems, coolItems.length ? '' : '직접 구성 — 필요 시 쿨다운을 추가하세요'),
+    total: `${total}m`,
+    tip: allEquipment.length ? `도구: ${allEquipment.join(', ')}` : (items.find(item => item.tip)?.tip || '세트별 사이클과 강도를 실제 컨디션에 맞게 조절하세요'),
+  };
+}
+
 document.getElementById('btn-save-builder').addEventListener('click', async () => {
   const name = document.getElementById('builder-name').value.trim();
   if (!name) { alert('플랜 이름을 입력하세요.'); return; }
@@ -1938,26 +2312,24 @@ document.getElementById('btn-save-builder').addEventListener('click', async () =
     week: w, theme: `${w}주차 직접 구성`,
     intensity: WEEK_INTENSITIES[w-1],
     sessions: BUILDER_DAYS.flatMap(day =>
-      (builderPlan[w][day] || []).map(it => ({
-        day,
-        warmup: { dist: `${it.reps}×${it.distValue}m`, note: it.name },
-        mainset: [{ dist: `${it.reps}×${it.distValue}m`, drill: it.name, purpose: it.purpose, cycle: it.cycle || '' }],
-        cooldown: { dist: '100m', note: '정리 운동' },
-        total: `${it.reps * it.distValue}m`,
-        tip: it.equipment.length ? `도구: ${it.equipment.join(', ')}` : (it.tip || ''),
-      }))
+      (builderPlan[w][day] || []).length ? [buildBuilderSession(day, builderPlan[w][day])] : []
     ),
   }));
+  if (!weeks.some(week => week.sessions.length)) {
+    alert('저장할 훈련 세트를 먼저 추가하세요.');
+    return;
+  }
 
   let weekTotal = 0;
   BUILDER_DAYS.forEach(d => (builderPlan[currentBuilderWeek][d] || []).forEach(it => weekTotal += it.distValue * it.reps));
-  const planContent = { pool_length: selectedPoolLength, summary: `직접 구성 · ${selectedPoolLength}m 풀 · ${weekTotal}m/주`, weeks };
+  const planContent = { pool_length: selectedPoolLength, session_style: 'custom', summary: `직접 구성 · ${selectedPoolLength}m 풀 · ${selectedCycleLevel} 사이클 · ${weekTotal}m/주`, weeks };
   const body = {
     plan_name: name, goal: '직접구성',
     sessions_per_week: 3, session_duration: 60,
-    focus_stroke: '전체', level: '중급',
+    focus_stroke: '전체', level: selectedCycleLevel,
     plan_content: planContent,
   };
+  if (!confirmPlanQuality(planContent, body)) return;
 
   try {
     const res = await fetch('/api/plans', {
@@ -1978,6 +2350,16 @@ document.getElementById('btn-save-builder').addEventListener('click', async () =
 /* ══════════════════════════════════════════════
    내 플랜 탭
 ══════════════════════════════════════════════ */
+let myPlansCache = [];
+let myPresetFavoritesCache = [];
+const myPlanFilters = {
+  goal: '전체',
+  pool: '전체',
+  style: '전체',
+  favorite: '전체',
+  status: '전체',
+};
+
 async function loadMyPlans() {
   const container = document.getElementById('myplan-content');
   container.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;">불러오는 중...</div>';
@@ -2007,12 +2389,79 @@ async function loadMyPlans() {
   } catch { /* 비로그인 시 무시 */ }
 
   const allPlans = [...cloudPlans, ...localPlans];
+  myPlansCache = allPlans;
+  myPresetFavoritesCache = presetFavorites;
+  renderMyPlanContent();
+}
 
-  const presetFavHTML = presetFavorites.length ? `
+function getMyPlanStatus(plan) {
+  const content = plan.plan_content || {};
+  const sessions = (content.weeks || []).flatMap(week => week.sessions || []);
+  const completed = Number(content.completed_sessions || content.completed_count || 0);
+  if (content.status === 'completed' || content.completed_at || (sessions.length && completed >= sessions.length)) return '완료';
+  if (completed > 0) return '진행중';
+  return '미완료';
+}
+
+function matchesMyPlanFilters(plan) {
+  const content = plan.plan_content || {};
+  const style = content.session_style || 'custom';
+  const status = getMyPlanStatus(plan);
+  if (myPlanFilters.goal !== '전체' && plan.goal !== myPlanFilters.goal) return false;
+  if (myPlanFilters.pool !== '전체' && String(content.pool_length || 25) !== myPlanFilters.pool) return false;
+  if (myPlanFilters.style !== '전체' && style !== myPlanFilters.style) return false;
+  if (myPlanFilters.favorite === '즐겨찾기' && !plan.is_favorite) return false;
+  if (myPlanFilters.status !== '전체' && status !== myPlanFilters.status) return false;
+  return true;
+}
+
+function renderMyPlanFilters(total, visible) {
+  return `
+    <div class="myplan-filter-panel">
+      <div class="myplan-filter-title">필터</div>
+      <div class="myplan-filter-grid">
+        <select class="myplan-filter-select" data-myplan-filter="goal">
+          ${['전체','기록단축','건강','영법교정','취미','직접구성'].map(v => `<option value="${v}"${myPlanFilters.goal === v ? ' selected' : ''}>목적: ${v}</option>`).join('')}
+        </select>
+        <select class="myplan-filter-select" data-myplan-filter="pool">
+          ${[['전체','풀 전체'],['25','25m 풀'],['50','50m 풀']].map(([v,l]) => `<option value="${v}"${myPlanFilters.pool === v ? ' selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <select class="myplan-filter-select" data-myplan-filter="style">
+          ${[
+            ['전체','구성 전체'],
+            ['balanced','밸런스'],
+            ['drill','드릴 중심'],
+            ['dash','대시·스피드'],
+            ['custom','직접 구성'],
+          ].map(([v,l]) => `<option value="${v}"${myPlanFilters.style === v ? ' selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <select class="myplan-filter-select" data-myplan-filter="favorite">
+          ${['전체','즐겨찾기'].map(v => `<option value="${v}"${myPlanFilters.favorite === v ? ' selected' : ''}>${v === '전체' ? '즐겨찾기 전체' : '즐겨찾기만'}</option>`).join('')}
+        </select>
+        <select class="myplan-filter-select" data-myplan-filter="status">
+          ${['전체','미완료','진행중','완료'].map(v => `<option value="${v}"${myPlanFilters.status === v ? ' selected' : ''}>상태: ${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="myplan-filter-summary">총 ${total}개 중 ${visible}개 표시</div>
+    </div>`;
+}
+
+function attachMyPlanFilterEvents() {
+  document.querySelectorAll('[data-myplan-filter]').forEach(select => {
+    select.addEventListener('change', () => {
+      myPlanFilters[select.dataset.myplanFilter] = select.value;
+      renderMyPlanContent();
+    });
+  });
+}
+
+function renderMyPlanContent() {
+  const container = document.getElementById('myplan-content');
+  const presetFavHTML = myPresetFavoritesCache.length ? `
     <div class="panel" style="margin-bottom:16px;">
       <div class="panel-title" style="margin-bottom:10px;">⭐ 즐겨찾기한 추천 플랜</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${presetFavorites.map(f => `
+        ${myPresetFavoritesCache.map(f => `
           <a href="/plan#${f.plan_key}" class="plan-btn plan-btn-secondary" style="border-color:var(--amber);color:var(--amber);text-decoration:none;">
             ★ ${f.plan_title || f.plan_key}
           </a>
@@ -2020,7 +2469,10 @@ async function loadMyPlans() {
       </div>
     </div>` : '';
 
-  if (allPlans.length === 0) {
+  const filteredPlans = myPlansCache.filter(matchesMyPlanFilters);
+  const filterHTML = renderMyPlanFilters(myPlansCache.length, filteredPlans.length);
+
+  if (myPlansCache.length === 0) {
     container.innerHTML = presetFavHTML + `
       <div class="myplan-empty">
         <div class="myplan-empty-icon">🏊</div>
@@ -2031,9 +2483,14 @@ async function loadMyPlans() {
     return;
   }
 
-  container.innerHTML = presetFavHTML + `<div class="myplan-list" id="myplan-list"></div>`;
+  container.innerHTML = presetFavHTML + filterHTML + `<div class="myplan-list" id="myplan-list"></div>`;
+  attachMyPlanFilterEvents();
   const list = document.getElementById('myplan-list');
-  allPlans.forEach(p => list.appendChild(buildMyPlanCard(p)));
+  if (filteredPlans.length === 0) {
+    list.innerHTML = '<div class="myplan-empty" style="padding:34px 20px;"><div class="myplan-empty-icon">🔎</div><h3>조건에 맞는 플랜이 없습니다</h3><p>필터를 바꿔 다시 확인해보세요.</p></div>';
+    return;
+  }
+  filteredPlans.forEach(p => list.appendChild(buildMyPlanCard(p)));
 }
 
 function buildMyPlanCard(plan) {
@@ -2043,11 +2500,13 @@ function buildMyPlanCard(plan) {
 
   const dateStr = plan.created_at ? plan.created_at.split('T')[0].split(' ')[0] : '';
   const poolLength = Number(plan.plan_content?.pool_length) || 25;
-  const sessionStyleLabel = SESSION_STYLE_LABELS[plan.plan_content?.session_style] || '';
+  const sessionStyleLabel = SESSION_STYLE_LABELS[plan.plan_content?.session_style] || (plan.plan_content?.session_style === 'custom' ? '직접 구성' : '');
+  const status = getMyPlanStatus(plan);
   const metaParts = [plan.goal, plan.focus_stroke ? `${plan.focus_stroke} 위주` : '', sessionStyleLabel, `${poolLength}m 풀`, plan.level].filter(Boolean);
   const badge = plan._local
     ? '<span class="myplan-source-badge badge-local">로컬</span>'
     : '<span class="myplan-source-badge badge-cloud">클라우드</span>';
+  const statusBadge = `<span class="myplan-status-badge${status === '완료' ? ' myplan-status-done' : ''}">${status}</span>`;
 
   let weeksHTML = '';
   if (plan.plan_content && plan.plan_content.weeks) {
@@ -2075,7 +2534,7 @@ function buildMyPlanCard(plan) {
   card.innerHTML = `
     <div class="myplan-card-header">
       <div class="myplan-card-info">
-        <div class="myplan-card-name">${plan.plan_name}${badge}</div>
+        <div class="myplan-card-name">${plan.plan_name}${badge}${statusBadge}</div>
         <div class="myplan-card-meta">${metaParts.join(' · ')}${summaryText && summaryText !== plan.plan_name ? ' · ' + summaryText : ''}</div>
       </div>
       <div class="myplan-card-date">${dateStr}</div>
@@ -2084,6 +2543,7 @@ function buildMyPlanCard(plan) {
     <div class="myplan-card-body">
       ${weeksHTML || '<div style="color:var(--muted);font-size: var(--fs-caption);">플랜 내용이 없습니다</div>'}
       <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+        <button class="btn-share-plan" data-log-plan-id="${plan.id}">📝 첫 세션 일지에 추가</button>
         ${!plan._local ? `<button class="btn-fav-plan${plan.is_favorite ? ' active' : ''}" data-id="${plan.id}"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기</button>` : ''}
         ${!plan._local ? `<button class="btn-share-plan" data-id="${plan.id}">🔗 공유</button>` : ''}
         <button class="btn-del-plan" data-id="${plan.id}" data-local="${plan._local ? '1' : '0'}">🗑 삭제</button>
@@ -2099,11 +2559,18 @@ function buildMyPlanCard(plan) {
       await togglePlanFavorite(plan.id, favBtn);
     });
   }
-  const shareBtn = card.querySelector('.btn-share-plan');
+  const shareBtn = card.querySelector('.btn-share-plan[data-id]');
   if (shareBtn) {
     shareBtn.addEventListener('click', async e => {
       e.stopPropagation();
-      await sharePlan(plan.id);
+      await shareCustomPlan(plan.id);
+    });
+  }
+  const logBtn = card.querySelector('[data-log-plan-id]');
+  if (logBtn) {
+    logBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      addSavedPlanToTrainingLog(plan);
     });
   }
 
@@ -2154,16 +2621,19 @@ async function togglePlanFavorite(planId, btn) {
     if (data.status === 'added') {
       btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기';
       btn.classList.add('active');
+      myPlansCache = myPlansCache.map(plan => String(plan.id) === String(planId) ? { ...plan, is_favorite: true } : plan);
     } else {
       btn.innerHTML = '<svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-star"/></svg> 즐겨찾기';
       btn.classList.remove('active');
+      myPlansCache = myPlansCache.map(plan => String(plan.id) === String(planId) ? { ...plan, is_favorite: false } : plan);
+      if (myPlanFilters.favorite === '즐겨찾기') renderMyPlanContent();
     }
   } catch {
     alert('즐겨찾기 처리 중 오류가 발생했습니다.');
   }
 }
 
-async function sharePlan(planId) {
+async function shareCustomPlan(planId) {
   try {
     const res = await fetch(`/api/plans/${planId}/share`, { credentials: 'include' });
     if (!res.ok) throw new Error(res.status);
@@ -2251,15 +2721,69 @@ async function loadPlanCompletions() {
   } catch (e) { /* 비로그인 상태에서는 완료 표시를 숨긴다. */ }
 }
 
+function getSessionStyleLabel(style) {
+  if (style === 'preset') return '추천 플랜';
+  if (style === 'custom') return '직접 구성';
+  return SESSION_STYLE_LABELS[style] || style || '추천 플랜';
+}
+
+function findSessionIndex(planKey, weekIndex, dayLabel) {
+  return (PLANS[planKey]?.weeks?.[weekIndex]?.sessions || []).findIndex(session => session.day === dayLabel);
+}
+
+function getSessionWithLogCycles(planKey, weekIndex, session) {
+  const dayIndex = findSessionIndex(planKey, weekIndex, session.day);
+  return {
+    ...session,
+    mainset: (session.mainset || []).map((set, setIndex) => {
+      const adjusted = getPoolAdjustedSet(set);
+      const cycle = getPresetCycle(planKey, weekIndex, dayIndex, setIndex) ||
+        normalizeCycleInput(set.cycle) ||
+        getRecommendedCycle(adjusted, selectedPoolLength, selectedCycleLevel, getPlanGoalLabel(planKey)).value;
+      return { ...adjusted, cycle };
+    }),
+  };
+}
+
+function buildTrainingMemo({ prefix, planTitle, session, poolLength, sessionStyle, goal }) {
+  const mainsets = (session?.mainset || []).map(set =>
+    `${set.dist || ''} ${set.drill || ''}${set.cycle ? ` @${set.cycle}` : ''}${set.purpose ? ` (${set.purpose})` : ''}`
+  ).join('\n- ');
+  return [
+    `[${prefix}] ${planTitle}${session?.day ? ` · ${session.day}` : ''}`,
+    `수영장: ${poolLength}m 풀`,
+    `구성: ${getSessionStyleLabel(sessionStyle)}${goal ? ` · 목적: ${goal}` : ''}`,
+    mainsets ? `메인셋:\n- ${mainsets}` : '',
+    session?.tip ? `팁: ${session.tip}` : '',
+    '실제로 한 만큼 거리/시간을 확인 후 저장해주세요.',
+  ].filter(Boolean).join('\n');
+}
+
+function guessStrokeFromPlan(plan, session) {
+  const text = `${plan?.focus_stroke || ''} ${(session?.mainset || []).map(set => `${set.drill || ''} ${set.purpose || ''}`).join(' ')}`;
+  return ['자유형','배영','평영','접영'].find(stroke => text.includes(stroke)) || '자유형';
+}
+
 function completeSessionDay(planKey, weekIndex, dayLabel, totalStr, intensity) {
-  const distance = parseInt(String(totalStr).replace(/[^0-9]/g, ''), 10) || '';
+  const plan = PLANS[planKey];
+  const session = (plan?.weeks?.[weekIndex]?.sessions || []).find(s => s.day === dayLabel);
+  const logSession = session ? getSessionWithLogCycles(planKey, weekIndex, session) : null;
+  const distance = logSession ? calculateSessionDistance(logSession) : (parseInt(String(totalStr).replace(/[^0-9]/g, ''), 10) || '');
   const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[intensity] || '보통';
   const prefill = {
     log_date: new Date().toISOString().slice(0, 10),
+    stroke_type: guessStrokeFromPlan(plan, logSession),
     total_distance: distance,
     pool_length: selectedPoolLength,
     intensity: intensityLabel,
-    memo: `[훈련 플랜] ${dayLabel} 세션 완료 (실제로 한 만큼만 확인 후 저장해주세요)`,
+    memo: buildTrainingMemo({
+      prefix: '훈련 플랜 완료',
+      planTitle: plan?.title || planKey,
+      session: logSession || { day: dayLabel, mainset: [] },
+      poolLength: selectedPoolLength,
+      sessionStyle: 'preset',
+      goal: getPlanGoalLabel(planKey),
+    }),
     plan_completion: {
       plan_key: planKey,
       week_index: weekIndex,
@@ -2276,14 +2800,54 @@ function addToTrainingLog(planId) {
   const plan = PLANS[planId];
   if (!plan) return;
   const firstSession = plan.weeks?.[0]?.sessions?.[0];
-  const firstDistance = firstSession ? parseInt(String(firstSession.total).replace(/[^0-9]/g, ''), 10) || '' : '';
+  const logSession = firstSession ? getSessionWithLogCycles(planId, 0, firstSession) : null;
+  const firstDistance = logSession ? calculateSessionDistance(logSession) : '';
   const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[plan.weeks?.[0]?.intensity] || '보통';
   const prefill = {
     log_date: new Date().toISOString().slice(0, 10),
+    stroke_type: guessStrokeFromPlan(plan, logSession),
     total_distance: firstDistance,
     pool_length: selectedPoolLength,
     intensity: intensityLabel,
-    memo: `[플랜] ${plan.title} — ${firstSession ? firstSession.day + ' ' : ''}훈련 (실제로 한 만큼만 거리/시간을 확인 후 저장해주세요)`,
+    memo: buildTrainingMemo({
+      prefix: '플랜',
+      planTitle: plan.title,
+      session: logSession,
+      poolLength: selectedPoolLength,
+      sessionStyle: 'preset',
+      goal: getPlanGoalLabel(planId),
+    }),
+  };
+  try {
+    sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
+  } catch (e) { /* ignore */ }
+  window.location.href = '/training-log';
+}
+
+function addSavedPlanToTrainingLog(plan) {
+  const content = plan.plan_content || {};
+  const firstWeek = (content.weeks || []).find(week => (week.sessions || []).length);
+  const firstSession = firstWeek?.sessions?.[0];
+  if (!firstSession) {
+    alert('일지에 추가할 세션이 없습니다.');
+    return;
+  }
+  const poolLength = Number(content.pool_length) || selectedPoolLength;
+  const distance = calculateSessionDistance(firstSession);
+  const prefill = {
+    log_date: new Date().toISOString().slice(0, 10),
+    stroke_type: guessStrokeFromPlan(plan, firstSession),
+    total_distance: distance || '',
+    pool_length: poolLength,
+    intensity: { easy: '쉬움', medium: '보통', hard: '힘듦' }[firstWeek.intensity] || '보통',
+    memo: buildTrainingMemo({
+      prefix: '내 플랜',
+      planTitle: plan.plan_name,
+      session: firstSession,
+      poolLength,
+      sessionStyle: content.session_style || 'custom',
+      goal: plan.goal,
+    }),
   };
   try {
     sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
@@ -2335,7 +2899,7 @@ async function togglePlanFav(key, title, btn) {
   } catch (e) { alert('네트워크 오류'); }
 }
 
-async function sharePlan(key, title) {
+async function sharePresetPlan(key, title) {
   try {
     const url = `${location.origin}/plan#${key}`;
     await navigator.clipboard.writeText(url);
