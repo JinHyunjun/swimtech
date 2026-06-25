@@ -147,6 +147,8 @@ def test_plan_p3_improvements_are_kept():
     assert "_build_training_advisor" in dashboard_api
     assert "plan_completions" in dashboard_api
     assert "advisor-card" in dashboard_page
+    assert "이번 주 훈련 추천" in dashboard_page
+    assert "P3 Training Advisor" not in dashboard_page
     assert "renderTrainingAdvisor" in dashboard_page
     assert "loadTrainingAdvisor" in dashboard_page
     assert "/api/dashboard/training-advisor" in dashboard_page
