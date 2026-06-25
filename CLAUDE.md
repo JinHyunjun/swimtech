@@ -147,62 +147,36 @@ docker compose restart caddy
 
 ## Branch Strategy
 
-### 브랜치 구조
+### 단일 브랜치 (`main`)
 
-| 브랜치 | 용도 | 규칙 |
-|---|---|---|
-| `main` | 프로덕션 배포 | 항상 배포 가능한 상태 유지 |
-| `dev` | 기능 개발·실험 | 모든 신규 기능은 여기서 시작 |
+- 모든 작업은 `main`에 직접 진행한다. 별도의 `dev` 브랜치 워크플로우는 더 이상 사용하지 않는다.
+- `dev` 브랜치는 2026-06-25에 `main`과 동일한 지점으로 fast-forward 동기화되었고, 그 이후로는 운영하지 않는다(필요 시 같은 지점으로 재동기화만 한다).
+- `main`은 실배포 대상이다 — `render.yaml`의 `autoDeploy: true`로 백엔드(Render)가, Vercel이 프론트엔드를 같은 브랜치에서 자동 배포한다. **`main`에 푸시 = 프로덕션 반영**이라는 점을 항상 인지한다.
 
-### 개발 규칙
+### AI 분석 기능
 
-1. **신규 기능 개발은 반드시 `dev` 브랜치에서 작업**
-   ```powershell
-   git checkout dev
-   git pull origin dev
-   # ... 작업 후 dev에 커밋
-   git push origin dev
-   ```
+- AI 영상 분석 관련 UI는 여전히 비활성화(숨김) 상태다. 더 이상 브랜치로 격리하지 않고, **`main` 안에서 feature-flag/숨김 처리로 관리**한다.
+- 숨김 처리된 항목: `onboarding` 슬라이드, `faq` 촬영·분석 탭, `injury` CTA, `landing` 영상 분석 카드
+- 이 영역을 다시 활성화하려면 위 항목들의 숨김 처리를 해제하고 정상 동작을 검증한 뒤 `main`에 커밋한다.
 
-2. **`main` merge 조건** — 아래를 모두 충족할 때만 허용
-   - 전체 테스트 통과 (`pytest tests/test_swimtech.py`)
-   - 기능이 프로덕션 준비 완료 상태
-   - 관련 UI 숨김/노출 처리 확인
+### 현재 상태 (2026-06-25 기준)
 
-3. **AI 분석 관련 작업은 `dev` 브랜치에서만**
-   - 현재 `main`에는 AI 분석 UI가 **숨김 처리**된 상태
-   - AI 분석 기능 완성 후 `dev → main` PR로 통합
-   - 숨김 처리된 항목: `onboarding` 슬라이드, `faq` 촬영·분석 탭, `injury` CTA, `landing` 영상 분석 카드
-
-### 현재 상태 (2026-05-25 기준)
-
-- `main` : v2.3.9 — AI 분석 UI 숨김, 서비스 배포 중
-- `dev`  : main 기준으로 분기, AI 분석 개발 진행 예정
+- `main` (`dev`도 동일 지점) : 훈련 플랜 P0/P1 개선, UI QA 크롤러 추가 완료. AI 분석 UI는 여전히 숨김.
 
 ---
 
 ## 작업 완료 후 필수 Git 절차
 
-모든 기능 구현/수정 완료 후 반드시 아래 순서로 자동 실행한다.
-
-### 1. dev 브랜치에 커밋 및 푸시
+모든 기능 구현/수정 완료 후 반드시 아래를 자동 실행한다(사용자에게 매번 확인받지 않음 — 이 지침이 곧 사전 승인이다).
 
 ```powershell
 git add .
-git commit -m "feat/fix: 작업 내용 (버전)"
-git push origin dev
-```
-
-### 2. main 브랜치에 자동 머지
-
-```powershell
-git checkout main
-git merge dev
+git commit -m "feat/fix: 작업 내용"
 git push origin main
-git checkout dev
 ```
 
 > **충돌(conflict) 발생 시**: 머지를 중단하고 사용자에게 알림. 자동으로 강제 진행하지 않는다.
+> **위험도가 높은 변경**(스키마 마이그레이션, 인증/결제 로직, 대량 데이터 변경 등)은 푸시 전에 사용자에게 먼저 알린다.
 
 ---
 
