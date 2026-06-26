@@ -157,18 +157,29 @@ def test_qa_scripts_cover_training_report_and_advisor_flows():
     api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
     qa_workflow = (ROOT / ".github" / "workflows" / "qa.yml").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
 
     assert "/api/training-log/goal" in api_qa
     assert "/api/report/monthly" in api_qa
     assert "/api/dashboard/training-advisor" in api_qa
+    assert "/api/admin/training-health" in api_qa
     assert "월간 리포트↔훈련 일지 데이터 연동" in api_qa
+    assert "관리자 훈련 운영 API" in api_qa
     assert "plan_completion" in api_qa
     assert "avg_distance" in api_qa
     assert "PAGE_EXPECTATIONS" in ui_qa
     assert ".advisor-card" in ui_qa
     assert "#stat-avg" in ui_qa
+    assert "[data-tab='training-health']" in ui_qa
     assert "P3 Training Advisor" in ui_qa
     assert "pip install playwright requests" in qa_workflow
+    assert "ADMIN_ID" in qa_workflow and "ADMIN_PW" in qa_workflow
+    assert "python scripts/qa_runner.py --no-admin" not in qa_workflow
+    assert '@router.get("/training-health")' in admin_api
+    assert "훈련 운영" in admin_page
+    assert "새 기능 / 새 화면 / 새 API는 반드시" in checklist
 
 
 def test_plan_p3_improvements_are_kept():
@@ -186,6 +197,31 @@ def test_plan_p3_improvements_are_kept():
     assert "loadTrainingAdvisor" in dashboard_page
     assert "/api/dashboard/training-advisor" in dashboard_page
     assert "## P3 — 완료" in checklist
+
+
+def test_plan_p4_admin_quality_gate_is_kept():
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+
+    assert "## P4 — 완료" in checklist
+    assert "슈퍼 관리자 훈련 운영 대시보드 추가" in checklist
+    assert "기능 추가 시 QA 스크립트 업데이트 의무화" in checklist
+    assert '@router.get("/training-health")' in admin_api
+    assert "training_logs" in admin_api
+    assert "training_goals" in admin_api
+    assert "custom_plans" in admin_api
+    assert "plan_completions" in admin_api
+    assert 'data-tab="training-health"' in admin_page
+    assert "30일 훈련 일지" in admin_page
+    assert "운영 체크포인트" in admin_page
+    assert "/api/admin/training-health" in admin_page
+    assert "/api/admin/training-health" in qa_api
+    assert "[data-tab='training-health']" in qa_ui
+    assert "운영 QA 스크립트 갱신 규칙" in claude
 
 
 def test_swimtech_branding_is_training_helper_focused():

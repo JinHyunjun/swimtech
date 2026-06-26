@@ -95,6 +95,12 @@ PAGES = [
     ("/coach", "코치 연동"),
 ]
 
+PROTECTED_PATHS = {
+    "/dashboard", "/plan", "/training-log", "/report", "/pool", "/badges",
+    "/community", "/challenge", "/equipment", "/chat", "/videos",
+    "/profile", "/injury", "/coach",
+}
+
 # 되돌릴 수 없는 동작 — 클릭하지 않고 "존재 확인"만 한다
 DESTRUCTIVE_PATTERN = re.compile(
     r"탈퇴|회원\s*탈퇴|로그아웃|log\s*out|logout|delete\s*account|withdraw|결제|구독\s*취소",
@@ -141,6 +147,10 @@ PAGE_EXPECTATIONS = {
     "/plan": {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
         "texts": ["내 플랜", "직접 구성"],
+    },
+    "/admin": {
+        "selectors": [".admin-badge", "[data-tab='training-health']", "#tab-training-health", "#h-log-count", "#h-recent-body"],
+        "texts": ["SUPER ADMIN", "훈련 운영"],
     },
 }
 
@@ -214,6 +224,29 @@ def login(page, username=None, password=None):
         pass
     if "/login" in page.url:
         raise RuntimeError(f"로그인 실패 — 계정/비밀번호 확인 필요 (계정: {username})")
+
+
+def is_auth_redirect(path, page):
+    if path == "/admin":
+        return False
+    current = page.url.split("?", 1)[0].rstrip("/")
+    return path in PROTECTED_PATHS and (current.endswith("/login") or current.endswith("/landing"))
+
+
+def goto_page(page, path, username=None, password=None, timeout=45000):
+    resp = page.goto(f"{BASE}{path}", wait_until="domcontentloaded", timeout=timeout)
+    try:
+        page.wait_for_load_state("networkidle", timeout=8000)
+    except PWTimeout:
+        pass
+    if is_auth_redirect(path, page):
+        login(page, username, password)
+        resp = page.goto(f"{BASE}{path}", wait_until="domcontentloaded", timeout=timeout)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except PWTimeout:
+            pass
+    return resp
 
 
 def check_page_expectations(page, path):
@@ -313,7 +346,7 @@ def collect_candidates(page, selector=CLICKABLE_SELECTOR):
     return candidates
 
 
-def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
+def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, password=None):
     console_errors = []
     network_errors = []
 
@@ -328,6 +361,8 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
 
     def on_response(resp):
         try:
+            if resp.status == 401 and "/auth/refresh" in resp.url:
+                return
             if resp.status >= 400 and resp.url.startswith(BASE) and "/static/" not in resp.url:
                 network_errors.append({"url": resp.url, "status": resp.status})
         except Exception:
@@ -341,11 +376,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
     SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
     try:
-        resp = page.goto(f"{BASE}{path}", wait_until="domcontentloaded", timeout=30000)
-        try:
-            page.wait_for_load_state("networkidle", timeout=8000)
-        except PWTimeout:
-            pass
+        resp = goto_page(page, path, username=username, password=password)
         if resp and resp.status >= 400:
             entry["page_errors"].append({"phase": "load", "status": resp.status})
     except Exception as e:
@@ -430,17 +461,17 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
                     action_result["screenshot"] = shot_name
                 except Exception:
                     pass
-            entry["actions"].append(action_result)
 
             try_close_modal(page)
             if navigated:
-                page.goto(f"{BASE}{path}", wait_until="domcontentloaded", timeout=15000)
                 try:
-                    page.wait_for_load_state("networkidle", timeout=6000)
-                except PWTimeout:
-                    pass
+                    goto_page(page, path, username=username, password=password, timeout=30000)
+                except Exception as nav_err:
+                    action_result["status"] = "error"
+                    action_result["error"] = f"원래 페이지 복귀 실패: {str(nav_err)[:160]}"
                 console_errors.clear()
                 network_errors.clear()
+            entry["actions"].append(action_result)
         except PWTimeout as e:
             entry["actions"].append({"action": action_label, "status": "timeout", "error": str(e)[:200]})
         except Exception as e:
@@ -484,24 +515,34 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=not args.headed)
         context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
-        page = context.new_page()
+        login_page = context.new_page()
 
         try:
-            login(page)
+            login(login_page)
             print("✅ 로그인 성공\n")
         except Exception as e:
             print(f"❌ {e}")
             browser.close()
             sys.exit(2)
+        finally:
+            try:
+                login_page.close()
+            except Exception:
+                pass
 
         for path, label in pages:
             print(f"[{label}] {path} 검사 중...")
+            page = context.new_page()
             entry = crawl_page(page, path, label)
             RESULTS.append(entry)
             n_err = sum(1 for a in entry["actions"] if a["status"] in ("error", "click_failed", "timeout", "blocked"))
             n_skip = sum(1 for a in entry["actions"] if a["status"] == "skipped")
             mark = "❌" if (entry["page_errors"] or n_err) else "✅"
             print(f"  {mark} 액션 {len(entry['actions'])}개 (에러 {n_err}, 건너뜀 {n_skip})")
+            try:
+                page.close()
+            except Exception:
+                pass
 
         if do_admin:
             print("\n[관리자] /admin 검사 중... (탭/필터 전환만 — 읽기 전용)")
@@ -509,7 +550,8 @@ def main():
             admin_page = admin_context.new_page()
             try:
                 login(admin_page, ADMIN_ID, ADMIN_PW)
-                entry = crawl_page(admin_page, "/admin", "관리자", selector=ADMIN_CLICKABLE_SELECTOR)
+                entry = crawl_page(admin_page, "/admin", "관리자", selector=ADMIN_CLICKABLE_SELECTOR,
+                                   username=ADMIN_ID, password=ADMIN_PW)
                 if "/landing" in admin_page.url or admin_page.url.rstrip("/").endswith("/landing"):
                     entry["page_errors"].append({"phase": "load", "error": "관리자 권한으로 인식되지 않아 /landing으로 리다이렉트됨"})
                 RESULTS.append(entry)

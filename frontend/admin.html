@@ -191,6 +191,28 @@
 .menu-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: var(--radius-pill); }
 .menu-bar-count { width: 36px; text-align: right; font-size: var(--fs-caption); color: var(--text); font-weight: 700; }
 
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.watchlist {
+  display: grid;
+  gap: 10px;
+}
+.watch-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.025);
+}
+.watch-title { color: var(--text); font-weight: 800; margin-bottom: 4px; }
+.watch-detail { color: var(--muted); font-size: var(--fs-caption); line-height: 1.5; }
+
 .empty-state { text-align: center; padding: 40px 0; color: var(--muted); font-size: var(--fs-body); }
 .loading-state { text-align: center; padding: 40px 0; color: var(--muted); font-size: var(--fs-body); }
 
@@ -209,6 +231,7 @@
 
 @media (max-width: 760px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .health-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -227,6 +250,7 @@
     <button class="admin-tab active" data-tab="dashboard">대시보드</button>
     <button class="admin-tab" data-tab="users">사용자 관리</button>
     <button class="admin-tab" data-tab="activity">메뉴 사용 분석</button>
+    <button class="admin-tab" data-tab="training-health">훈련 운영</button>
     <button class="admin-tab" data-tab="logs">운영 로그</button>
     <button class="admin-tab" data-tab="feedback">피드백</button>
   </div>
@@ -314,7 +338,78 @@
     </div>
   </section>
 
-  <!-- 4) 운영 로그 -->
+  <!-- 4) 훈련 운영 -->
+  <section class="admin-section" id="tab-training-health">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="label">30일 훈련 일지</div>
+        <div class="value" id="h-log-count">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">30일 활성 훈련 유저</div>
+        <div class="value" id="h-active-users">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">30일 총 훈련 거리</div>
+        <div class="value" id="h-total-distance">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">플랜 완료 세션</div>
+        <div class="value energy" id="h-plan-completions">—</div>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="label">이번 달 목표 설정자</div>
+        <div class="value" id="h-goal-users">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">평균 목표 달성률</div>
+        <div class="value" id="h-goal-rate">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">평균 훈련 거리</div>
+        <div class="value" id="h-avg-distance">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">평균 훈련 시간</div>
+        <div class="value" id="h-avg-duration">—</div>
+      </div>
+    </div>
+
+    <div class="health-grid">
+      <div class="panel">
+        <div class="panel-title">영법별 거리 분포</div>
+        <div id="h-strokes"><div class="loading-state">불러오는 중...</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">수영장 길이 분포</div>
+        <div id="h-pools"><div class="loading-state">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">최근 훈련 일지</div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>일자</th><th>회원</th><th>영법</th><th>거리</th><th>시간</th><th>풀</th><th>강도</th></tr>
+          </thead>
+          <tbody id="h-recent-body">
+            <tr><td colspan="7" class="loading-state">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">운영 체크포인트</div>
+      <div class="watchlist" id="h-watchlist"><div class="loading-state">불러오는 중...</div></div>
+    </div>
+  </section>
+
+  <!-- 5) 운영 로그 -->
   <section class="admin-section" id="tab-logs">
     <div class="panel">
       <div class="log-filter" id="log-filter">
@@ -337,7 +432,7 @@
     </div>
   </section>
 
-  <!-- 5) 피드백 -->
+  <!-- 6) 피드백 -->
   <section class="admin-section" id="tab-feedback">
     <div class="panel">
       <div class="log-filter" id="feedback-filter">
@@ -372,6 +467,9 @@ const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' }
 function fmtDate(s) {
   if (!s) return '-';
   return s.replace('T', ' ').slice(0, 16);
+}
+function fmtNumber(n) {
+  return Number(n || 0).toLocaleString();
 }
 
 async function authedFetch(url) {
@@ -474,7 +572,61 @@ async function loadActivity() {
   } catch (e) { console.error(e); }
 }
 
-// 4) 운영 로그
+// 4) 훈련 운영
+async function loadTrainingHealth() {
+  try {
+    const data = await authedFetch('/api/admin/training-health');
+    const s = data.summary || {};
+    document.getElementById('h-log-count').textContent = fmtNumber(s.logs_30d);
+    document.getElementById('h-active-users').textContent = fmtNumber(s.active_users_30d);
+    document.getElementById('h-total-distance').textContent = `${fmtNumber(s.distance_30d)}m`;
+    document.getElementById('h-plan-completions').textContent = fmtNumber(s.plan_completions_30d);
+    document.getElementById('h-goal-users').textContent = fmtNumber(s.goal_users_this_month);
+    document.getElementById('h-goal-rate').textContent = `${fmtNumber(s.goal_achievement_rate)}%`;
+    document.getElementById('h-avg-distance').textContent = `${fmtNumber(s.avg_distance_30d)}m`;
+    document.getElementById('h-avg-duration').textContent = `${fmtNumber(s.avg_duration_30d)}분`;
+
+    renderMenuBars('h-strokes', (data.stroke_distribution || []).map(i => ({
+      menu: `${i.stroke_type || '기타'} · ${fmtNumber(i.distance)}m`,
+      count: i.count || 0,
+    })));
+    renderMenuBars('h-pools', (data.pool_distribution || []).map(i => ({
+      menu: `${i.pool_length || 25}m 풀 · ${fmtNumber(i.distance)}m`,
+      count: i.count || 0,
+    })));
+
+    const recentBody = document.getElementById('h-recent-body');
+    const recent = data.recent_logs || [];
+    if (!recent.length) {
+      recentBody.innerHTML = '<tr><td colspan="7" class="empty-state">최근 훈련 일지가 없습니다.</td></tr>';
+    } else {
+      recentBody.innerHTML = recent.map(l => `
+        <tr>
+          <td>${fmtDate(l.log_date)}</td>
+          <td>${escapeHtml(l.username || l.name || '-')}</td>
+          <td>${escapeHtml(l.stroke_type || '-')}</td>
+          <td>${fmtNumber(l.total_distance)}m</td>
+          <td>${fmtNumber(l.duration_minutes)}분</td>
+          <td>${fmtNumber(l.pool_length || 25)}m</td>
+          <td>${escapeHtml(l.intensity || '-')}</td>
+        </tr>
+      `).join('');
+    }
+
+    const watchlist = data.watchlist || [];
+    document.getElementById('h-watchlist').innerHTML = watchlist.length ? watchlist.map(item => `
+      <div class="watch-item">
+        <div>
+          <div class="watch-title">${escapeHtml(item.label)}</div>
+          <div class="watch-detail">${escapeHtml(item.detail)}</div>
+        </div>
+        <span class="pill success">${escapeHtml(item.status)}</span>
+      </div>
+    `).join('') : '<div class="empty-state">체크포인트가 없습니다.</div>';
+  } catch (e) { console.error(e); }
+}
+
+// 5) 운영 로그
 async function loadLogs(eventType) {
   const body = document.getElementById('l-body');
   body.innerHTML = '<tr><td colspan="5" class="loading-state">불러오는 중...</td></tr>';
@@ -507,7 +659,7 @@ document.querySelectorAll('#log-filter .log-filter-btn').forEach(btn => {
 // 5) 피드백
 function escapeHtml(s) {
   if (!s) return '';
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 async function loadFeedback(feedbackType) {
   const body = document.getElementById('f-body');
@@ -543,6 +695,7 @@ document.querySelectorAll('#feedback-filter .log-filter-btn').forEach(btn => {
 loadDashboard();
 loadUsers();
 loadActivity();
+loadTrainingHealth();
 loadLogs();
 loadFeedback();
 </script>

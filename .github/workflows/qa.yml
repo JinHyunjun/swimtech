@@ -26,8 +26,11 @@ jobs:
           QA_USERNAME: ${{ secrets.QA_USERNAME }}
           QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
           QA_EMAIL:    ${{ secrets.QA_EMAIL }}
+          # 등록되어 있으면 관리자 운영 API까지 검증한다. 비어 있으면 qa_runner.py가 자동으로 건너뛴다.
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+          ADMIN_PW: ${{ secrets.ADMIN_PW }}
         run: |
-          python scripts/qa_runner.py --no-admin
+          python scripts/qa_runner.py
 
       - name: Upload QA report
         if: always()

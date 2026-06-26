@@ -106,6 +106,8 @@ def main():
     except Exception as e:
         rec(0, "백엔드 health", False, str(e)[:60])
 
+    admin_sess = None
+
     # ── 관리자 슈퍼계정 확인/생성 ───────────────────────
     if not args.no_admin:
         admin_id, admin_pw = os.getenv("ADMIN_ID"), os.getenv("ADMIN_PW")
@@ -117,10 +119,12 @@ def main():
             login = s.post(f"{BASE}/auth/login",
                            json={"username": admin_id, "password": admin_pw}, timeout=60)
             ok = login.status_code == 200
+            if ok:
+                admin_sess = s
             note = "신규 생성" if reg.status_code == 200 else "이미 존재"
             rec("A", f"관리자 슈퍼계정 ({admin_id})", ok, f"{note}, 로그인 {login.status_code}")
         else:
-            rec("A", "관리자 슈퍼계정", False, "ADMIN_ID/ADMIN_PW 환경변수 없음 (건너뜀)")
+            print("  ⚠ 관리자 API QA 생략: ADMIN_ID/ADMIN_PW 환경변수 없음")
 
     # ── QA 계정 + 세션 준비 ─────────────────────────────
     sess = requests.Session()
@@ -360,6 +364,27 @@ def main():
     )
     rec(18, "대시보드 주간 목표/훈련 어드바이저", dashboard_ok,
         f"summary {summary.status_code}, weekly {weekly.status_code}, advisor {advisor.status_code}, focus={advisor_json.get('focus')}")
+
+    if admin_sess:
+        admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard", timeout=60)
+        admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)
+        admin_health = admin_sess.get(f"{BASE}/api/admin/training-health", timeout=60)
+        admin_logs = admin_sess.get(f"{BASE}/api/admin/logs", timeout=60)
+        health_json = jget(admin_health)
+        health_summary = health_json.get("summary") or {}
+        admin_ok = (
+            admin_dashboard.status_code == 200
+            and admin_activity.status_code == 200
+            and admin_health.status_code == 200
+            and admin_logs.status_code == 200
+            and "logs_30d" in health_summary
+            and "plan_completions_30d" in health_summary
+            and isinstance(health_json.get("watchlist"), list)
+        )
+        rec("18b", "관리자 훈련 운영 API", admin_ok,
+            f"dashboard {admin_dashboard.status_code}, activity {admin_activity.status_code}, "
+            f"training-health {admin_health.status_code}, logs {admin_logs.status_code}, "
+            f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")

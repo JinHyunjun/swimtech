@@ -127,6 +127,14 @@ pytest tests/test_swimtech.py --html=tests/report.html --self-contained-html
 | 새 페이지 (`/newpage`) | `test_{페이지명}_load` + `test_{페이지명}_ui` | 2개 |
 | 새 API 엔드포인트 | `test_{기능명}_api` | 1개 |
 | 모달 / 인터랙션 | `test_{기능명}_interaction` | 1개 |
+| 운영 QA 대상 기능 | `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py` 매핑 갱신 | 1개 |
+
+### 2-1. 운영 QA 스크립트 갱신 규칙
+
+- 새 기능 / 새 화면 / 새 API를 추가하면 반드시 `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py`에 검증 매핑을 추가한다.
+- 훈련 일지, 월간 리포트, 대시보드, 플랜, 관리자 화면처럼 서로 연동되는 기능은 단순 200 응답이 아니라 실제 데이터 반영값까지 확인한다.
+- 슈퍼계정(`administrator`/`ADMIN_ID`)에서 확인해야 하는 운영 지표가 늘어나면 `/admin` 화면과 관리자 QA 검증도 함께 갱신한다.
+- 관리자 QA는 운영 데이터 보호를 위해 읽기 전용 탭/필터/조회 액션만 수행한다.
 
 ### 3. Caddyfile 라우트 확인
 
