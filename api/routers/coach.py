@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""SwimTech — 코치-수강생 연동 라우터 (v2.5.2)"""
+"""SwimMate — 코치-수강생 연동 라우터 (v2.5.2)"""
 import os
 import random
 import string

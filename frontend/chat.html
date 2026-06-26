@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SwimTech — AI 코치</title>
+<title>SwimMate — AI 코치</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SwimTech">
+<meta name="apple-mobile-web-app-title" content="SwimMate">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
@@ -312,7 +312,7 @@
       <button class="sidebar-toggle" onclick="toggleMobileSidebar()" id="sidebar-toggle-btn">
         <svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-training-log"/></svg> 이전 대화
       </button>
-      <span class="logo">SwimTech AI 코치</span>
+      <span class="logo">SwimMate AI 코치</span>
     </div>
     <div class="header-right">
       <button onclick="logout()"
@@ -496,7 +496,7 @@ function renderMessages() {
     box.innerHTML = `
       <div class="chat-welcome">
         <div class="welcome-icon"><svg class="icon icon-xl" aria-hidden="true"><use href="/static/icons.svg#icon-robot"/></svg></div>
-        <div class="welcome-title">SwimTech AI 코치</div>
+        <div class="welcome-title">SwimMate AI 코치</div>
         <p class="welcome-desc">수영 기술, 훈련 방법, 지상운동, 스트레칭,<br>대회 정보, 용품 추천 등 수영과 관련된 모든 것을 물어보세요!</p>
         <div class="sample-grid">
           ${SAMPLES.map(q =>

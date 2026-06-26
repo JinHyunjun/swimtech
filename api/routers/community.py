@@ -1,5 +1,5 @@
 """
-SwimTech — 커뮤니티 라우터
+SwimMate — 커뮤니티 라우터
 게시글/댓글 CRUD, 좋아요/북마크/신고/태그/이미지/알림
 """
 import io

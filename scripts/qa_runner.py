@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SwimTech 자동 QA 검증 스크립트 (API 레벨)
+SwimMate 자동 QA 검증 스크립트 (API 레벨)
 ─────────────────────────────────────────────────────────
 하는 일:
   1) 관리자 슈퍼계정 확인/생성 (ADMIN_ID 로 가입 시도 → 이미 있으면 로그인)
@@ -96,7 +96,7 @@ def main():
     ap.add_argument("--no-admin", action="store_true")
     args = ap.parse_args()
     BASE = args.base.rstrip("/")
-    print(f"\n=== SwimTech QA 검증 시작 ===\n대상: {BASE}\n")
+    print(f"\n=== SwimMate QA 검증 시작 ===\n대상: {BASE}\n")
 
     # ── 0. 배포/기본 접속 확인 ──────────────────────────
     print("[0] 배포/기본 접속")

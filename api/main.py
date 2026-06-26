@@ -177,7 +177,7 @@ CREATE INDEX IF NOT EXISTS idx_plan_completions_cid ON plan_completions(customer
 """
 
 app = FastAPI(
-    title="SwimTech API",
+    title="SwimMate API",
     description="수영 훈련 도우미 플랫폼 백엔드",
     version="0.1.0"
 )
@@ -578,9 +578,9 @@ if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
-# --- SwimTech safe HTTP error messages ---
-from fastapi import Request as _SwimTechRequest, HTTPException as _SwimTechHTTPException
-from fastapi.responses import JSONResponse as _SwimTechJSONResponse
+# --- SwimMate safe HTTP error messages ---
+from fastapi import Request as _SwimMateRequest, HTTPException as _SwimMateHTTPException
+from fastapi.responses import JSONResponse as _SwimMateJSONResponse
 
 
 def _swimtech_looks_mojibake(value):
@@ -616,14 +616,14 @@ def _swimtech_default_error_message(status_code):
     return messages.get(status_code, "\uc694\uccad\uc744 \ucc98\ub9ac\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.")
 
 
-@app.exception_handler(_SwimTechHTTPException)
-async def _swimtech_http_exception_handler(request: _SwimTechRequest, exc: _SwimTechHTTPException):
+@app.exception_handler(_SwimMateHTTPException)
+async def _swimtech_http_exception_handler(request: _SwimMateRequest, exc: _SwimMateHTTPException):
     detail = exc.detail
 
     if isinstance(detail, str) and _swimtech_looks_mojibake(detail):
         detail = _swimtech_default_error_message(exc.status_code)
 
-    return _SwimTechJSONResponse(
+    return _SwimMateJSONResponse(
         status_code=exc.status_code,
         content={"detail": detail},
         headers=getattr(exc, "headers", None),

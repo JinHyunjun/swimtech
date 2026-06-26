@@ -1,8 +1,8 @@
-# SwimTech — Claude Code Guide
+# SwimMate — Claude Code Guide
 
 ## Project Overview
 
-SwimTech is a swimming technique analysis web app. It uses AI/ML to analyze swimmer video, provides coaching via chat, and helps users find nearby pools.
+SwimMate is a swimming technique analysis web app. It uses AI/ML to analyze swimmer video, provides coaching via chat, and helps users find nearby pools.
 
 **Stack**: Python (FastAPI backend), HTML/CSS/JS frontend (multi-page), pytest-playwright for E2E tests.
 

@@ -251,10 +251,15 @@ def test_badge_progression_content_is_kept():
 def test_swimtech_branding_is_training_helper_focused():
     login = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
     register = (ROOT / "frontend" / "register.html").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    dashboard = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
     logo = (ROOT / "frontend" / "static" / "icons" / "logo.svg").read_text(encoding="utf-8")
     style = (ROOT / "frontend" / "style.css").read_text(encoding="utf-8")
     api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
 
+    visible_brand_sources = login + register + landing + dashboard + logo + api_main
+    assert "SwimMate" in visible_brand_sources
+    assert "SwimTech" not in visible_brand_sources
     assert "나만의 수영 훈련 도우미" in login
     assert "수영 훈련을 함께 설계해볼까요?" in register
     assert "수영 훈련 도우미" in logo
@@ -262,3 +267,16 @@ def test_swimtech_branding_is_training_helper_focused():
     assert "수영 영법 분석 플랫폼" not in login + logo + api_main
     assert ".logo-img { height: 42px" in style
     assert ".logo { font-size: clamp(22px" in style
+
+
+def test_frontend_visible_branding_uses_swimmate():
+    checked = []
+    for path in (ROOT / "frontend").rglob("*"):
+        if path.suffix.lower() not in {".html", ".svg"}:
+            continue
+        text = path.read_text(encoding="utf-8-sig")
+        checked.append(path.name)
+        assert "SwimTech" not in text, f"old visible brand remains in {path}"
+    assert "SwimMate" in (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    assert "SwimMate" in (ROOT / "frontend" / "static" / "icons" / "logo.svg").read_text(encoding="utf-8")
+    assert checked

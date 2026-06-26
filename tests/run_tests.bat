@@ -5,7 +5,7 @@ REM ── --ai 옵션: AI 분析 전용 테스트 별도 실행 ─────
 if "%1"=="--ai" goto :ai_tests
 
 echo ============================================================
-echo  SwimTech E2E Test Runner
+echo  SwimMate E2E Test Runner
 echo ============================================================
 echo.
 
@@ -79,7 +79,7 @@ if not exist "%SHOT_DIR%" mkdir "%SHOT_DIR%"
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%"
 
 echo ============================================================
-echo  SwimTech AI 분析 전용 테스트 (upload / viewer / meta / analysis)
+echo  SwimMate AI 분析 전용 테스트 (upload / viewer / meta / analysis)
 echo ============================================================
 echo  Date       : %DATESTR%
 echo  Report     : %REPORT_DIR%\report_ai.html

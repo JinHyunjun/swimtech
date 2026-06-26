@@ -1,5 +1,5 @@
 """
-SwimTech E2E Test Suite — pytest-playwright
+SwimMate E2E Test Suite — pytest-playwright
 
 Setup:
     pip install pytest playwright pytest-playwright pytest-html

@@ -1,5 +1,5 @@
 """
-SwimTech — 실시간 분석 스트리밍 엔드포인트
+SwimMate — 실시간 분석 스트리밍 엔드포인트
 GET /stream/analyze?video_key=uploads/1/xxx.mp4
 → Server-Sent Events로 프레임별 분석 결과 실시간 전송
 """

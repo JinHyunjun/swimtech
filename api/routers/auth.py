@@ -1,5 +1,5 @@
 """
-SwimTech — 인증 모듈
+SwimMate — 인증 모듈
 JWT 기반 로컬 로그인 + Google / Kakao 소셜 로그인
 """
 import json

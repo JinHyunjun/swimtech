@@ -1,4 +1,4 @@
-# SwimTech Design Tokens
+# SwimMate Design Tokens
 
 > 포트폴리오 증거 문서 — v2.7.0 기준 토큰 정의
 

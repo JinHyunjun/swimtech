@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SwimTech 자동 QA 검증 스크립트 (UI 레벨 — 실제 브라우저 클릭)
+SwimMate 자동 QA 검증 스크립트 (UI 레벨 — 실제 브라우저 클릭)
 ─────────────────────────────────────────────────────────
 qa_runner.py(API 레벨 체크)와는 별개로, 로그인한 사용자가 보는 모든 메뉴 페이지에
 실제로 들어가서 버튼·탭·칩·아코디언·모달 등 클릭 가능한 요소를 전부 눌러보고,
@@ -513,7 +513,7 @@ def main():
         print("코치-수강생 연동 사전 준비 중...")
         provision_coach_relationship()
 
-    print(f"\n=== SwimTech UI QA 크롤 시작 ===\n대상: {BASE}\n계정: {USERNAME}\n페이지 수: {len(pages)}"
+    print(f"\n=== SwimMate UI QA 크롤 시작 ===\n대상: {BASE}\n계정: {USERNAME}\n페이지 수: {len(pages)}"
           f"{' (+/admin)' if do_admin else ''}\n")
 
     with sync_playwright() as pw:

@@ -1,4 +1,4 @@
-"""SwimTech — Google Sheets 연동 라우터"""
+"""SwimMate — Google Sheets 연동 라우터"""
 import os
 import json
 from datetime import datetime
@@ -161,7 +161,7 @@ async def sheets_save(request: Request, swimtech_token: str = Cookie(default=Non
     try:
         if not sheets_id:
             spreadsheet = service.spreadsheets().create(body={
-                "properties": {"title": "SwimTech 수영 분석 기록"},
+                "properties": {"title": "SwimMate 수영 분석 기록"},
                 "sheets": [{"properties": {"title": "분석 결과"}}],
             }).execute()
             sheets_id = spreadsheet["spreadsheetId"]

@@ -47,12 +47,12 @@ class MetabaseClient:
                 "token": token,
                 "user": {
                     "first_name": "Admin",
-                    "last_name": "SwimTech",
+                    "last_name": "SwimMate",
                     "email": email,
                     "password": password,
-                    "site_name": "SwimTech",
+                    "site_name": "SwimMate",
                 },
-                "prefs": {"site_name": "SwimTech", "allow_tracking": False},
+                "prefs": {"site_name": "SwimMate", "allow_tracking": False},
             }
             r2 = self.session.post(f"{self.base}/api/setup", json=payload)
             if r2.status_code == 200:

@@ -1,5 +1,5 @@
 """
-SwimTech — 알림 라우터
+SwimMate — 알림 라우터
 GET  /api/notifications        — 목록 (최대 50개)
 GET  /api/notifications/count  — 미읽음 수 (30초 폴링용)
 PUT  /api/notifications/read-all — 전체 읽음
