@@ -55,6 +55,7 @@ except ImportError:
 BASE = os.getenv("QA_BASE_URL", "https://swimtech.vercel.app")
 USERNAME = os.getenv("QA_USERNAME", "qabot")
 PASSWORD = os.getenv("QA_PASSWORD", "QaTest1234")
+EMAIL = os.getenv("QA_EMAIL", f"{USERNAME}@example.com")
 
 # /coach 검증용 — qabot을 코치로, 이 계정을 수강생으로 등록해 실제 연동 상태를 만든다
 STUDENT_USERNAME = os.getenv("QA_STUDENT_USERNAME", "qabotstudent")
@@ -123,6 +124,26 @@ ADMIN_CLICKABLE_SELECTOR = ".admin-tab, .log-filter-btn, [data-tab], [data-type]
 
 RESULTS = []  # 페이지별 결과 dict 리스트
 
+PAGE_EXPECTATIONS = {
+    "/dashboard": {
+        "selectors": [".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool"],
+        "texts": ["이번 주 훈련 추천"],
+        "absent_texts": ["P3 Training Advisor"],
+    },
+    "/training-log": {
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal"],
+        "texts": ["이번 달 목표 거리"],
+    },
+    "/report": {
+        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate"],
+        "texts": ["평균 거리 (m)", "플랜 수행률"],
+    },
+    "/plan": {
+        "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
+        "texts": ["내 플랜", "직접 구성"],
+    },
+}
+
 
 def slug(text, n=40):
     s = re.sub(r"[^\w가-힣]+", "_", (text or "")[:n]).strip("_")
@@ -141,7 +162,48 @@ def is_ignored_console(text):
     return any(p.search(text) for p in IGNORE_CONSOLE_PATTERNS)
 
 
-def login(page, username=USERNAME, password=PASSWORD):
+def ensure_user_account(username=None, password=None, email=None, name="QA봇"):
+    username = username or USERNAME
+    password = password or PASSWORD
+    email = email or EMAIL
+    if requests is None:
+        return username, password, email
+    try:
+        s = requests.Session()
+        s.post(f"{BASE}/auth/register", json={
+            "name": name,
+            "email": email,
+            "username": username,
+            "password": password,
+        }, timeout=30)
+        r = s.post(f"{BASE}/auth/login", json={"username": username, "password": password}, timeout=30)
+        if r.status_code == 200:
+            return username, password, email
+
+        suffix = re.sub(r"[^A-Za-z0-9]", "", username)[:4].lower() or "user"
+        fallback_username = f"qa{int(time.time()) % 100000000}{suffix}"
+        fallback_email = f"{fallback_username}@example.com"
+        s2 = requests.Session()
+        reg = s2.post(f"{BASE}/auth/register", json={
+            "name": "QA임시봇",
+            "email": fallback_email,
+            "username": fallback_username,
+            "password": password,
+        }, timeout=30)
+        login_res = s2.post(f"{BASE}/auth/login", json={"username": fallback_username, "password": password}, timeout=30)
+        if login_res.status_code == 200:
+            print(f"⚠ 기본 QA 계정 로그인 실패({r.status_code}) → 임시 계정으로 전환: {fallback_username}")
+            return fallback_username, password, fallback_email
+        raise RuntimeError(
+            f"{username} 로그인 실패({r.status_code}), 임시 계정도 실패(register {reg.status_code}, login {login_res.status_code})"
+        )
+    except Exception as e:
+        raise RuntimeError(f"QA 계정 준비 실패 — {e}")
+
+
+def login(page, username=None, password=None):
+    username = username or USERNAME
+    password = password or PASSWORD
     page.goto(f"{BASE}/login", wait_until="domcontentloaded", timeout=30000)
     page.fill("#username", username)
     page.fill("#password", password)
@@ -152,6 +214,30 @@ def login(page, username=USERNAME, password=PASSWORD):
         pass
     if "/login" in page.url:
         raise RuntimeError(f"로그인 실패 — 계정/비밀번호 확인 필요 (계정: {username})")
+
+
+def check_page_expectations(page, path):
+    expected = PAGE_EXPECTATIONS.get(path)
+    if not expected:
+        return []
+    errors = []
+    for selector in expected.get("selectors", []):
+        try:
+            page.locator(selector).first.wait_for(state="attached", timeout=5000)
+        except Exception:
+            errors.append({"type": "missing_selector", "selector": selector})
+    body_text = ""
+    try:
+        body_text = page.locator("body").inner_text(timeout=3000)
+    except Exception:
+        pass
+    for text in expected.get("texts", []):
+        if text not in body_text:
+            errors.append({"type": "missing_text", "text": text})
+    for text in expected.get("absent_texts", []):
+        if text in body_text:
+            errors.append({"type": "forbidden_text", "text": text})
+    return errors
 
 
 def provision_coach_relationship():
@@ -271,6 +357,13 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
 
     page.screenshot(path=str(SHOT_DIR / f"{slug(path)}_00_load.png"))
 
+    expectation_errors = check_page_expectations(page, path)
+    if expectation_errors:
+        entry["page_errors"].append({
+            "phase": "expectations",
+            "errors": expectation_errors,
+        })
+
     if console_errors or network_errors:
         entry["page_errors"].append({
             "phase": "load",
@@ -360,7 +453,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR):
 
 
 def main():
-    global BASE
+    global BASE, USERNAME, PASSWORD, EMAIL
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=BASE)
     ap.add_argument("--headed", action="store_true")
@@ -372,6 +465,13 @@ def main():
     if args.only:
         wanted = set(args.only.split(","))
         pages = [p for p in PAGES if p[0] in wanted]
+
+    try:
+        USERNAME, PASSWORD, EMAIL = ensure_user_account()
+        print(f"✅ QA 계정 준비 완료: {USERNAME}")
+    except Exception as e:
+        print(f"❌ {e}")
+        sys.exit(2)
 
     do_admin = bool(ADMIN_ID and ADMIN_PW) and (not args.only or "/admin" in args.only.split(","))
     if any(p[0] == "/coach" for p in pages):
@@ -446,15 +546,22 @@ def main():
         print("\n❌ 문제 상세:")
         for page_path, action, detail in total_errors:
             print(f"  [{page_path}] {action}")
-            if isinstance(detail, dict):
-                for c in detail.get("console", []):
+            details = detail if isinstance(detail, list) else [detail]
+            for item in details:
+                if not isinstance(item, dict):
+                    continue
+                if "phase" in item:
+                    print(f"      phase: {item['phase']}")
+                for e in item.get("errors", []):
+                    print(f"      expectation: {e}")
+                for c in item.get("console", []):
                     print(f"      console: {c['text']}")
-                for n in detail.get("network", []):
+                for n in item.get("network", []):
                     print(f"      network: {n['status']} {n['url']}")
-                if "reason" in detail:
-                    print(f"      reason: {detail['reason']}")
-                if "error" in detail:
-                    print(f"      error: {detail['error']}")
+                if "reason" in item:
+                    print(f"      reason: {item['reason']}")
+                if "error" in item:
+                    print(f"      error: {item['error']}")
     print(f"\n  → {REPORT_PATH} / {SHOT_DIR}/ 저장됨")
     sys.exit(1 if total_errors else 0)
 

@@ -153,6 +153,24 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "평균 거리 (m)" in report_page
 
 
+def test_qa_scripts_cover_training_report_and_advisor_flows():
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    qa_workflow = (ROOT / ".github" / "workflows" / "qa.yml").read_text(encoding="utf-8")
+
+    assert "/api/training-log/goal" in api_qa
+    assert "/api/report/monthly" in api_qa
+    assert "/api/dashboard/training-advisor" in api_qa
+    assert "월간 리포트↔훈련 일지 데이터 연동" in api_qa
+    assert "plan_completion" in api_qa
+    assert "avg_distance" in api_qa
+    assert "PAGE_EXPECTATIONS" in ui_qa
+    assert ".advisor-card" in ui_qa
+    assert "#stat-avg" in ui_qa
+    assert "P3 Training Advisor" in ui_qa
+    assert "pip install playwright requests" in qa_workflow
+
+
 def test_plan_p3_improvements_are_kept():
     dashboard_page = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
     dashboard_api = (ROOT / "api" / "routers" / "dashboard.py").read_text(encoding="utf-8")
