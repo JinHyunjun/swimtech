@@ -264,12 +264,23 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "페이지 조회" in admin_page
     assert "listState" in admin_page
     assert "updatePager" in admin_page
+    assert "renderPageNumbers" in admin_page
+    assert "pager-action" in admin_page
+    assert 'id="u-page-numbers"' in admin_page
+    assert 'id="l-page-numbers"' in admin_page
+    assert 'id="f-page-numbers"' in admin_page
+    assert 'data-target="first"' in admin_page
+    assert 'data-target="last"' in admin_page
     assert "page_size" in admin_page
     assert "page_size=100" in qa_api
+    assert "page=2&page_size=20" in qa_api
     assert "event_type=page_view" in qa_api
     assert "#u-page-size" in qa_ui
     assert "#l-page-size" in qa_ui
     assert "#f-page-size" in qa_ui
+    assert "#u-page-numbers" in qa_ui
+    assert "#l-page-numbers" in qa_ui
+    assert "#f-page-numbers" in qa_ui
 
 
 def test_badge_progression_content_is_kept():

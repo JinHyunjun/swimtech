@@ -256,6 +256,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .pager-info {
   min-width: 160px;
@@ -263,7 +264,13 @@
   color: var(--muted);
   font-size: var(--fs-caption);
 }
-.pager-btn {
+.pager-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pager-btn, .pager-page-btn {
   background: var(--bg);
   border: 0.5px solid var(--border);
   color: var(--text);
@@ -275,6 +282,17 @@
 .pager-btn:disabled {
   opacity: .4;
   cursor: not-allowed;
+}
+.pager-page-btn.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #06121c;
+  font-weight: 800;
+}
+.pager-ellipsis {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  padding: 0 3px;
 }
 
 @media (max-width: 760px) {
@@ -355,9 +373,12 @@
           </select>
         </label>
         <div class="pager">
-          <button class="pager-btn" id="u-prev" data-list="users" data-dir="-1">이전</button>
+          <button class="pager-btn pager-action" id="u-first" data-list="users" data-target="first">처음</button>
+          <button class="pager-btn pager-action" id="u-prev" data-list="users" data-dir="-1">이전</button>
+          <span class="pager-pages" id="u-page-numbers"></span>
           <span class="pager-info" id="u-page-info">—</span>
-          <button class="pager-btn" id="u-next" data-list="users" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="u-next" data-list="users" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="u-last" data-list="users" data-target="last">끝</button>
         </div>
       </div>
       <div class="admin-table-wrap">
@@ -491,9 +512,12 @@
           </select>
         </label>
         <div class="pager">
-          <button class="pager-btn" id="l-prev" data-list="logs" data-dir="-1">이전</button>
+          <button class="pager-btn pager-action" id="l-first" data-list="logs" data-target="first">처음</button>
+          <button class="pager-btn pager-action" id="l-prev" data-list="logs" data-dir="-1">이전</button>
+          <span class="pager-pages" id="l-page-numbers"></span>
           <span class="pager-info" id="l-page-info">—</span>
-          <button class="pager-btn" id="l-next" data-list="logs" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="l-next" data-list="logs" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="l-last" data-list="logs" data-target="last">끝</button>
         </div>
       </div>
       <div class="admin-table-wrap">
@@ -528,9 +552,12 @@
           </select>
         </label>
         <div class="pager">
-          <button class="pager-btn" id="f-prev" data-list="feedback" data-dir="-1">이전</button>
+          <button class="pager-btn pager-action" id="f-first" data-list="feedback" data-target="first">처음</button>
+          <button class="pager-btn pager-action" id="f-prev" data-list="feedback" data-dir="-1">이전</button>
+          <span class="pager-pages" id="f-page-numbers"></span>
           <span class="pager-info" id="f-page-info">—</span>
-          <button class="pager-btn" id="f-next" data-list="feedback" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="f-next" data-list="feedback" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="f-last" data-list="feedback" data-target="last">끝</button>
         </div>
       </div>
       <div class="admin-table-wrap">
@@ -555,10 +582,11 @@ const EVENT_LABEL = {
 };
 const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
 const listState = {
-  users: { page: 1, pageSize: 20, q: '' },
-  logs: { page: 1, pageSize: 50, eventType: '' },
-  feedback: { page: 1, pageSize: 50, feedbackType: '' },
+  users: { page: 1, pageSize: 20, q: '', totalPages: 1 },
+  logs: { page: 1, pageSize: 50, eventType: '', totalPages: 1 },
+  feedback: { page: 1, pageSize: 50, feedbackType: '', totalPages: 1 },
 };
+const prefixList = { u: 'users', l: 'logs', f: 'feedback' };
 
 function fmtDate(s) {
   if (!s) return '-';
@@ -575,16 +603,47 @@ function buildQuery(params) {
   return qs.toString();
 }
 function updatePager(prefix, total, page, pageSize) {
+  const list = prefixList[prefix];
   const totalCount = Number(total || 0);
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const start = totalCount ? ((page - 1) * pageSize) + 1 : 0;
-  const end = Math.min(totalCount, page * pageSize);
+  const currentPage = Math.min(Math.max(1, Number(page || 1)), totalPages);
+  if (list && listState[list]) {
+    listState[list].page = currentPage;
+    listState[list].totalPages = totalPages;
+  }
+  const start = totalCount ? ((currentPage - 1) * pageSize) + 1 : 0;
+  const end = Math.min(totalCount, currentPage * pageSize);
   const info = document.getElementById(`${prefix}-page-info`);
+  const numbers = document.getElementById(`${prefix}-page-numbers`);
+  const first = document.getElementById(`${prefix}-first`);
   const prev = document.getElementById(`${prefix}-prev`);
   const next = document.getElementById(`${prefix}-next`);
+  const last = document.getElementById(`${prefix}-last`);
   if (info) info.textContent = totalCount ? `${fmtNumber(start)}-${fmtNumber(end)} / ${fmtNumber(totalCount)}개` : '0개';
-  if (prev) prev.disabled = page <= 1;
-  if (next) next.disabled = page >= totalPages;
+  if (numbers) numbers.innerHTML = renderPageNumbers(list, currentPage, totalPages);
+  if (first) first.disabled = currentPage <= 1;
+  if (prev) prev.disabled = currentPage <= 1;
+  if (next) next.disabled = currentPage >= totalPages;
+  if (last) last.disabled = currentPage >= totalPages;
+}
+function renderPageNumbers(list, currentPage, totalPages) {
+  if (!list) return '';
+  const pages = [];
+  const add = p => {
+    if (p >= 1 && p <= totalPages && !pages.includes(p)) pages.push(p);
+  };
+  add(1);
+  add(2);
+  for (let p = currentPage - 2; p <= currentPage + 2; p++) add(p);
+  add(totalPages - 1);
+  add(totalPages);
+  pages.sort((a, b) => a - b);
+  let prev = 0;
+  return pages.map(p => {
+    const gap = p - prev > 1 ? '<span class="pager-ellipsis">…</span>' : '';
+    prev = p;
+    return `${gap}<button class="pager-page-btn pager-action ${p === currentPage ? 'active' : ''}" data-list="${list}" data-page="${p}" ${p === currentPage ? 'disabled' : ''}>${p}</button>`;
+  }).join('');
 }
 function reloadList(list) {
   if (list === 'users') return loadUsers();
@@ -861,13 +920,21 @@ document.querySelectorAll('.page-size-select').forEach(select => {
   });
 });
 
-document.querySelectorAll('.pager-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const list = btn.dataset.list;
-    if (!listState[list]) return;
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.pager-action');
+  if (!btn) return;
+  const list = btn.dataset.list;
+  if (!listState[list] || btn.disabled) return;
+  if (btn.dataset.target === 'first') {
+    listState[list].page = 1;
+  } else if (btn.dataset.target === 'last') {
+    listState[list].page = listState[list].totalPages || 1;
+  } else if (btn.dataset.page) {
+    listState[list].page = Number(btn.dataset.page);
+  } else {
     listState[list].page = Math.max(1, listState[list].page + Number(btn.dataset.dir || 0));
-    reloadList(list);
-  });
+  }
+  reloadList(list);
 });
 
 // 초기 로드

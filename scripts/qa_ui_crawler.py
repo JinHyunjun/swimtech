@@ -153,8 +153,8 @@ PAGE_EXPECTATIONS = {
         "texts": ["다음으로 노릴 뱃지", "단계별 뱃지 여정"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-training-health", "#h-log-count", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size"],
-        "texts": ["SUPER ADMIN", "훈련 운영", "피드백", "페이지 조회"],
+        "selectors": [".admin-badge", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-training-health", "#h-log-count", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
+        "texts": ["SUPER ADMIN", "훈련 운영", "피드백", "페이지 조회", "처음", "끝"],
     },
 }
 

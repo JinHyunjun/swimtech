@@ -385,16 +385,22 @@ def main():
     if admin_sess:
         admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard", timeout=60)
         admin_users = admin_sess.get(f"{BASE}/api/admin/users?page_size=100", timeout=60)
+        admin_users_page2 = admin_sess.get(f"{BASE}/api/admin/users?page=2&page_size=20", timeout=60)
         admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)
         admin_health = admin_sess.get(f"{BASE}/api/admin/training-health", timeout=60)
         admin_logs = admin_sess.get(f"{BASE}/api/admin/logs", timeout=60)
         admin_page_view_logs = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page_size=100", timeout=60)
+        admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page=2&page_size=20", timeout=60)
         admin_feedback = admin_sess.get(f"{BASE}/api/feedback?page_size=20", timeout=60)
+        admin_feedback_page2 = admin_sess.get(f"{BASE}/api/feedback?page=2&page_size=20", timeout=60)
         users_json = jget(admin_users)
+        users_page2_json = jget(admin_users_page2)
         health_json = jget(admin_health)
         health_summary = health_json.get("summary") or {}
         logs_json = jget(admin_page_view_logs)
+        logs_page2_json = jget(admin_page_view_logs_page2)
         feedback_json = jget(admin_feedback)
+        feedback_page2_json = jget(admin_feedback_page2)
         feedback_items = feedback_json.get("items") or []
         feedback_author_ok = (
             admin_feedback.status_code == 200
@@ -404,11 +410,17 @@ def main():
         admin_paging_ok = (
             admin_users.status_code == 200
             and users_json.get("page_size") == 100
+            and admin_users_page2.status_code == 200
+            and users_page2_json.get("page") == 2
             and admin_page_view_logs.status_code == 200
             and logs_json.get("page_size") == 100
             and logs_json.get("page") == 1
             and "total" in logs_json
+            and admin_page_view_logs_page2.status_code == 200
+            and logs_page2_json.get("page") == 2
             and feedback_json.get("page_size") == 20
+            and admin_feedback_page2.status_code == 200
+            and feedback_page2_json.get("page") == 2
         )
         admin_ok = (
             admin_dashboard.status_code == 200
@@ -426,9 +438,9 @@ def main():
         rec("18b", "관리자 훈련 운영 API", admin_ok,
             f"dashboard {admin_dashboard.status_code}, activity {admin_activity.status_code}, "
             f"training-health {admin_health.status_code}, logs {admin_logs.status_code}, "
-            f"users {admin_users.status_code}/page_size={users_json.get('page_size')}, "
-            f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}, "
-            f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}, "
+            f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
+            f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "
+            f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}/page2={feedback_page2_json.get('page')}, "
             f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
