@@ -246,6 +246,32 @@ def test_admin_feedback_shows_author_nickname_contract():
     assert "#f-body" in qa_ui
 
 
+def test_admin_lists_support_page_size_and_page_view_filter():
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    feedback_api = (ROOT / "api" / "routers" / "feedback.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "_normalize_page_size" in admin_api
+    assert "_normalize_page_size" in feedback_api
+    assert '"total": total' in admin_api
+    assert "event_type = %s" in admin_api
+    assert 'id="u-page-size"' in admin_page
+    assert 'id="l-page-size"' in admin_page
+    assert 'id="f-page-size"' in admin_page
+    assert 'data-type="page_view"' in admin_page
+    assert "페이지 조회" in admin_page
+    assert "listState" in admin_page
+    assert "updatePager" in admin_page
+    assert "page_size" in admin_page
+    assert "page_size=100" in qa_api
+    assert "event_type=page_view" in qa_api
+    assert "#u-page-size" in qa_ui
+    assert "#l-page-size" in qa_ui
+    assert "#f-page-size" in qa_ui
+
+
 def test_badge_progression_content_is_kept():
     badge_api = (ROOT / "api" / "routers" / "badge.py").read_text(encoding="utf-8")
     badge_page = (ROOT / "frontend" / "badge.html").read_text(encoding="utf-8")

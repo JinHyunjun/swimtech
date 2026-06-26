@@ -63,6 +63,14 @@ def _resolve_author(cur, swimtech_token: str | None):
     return customer_id, username
 
 
+def _normalize_page_size(value, default=50):
+    try:
+        size = int(value or default)
+    except Exception:
+        size = default
+    return size if size in (20, 50, 100) else default
+
+
 class FeedbackRequest(BaseModel):
     feedback_type: str
     page: str
@@ -111,6 +119,8 @@ def list_feedback(
     _ensure_table()
     conn = _get_db()
     cur = conn.cursor()
+    page = max(1, int(page or 1))
+    page_size = _normalize_page_size(page_size, 50)
     offset = max(0, (page - 1) * page_size)
 
     author_join = """

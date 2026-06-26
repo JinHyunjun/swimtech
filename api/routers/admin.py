@@ -65,6 +65,11 @@ def _safe_float(value, default=0.0):
         return default
 
 
+def _normalize_page_size(value, default=20):
+    size = _safe_int(value, default)
+    return size if size in (20, 50, 100) else default
+
+
 def _require_admin(swimtech_token: str):
     """role='admin' 우선 확인, 없으면 ADMIN_ID 폴백(과도기 호환)."""
     if not swimtech_token:
@@ -187,6 +192,8 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
     _require_admin(swimtech_token)
     conn = _get_db()
     cur = conn.cursor()
+    page = max(1, _safe_int(page, 1))
+    page_size = _normalize_page_size(page_size, 20)
     offset = max(0, (page - 1) * page_size)
 
     if q:
@@ -220,7 +227,13 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
         "last_login_at": str(r[7]) if r[7] else None, "status": r[8],
     } for r in cur.fetchall()]
 
-    cur.execute("SELECT COUNT(*) FROM customers")
+    if q:
+        cur.execute("""
+            SELECT COUNT(*) FROM customers
+            WHERE (name ILIKE %s OR email ILIKE %s OR username ILIKE %s OR nickname ILIKE %s)
+        """, (like, like, like, like))
+    else:
+        cur.execute("SELECT COUNT(*) FROM customers")
     total = cur.fetchone()[0]
     cur.close()
     conn.close()
@@ -478,6 +491,8 @@ def get_logs(swimtech_token: str = Cookie(default=None), event_type: str = None,
     _ensure_table()
     conn = _get_db()
     cur = conn.cursor()
+    page = max(1, _safe_int(page, 1))
+    page_size = _normalize_page_size(page_size, 50)
     offset = max(0, (page - 1) * page_size)
 
     if event_type:
@@ -502,6 +517,12 @@ def get_logs(swimtech_token: str = Cookie(default=None), event_type: str = None,
         "created_at": str(r[8]), "metadata": r[9],
     } for r in cur.fetchall()]
 
+    if event_type:
+        cur.execute("SELECT COUNT(*) FROM user_activity_logs WHERE event_type = %s", (event_type,))
+    else:
+        cur.execute("SELECT COUNT(*) FROM user_activity_logs")
+    total = cur.fetchone()[0]
+
     cur.close()
     conn.close()
-    return {"logs": logs, "page": page, "page_size": page_size}
+    return {"logs": logs, "total": total, "page": page, "page_size": page_size}
