@@ -115,6 +115,36 @@
   .btn:hover { background: #0096c7; box-shadow: 0 4px 16px rgba(0,180,216,0.3); }
   .btn:disabled { background: var(--border); cursor: not-allowed; }
 
+  .btn-demo {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    color: #e8f4f8;
+    border: 0.5px solid rgba(72,202,228,0.35);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+
+  .btn-demo:hover {
+    border-color: #48cae4;
+    background: rgba(72,202,228,0.12);
+    box-shadow: 0 4px 16px rgba(72,202,228,0.18);
+  }
+
+  .btn-demo:disabled { opacity: .55; cursor: not-allowed; }
+
+  .demo-note {
+    color: #90c4d4;
+    font-size: 11px;
+    line-height: 1.55;
+    text-align: center;
+    margin-top: 8px;
+  }
+
   .error {
     background: rgba(248, 113, 113, 0.1);
     border: 0.5px solid rgba(248, 113, 113, 0.3);
@@ -207,6 +237,8 @@
   </div>
 
   <button class="btn" id="login-btn" onclick="doLogin()">로그인</button>
+  <button class="btn-demo" id="demo-btn" onclick="startDemo()">비회원 체험 시작</button>
+  <div class="demo-note">회원가입 없이 샘플 훈련 일지·리포트·뱃지를 바로 둘러볼 수 있어요.</div>
 
   <div class="error" id="error-msg"></div>
 
@@ -277,6 +309,33 @@ async function doLogin() {
   }
 }
 
+async function startDemo() {
+  const btn = document.getElementById('demo-btn');
+  const errMsg = document.getElementById('error-msg');
+  btn.disabled = true;
+  btn.textContent = '체험 모드 준비 중...';
+  errMsg.style.display = 'none';
+
+  try {
+    const res = await fetch('/auth/demo', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showError(data.detail || '체험 모드를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    localStorage.setItem('onboarding_done', '1');
+    window.location.href = data.redirect || '/dashboard';
+  } catch (e) {
+    showError('서버에 연결할 수 없습니다.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '비회원 체험 시작';
+  }
+}
+
 function showError(msg) {
   const el = document.getElementById('error-msg');
   el.textContent     = msg;
@@ -295,4 +354,3 @@ function showError(msg) {
 <script src="/static/theme.js"></script>
 </body>
 </html>
-

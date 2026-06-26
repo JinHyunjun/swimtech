@@ -165,11 +165,15 @@ def test_qa_scripts_cover_training_report_and_advisor_flows():
     assert "/api/report/monthly" in api_qa
     assert "/api/dashboard/training-advisor" in api_qa
     assert "/api/admin/training-health" in api_qa
+    assert "/auth/demo" in api_qa
+    assert "Portfolio demo mode" in api_qa
     assert "월간 리포트↔훈련 일지 데이터 연동" in api_qa
     assert "관리자 훈련 운영 API" in api_qa
     assert "plan_completion" in api_qa
     assert "avg_distance" in api_qa
     assert "PAGE_EXPECTATIONS" in ui_qa
+    assert "#demo-btn" in ui_qa
+    assert "check_public_demo_entry" in ui_qa
     assert ".advisor-card" in ui_qa
     assert "#stat-avg" in ui_qa
     assert "[data-tab='training-health']" in ui_qa
@@ -180,6 +184,39 @@ def test_qa_scripts_cover_training_report_and_advisor_flows():
     assert '@router.get("/training-health")' in admin_api
     assert "훈련 운영" in admin_page
     assert "새 기능 / 새 화면 / 새 API는 반드시" in checklist
+
+
+def test_portfolio_demo_mode_contract():
+    auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
+    login_page = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
+    dashboard_page = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert '@router.post("/demo")' in auth_api
+    assert "DEMO_USERNAME" in auth_api
+    assert "portfolio_demo" in auth_api
+    assert "_ensure_demo_user_and_seed" in auth_api
+    assert "create_token(DEMO_USERNAME, customer_id, is_demo=True)" in auth_api
+    assert "create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True)" in auth_api
+    assert "training_logs" in auth_api
+    assert "training_goals" in auth_api
+    assert "plan_completions" in auth_api
+    assert "user_badges" in auth_api
+    assert '"is_demo":         is_demo' in auth_api
+    assert 'payload.get("is_demo")' in auth_api
+    assert "demo-btn" in login_page
+    assert "startDemo" in login_page
+    assert "/auth/demo" in login_page
+    assert "onboarding_done" in login_page
+    assert "demo-banner" in dashboard_page
+    assert "me.is_demo" in dashboard_page
+    assert "/auth/demo" in api_qa
+    assert "Portfolio demo mode" in api_qa
+    assert "#demo-btn" in ui_qa
+    assert "check_public_demo_entry" in ui_qa
+    assert "포트폴리오 비회원 체험 모드" in checklist
 
 
 def test_plan_p3_improvements_are_kept():

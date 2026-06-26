@@ -2,11 +2,10 @@
 SwimMate — 인증 모듈
 JWT 기반 로컬 로그인 + Google / Kakao 소셜 로그인
 """
-import json
 import logging
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
@@ -35,6 +34,10 @@ LOGIN_FAIL_EXPIRE = 900  # 15분 (초)
 
 ADMIN_ID = os.getenv("ADMIN_ID", "admin")
 ADMIN_PW = os.getenv("ADMIN_PW", "swimtech1234")
+DEMO_USERNAME = os.getenv("DEMO_USERNAME", "portfolio_demo")
+DEMO_EMAIL = os.getenv("DEMO_EMAIL", "portfolio-demo@swimmate.local")
+DEMO_NAME = os.getenv("DEMO_NAME", "비회원 체험 사용자")
+DEMO_NICKNAME = os.getenv("DEMO_NICKNAME", "체험 사용자")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 REDIS_URL    = os.getenv("REDIS_URL", "redis://redis:6379/0")
@@ -166,19 +169,23 @@ class NicknameRequest(BaseModel):
 
 # ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
 
-def create_token(username: str, customer_id: int | None = None) -> str:
+def create_token(username: str, customer_id: int | None = None, is_demo: bool = False) -> str:
     expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
     payload = {"sub": username, "exp": expire}
     if customer_id is not None:
         payload["customer_id"] = customer_id
+    if is_demo:
+        payload["is_demo"] = True
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(username: str, customer_id: int | None = None) -> str:
+def create_refresh_token(username: str, customer_id: int | None = None, is_demo: bool = False) -> str:
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     payload = {"sub": username, "exp": expire, "type": "refresh"}
     if customer_id is not None:
         payload["customer_id"] = customer_id
+    if is_demo:
+        payload["is_demo"] = True
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -277,6 +284,142 @@ def _find_or_create_social_user(
 
 
 # ── 로컬 인증 ─────────────────────────────────────────────────────────────────
+
+def _ensure_demo_user_and_seed() -> int:
+    if not DATABASE_URL:
+        raise HTTPException(503, "체험 모드는 데이터베이스 연결이 필요합니다.")
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_provider TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS social_id TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS nickname TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS role TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS status TEXT")
+        cur.execute("ALTER TABLE customers ADD COLUMN IF NOT EXISTS weekly_goal INTEGER NOT NULL DEFAULT 3")
+        cur.execute("ALTER TABLE training_logs ADD COLUMN IF NOT EXISTS used_fins BOOLEAN NOT NULL DEFAULT FALSE")
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name='training_goals' AND column_name='username'
+        """)
+        if cur.fetchone():
+            cur.execute("DROP TABLE IF EXISTS training_goals")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS training_goals (
+                id            SERIAL PRIMARY KEY,
+                customer_id   INTEGER NOT NULL,
+                year          INTEGER NOT NULL,
+                month         INTEGER NOT NULL,
+                goal_distance INTEGER NOT NULL DEFAULT 0,
+                created_at    TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE (customer_id, year, month)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS plan_completions (
+                id           SERIAL PRIMARY KEY,
+                customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                plan_key     VARCHAR(50) NOT NULL,
+                week_index   INTEGER NOT NULL,
+                day_label    VARCHAR(20) NOT NULL,
+                training_log_id INTEGER REFERENCES training_logs(id) ON DELETE SET NULL,
+                completed_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE (customer_id, plan_key, week_index, day_label)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_badges (
+                id        SERIAL PRIMARY KEY,
+                username  VARCHAR(100) NOT NULL,
+                badge_id  VARCHAR(100) NOT NULL,
+                earned_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE (username, badge_id)
+            )
+        """)
+
+        disabled_hash = bcrypt.hashpw(os.urandom(24), bcrypt.gensalt()).decode("utf-8")
+        cur.execute(
+            """
+            INSERT INTO customers
+                (name, email, username, password_hash, social_provider, social_id, nickname, weekly_goal, role, status)
+            VALUES (%s, %s, %s, %s, 'demo', 'portfolio', %s, 3, NULL, 'active')
+            ON CONFLICT (username) DO UPDATE SET
+                name = EXCLUDED.name,
+                password_hash = EXCLUDED.password_hash,
+                social_provider = 'demo',
+                social_id = 'portfolio',
+                nickname = EXCLUDED.nickname,
+                weekly_goal = 3,
+                role = NULL,
+                status = 'active'
+            RETURNING id
+            """,
+            (DEMO_NAME, DEMO_EMAIL, DEMO_USERNAME, disabled_hash, DEMO_NICKNAME),
+        )
+        customer_id = cur.fetchone()[0]
+
+        cur.execute("DELETE FROM plan_completions WHERE customer_id = %s", (customer_id,))
+        cur.execute("DELETE FROM training_goals WHERE customer_id = %s", (customer_id,))
+        cur.execute("DELETE FROM training_logs WHERE customer_id = %s", (customer_id,))
+        cur.execute("DELETE FROM user_badges WHERE username = %s", (DEMO_USERNAME,))
+
+        today = date.today()
+        sample_logs = [
+            (today, "자유형", 1700, 42, 25, "보통", "좋음", "체험 데이터: 자유형 지구력 + 킥 정리", False),
+            (today - timedelta(days=2), "배영", 1400, 36, 25, "쉬움", "좋음", "체험 데이터: 배영 롤링 감각", False),
+            (today - timedelta(days=4), "자유형", 2200, 55, 50, "힘듦", "최고", "체험 데이터: 50m 풀 페이스 훈련", True),
+            (today - timedelta(days=7), "평영", 1200, 34, 25, "보통", "보통", "체험 데이터: 호흡 타이밍 교정", False),
+            (today - timedelta(days=10), "접영", 900, 28, 25, "힘듦", "좋음", "체험 데이터: 짧은 대시와 회복", False),
+            (today - timedelta(days=13), "자유형", 1600, 40, 50, "보통", "좋음", "체험 데이터: 25m/50m 차이 비교", False),
+        ]
+        log_ids = []
+        for row in sample_logs:
+            cur.execute(
+                """
+                INSERT INTO training_logs
+                    (customer_id, log_date, stroke_type, total_distance, duration_minutes,
+                     pool_length, intensity, mood, memo, used_fins)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (customer_id, *row),
+            )
+            log_ids.append(cur.fetchone()[0])
+
+        cur.execute(
+            """
+            INSERT INTO training_goals (customer_id, year, month, goal_distance)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (customer_id, year, month)
+            DO UPDATE SET goal_distance = EXCLUDED.goal_distance, created_at = NOW()
+            """,
+            (customer_id, today.year, today.month, 12000),
+        )
+
+        for idx, log_id in enumerate(log_ids[:2]):
+            cur.execute(
+                """
+                INSERT INTO plan_completions
+                    (customer_id, plan_key, week_index, day_label, training_log_id)
+                VALUES (%s, 'demo_foundation_4w', 0, %s, %s)
+                ON CONFLICT (customer_id, plan_key, week_index, day_label)
+                DO UPDATE SET training_log_id = EXCLUDED.training_log_id,
+                              completed_at = NOW()
+                """,
+                (customer_id, f"Day {idx + 1}", log_id),
+            )
+
+        conn.commit()
+        return int(customer_id)
+    except Exception:
+        conn.rollback()
+        logger.exception("demo login seed failed")
+        raise HTTPException(500, "체험 모드 준비 중 오류가 발생했습니다.")
+    finally:
+        cur.close()
+        conn.close()
+
 
 @router.post("/register")
 def register(body: RegisterRequest):
@@ -412,6 +555,31 @@ def login(request: Request, body: LoginRequest, response: Response):
     return {"status": "ok", "message": f"{body.username}님 환영합니다!", "is_admin": is_admin}
 
 
+@router.post("/demo")
+@limiter.limit("20/minute")
+def demo_login(request: Request, response: Response):
+    customer_id = _ensure_demo_user_and_seed()
+    token = create_token(DEMO_USERNAME, customer_id, is_demo=True)
+    refresh = create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True)
+    _set_auth_cookie(response, token)
+    _set_refresh_cookie(response, refresh)
+    log_activity(
+        customer_id=customer_id,
+        username=DEMO_USERNAME,
+        event_type="login_success",
+        action="demo_login",
+        ip_address=_get_client_ip(request),
+        metadata={"mode": "portfolio_demo"},
+    )
+    return {
+        "status": "ok",
+        "message": "체험 모드로 시작합니다.",
+        "is_admin": False,
+        "is_demo": True,
+        "redirect": "/dashboard",
+    }
+
+
 @router.post("/refresh")
 def refresh_token_endpoint(
     response: Response,
@@ -427,8 +595,9 @@ def refresh_token_endpoint(
         raise HTTPException(401, "?좏슚?섏? ?딆? ?좏겙 ??낆엯?덈떎.")
     username    = payload.get("sub")
     customer_id = payload.get("customer_id")
-    token = create_token(username, customer_id)
-    new_refresh = create_refresh_token(username, customer_id)
+    is_demo = bool(payload.get("is_demo"))
+    token = create_token(username, customer_id, is_demo=is_demo)
+    new_refresh = create_refresh_token(username, customer_id, is_demo=is_demo)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, new_refresh)
     return {"status": "ok", "message": "토큰이 갱신되었습니다."}
@@ -457,6 +626,8 @@ def delete_me(response: Response, swimtech_token: str = Cookie(default=None)):
     payload = decode_token(swimtech_token)
     username = payload.get("sub")
     customer_id = payload.get("customer_id")
+    if payload.get("is_demo"):
+        raise HTTPException(400, "체험 모드 계정은 탈퇴할 수 없습니다.")
 
     if not username:
         raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
@@ -548,6 +719,7 @@ def me(swimtech_token: str = Cookie(default=None)):
         raise HTTPException(401, "로그인이 필요합니다.")
     payload = decode_token(swimtech_token)
     username = payload.get("sub")
+    is_demo = bool(payload.get("is_demo"))
     if not username:
         raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
 
@@ -582,7 +754,8 @@ def me(swimtech_token: str = Cookie(default=None)):
         "status":          "authenticated",
         "nickname":        nickname,
         "social_provider": social_provider,
-        "needs_nickname":  nickname is None,
+        "needs_nickname":  False if is_demo else nickname is None,
+        "is_demo":         is_demo,
     }
 
 
@@ -591,6 +764,8 @@ def set_nickname(body: NicknameRequest, swimtech_token: str = Cookie(default=Non
     if not swimtech_token:
         raise HTTPException(401, "로그인이 필요합니다.")
     payload = decode_token(swimtech_token)
+    if payload.get("is_demo"):
+        raise HTTPException(400, "체험 모드에서는 닉네임을 변경할 수 없습니다.")
     username_in_token = payload.get("sub")
     if not username_in_token:
         raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")

@@ -131,6 +131,9 @@ ADMIN_CLICKABLE_SELECTOR = ".admin-tab, .log-filter-btn, [data-tab], [data-type]
 RESULTS = []  # 페이지별 결과 dict 리스트
 
 PAGE_EXPECTATIONS = {
+    "/login": {
+        "selectors": ["#login-btn", "#demo-btn"],
+    },
     "/dashboard": {
         "selectors": [".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool"],
         "texts": ["이번 주 훈련 추천"],
@@ -275,6 +278,30 @@ def check_page_expectations(page, path):
         if text in body_text:
             errors.append({"type": "forbidden_text", "text": text})
     return errors
+
+
+def check_public_demo_entry(context):
+    page = context.new_page()
+    entry = {"page": "/login", "label": "Portfolio demo entry", "actions": [], "page_errors": []}
+    try:
+        page.goto(f"{BASE}/login", wait_until="domcontentloaded", timeout=30000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except PWTimeout:
+            pass
+        expectation_errors = check_page_expectations(page, "/login")
+        if expectation_errors:
+            entry["page_errors"].append({"phase": "expectations", "errors": expectation_errors})
+    except Exception as e:
+        entry["page_errors"].append({"phase": "load", "error": str(e)[:200]})
+    finally:
+        try:
+            page.close()
+        except Exception:
+            pass
+    RESULTS.append(entry)
+    mark = "FAIL" if entry["page_errors"] else "PASS"
+    print(f"[Portfolio demo entry] /login {mark}")
 
 
 def provision_coach_relationship():
@@ -519,6 +546,7 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=not args.headed)
         context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
+        check_public_demo_entry(context)
         login_page = context.new_page()
 
         try:

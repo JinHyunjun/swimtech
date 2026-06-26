@@ -147,6 +147,7 @@ def test_login_form_visible(browser, browser_context_args):
         expect(page.locator("#username")).to_be_visible()
         expect(page.locator("#password")).to_be_visible()
         expect(page.locator("#login-btn")).to_be_visible()
+        expect(page.locator("#demo-btn")).to_be_visible()
         shot(page, "02_login_form")
     finally:
         page.close()

@@ -183,6 +183,30 @@ def main():
     rec(6, "닉네임 설정", expected, f"{r.status_code} ({note})")
 
     year, month = this_month()
+
+    demo_sess = requests.Session()
+    demo_login = demo_sess.post(f"{BASE}/auth/demo", timeout=60)
+    demo_me = demo_sess.get(f"{BASE}/auth/me", timeout=60)
+    demo_summary = demo_sess.get(f"{BASE}/api/dashboard/summary", timeout=60)
+    demo_report = demo_sess.get(month_url("/api/report/monthly", year, month), timeout=60)
+    demo_me_json = jget(demo_me)
+    demo_summary_json = jget(demo_summary)
+    demo_report_json = jget(demo_report)
+    demo_ok = (
+        demo_login.status_code == 200
+        and demo_me.status_code == 200
+        and demo_me_json.get("is_demo") is True
+        and demo_summary.status_code == 200
+        and to_int(demo_summary_json.get("total_logs")) >= 6
+        and to_int(demo_summary_json.get("total_distance")) > 0
+        and demo_report.status_code == 200
+        and to_int(demo_report_json.get("total_distance")) > 0
+    )
+    rec("6b", "Portfolio demo mode (/auth/demo)", demo_ok,
+        f"login {demo_login.status_code}, me {demo_me.status_code}/demo={demo_me_json.get('is_demo')}, "
+        f"summary {demo_summary.status_code}/logs={demo_summary_json.get('total_logs')}/distance={demo_summary_json.get('total_distance')}, "
+        f"report {demo_report.status_code}/distance={demo_report_json.get('total_distance')}")
+
     baseline_stats = {}
     baseline_report = {}
     try:
