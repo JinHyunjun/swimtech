@@ -365,6 +365,23 @@ def main():
     rec(18, "대시보드 주간 목표/훈련 어드바이저", dashboard_ok,
         f"summary {summary.status_code}, weekly {weekly.status_code}, advisor {advisor.status_code}, focus={advisor_json.get('focus')}")
 
+    badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
+    badges_json = jget(badges_res)
+    badge_ids = {b.get("id") for b in badges_json.get("badges", [])}
+    badge_ok = (
+        badges_res.status_code == 200
+        and "first_log" in badge_ids
+        and "log_count_5" in badge_ids
+        and "plan_runner_1" in badge_ids
+        and "monthly_goal_set" in badge_ids
+        and "pool_dual" in badge_ids
+        and isinstance(badges_json.get("series_groups"), list)
+        and isinstance(badges_json.get("next_badges"), list)
+        and badges_json.get("total_count", 0) >= 30
+    )
+    rec("18c", "단계형 뱃지 API", badge_ok,
+        f"{badges_res.status_code}, total={badges_json.get('total_count')}, next={len(badges_json.get('next_badges', []))}")
+
     if admin_sess:
         admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard", timeout=60)
         admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)

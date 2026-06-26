@@ -69,6 +69,121 @@
   background: linear-gradient(90deg, #00b4d8, #48cae4);
   transition: width .8s ease;
 }
+.next-badge-panel {
+  background: linear-gradient(135deg, rgba(0,180,216,.16), rgba(72,202,228,.05) 52%, var(--surface));
+  border: 0.5px solid rgba(72,202,228,.28);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.next-badge-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.next-badge-title {
+  color: var(--text);
+  font-size: var(--fs-body-lg);
+  font-weight: 800;
+}
+.next-badge-sub {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+.next-badge-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.next-badge-card {
+  background: rgba(2,14,24,.28);
+  border: 0.5px solid rgba(255,255,255,.08);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  cursor: pointer;
+}
+.next-badge-kicker {
+  color: var(--cyan);
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.next-badge-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.next-badge-emoji { font-size: var(--fs-heading); }
+
+.series-grid {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.badge-stage-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+.stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.stage-title {
+  color: var(--text);
+  font-size: var(--fs-body-lg);
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.stage-desc {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+.stage-count {
+  flex: 0 0 auto;
+  color: var(--cyan);
+  font-size: var(--fs-caption);
+  font-weight: 800;
+  border: 0.5px solid rgba(72,202,228,.28);
+  border-radius: var(--radius-pill);
+  padding: 5px 10px;
+  background: rgba(0,180,216,.08);
+}
+.stage-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.stage-step {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: rgba(255,255,255,.025);
+}
+.stage-step.earned {
+  border-color: rgba(74,222,128,.32);
+  background: rgba(74,222,128,.06);
+}
+.stage-step.next {
+  border-color: rgba(0,180,216,.5);
+  background: rgba(0,180,216,.09);
+  box-shadow: 0 0 0 1px rgba(0,180,216,.08) inset;
+}
+.stage-step-emoji { font-size: var(--fs-heading); margin-bottom: 5px; }
+.stage-step-name { color: var(--text); font-weight: 800; font-size: var(--fs-caption); line-height: 1.35; }
+.stage-step-state { color: var(--muted); font-size: 11px; margin-top: 4px; }
 
 /* 뱃지 그리드 */
 .badge-section-title {
@@ -192,7 +307,7 @@
 }
 .modal-emoji { font-size: var(--fs-display); margin-bottom: 14px; }
 .modal-name  { font-size: var(--fs-title); font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.modal-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+.modal-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.7; margin-bottom: 16px; white-space: pre-line; }
 .modal-status {
   display: inline-block;
   padding: 6px 18px;
@@ -240,6 +355,21 @@
       </div>
     </div>
 
+    <!-- 다음 목표 -->
+    <div class="next-badge-panel" id="next-badge-panel">
+      <div class="next-badge-head">
+        <div>
+          <div class="next-badge-title">다음으로 노릴 뱃지</div>
+          <div class="next-badge-sub">각 여정에서 아직 열리지 않은 첫 단계예요</div>
+        </div>
+      </div>
+      <div class="next-badge-list" id="next-badge-list"></div>
+    </div>
+
+    <!-- 단계별 여정 -->
+    <div class="badge-section-title">🧭 단계별 뱃지 여정</div>
+    <div id="series-grid" class="series-grid"></div>
+
     <!-- 획득 뱃지 -->
     <div class="badge-section-title">✅ 획득한 뱃지</div>
     <div id="earned-grid" class="badge-grid"></div>
@@ -275,7 +405,8 @@ function closeModal(e) {
 function openModal(badge) {
   document.getElementById('m-emoji').textContent  = badge.emoji;
   document.getElementById('m-name').textContent   = badge.name;
-  document.getElementById('m-desc').textContent   = badge.description;
+  document.getElementById('m-desc').textContent   =
+    `${badge.description}${badge.series_label ? `\n${badge.series_label} ${badge.step}/${badge.total_steps}단계` : ''}`;
   const st = document.getElementById('m-status');
   if (badge.earned) {
     st.textContent  = '✅ 획득 완료';
@@ -287,11 +418,23 @@ function openModal(badge) {
   document.getElementById('modal').classList.add('open');
 }
 
+function openModalById(badgeId) {
+  const badge = _badges.find(b => b.id === badgeId);
+  if (badge) openModal(badge);
+}
+
+function formatProgress(p) {
+  if (!p) return '0 / 1';
+  const current = Number.isInteger(p.current) ? p.current : Number(p.current || 0).toLocaleString(undefined, {maximumFractionDigits: 1});
+  const target = Number.isInteger(p.target) ? p.target : Number(p.target || 0).toLocaleString(undefined, {maximumFractionDigits: 1});
+  return `${current}${p.unit || ''} / ${target}${p.unit || ''}`;
+}
+
 function renderBadge(b) {
   const p = b.progress;
   const pctBar = b.earned ? 100 : p.percent;
   return `
-    <div class="badge-card ${b.earned ? 'earned' : 'locked'}" onclick='openModal(${JSON.stringify(b)})'>
+    <div class="badge-card ${b.earned ? 'earned' : 'locked'}" onclick="openModalById('${b.id}')">
       ${b.earned ? '<div class="badge-check">✅</div>' : ''}
       <div class="badge-emoji">${b.emoji}</div>
       <div class="badge-name">${b.name}</div>
@@ -300,9 +443,60 @@ function renderBadge(b) {
         <div class="badge-mini-progress">
           <div class="badge-mini-fill" style="width:${pctBar}%"></div>
         </div>
-        <div class="badge-mini-label">${p.current} / ${p.target}</div>
+        <div class="badge-mini-label">${formatProgress(p)}</div>
       ` : ''}
     </div>`;
+}
+
+function renderNextBadges(items) {
+  const wrap = document.getElementById('next-badge-list');
+  const panel = document.getElementById('next-badge-panel');
+  if (!items || !items.length) {
+    wrap.innerHTML = '<div class="next-badge-card"><div class="next-badge-main">🎉 모든 단계형 뱃지를 열었어요!</div><div class="badge-desc">새로운 훈련을 계속 기록하며 다음 업데이트를 기다려주세요.</div></div>';
+    panel.style.display = 'block';
+    return;
+  }
+  panel.style.display = 'block';
+  wrap.innerHTML = items.map(b => `
+    <div class="next-badge-card" onclick="openModalById('${b.id}')">
+      <div class="next-badge-kicker">${b.series_label || '다음 단계'} · ${b.step || 1}/${b.total_steps || 1}단계</div>
+      <div class="next-badge-main"><span class="next-badge-emoji">${b.emoji}</span><span>${b.name}</span></div>
+      <div class="badge-desc">${b.condition_label}</div>
+      <div class="badge-mini-progress"><div class="badge-mini-fill" style="width:${b.progress?.percent || 0}%"></div></div>
+      <div class="badge-mini-label">${formatProgress(b.progress)}</div>
+    </div>
+  `).join('');
+}
+
+function renderSeries(groups) {
+  const wrap = document.getElementById('series-grid');
+  if (!groups || !groups.length) {
+    wrap.innerHTML = '<div style="color:var(--muted);font-size: var(--fs-body);">단계형 뱃지를 불러오지 못했어요.</div>';
+    return;
+  }
+  wrap.innerHTML = groups.map(g => {
+    const nextId = g.next_badge?.id;
+    const steps = (g.badges || []).map(b => `
+      <div class="stage-step ${b.earned ? 'earned' : ''} ${b.id === nextId ? 'next' : ''}" onclick="openModalById('${b.id}')">
+        <div class="stage-step-emoji">${b.emoji}</div>
+        <div class="stage-step-name">${b.name}</div>
+        <div class="stage-step-state">${b.earned ? '획득 완료' : (b.id === nextId ? '다음 단계' : `${b.step}단계`)}</div>
+      </div>
+    `).join('');
+    return `
+      <section class="badge-stage-card">
+        <div class="stage-head">
+          <div>
+            <div class="stage-title">${g.label}</div>
+            <div class="stage-desc">${g.description}</div>
+          </div>
+          <div class="stage-count">${g.completed_steps}/${g.total_steps}</div>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${g.percent || 0}%"></div></div>
+        <div class="stage-steps">${steps}</div>
+      </section>
+    `;
+  }).join('');
 }
 
 async function loadBadges() {
@@ -317,6 +511,8 @@ async function loadBadges() {
     document.getElementById('prog-total').textContent  = data.total_count;
     const pct = data.total_count ? Math.round(data.earned_count / data.total_count * 100) : 0;
     document.getElementById('prog-bar').style.width = pct + '%';
+    renderNextBadges(data.next_badges || []);
+    renderSeries(data.series_groups || []);
 
     const earned = _badges.filter(b => b.earned);
     const locked = _badges.filter(b => !b.earned);

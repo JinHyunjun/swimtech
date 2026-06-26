@@ -224,6 +224,30 @@ def test_plan_p4_admin_quality_gate_is_kept():
     assert "운영 QA 스크립트 갱신 규칙" in claude
 
 
+def test_badge_progression_content_is_kept():
+    badge_api = (ROOT / "api" / "routers" / "badge.py").read_text(encoding="utf-8")
+    badge_page = (ROOT / "frontend" / "badge.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert "BADGE_SERIES" in badge_api
+    assert "log_count_100" in badge_api
+    assert "log_dist_500km" in badge_api
+    assert "plan_runner_12" in badge_api
+    assert "monthly_goal_achiever" in badge_api
+    assert "pool_dual" in badge_api
+    assert "series_groups" in badge_api
+    assert "next_badges" in badge_api
+    assert "다음으로 노릴 뱃지" in badge_page
+    assert "단계별 뱃지 여정" in badge_page
+    assert "badge-stage-card" in badge_page
+    assert "/api/badges" in qa_api
+    assert "단계형 뱃지 API" in qa_api
+    assert "#series-grid" in qa_ui
+    assert "단계형 뱃지 콘텐츠 확장" in checklist
+
+
 def test_swimtech_branding_is_training_helper_focused():
     login = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
     register = (ROOT / "frontend" / "register.html").read_text(encoding="utf-8")

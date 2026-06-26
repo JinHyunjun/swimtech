@@ -148,6 +148,10 @@ PAGE_EXPECTATIONS = {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
         "texts": ["내 플랜", "직접 구성"],
     },
+    "/badges": {
+        "selectors": ["#next-badge-panel", "#series-grid", ".badge-stage-card", ".next-badge-card", ".badge-card"],
+        "texts": ["다음으로 노릴 뱃지", "단계별 뱃지 여정"],
+    },
     "/admin": {
         "selectors": [".admin-badge", "[data-tab='training-health']", "#tab-training-health", "#h-log-count", "#h-recent-body"],
         "texts": ["SUPER ADMIN", "훈련 운영"],
