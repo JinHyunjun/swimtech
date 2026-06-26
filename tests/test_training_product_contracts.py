@@ -224,6 +224,28 @@ def test_plan_p4_admin_quality_gate_is_kept():
     assert "운영 QA 스크립트 갱신 규칙" in claude
 
 
+def test_admin_feedback_shows_author_nickname_contract():
+    feedback_api = (ROOT / "api" / "routers" / "feedback.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "ALTER TABLE feedback ADD COLUMN IF NOT EXISTS customer_id" in feedback_api
+    assert "ALTER TABLE feedback ADD COLUMN IF NOT EXISTS username" in feedback_api
+    assert "decode_token" in feedback_api
+    assert "LEFT JOIN customers c" in feedback_api
+    assert "author_nickname" in feedback_api
+    assert "author_display" in feedback_api
+    assert "renderFeedbackAuthor" in admin_page
+    assert "<th>작성자</th>" in admin_page
+    assert "author_nickname" in admin_page
+    assert "author_display" in admin_page
+    assert "/api/feedback" in qa_api
+    assert "author_display" in qa_api
+    assert "[data-tab='feedback']" in qa_ui
+    assert "#f-body" in qa_ui
+
+
 def test_badge_progression_content_is_kept():
     badge_api = (ROOT / "api" / "routers" / "badge.py").read_text(encoding="utf-8")
     badge_page = (ROOT / "frontend" / "badge.html").read_text(encoding="utf-8")

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Cookie
 from pydantic import BaseModel
 
 from routers.admin import _require_admin
+from routers.auth import decode_token
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -33,11 +34,33 @@ def _ensure_table():
             created_at    TIMESTAMPTZ DEFAULT NOW()
         )
     """)
+    cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS customer_id INTEGER")
+    cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS username TEXT")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_type ON feedback(feedback_type)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_customer ON feedback(customer_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_username ON feedback(username)")
     conn.commit()
     cur.close()
     conn.close()
+
+
+def _resolve_author(cur, swimtech_token: str | None):
+    if not swimtech_token:
+        return None, None
+    payload = decode_token(swimtech_token)
+    username = payload.get("sub") if payload else None
+    customer_id = payload.get("customer_id") if payload else None
+    if not username:
+        return None, None
+    if not customer_id:
+        try:
+            cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+            row = cur.fetchone()
+            customer_id = row[0] if row else None
+        except Exception:
+            customer_id = None
+    return customer_id, username
 
 
 class FeedbackRequest(BaseModel):
@@ -49,7 +72,7 @@ class FeedbackRequest(BaseModel):
 
 
 @router.post("")
-def submit_feedback(body: FeedbackRequest):
+def submit_feedback(body: FeedbackRequest, swimtech_token: str = Cookie(default=None)):
     title = body.title.strip()
     content = body.content.strip()
     if not title or not content:
@@ -60,10 +83,11 @@ def submit_feedback(body: FeedbackRequest):
         _ensure_table()
         conn = _get_db()
         cur = conn.cursor()
+        customer_id, username = _resolve_author(cur, swimtech_token)
         cur.execute("""
-            INSERT INTO feedback (feedback_type, page, title, content, email)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id
-        """, (body.feedback_type, body.page, title, content, email))
+            INSERT INTO feedback (feedback_type, page, title, content, email, customer_id, username)
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (body.feedback_type, body.page, title, content, email, customer_id, username))
         nid = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -89,22 +113,40 @@ def list_feedback(
     cur = conn.cursor()
     offset = max(0, (page - 1) * page_size)
 
+    author_join = """
+        LEFT JOIN customers c ON (
+            (f.customer_id IS NOT NULL AND c.id = f.customer_id)
+            OR (f.customer_id IS NULL AND f.username IS NOT NULL AND c.username = f.username)
+            OR (f.customer_id IS NULL AND f.username IS NULL AND f.email IS NOT NULL AND c.email = f.email)
+        )
+    """
+    select_sql = f"""
+        SELECT f.id, f.feedback_type, f.page, f.title, f.content, f.email, f.created_at,
+               f.customer_id,
+               COALESCE(f.username, c.username) AS author_username,
+               c.nickname AS author_nickname,
+               c.name AS author_name,
+               c.email AS author_email,
+               COALESCE(c.nickname, c.name, f.username, c.username, f.email, '비로그인') AS author_display
+        FROM feedback f
+        {author_join}
+    """
     if feedback_type:
-        cur.execute("""
-            SELECT id, feedback_type, page, title, content, email, created_at
-            FROM feedback WHERE feedback_type = %s
-            ORDER BY created_at DESC LIMIT %s OFFSET %s
+        cur.execute(select_sql + """
+            WHERE f.feedback_type = %s
+            ORDER BY f.created_at DESC LIMIT %s OFFSET %s
         """, (feedback_type, page_size, offset))
     else:
-        cur.execute("""
-            SELECT id, feedback_type, page, title, content, email, created_at
-            FROM feedback
-            ORDER BY created_at DESC LIMIT %s OFFSET %s
+        cur.execute(select_sql + """
+            ORDER BY f.created_at DESC LIMIT %s OFFSET %s
         """, (page_size, offset))
 
     items = [{
         "id": r[0], "feedback_type": r[1], "page": r[2], "title": r[3],
         "content": r[4], "email": r[5], "created_at": str(r[6]),
+        "customer_id": r[7], "username": r[8], "author_username": r[8],
+        "author_nickname": r[9], "author_name": r[10], "author_email": r[11],
+        "author_display": r[12],
     } for r in cur.fetchall()]
 
     cur.execute("SELECT COUNT(*) FROM feedback" + (" WHERE feedback_type = %s" if feedback_type else ""),

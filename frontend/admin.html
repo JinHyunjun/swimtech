@@ -445,10 +445,10 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th>시간</th><th>유형</th><th>페이지</th><th>제목</th><th>내용</th><th>이메일</th></tr>
+            <tr><th>시간</th><th>유형</th><th>작성자</th><th>페이지</th><th>제목</th><th>내용</th><th>이메일</th></tr>
           </thead>
           <tbody id="f-body">
-            <tr><td colspan="6" class="loading-state">불러오는 중...</td></tr>
+            <tr><td colspan="7" class="loading-state">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -661,20 +661,29 @@ function escapeHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+function renderFeedbackAuthor(f) {
+  const main = f.author_nickname || f.author_name || f.author_display || '비로그인';
+  const meta = [];
+  if (f.author_username) meta.push('@' + f.author_username);
+  if (f.author_email && f.author_email !== f.email) meta.push(f.author_email);
+  const sub = meta.length ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${escapeHtml(meta.join(' · '))}</div>` : '';
+  return `<div style="font-weight:700;">${escapeHtml(main)}</div>${sub}`;
+}
 async function loadFeedback(feedbackType) {
   const body = document.getElementById('f-body');
-  body.innerHTML = '<tr><td colspan="6" class="loading-state">불러오는 중...</td></tr>';
+  body.innerHTML = '<tr><td colspan="7" class="loading-state">불러오는 중...</td></tr>';
   try {
     const url = '/api/feedback' + (feedbackType ? '?feedback_type=' + encodeURIComponent(feedbackType) : '');
     const data = await authedFetch(url);
     if (!data.items.length) {
-      body.innerHTML = '<tr><td colspan="6" class="empty-state">피드백이 없습니다.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="empty-state">피드백이 없습니다.</td></tr>';
       return;
     }
     body.innerHTML = data.items.map(f => `
       <tr>
         <td>${fmtDate(f.created_at)}</td>
         <td><span class="pill">${escapeHtml(f.feedback_type)}</span></td>
+        <td>${renderFeedbackAuthor(f)}</td>
         <td>${escapeHtml(f.page) || '-'}</td>
         <td>${escapeHtml(f.title)}</td>
         <td style="white-space: pre-wrap; max-width: 320px;">${escapeHtml(f.content)}</td>
