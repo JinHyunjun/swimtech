@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""인증 코치 전용 AI 강습 운영 도구.
+"""등록 코치 전용 AI 강습 운영 도구.
 
 개인 운동 플랜과 달리 여러 수강생이 함께 움직이는 강습의 시간표, 레인 운영,
 수준별 변형, 안전 체크와 배포를 다룬다. 학생 분석에는 실명 대신 S1/S2 참조만 AI에 전달한다.
@@ -17,7 +17,7 @@ from google.genai import types
 from pydantic import BaseModel, Field, model_validator
 
 from rate_limit import limiter
-from routers.coach import _ensure_tables, _get_customer_id, _require_user, _require_verified_coach
+from routers.coach import _ensure_tables, _get_customer_id, _require_coach, _require_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -292,14 +292,14 @@ def _document_dict(row):
 @router.post("/ai/documents/generate")
 @limiter.limit("6/hour")
 def generate_class_document(body: GenerateClassDocumentRequest, request: Request):
-    """검증 코치가 단체 훈련표 또는 강의 일정표 초안을 생성한다."""
+    """등록 코치가 단체 훈련표 또는 강의 일정표 초안을 생성한다."""
     _ensure_tables()
     username = _require_user(request)
     conn = _get_db()
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
     finally:
         cur.close()
         conn.close()
@@ -356,7 +356,7 @@ def list_class_documents(request: Request):
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         cur.execute(
             """SELECT id, document_type, title, audience_label, status, input_json,
@@ -381,7 +381,7 @@ def update_class_document(document_id: int, body: UpdateClassDocumentRequest, re
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         cur.execute(
             """UPDATE coach_ai_documents SET title = %s, content_text = %s, updated_at = NOW()
@@ -413,7 +413,7 @@ def delete_class_document(document_id: int, request: Request):
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         cur.execute("SELECT 1 FROM coach_ai_documents WHERE id = %s AND coach_id = %s", (document_id, coach_id))
         if not cur.fetchone():
@@ -445,7 +445,7 @@ def publish_class_document(document_id: int, body: PublishClassDocumentRequest, 
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         cur.execute("SELECT title FROM coach_ai_documents WHERE id = %s AND coach_id = %s", (document_id, coach_id))
         doc = cur.fetchone()
@@ -515,7 +515,6 @@ def list_my_class_documents(request: Request):
             JOIN coaches co ON co.id = d.coach_id
             JOIN customers c ON c.id = co.customer_id
             WHERE r.student_id = %s
-              AND COALESCE(co.verification_status, 'pending') = 'verified'
             ORDER BY d.published_at DESC LIMIT 30
             """,
             (student_id,),
@@ -652,7 +651,7 @@ def generate_class_insight(body: CohortInsightRequest, request: Request):
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         snapshot, roster_map = _fetch_cohort_snapshot(cur, coach_id)
         if not snapshot:
@@ -703,7 +702,7 @@ def delete_class_insight(insight_id: int, request: Request):
     cur = conn.cursor()
     try:
         customer_id = _get_customer_id(conn, username)
-        coach_id = _require_verified_coach(cur, customer_id)
+        coach_id = _require_coach(cur, customer_id)
         _ensure_ai_tables(cur)
         cur.execute("DELETE FROM coach_ai_insights WHERE id = %s AND coach_id = %s RETURNING id", (insight_id, coach_id))
         if not cur.fetchone():

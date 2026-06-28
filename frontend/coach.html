@@ -258,6 +258,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
 .verification-status { display:inline-flex; padding:4px 10px; border-radius:999px; font-size:var(--fs-caption); font-weight:800; margin-bottom:8px; background:rgba(251,191,36,.12); color:#fbbf24; }
 .verification-status.verified { background:rgba(74,222,128,.12); color:var(--green); }
 .verification-status.rejected { background:rgba(248,113,113,.12); color:#f87171; }
+.verification-status.unverified { background:rgba(56,189,248,.12); color:var(--cyan); }
 .ai-card { border-color:rgba(72,202,228,.34); background:linear-gradient(145deg,rgba(0,180,216,.09),var(--surface) 42%); }
 .ai-kicker { color:var(--cyan); font-size:var(--fs-caption); font-weight:800; letter-spacing:.04em; margin-bottom:5px; }
 .ai-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -324,20 +325,15 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
             <div class="c-label">소개</div>
             <textarea id="reg-intro" class="c-textarea" placeholder="수강생에게 전달할 자기 소개를 입력하세요." maxlength="500"></textarea>
           </div>
-          <div class="ai-grid">
-            <div class="c-field"><div class="c-label">자격 종류</div><input id="reg-credential-type" class="c-input" placeholder="예: 생활스포츠지도사 2급" maxlength="60"></div>
-            <div class="c-field"><div class="c-label">자격 번호</div><input id="reg-credential-number" class="c-input" placeholder="자격증 번호" maxlength="120"></div>
-            <div class="c-field"><div class="c-label">발급 기관</div><input id="reg-credential-org" class="c-input" placeholder="예: 문화체육관광부" maxlength="120"></div>
-          </div>
-          <div style="font-size:var(--fs-caption);color:var(--muted);margin-bottom:12px;">제출 정보는 관리자 본인 확인에만 사용되며 수강생에게 자격 번호가 공개되지 않습니다.</div>
-          <button class="c-btn c-btn-primary" onclick="registerCoach()">코치 등록 및 본인 확인 요청</button>
+          <div style="font-size:var(--fs-caption);color:var(--muted);margin-bottom:12px;">등록 즉시 코치 코드가 발급됩니다. 학생이 코드를 직접 입력하면 연동되며, 자격 인증은 등록 후 선택할 수 있습니다.</div>
+          <button class="c-btn c-btn-primary" onclick="registerCoach()">코치 등록하고 코드 받기</button>
         </div>
       </div>
 
       <!-- 코치 등록 완료 대시보드 -->
       <div id="coach-dashboard" style="display:none">
         <div class="c-card verification-card" id="coach-verification-card">
-          <div class="c-card-title">🪪 코치 본인 확인</div>
+          <div class="c-card-title">🪪 선택 사항 · 코치 자격 인증</div>
           <div class="verification-status" id="coach-verification-status">검토 대기</div>
           <div id="coach-verification-detail" style="color:var(--muted);font-size:var(--fs-body);line-height:1.55;"></div>
           <div id="coach-verification-resubmit" style="display:none;margin-top:14px;">
@@ -350,17 +346,18 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           </div>
         </div>
 
-        <!-- 초대코드 -->
+        <!-- 코치 코드 -->
         <div class="c-card coach-only-tool">
-          <div class="c-card-title">🔑 초대코드</div>
+          <div class="c-card-title">🔑 내 코치 코드</div>
           <div class="invite-box">
             <div style="flex:1">
-              <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:6px;">수강생에게 아래 코드를 공유하세요</div>
+              <div style="font-size: var(--fs-caption);color:var(--muted);margin-bottom:6px;">학생에게 아래 코드를 보내세요</div>
               <div class="invite-code" id="my-invite-code">—</div>
             </div>
             <button class="invite-copy-btn" onclick="copyInviteCode()">복사</button>
+            <button class="invite-copy-btn" onclick="shareInviteCode()">보내기</button>
           </div>
-          <div style="font-size: var(--fs-caption);color:var(--muted);">수강생이 <strong>수강생 탭</strong>에서 이 코드를 입력하면 연동됩니다.</div>
+          <div style="font-size: var(--fs-caption);color:var(--muted);">학생이 <strong>수강생 탭</strong>에서 코드를 직접 입력하면 연동됩니다.</div>
         </div>
 
         <!-- 수강생 목록 -->
@@ -449,13 +446,13 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
         <div class="c-card">
           <div class="c-card-title">🔗 코치 연동하기</div>
           <div class="c-field">
-            <div class="c-label">초대코드 입력</div>
+            <div class="c-label">코치 코드 입력</div>
             <input id="join-code" class="c-input" placeholder="SWIM-XXXX" maxlength="20"
                    style="font-family:monospace;font-size: var(--fs-body-lg);letter-spacing:1px;"
                    oninput="this.value=this.value.toUpperCase()">
           </div>
-          <button class="c-btn c-btn-primary" onclick="joinCoach()">연동 요청</button>
-          <div style="font-size: var(--fs-caption);color:var(--muted);margin-top:10px;">코치에게 초대코드를 받아 입력하세요.</div>
+          <button class="c-btn c-btn-primary" onclick="joinCoach()">코치와 연동하기</button>
+          <div style="font-size: var(--fs-caption);color:var(--muted);margin-top:10px;">코치에게 받은 코드를 확인해 직접 입력하세요.</div>
         </div>
       </div>
 
@@ -480,6 +477,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
             </div>
           </div>
           <div class="coach-intro" id="sc-intro"></div>
+          <button class="s-btn s-btn-del" id="disconnect-coach-btn" style="margin-top:14px;" onclick="disconnectMyCoach()">코치 연동 해제</button>
         </div>
 
         <!-- 코치 피드백 -->
@@ -715,16 +713,13 @@ async function loadCoachTab() {
       document.getElementById("coach-dashboard").style.display = "";
       document.getElementById("my-invite-code").textContent = data.invite_code || "—";
       _coachStudents = data.students || [];
-      const verified = data.verification_status === 'verified';
       renderCoachVerification(data);
-      document.querySelectorAll('.coach-only-tool').forEach(el => { el.style.display = verified ? '' : 'none'; });
-      if (verified) {
-        renderStudentList(_coachStudents);
-        renderAiRecipients();
-        loadLessons();
-        loadSwimShares();
-        loadClassDocuments();
-      }
+      document.querySelectorAll('.coach-only-tool').forEach(el => { el.style.display = ''; });
+      renderStudentList(_coachStudents);
+      renderAiRecipients();
+      loadLessons();
+      loadSwimShares();
+      loadClassDocuments();
     } else {
       document.getElementById("coach-unregistered").style.display = "";
     }
@@ -743,16 +738,20 @@ function renderCoachVerification(data) {
   badge.className = 'verification-status';
   if (status === 'verified') {
     card.classList.add('verified'); badge.classList.add('verified'); badge.textContent = '본인 확인 완료';
-    detail.textContent = `${data.credential_type || '코치 자격'} · ${data.credential_organization || '발급 기관 확인'} — AI 강습 운영과 회원 배포 기능을 사용할 수 있습니다.`;
+    detail.textContent = `${data.credential_type || '코치 자격'} · ${data.credential_organization || '발급 기관 확인'} — 학생에게 본인 확인 배지가 표시됩니다.`;
     form.style.display = 'none';
   } else if (status === 'rejected') {
     card.classList.add('rejected'); badge.classList.add('rejected'); badge.textContent = '확인 반려';
-    detail.textContent = data.verification_note || '자격 정보를 보완해 다시 제출해주세요.';
+    detail.textContent = `${data.verification_note || '자격 정보를 보완해 다시 제출해주세요.'} 코치 코드와 운영 기능은 계속 사용할 수 있습니다.`;
+    form.style.display = '';
+  } else if (status === 'unverified') {
+    badge.classList.add('unverified'); badge.textContent = '등록 코치';
+    detail.textContent = '코치 코드와 강습 운영 기능을 바로 사용할 수 있습니다. 자격 인증을 원하면 아래 정보를 선택적으로 제출하세요.';
     form.style.display = '';
   } else {
     badge.textContent = '검토 대기';
-    detail.textContent = '관리자가 제출한 자격과 계정 정보를 확인하고 있습니다. 승인 전에는 초대코드·강습 운영·AI 배포 기능이 잠깁니다.';
-    form.style.display = '';
+    detail.textContent = '제출한 자격 정보를 확인하고 있습니다. 검토 중에도 코치 코드와 모든 운영 기능을 사용할 수 있습니다.';
+    form.style.display = 'none';
   }
   document.getElementById('verify-credential-type').value = data.credential_type || '';
   document.getElementById('verify-credential-org').value = data.credential_organization || '';
@@ -789,19 +788,15 @@ async function registerCoach() {
   const specialty = document.getElementById("reg-specialty").value.trim();
   const career    = document.getElementById("reg-career").value.trim();
   const intro     = document.getElementById("reg-intro").value.trim();
-  const credential_type = document.getElementById('reg-credential-type').value.trim();
-  const credential_number = document.getElementById('reg-credential-number').value.trim();
-  const credential_organization = document.getElementById('reg-credential-org').value.trim();
-  if (!credential_type || !credential_number || !credential_organization) { toast('자격 종류·번호·발급 기관을 모두 입력해주세요.', false); return; }
   try {
     const r = await fetch(`${API}/api/coach/register`, {
       method: "POST", credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ specialty, career, intro, credential_type, credential_number, credential_organization }),
+      body: JSON.stringify({ specialty, career, intro }),
     });
     const data = await r.json();
     if (r.ok) {
-      toast("코치 등록 완료! 관리자 본인 확인을 요청했습니다.");
+      toast(`코치 등록 완료! 코드 ${data.invite_code || ''}가 발급되었습니다.`);
       loadCoachTab();
     } else {
       toast(data.detail || "등록 실패", false);
@@ -828,10 +823,20 @@ async function resubmitVerification() {
 
 function copyInviteCode() {
   const code = document.getElementById("my-invite-code").textContent;
-  navigator.clipboard.writeText(code).then(() => toast("초대코드 복사됨: " + code));
+  navigator.clipboard.writeText(code).then(() => toast("코치 코드 복사됨: " + code));
 }
 
-// ── 인증 코치 전용 AI 강습 운영 ──
+async function shareInviteCode() {
+  const code = document.getElementById("my-invite-code").textContent;
+  const shareData = { title:'SwimMate 코치 연동', text:`SwimMate에서 제 코치 코드 ${code}를 입력해 연동하세요.` };
+  if (navigator.share) {
+    try { await navigator.share(shareData); return; } catch (error) { if (error && error.name === 'AbortError') return; }
+  }
+  await navigator.clipboard.writeText(shareData.text);
+  toast('코치 코드 안내 문구를 복사했습니다.');
+}
+
+// ── 등록 코치 전용 AI 강습 운영 ──
 function renderAiRecipients() {
   const active = _coachStudents.filter(s => s.status === 'active');
   document.getElementById('ai-recipients').innerHTML = active.length
@@ -1162,7 +1167,7 @@ async function loadMyPlans() {
 
 async function joinCoach() {
   const code = document.getElementById("join-code").value.trim().toUpperCase();
-  if (!code) { toast("초대코드를 입력해주세요.", false); return; }
+  if (!code) { toast("코치 코드를 입력해주세요.", false); return; }
   try {
     const r = await fetch(`${API}/api/coach/join`, {
       method: "POST", credentials: "include",
@@ -1173,6 +1178,17 @@ async function joinCoach() {
     if (r.ok) { toast("코치 연동 완료!"); loadStudentTab(); }
     else { toast(data.detail || "연동 실패", false); }
   } catch { toast("네트워크 오류", false); }
+}
+
+async function disconnectMyCoach() {
+  if (!confirm('현재 코치와의 연동을 해제할까요? 이후 코치는 회원 기록을 볼 수 없습니다.')) return;
+  try {
+    const response = await fetch(`${API}/api/coach/my-coach`, { method:'DELETE', credentials:'include' });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '연동을 해제하지 못했습니다.');
+    toast('코치 연동을 해제했습니다.');
+    loadStudentTab();
+  } catch (error) { toast(error.message || '네트워크 오류', false); }
 }
 
 // ── 모달 ──

@@ -78,7 +78,8 @@ def _ensure_coach_verification(cur):
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60)")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120)")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_organization VARCHAR(120)")
-    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'pending'")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'unverified'")
+    cur.execute("ALTER TABLE coaches ALTER COLUMN verification_status SET DEFAULT 'unverified'")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_note TEXT")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100)")
@@ -318,7 +319,7 @@ def get_activity(swimtech_token: str = Cookie(default=None)):
 @router.get("/coaches")
 def list_coach_verifications(
     swimtech_token: str = Cookie(default=None),
-    status: str = "pending",
+    status: str = "all",
     page: int = 1,
     page_size: int = 20,
 ):
@@ -327,24 +328,27 @@ def list_coach_verifications(
     page = max(1, _safe_int(page, 1))
     page_size = _normalize_page_size(page_size, 20)
     offset = (page - 1) * page_size
-    status = status if status in ("pending", "verified", "rejected", "all") else "pending"
+    status = status if status in ("unverified", "pending", "verified", "rejected", "all") else "all"
     conn = _get_db()
     cur = conn.cursor()
     try:
         if not _ensure_coach_verification(cur):
             conn.commit()
             return {"coaches": [], "total": 0, "page": page, "page_size": page_size, "status": status,
-                    "summary": {"pending": 0, "verified": 0, "rejected": 0, "documents_30d": 0, "published_30d": 0}}
+                    "summary": {"registered": 0, "unverified": 0, "pending": 0, "verified": 0, "rejected": 0, "documents_30d": 0, "published_30d": 0}}
         cur.execute("""
-            SELECT COUNT(*) FILTER (WHERE COALESCE(verification_status, 'pending') = 'pending'),
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE COALESCE(verification_status, 'unverified') = 'unverified'),
+                   COUNT(*) FILTER (WHERE verification_status = 'pending'),
                    COUNT(*) FILTER (WHERE verification_status = 'verified'),
                    COUNT(*) FILTER (WHERE verification_status = 'rejected')
             FROM coaches
         """)
         counts = cur.fetchone()
         summary = {
-            "pending": _safe_int(counts[0]), "verified": _safe_int(counts[1]),
-            "rejected": _safe_int(counts[2]), "documents_30d": 0, "published_30d": 0,
+            "registered": _safe_int(counts[0]), "unverified": _safe_int(counts[1]),
+            "pending": _safe_int(counts[2]), "verified": _safe_int(counts[3]),
+            "rejected": _safe_int(counts[4]), "documents_30d": 0, "published_30d": 0,
         }
         cur.execute("SELECT to_regclass('public.coach_ai_documents')")
         if cur.fetchone()[0]:
@@ -356,17 +360,17 @@ def list_coach_verifications(
             docs = cur.fetchone()
             summary["documents_30d"] = _safe_int(docs[0])
             summary["published_30d"] = _safe_int(docs[1])
-        where = "" if status == "all" else "WHERE COALESCE(co.verification_status, 'pending') = %s"
+        where = "" if status == "all" else "WHERE COALESCE(co.verification_status, 'unverified') = %s"
         params = [] if status == "all" else [status]
         cur.execute(
             f"""
             SELECT co.id, c.name, c.username, c.email, co.specialty, co.career,
                    co.credential_type, co.credential_number, co.credential_organization,
-                   COALESCE(co.verification_status, 'pending'), co.verification_note,
+                   COALESCE(co.verification_status, 'unverified'), co.verification_note,
                    co.created_at, co.verified_at, co.verified_by
             FROM coaches co JOIN customers c ON c.id = co.customer_id
             {where}
-            ORDER BY CASE COALESCE(co.verification_status, 'pending') WHEN 'pending' THEN 0 ELSE 1 END,
+            ORDER BY CASE COALESCE(co.verification_status, 'unverified') WHEN 'pending' THEN 0 WHEN 'unverified' THEN 1 ELSE 2 END,
                      co.created_at DESC
             LIMIT %s OFFSET %s
             """,

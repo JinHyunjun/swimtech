@@ -156,12 +156,12 @@ PAGE_EXPECTATIONS = {
         "texts": ["다음으로 노릴 뱃지", "단계별 뱃지 여정"],
     },
     "/coach": {
-        "selectors": ["#coach-verification-card", "#reg-credential-type", "#coach-ai-studio", "#ai-doc-type", "#ai-generate-btn", "#coach-ai-insight", "#insight-btn", "#my-class-documents"],
-        "texts": ["코치 본인 확인"],
+        "selectors": ["#coach-verification-card", "#my-invite-code", "#disconnect-coach-btn", "#coach-ai-studio", "#ai-doc-type", "#ai-generate-btn", "#coach-ai-insight", "#insight-btn", "#my-class-documents"],
+        "texts": ["내 코치 코드", "선택 사항 · 코치 자격 인증"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
-        "texts": ["SUPER ADMIN", "코치 인증", "훈련 운영", "7일 준비도 체크인", "피드백", "페이지 조회", "처음", "끝"],
+        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
+        "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "7일 준비도 체크인", "피드백", "페이지 조회", "처음", "끝"],
     },
 }
 
@@ -322,23 +322,15 @@ def provision_coach_relationship():
             return True
         r = s.post(f"{BASE}/api/coach/register", json={
             "specialty": "QA", "career": "QA", "intro": "QA",
-            "credential_type": "QA 테스트 자격", "credential_number": f"QA-UI-{USERNAME[:80]}",
-            "credential_organization": "SwimMate QA",
         }, timeout=30)
         if r.status_code != 200:
             print(f"⚠ qabot 코치 등록 실패({r.status_code}) — /coach 사전 연동 건너뜀")
             return True
         profile = s.get(f"{BASE}/api/coach/me", timeout=30).json()
-        if profile.get("verification_status") != "verified" and ADMIN_ID and ADMIN_PW:
-            admin = requests.Session()
-            admin.post(f"{BASE}/auth/login", json={"username": ADMIN_ID, "password": ADMIN_PW}, timeout=30)
-            listed = admin.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=30)
-            if listed.status_code == 200:
-                match = next((c for c in listed.json().get("coaches", []) if c.get("username") == USERNAME), None)
-                if match:
-                    admin.patch(f"{BASE}/api/admin/coaches/{match['id']}/verification", json={"status": "verified", "note": "UI QA 자동 승인"}, timeout=30)
-                    profile = s.get(f"{BASE}/api/coach/me", timeout=30).json()
         invite_code = profile.get("invite_code")
+        if not invite_code:
+            print("⚠ 코치 코드가 즉시 발급되지 않음 — /coach 사전 연동 건너뜀")
+            return True
 
         s2 = requests.Session()
         s2.post(f"{BASE}/auth/register", json={

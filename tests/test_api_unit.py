@@ -172,9 +172,84 @@ class TestNotificationRouterMethods:
 
 
 # ---------------------------------------------------------------------------
-# 6. Verified coach AI class-operation templates
+# 6. Registered coach code and AI class-operation templates
 # ---------------------------------------------------------------------------
 class TestCoachAiClassOperations:
+    def test_coach_registration_does_not_require_credentials(self):
+        from routers.coach import RegisterRequest
+
+        request = RegisterRequest(specialty="자유형", career="10년", intro="테스트 코치")
+
+        assert request.credential_type == ""
+        assert request.credential_number == ""
+        assert request.credential_organization == ""
+
+    def test_registered_coach_access_does_not_depend_on_verification(self):
+        from routers.coach import _require_coach
+
+        class Cursor:
+            def execute(self, query, params):
+                assert "verification_status" not in query
+                assert params == (77,)
+
+            def fetchone(self):
+                return (12,)
+
+        assert _require_coach(Cursor(), 77) == 12
+
+    def test_registration_returns_code_before_optional_verification(self, monkeypatch):
+        from routers import coach
+
+        class Cursor:
+            def __init__(self):
+                self.result = None
+                self.insert_params = None
+
+            def execute(self, query, params=None):
+                if "FROM coaches WHERE customer_id" in query:
+                    self.result = None
+                elif "SELECT 1 FROM coaches WHERE invite_code" in query:
+                    self.result = None
+                elif "INSERT INTO coaches" in query:
+                    self.insert_params = params
+                    self.result = (91,)
+
+            def fetchone(self):
+                result = self.result
+                self.result = None
+                return result
+
+            def close(self):
+                pass
+
+        class Connection:
+            def __init__(self):
+                self.cursor_instance = Cursor()
+
+            def cursor(self):
+                return self.cursor_instance
+
+            def commit(self):
+                pass
+
+            def rollback(self):
+                pass
+
+            def close(self):
+                pass
+
+        connection = Connection()
+        monkeypatch.setattr(coach, "_ensure_tables", lambda: None)
+        monkeypatch.setattr(coach, "_require_user", lambda request: "coach-user")
+        monkeypatch.setattr(coach, "_get_db", lambda: connection)
+        monkeypatch.setattr(coach, "_get_customer_id", lambda conn, username: 77)
+        monkeypatch.setattr(coach, "_gen_invite_code", lambda: "SWIM-QA01")
+
+        result = coach.register_coach(coach.RegisterRequest(specialty="자유형"), object())
+
+        assert result == {"coach_id": 91, "invite_code": "SWIM-QA01", "verification_status": "unverified"}
+        assert connection.cursor_instance.insert_params[-1] == "unverified"
+
     def test_group_template_has_fixed_dates_and_operational_sets(self):
         from routers.coach_ai import GenerateClassDocumentRequest, _render_document, _template_document
 

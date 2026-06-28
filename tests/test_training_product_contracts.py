@@ -302,7 +302,7 @@ def test_admin_header_does_not_link_to_member_dashboard():
     assert "← 대시보드" not in admin_page
 
 
-def test_plan_p6_verified_coach_ai_class_operations_are_connected():
+def test_plan_p6_coach_code_ai_class_operations_are_connected():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     coach_api = (ROOT / "api" / "routers" / "coach.py").read_text(encoding="utf-8")
     coach_ai = (ROOT / "api" / "routers" / "coach_ai.py").read_text(encoding="utf-8")
@@ -318,9 +318,13 @@ def test_plan_p6_verified_coach_ai_class_operations_are_connected():
     assert "coach_ai.router" in main
     assert "verification_status" in coach_api
     assert "credential_number" in coach_api
-    assert "_require_verified_coach" in coach_api
+    assert "_require_coach" in coach_api
+    assert "_require_verified_coach" not in coach_api
     assert '@router.put("/verification")' in coach_api
-    assert "COALESCE(co.verification_status, 'pending') = 'verified'" in coach_api
+    assert '"invite_code": invite_code' in coach_api
+    assert 'verification_status = "pending" if all(credential_values) else "unverified"' in coach_api
+    assert "_require_verified_coach" not in coach_ai
+    assert "COALESCE(co.verification_status, 'pending') = 'verified'" not in coach_ai
     assert '@router.post("/ai/documents/generate")' in coach_ai
     assert '@router.post("/ai/documents/{document_id}/publish")' in coach_ai
     assert '@router.get("/class-documents")' in coach_ai
@@ -332,14 +336,19 @@ def test_plan_p6_verified_coach_ai_class_operations_are_connected():
     assert '@router.patch("/coaches/{coach_id}/verification")' in admin_api
     assert "coach_verification_events" in admin_api
     assert 'id="coach-verification-card"' in coach_page
+    assert 'id="my-invite-code"' in coach_page
+    assert '@router.delete("/my-coach")' in coach_api
+    assert 'id="disconnect-coach-btn"' in coach_page
+    assert "shareInviteCode" in coach_page
     assert 'id="coach-ai-studio"' in coach_page
     assert 'id="coach-ai-insight"' in coach_page
     assert 'id="my-class-documents"' in coach_page
     assert 'data-tab="coaches"' in admin_page
     assert 'id="c-page-size"' in admin_page
     assert 'id="c-documents"' in admin_page
-    assert "코치 등록·본인 확인 권한 경계" in api_qa
-    assert "AI 단체 강습안 생성·선택 배포·익명 브리핑" in api_qa
+    assert "코치 등록→코드 즉시 발급" in api_qa
+    assert "코드 연동→AI 강습안 생성·선택 배포·익명 브리핑" in api_qa
+    assert "학생의 코치 연동 직접 해제" in api_qa
     assert "#coach-ai-studio" in ui_qa
     assert "#tab-coaches" in ui_qa
 

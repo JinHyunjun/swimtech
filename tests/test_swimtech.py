@@ -1316,7 +1316,7 @@ def test_coach_register_api(page: Page):
     """POST /api/coach/register — 코치 등록 또는 기존 프로필 반환."""
     resp = page.request.post(
         "https://localhost/api/coach/register",
-        data='{"specialty":"자유형","career":"10년","intro":"테스트 코치","credential_type":"QA 테스트 자격","credential_number":"QA-E2E-001","credential_organization":"SwimMate QA"}',
+        data='{"specialty":"자유형","career":"10년","intro":"테스트 코치"}',
         headers={"Content-Type": "application/json"},
     )
     assert resp.status in (200, 400, 401, 409, 422), (
@@ -1325,6 +1325,7 @@ def test_coach_register_api(page: Page):
     if resp.status == 200:
         body = resp.json()
         assert "verification_status" in body or "already_exists" in body, f"응답 키 없음: {body}"
+        assert str(body.get("invite_code") or "").startswith("SWIM-"), f"코치 코드 즉시 발급 실패: {body}"
     shot(page, "21_coach_register_api")
 
 
@@ -1409,16 +1410,13 @@ def test_coach_invite_code_api(page: Page):
     body = resp.json()
     assert body.get("is_coach") is True, f"coach_test 가 코치로 등록되지 않음: {body}"
     invite_code = body.get("invite_code")
-    if body.get("verification_status") == "verified":
-        assert invite_code.startswith("SWIM-"), f"invite_code 형식 이상: {invite_code!r}"
-    else:
-        assert invite_code is None, "미인증 코치에게 초대코드가 노출되면 안 됨"
+    assert invite_code.startswith("SWIM-"), f"invite_code 형식 이상: {invite_code!r}"
 
     shot(page, "22_coach_invite_code_api")
 
 
 def test_student_join_ui(page: Page):
-    """수강생 탭 — 초대코드 입력란(#join-code) 존재 확인."""
+    """수강생 탭 — 코치 코드 입력란(#join-code) 존재 확인."""
     goto(page, "/coach")
     page.wait_for_timeout(500)
 
