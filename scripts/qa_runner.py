@@ -220,6 +220,7 @@ def main():
     baseline_plan_completed = to_int(baseline_plan_perf.get("completed_sessions"))
     baseline_plan_distance = to_int(baseline_plan_perf.get("plan_distance"))
     cleanup_ids = []
+    readiness_before = None
 
     # ── 7. 메인 화면/라우팅 ─────────────────────────────
     print("\n[7-8] 화면/라우팅 (정적 페이지 200 확인)")
@@ -389,6 +390,34 @@ def main():
     rec(18, "대시보드 주간 목표/훈련 어드바이저", dashboard_ok,
         f"summary {summary.status_code}, weekly {weekly.status_code}, advisor {advisor.status_code}, focus={advisor_json.get('focus')}")
 
+    readiness_before_res = sess.get(f"{BASE}/api/dashboard/readiness", timeout=60)
+    readiness_before = jget(readiness_before_res).get("today") if readiness_before_res.status_code == 200 else None
+    readiness_save = sess.post(f"{BASE}/api/dashboard/readiness", json={
+        "sleep_quality": 2,
+        "fatigue": 5,
+        "muscle_soreness": 4,
+        "available_minutes": 30,
+        "note": "QA 회복 우선 추천 검증",
+    }, timeout=60)
+    readiness_get = sess.get(f"{BASE}/api/dashboard/readiness", timeout=60)
+    readiness_advisor = sess.get(f"{BASE}/api/dashboard/training-advisor", timeout=60)
+    readiness_json = jget(readiness_get)
+    readiness_today = readiness_json.get("today") or {}
+    readiness_advisor_json = jget(readiness_advisor)
+    readiness_ok = (
+        readiness_save.status_code == 200
+        and readiness_get.status_code == 200
+        and readiness_advisor.status_code == 200
+        and to_int(readiness_today.get("score"), 100) < 50
+        and readiness_today.get("status") == "회복 우선"
+        and readiness_advisor_json.get("readiness_applied") is True
+        and (readiness_advisor_json.get("readiness") or {}).get("score") == readiness_today.get("score")
+        and readiness_advisor_json.get("recommended_intensity") == "쉬움"
+    )
+    rec("18a", "준비도 체크인→훈련 추천 연동", readiness_ok,
+        f"save {readiness_save.status_code}, get {readiness_get.status_code}/score={readiness_today.get('score')}, "
+        f"advisor {readiness_advisor.status_code}/focus={readiness_advisor_json.get('focus')}")
+
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)
     badge_ids = {b.get("id") for b in badges_json.get("badges", [])}
@@ -457,6 +486,8 @@ def main():
             and feedback_author_ok
             and "logs_30d" in health_summary
             and "plan_completions_30d" in health_summary
+            and "readiness_checkins_7d" in health_summary
+            and "readiness_avg_score_7d" in health_summary
             and isinstance(health_json.get("watchlist"), list)
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
@@ -465,7 +496,8 @@ def main():
             f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "
             f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}/page2={feedback_page2_json.get('page')}, "
-            f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}")
+            f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}, "
+            f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")
@@ -476,6 +508,18 @@ def main():
 
     cleanup_ok, cleanup_detail = cleanup_logs(sess, cleanup_ids)
     rec("C", "QA 생성 일지 정리", cleanup_ok, cleanup_detail or "정리할 일지 없음")
+    if readiness_before:
+        readiness_cleanup = sess.post(f"{BASE}/api/dashboard/readiness", json={
+            "sleep_quality": readiness_before.get("sleep_quality"),
+            "fatigue": readiness_before.get("fatigue"),
+            "muscle_soreness": readiness_before.get("muscle_soreness"),
+            "available_minutes": readiness_before.get("available_minutes"),
+            "note": readiness_before.get("note"),
+        }, timeout=60)
+    else:
+        readiness_cleanup = sess.delete(f"{BASE}/api/dashboard/readiness", timeout=60)
+    rec("C2", "QA 준비도 체크인 복원", readiness_cleanup.status_code == 200,
+        f"{readiness_cleanup.status_code}, {'기존 값 복원' if readiness_before else '테스트 값 삭제'}")
 
     # ── 결과 요약 ───────────────────────────────────────
     print("\n" + "="*60)

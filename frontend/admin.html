@@ -27,19 +27,6 @@
 
 .admin-topbar-left { display: flex; align-items: center; gap: 16px; }
 
-.back-btn {
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  transition: all .2s;
-  text-decoration: none;
-}
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
-
 .admin-title {
   font-size: var(--fs-title);
   font-style: italic;
@@ -306,7 +293,6 @@
 
   <div class="admin-topbar">
     <div class="admin-topbar-left">
-      <a href="/dashboard" class="back-btn">← 대시보드</a>
       <span class="admin-title">관리자</span>
       <span class="admin-badge">⚡ SUPER ADMIN</span>
     </div>
@@ -458,6 +444,25 @@
       <div class="summary-card">
         <div class="label">평균 훈련 시간</div>
         <div class="value" id="h-avg-duration">—</div>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="label">7일 준비도 체크인</div>
+        <div class="value" id="h-readiness-checkins">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">체크인 사용자</div>
+        <div class="value" id="h-readiness-users">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">평균 훈련 준비도</div>
+        <div class="value" id="h-readiness-score">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">회복 우선 비율</div>
+        <div class="value energy" id="h-readiness-recovery">—</div>
       </div>
     </div>
 
@@ -779,6 +784,10 @@ async function loadTrainingHealth() {
     document.getElementById('h-goal-rate').textContent = `${fmtNumber(s.goal_achievement_rate)}%`;
     document.getElementById('h-avg-distance').textContent = `${fmtNumber(s.avg_distance_30d)}m`;
     document.getElementById('h-avg-duration').textContent = `${fmtNumber(s.avg_duration_30d)}분`;
+    document.getElementById('h-readiness-checkins').textContent = fmtNumber(s.readiness_checkins_7d);
+    document.getElementById('h-readiness-users').textContent = fmtNumber(s.readiness_users_7d);
+    document.getElementById('h-readiness-score').textContent = `${fmtNumber(s.readiness_avg_score_7d)}점`;
+    document.getElementById('h-readiness-recovery').textContent = `${fmtNumber(s.readiness_recovery_rate_7d)}%`;
 
     renderMenuBars('h-strokes', (data.stroke_distribution || []).map(i => ({
       menu: `${i.stroke_type || '기타'} · ${fmtNumber(i.distance)}m`,

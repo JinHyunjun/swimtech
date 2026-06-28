@@ -301,9 +301,16 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         SELECT to_regclass('public.training_logs'),
                to_regclass('public.training_goals'),
                to_regclass('public.custom_plans'),
-               to_regclass('public.plan_completions')
+               to_regclass('public.plan_completions'),
+               to_regclass('public.training_readiness')
     """)
-    has_training_logs, has_training_goals, has_custom_plans, has_plan_completions = [
+    (
+        has_training_logs,
+        has_training_goals,
+        has_custom_plans,
+        has_plan_completions,
+        has_training_readiness,
+    ) = [
         bool(x) for x in cur.fetchone()
     ]
 
@@ -321,6 +328,10 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         "plan_completion_users_30d": 0,
         "plan_completion_logs_30d": 0,
         "plan_completion_distance_30d": 0,
+        "readiness_checkins_7d": 0,
+        "readiness_users_7d": 0,
+        "readiness_avg_score_7d": 0,
+        "readiness_recovery_rate_7d": 0,
     }
     pool_distribution = []
     stroke_distribution = []
@@ -451,6 +462,25 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             """)
             summary["plan_completion_distance_30d"] = _safe_int(cur.fetchone()[0])
 
+    if has_training_readiness:
+        cur.execute("""
+            SELECT COUNT(*),
+                   COUNT(DISTINCT customer_id),
+                   COALESCE(AVG(readiness_score), 0),
+                   COUNT(*) FILTER (WHERE readiness_score < 50)
+            FROM training_readiness
+            WHERE check_date >= CURRENT_DATE - INTERVAL '6 days'
+        """)
+        row = cur.fetchone()
+        checkins = _safe_int(row[0])
+        recovery_count = _safe_int(row[3])
+        summary.update({
+            "readiness_checkins_7d": checkins,
+            "readiness_users_7d": _safe_int(row[1]),
+            "readiness_avg_score_7d": round(_safe_float(row[2])),
+            "readiness_recovery_rate_7d": round(recovery_count / checkins * 100) if checkins else 0,
+        })
+
     cur.close()
     conn.close()
     return {
@@ -459,6 +489,7 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             "training_goals": has_training_goals,
             "custom_plans": has_custom_plans,
             "plan_completions": has_plan_completions,
+            "training_readiness": has_training_readiness,
         },
         "summary": summary,
         "pool_distribution": pool_distribution,
@@ -479,6 +510,15 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                 "label": "25m / 50m 풀 분포",
                 "status": "운영 확인",
                 "detail": "추천 플랜과 일지 기록의 pool_length가 실제 선택과 일치하는지 확인",
+            },
+            {
+                "label": "당일 준비도 기반 추천",
+                "status": "회복 우선 관찰" if summary["readiness_recovery_rate_7d"] >= 40 else "운영 확인",
+                "detail": (
+                    f"최근 7일 체크인 {summary['readiness_checkins_7d']}건 · "
+                    f"평균 {summary['readiness_avg_score_7d']}점 · "
+                    f"회복 우선 {summary['readiness_recovery_rate_7d']}%"
+                ),
             },
         ],
     }

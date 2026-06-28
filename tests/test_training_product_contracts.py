@@ -203,6 +203,7 @@ def test_portfolio_demo_mode_contract():
     assert "training_logs" in auth_api
     assert "training_goals" in auth_api
     assert "plan_completions" in auth_api
+    assert "training_readiness" in auth_api
     assert "user_badges" in auth_api
     assert '"is_demo":         is_demo' in auth_api
     assert 'payload.get("is_demo")' in auth_api
@@ -259,6 +260,46 @@ def test_plan_p4_admin_quality_gate_is_kept():
     assert "/api/admin/training-health" in qa_api
     assert "[data-tab='training-health']" in qa_ui
     assert "운영 QA 스크립트 갱신 규칙" in claude
+
+
+def test_plan_p5_readiness_advisor_is_fully_connected():
+    dashboard_api = (ROOT / "api" / "routers" / "dashboard.py").read_text(encoding="utf-8")
+    dashboard_page = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert "## P5 — 완료" in checklist
+    assert "오늘의 훈련 준비도 체크인 추가" in checklist
+    assert "CREATE TABLE IF NOT EXISTS training_readiness" in dashboard_api
+    assert "def _readiness_score" in dashboard_api
+    assert '@router.get("/readiness")' in dashboard_api
+    assert '@router.post("/readiness")' in dashboard_api
+    assert '@router.delete("/readiness")' in dashboard_api
+    assert "readiness_applied" in dashboard_api
+    assert "회복 우선 세션" in dashboard_api
+    assert 'id="readiness-form"' in dashboard_page
+    assert 'id="readiness-score"' in dashboard_page
+    assert 'id="advisor-readiness"' in dashboard_page
+    assert "loadReadiness" in dashboard_page
+    assert "/api/dashboard/readiness" in dashboard_page
+    assert "readiness_checkins_7d" in admin_api
+    assert "readiness_avg_score_7d" in admin_api
+    assert 'id="h-readiness-checkins"' in admin_page
+    assert 'id="h-readiness-score"' in admin_page
+    assert "/api/dashboard/readiness" in api_qa
+    assert "준비도 체크인→훈련 추천 연동" in api_qa
+    assert "#readiness-form" in ui_qa
+    assert "#h-readiness-checkins" in ui_qa
+
+
+def test_admin_header_does_not_link_to_member_dashboard():
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+
+    assert '<a href="/dashboard" class="back-btn">' not in admin_page
+    assert "← 대시보드" not in admin_page
 
 
 def test_admin_feedback_shows_author_nickname_contract():

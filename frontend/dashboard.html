@@ -33,6 +33,22 @@
 .weekly-msg.done { color:var(--green); font-weight:700; }
 .weekly-goal-btn,.weekly-goal-select { border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--muted); padding:5px 10px; font-size:var(--fs-caption); cursor:pointer; }
 .weekly-goal-select { display:none; border-color:var(--blue); color:var(--text); }
+.readiness-card { background:var(--surface2); border:.5px solid var(--border); border-radius:var(--radius-md); padding:20px; margin-bottom:20px; }
+.readiness-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.readiness-title { margin:0; color:var(--text); font-size:var(--fs-body-lg); font-weight:800; }
+.readiness-desc { margin:5px 0 0; color:var(--muted); font-size:var(--fs-caption); line-height:1.5; }
+.readiness-score { flex:0 0 auto; min-width:92px; padding:9px 12px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--muted); text-align:center; font-size:var(--fs-caption); font-weight:800; }
+.readiness-score.good { color:var(--green); border-color:rgba(74,222,128,.38); background:rgba(74,222,128,.08); }
+.readiness-score.adjust { color:var(--energy); border-color:rgba(251,146,60,.38); background:rgba(251,146,60,.08); }
+.readiness-score.recovery { color:var(--red); border-color:rgba(248,113,113,.38); background:rgba(248,113,113,.08); }
+.readiness-form { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.readiness-field { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:var(--fs-caption); }
+.readiness-field select,.readiness-note { width:100%; box-sizing:border-box; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); padding:9px 10px; font:inherit; }
+.readiness-field select:focus,.readiness-note:focus { outline:none; border-color:var(--blue); }
+.readiness-note-row { display:grid; grid-template-columns:1fr auto; align-items:end; gap:10px; margin-top:10px; }
+.readiness-save { border:0; border-radius:var(--radius-sm); background:var(--blue); color:var(--bg); padding:10px 16px; font-size:var(--fs-caption); font-weight:800; cursor:pointer; white-space:nowrap; }
+.readiness-save:disabled { opacity:.55; cursor:wait; }
+.readiness-meta { min-height:18px; margin-top:9px; color:var(--muted); font-size:var(--fs-caption); }
 .advisor-card { position:relative; overflow:hidden; background:linear-gradient(135deg,rgba(0,180,216,.16),rgba(14,165,233,.05) 48%,var(--surface)); border:.5px solid rgba(72,202,228,.32); border-radius:var(--radius-md); padding:20px; margin-bottom:20px; }
 .advisor-card::after { content:""; position:absolute; right:-60px; top:-70px; width:180px; height:180px; border-radius:50%; background:rgba(72,202,228,.13); pointer-events:none; }
 .advisor-kicker { color:var(--cyan); font-size:var(--fs-caption); font-weight:800; letter-spacing:.04em; text-transform:uppercase; margin-bottom:8px; }
@@ -40,7 +56,7 @@
 .advisor-title { margin:0; color:var(--text); font-size:var(--fs-heading); font-style:italic; font-weight:900; letter-spacing:-.02em; }
 .advisor-desc { margin:7px 0 0; color:var(--muted); font-size:var(--fs-body); line-height:1.55; }
 .advisor-pill { flex:0 0 auto; border:.5px solid rgba(72,202,228,.4); border-radius:999px; padding:7px 12px; color:var(--blue); background:rgba(0,180,216,.11); font-size:var(--fs-caption); font-weight:800; }
-.advisor-grid { position:relative; display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:10px; margin:16px 0; z-index:1; }
+.advisor-grid { position:relative; display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:10px; margin:16px 0; z-index:1; }
 .advisor-metric { min-width:0; border:.5px solid rgba(255,255,255,.08); border-radius:var(--radius-sm); padding:12px; background:rgba(2,14,24,.24); }
 .advisor-metric span { display:block; color:var(--muted); font-size:var(--fs-caption); margin-bottom:5px; }
 .advisor-metric strong { display:block; color:var(--text); font-size:var(--fs-body); line-height:1.35; }
@@ -71,8 +87,8 @@
 .history-distance { color:var(--text); font-size:var(--fs-body-lg); font-style:italic; font-weight:900; text-align:right; }
 .history-change { color:var(--muted); font-size:var(--fs-caption); text-align:right; margin-top:3px; }.history-change.up { color:var(--green); }.history-change.down { color:var(--red); }
 .empty-msg { color:var(--muted); font-size:var(--fs-body); text-align:center; padding:34px 0; }
-@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; }.advisor-grid { grid-template-columns:1fr 1fr; } }
-@media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); }.advisor-head { display:block; }.advisor-pill { display:inline-flex; margin-top:12px; }.advisor-grid { grid-template-columns:1fr; } }
+@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; }.advisor-grid { grid-template-columns:1fr 1fr; }.readiness-form { grid-template-columns:1fr 1fr; } }
+@media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); }.advisor-head { display:block; }.advisor-pill { display:inline-flex; margin-top:12px; }.advisor-grid,.readiness-form { grid-template-columns:1fr; }.readiness-note-row { grid-template-columns:1fr; }.readiness-save { width:100%; } }
 </style>
 </head>
 <body>
@@ -116,6 +132,45 @@
       </div>
     </section>
 
+    <section class="readiness-card" aria-labelledby="readiness-title">
+      <div class="readiness-head">
+        <div>
+          <h2 class="readiness-title" id="readiness-title">오늘의 훈련 준비도</h2>
+          <p class="readiness-desc">수면과 피로를 20초만 기록하면 아래 훈련 추천이 오늘 컨디션에 맞게 바뀝니다.</p>
+        </div>
+        <div class="readiness-score" id="readiness-score" aria-live="polite">체크인 전</div>
+      </div>
+      <form class="readiness-form" id="readiness-form">
+        <label class="readiness-field">수면 상태
+          <select id="readiness-sleep" name="sleep_quality">
+            <option value="1">1 · 매우 부족</option><option value="2">2 · 부족</option><option value="3" selected>3 · 보통</option><option value="4">4 · 좋음</option><option value="5">5 · 매우 좋음</option>
+          </select>
+        </label>
+        <label class="readiness-field">피로도
+          <select id="readiness-fatigue" name="fatigue">
+            <option value="1">1 · 매우 가벼움</option><option value="2">2 · 가벼움</option><option value="3" selected>3 · 보통</option><option value="4">4 · 피곤함</option><option value="5">5 · 매우 피곤함</option>
+          </select>
+        </label>
+        <label class="readiness-field">근육 뻐근함
+          <select id="readiness-soreness" name="muscle_soreness">
+            <option value="1">1 · 없음</option><option value="2">2 · 약함</option><option value="3" selected>3 · 보통</option><option value="4">4 · 강함</option><option value="5">5 · 매우 강함</option>
+          </select>
+        </label>
+        <label class="readiness-field">오늘 가능한 시간
+          <select id="readiness-minutes" name="available_minutes">
+            <option value="20">20분</option><option value="30">30분</option><option value="45">45분</option><option value="60" selected>60분</option><option value="90">90분</option><option value="120">120분</option>
+          </select>
+        </label>
+      </form>
+      <div class="readiness-note-row">
+        <label class="readiness-field">메모 (선택)
+          <input class="readiness-note" id="readiness-note" form="readiness-form" maxlength="160" placeholder="예: 어깨가 조금 뻐근해요">
+        </label>
+        <button class="readiness-save" id="readiness-save" type="submit" form="readiness-form">체크인 저장</button>
+      </div>
+      <div class="readiness-meta" id="readiness-meta" aria-live="polite">저장하면 오늘의 추천 강도와 세션이 즉시 다시 계산됩니다.</div>
+    </section>
+
     <section class="advisor-card" aria-labelledby="advisor-title">
       <div class="advisor-kicker">이번 주 훈련 추천</div>
       <div class="advisor-head">
@@ -130,6 +185,7 @@
         <div class="advisor-metric"><span>이번 주 진행</span><strong id="advisor-week">—</strong></div>
         <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
         <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
+        <div class="advisor-metric"><span>오늘 준비도</span><strong id="advisor-readiness">체크인 전</strong></div>
       </div>
       <div class="advisor-actions" id="advisor-actions">
         <a class="advisor-action" href="/plan">추천 플랜 고르기</a>
@@ -222,6 +278,63 @@ async function loadWeekly() {
 function toggleGoalEdit() { const select = document.getElementById('goal-select'); const button = document.getElementById('goal-edit-btn'); const open = select.style.display === 'block'; select.style.display = open ? 'none' : 'block'; button.textContent = open ? '목표 변경' : '닫기'; }
 async function saveGoal(value) { const response = await fetch('/api/dashboard/goal', {method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:Number(value)})}); if (response.ok) { toggleGoalEdit(); await Promise.all([loadWeekly(), loadTrainingAdvisor()]); } }
 
+function renderReadiness(data) {
+  const today = data.today;
+  const score = document.getElementById('readiness-score');
+  const meta = document.getElementById('readiness-meta');
+  score.className = 'readiness-score';
+  if (!today) {
+    score.textContent = '체크인 전';
+    meta.textContent = '저장하면 오늘의 추천 강도와 세션이 즉시 다시 계산됩니다.';
+    return;
+  }
+  const tone = today.score >= 75 ? 'good' : today.score >= 50 ? 'adjust' : 'recovery';
+  score.classList.add(tone);
+  score.textContent = `${today.score}점 · ${today.status}`;
+  document.getElementById('readiness-sleep').value = String(today.sleep_quality);
+  document.getElementById('readiness-fatigue').value = String(today.fatigue);
+  document.getElementById('readiness-soreness').value = String(today.muscle_soreness);
+  document.getElementById('readiness-minutes').value = String(today.available_minutes);
+  document.getElementById('readiness-note').value = today.note || '';
+  const average = data.average_score == null ? '' : ` · 최근 평균 ${data.average_score}점`;
+  meta.textContent = `오늘 체크인이 추천에 반영되었습니다${average}. 값을 바꾸면 다시 저장할 수 있어요.`;
+}
+
+async function loadReadiness() {
+  const response = await fetch('/api/dashboard/readiness', {credentials:'include'});
+  if (response.status === 401) { window.location.href = '/login'; return; }
+  if (!response.ok) return;
+  renderReadiness(await response.json());
+}
+
+document.getElementById('readiness-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = document.getElementById('readiness-save');
+  const meta = document.getElementById('readiness-meta');
+  button.disabled = true;
+  button.textContent = '계산 중...';
+  meta.textContent = '오늘 컨디션을 저장하고 추천을 다시 계산하고 있어요.';
+  try {
+    const response = await fetch('/api/dashboard/readiness', {
+      method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sleep_quality:Number(document.getElementById('readiness-sleep').value),
+        fatigue:Number(document.getElementById('readiness-fatigue').value),
+        muscle_soreness:Number(document.getElementById('readiness-soreness').value),
+        available_minutes:Number(document.getElementById('readiness-minutes').value),
+        note:document.getElementById('readiness-note').value.trim() || null
+      })
+    });
+    if (!response.ok) throw new Error('체크인을 저장하지 못했습니다.');
+    await Promise.all([loadReadiness(), loadTrainingAdvisor()]);
+  } catch (error) {
+    meta.textContent = error.message || '체크인을 저장하지 못했습니다.';
+  } finally {
+    button.disabled = false;
+    button.textContent = '체크인 저장';
+  }
+});
+
 function renderTrainingAdvisor(data) {
   document.getElementById('advisor-title').textContent = data.focus || '다음 훈련 추천';
   document.getElementById('advisor-message').textContent = data.message || '최근 기록을 바탕으로 다음 훈련 방향을 정리했어요.';
@@ -232,6 +345,9 @@ function renderTrainingAdvisor(data) {
   document.getElementById('advisor-week').textContent = `${week}${plan}`;
   document.getElementById('advisor-pool').textContent = `${data.preferred_pool_length || 25}m 기준`;
   document.getElementById('advisor-last').textContent = relativeTrainingDate(data.last_training_date, data.days_since_last);
+  document.getElementById('advisor-readiness').textContent = data.readiness
+    ? `${data.readiness.score}점 · ${data.readiness.status}`
+    : '체크인 전';
   const actions = Array.isArray(data.actions) && data.actions.length ? data.actions : [
     {label:'추천 플랜 고르기', href:'/plan'},
     {label:'오늘 훈련 기록', href:'/training-log?quick=1'}
@@ -259,7 +375,7 @@ async function logout() { await fetch('/auth/logout', {method:'POST',credentials
     if (!response.ok) { window.location.href = '/login'; return; }
     const me = await response.json();
     if (me.is_demo) document.getElementById('demo-banner').style.display = 'flex';
-    await Promise.all([loadDashboard(), loadWeekly(), loadTrainingAdvisor(), loadBadgeMini()]);
+    await Promise.all([loadDashboard(), loadWeekly(), loadReadiness(), loadTrainingAdvisor(), loadBadgeMini()]);
   } catch (error) {
     console.error(error);
     document.getElementById('history-list').innerHTML = '<div class="empty-msg">훈련 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';

@@ -337,6 +337,23 @@ def _ensure_demo_user_and_seed() -> int:
                 UNIQUE (username, badge_id)
             )
         """)
+        cur.execute("SELECT pg_advisory_xact_lock(81420260628)")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS training_readiness (
+                id                 SERIAL PRIMARY KEY,
+                customer_id        INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                check_date         DATE NOT NULL DEFAULT CURRENT_DATE,
+                sleep_quality      SMALLINT NOT NULL CHECK (sleep_quality BETWEEN 1 AND 5),
+                fatigue            SMALLINT NOT NULL CHECK (fatigue BETWEEN 1 AND 5),
+                muscle_soreness    SMALLINT NOT NULL CHECK (muscle_soreness BETWEEN 1 AND 5),
+                available_minutes  SMALLINT NOT NULL CHECK (available_minutes BETWEEN 15 AND 180),
+                note               VARCHAR(160),
+                readiness_score    SMALLINT NOT NULL CHECK (readiness_score BETWEEN 0 AND 100),
+                created_at         TIMESTAMPTZ DEFAULT NOW(),
+                updated_at         TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE (customer_id, check_date)
+            )
+        """)
 
         disabled_hash = bcrypt.hashpw(os.urandom(24), bcrypt.gensalt()).decode("utf-8")
         cur.execute(
@@ -362,6 +379,7 @@ def _ensure_demo_user_and_seed() -> int:
         cur.execute("DELETE FROM plan_completions WHERE customer_id = %s", (customer_id,))
         cur.execute("DELETE FROM training_goals WHERE customer_id = %s", (customer_id,))
         cur.execute("DELETE FROM training_logs WHERE customer_id = %s", (customer_id,))
+        cur.execute("DELETE FROM training_readiness WHERE customer_id = %s", (customer_id,))
         cur.execute("DELETE FROM user_badges WHERE username = %s", (DEMO_USERNAME,))
 
         today = date.today()
@@ -409,6 +427,24 @@ def _ensure_demo_user_and_seed() -> int:
                 """,
                 (customer_id, f"Day {idx + 1}", log_id),
             )
+
+        cur.execute(
+            """
+            INSERT INTO training_readiness
+                (customer_id, check_date, sleep_quality, fatigue, muscle_soreness,
+                 available_minutes, note, readiness_score)
+            VALUES (%s, %s, 4, 2, 2, 60, %s, 75)
+            ON CONFLICT (customer_id, check_date) DO UPDATE SET
+                sleep_quality = EXCLUDED.sleep_quality,
+                fatigue = EXCLUDED.fatigue,
+                muscle_soreness = EXCLUDED.muscle_soreness,
+                available_minutes = EXCLUDED.available_minutes,
+                note = EXCLUDED.note,
+                readiness_score = EXCLUDED.readiness_score,
+                updated_at = NOW()
+            """,
+            (customer_id, today, "체험 데이터: 컨디션이 좋아 핵심 세트 수행 가능"),
+        )
 
         conn.commit()
         return int(customer_id)

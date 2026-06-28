@@ -135,8 +135,8 @@ PAGE_EXPECTATIONS = {
         "selectors": ["#login-btn", "#demo-btn"],
     },
     "/dashboard": {
-        "selectors": [".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool"],
-        "texts": ["이번 주 훈련 추천"],
+        "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness"],
+        "texts": ["오늘의 훈련 준비도", "이번 주 훈련 추천"],
         "absent_texts": ["P3 Training Advisor"],
     },
     "/training-log": {
@@ -156,8 +156,8 @@ PAGE_EXPECTATIONS = {
         "texts": ["다음으로 노릴 뱃지", "단계별 뱃지 여정"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-training-health", "#h-log-count", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
-        "texts": ["SUPER ADMIN", "훈련 운영", "피드백", "페이지 조회", "처음", "끝"],
+        "selectors": [".admin-badge", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
+        "texts": ["SUPER ADMIN", "훈련 운영", "7일 준비도 체크인", "피드백", "페이지 조회", "처음", "끝"],
     },
 }
 

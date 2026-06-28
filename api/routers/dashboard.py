@@ -18,6 +18,69 @@ def get_db():
     return psycopg2.connect(DATABASE_URL)
 
 
+def _ensure_readiness_table(cur):
+    """오늘의 컨디션을 기기와 세션을 넘어 유지할 수 있도록 저장소를 보장한다."""
+    # 배포 직후 readiness/advisor 요청이 동시에 들어와도 DDL이 경합하지 않도록 직렬화한다.
+    cur.execute("SELECT pg_advisory_xact_lock(81420260628)")
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS training_readiness (
+            id                 SERIAL PRIMARY KEY,
+            customer_id        INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+            check_date         DATE NOT NULL DEFAULT CURRENT_DATE,
+            sleep_quality      SMALLINT NOT NULL CHECK (sleep_quality BETWEEN 1 AND 5),
+            fatigue            SMALLINT NOT NULL CHECK (fatigue BETWEEN 1 AND 5),
+            muscle_soreness    SMALLINT NOT NULL CHECK (muscle_soreness BETWEEN 1 AND 5),
+            available_minutes  SMALLINT NOT NULL CHECK (available_minutes BETWEEN 15 AND 180),
+            note               VARCHAR(160),
+            readiness_score    SMALLINT NOT NULL CHECK (readiness_score BETWEEN 0 AND 100),
+            created_at         TIMESTAMPTZ DEFAULT NOW(),
+            updated_at         TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE (customer_id, check_date)
+        )
+        """
+    )
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_training_readiness_customer_date "
+        "ON training_readiness(customer_id, check_date DESC)"
+    )
+
+
+def _readiness_score(sleep_quality: int, fatigue: int, muscle_soreness: int) -> int:
+    """수면 40%, 피로 회복 30%, 근육 회복 30%로 0~100 준비도를 계산한다."""
+    score = (
+        ((sleep_quality - 1) / 4) * 40
+        + ((5 - fatigue) / 4) * 30
+        + ((5 - muscle_soreness) / 4) * 30
+    )
+    return max(0, min(100, round(score)))
+
+
+def _readiness_status(score: int) -> str:
+    if score >= 75:
+        return "좋음"
+    if score >= 50:
+        return "조절 필요"
+    return "회복 우선"
+
+
+def _serialize_readiness(row):
+    if not row:
+        return None
+    score = int(row[6] or 0)
+    return {
+        "check_date": str(row[0]),
+        "sleep_quality": int(row[1]),
+        "fatigue": int(row[2]),
+        "muscle_soreness": int(row[3]),
+        "available_minutes": int(row[4]),
+        "note": row[5],
+        "score": score,
+        "status": _readiness_status(score),
+        "updated_at": str(row[7]) if row[7] else None,
+    }
+
+
 def _customer_id(swimtech_token: str | None) -> int:
     if not swimtech_token or not verify_token(swimtech_token):
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
@@ -53,7 +116,13 @@ def _pool_preference(rows) -> int:
     return 50 if pools.count(50) > pools.count(25) else 25
 
 
-def _build_training_advisor(week_rows, recent_rows, weekly_goal: int, plan_completion_count: int):
+def _build_training_advisor(
+    week_rows,
+    recent_rows,
+    weekly_goal: int,
+    plan_completion_count: int,
+    readiness=None,
+):
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
@@ -71,7 +140,20 @@ def _build_training_advisor(week_rows, recent_rows, weekly_goal: int, plan_compl
     last_intensity = last_row[3] if last_row else None
     avg_distance = round(week_distance / sessions_this_week) if sessions_this_week else 0
 
-    if not recent_rows:
+    readiness_score = int(readiness.get("score", 0)) if readiness else None
+    available_minutes = int(readiness.get("available_minutes", 0)) if readiness else None
+
+    if readiness and readiness_score < 50:
+        focus = "회복 우선 세션"
+        session = f"{preferred_pool}m 풀 기준 가벼운 회복 드릴 또는 휴식 · 최대 {available_minutes}분"
+        intensity = "쉬움"
+        message = "오늘 준비도가 낮아요. 훈련량을 채우기보다 통증 없는 범위에서 물감각만 유지하거나 쉬는 편이 좋습니다."
+    elif readiness and readiness_score < 75:
+        focus = "컨디션 조절 세션"
+        session = f"{preferred_pool}m 풀 기준 기술 드릴 + 짧은 유산소 · 최대 {available_minutes}분"
+        intensity = "쉬움"
+        message = "오늘 컨디션은 조절이 필요해요. 대시 비중을 줄이고 자세가 흐트러지기 전에 마무리하세요."
+    elif not recent_rows:
         focus = "첫 기록 만들기"
         session = f"{preferred_pool}m 풀 기준 기술 적응 1,000~1,400m"
         intensity = "쉬움"
@@ -107,6 +189,10 @@ def _build_training_advisor(week_rows, recent_rows, weekly_goal: int, plan_compl
         intensity = "보통"
         message = "이번 주 마무리 세션이에요. 피로가 적다면 짧은 대시로 페이스 감각을 확인해보세요."
 
+    if readiness and readiness_score >= 75:
+        session += f" · {available_minutes}분 내 구성"
+        message += " 오늘 준비도는 좋아 계획한 핵심 세트를 수행해도 좋습니다."
+
     if plan_completion_count:
         message += f" 이번 주 플랜 수행 기록은 {plan_completion_count}개입니다."
 
@@ -128,6 +214,8 @@ def _build_training_advisor(week_rows, recent_rows, weekly_goal: int, plan_compl
         "recommended_session": session,
         "recommended_intensity": intensity,
         "message": message,
+        "readiness_applied": bool(readiness),
+        "readiness": readiness,
         "actions": [
             {"label": "추천 플랜 고르기", "href": "/plan"},
             {"label": "오늘 훈련 기록", "href": "/training-log?quick=1"},
@@ -230,6 +318,120 @@ class GoalBody(BaseModel):
     goal: int = Field(..., ge=1, le=7)
 
 
+class ReadinessBody(BaseModel):
+    sleep_quality: int = Field(..., ge=1, le=5)
+    fatigue: int = Field(..., ge=1, le=5)
+    muscle_soreness: int = Field(..., ge=1, le=5)
+    available_minutes: int = Field(..., ge=15, le=180)
+    note: str | None = Field(default=None, max_length=160)
+
+
+@router.get("/readiness")
+def dashboard_readiness(swimtech_token: str = Cookie(default=None)):
+    """오늘 체크인과 최근 7회 준비도 흐름을 반환한다."""
+    customer_id = _customer_id(swimtech_token)
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        _ensure_readiness_table(cur)
+        cur.execute(
+            """
+            SELECT check_date, sleep_quality, fatigue, muscle_soreness,
+                   available_minutes, note, readiness_score, updated_at
+            FROM training_readiness
+            WHERE customer_id = %s
+            ORDER BY check_date DESC
+            LIMIT 7
+            """,
+            (customer_id,),
+        )
+        history = [_serialize_readiness(row) for row in cur.fetchall()]
+        conn.commit()
+        cur.close()
+        conn.close()
+        today = next((item for item in history if item["check_date"] == date.today().isoformat()), None)
+        average = round(sum(item["score"] for item in history) / len(history)) if history else None
+        return {"today": today, "history": history, "average_score": average}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("dashboard_readiness: DB error")
+        raise HTTPException(500, "훈련 준비도를 불러오지 못했습니다.")
+
+
+@router.post("/readiness")
+def dashboard_save_readiness(body: ReadinessBody, swimtech_token: str = Cookie(default=None)):
+    """당일 체크인을 한 건으로 갱신해 추천 입력값으로 사용한다."""
+    customer_id = _customer_id(swimtech_token)
+    score = _readiness_score(body.sleep_quality, body.fatigue, body.muscle_soreness)
+    note = (body.note or "").strip() or None
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        _ensure_readiness_table(cur)
+        cur.execute(
+            """
+            INSERT INTO training_readiness
+                (customer_id, check_date, sleep_quality, fatigue, muscle_soreness,
+                 available_minutes, note, readiness_score)
+            VALUES (%s, CURRENT_DATE, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (customer_id, check_date) DO UPDATE SET
+                sleep_quality = EXCLUDED.sleep_quality,
+                fatigue = EXCLUDED.fatigue,
+                muscle_soreness = EXCLUDED.muscle_soreness,
+                available_minutes = EXCLUDED.available_minutes,
+                note = EXCLUDED.note,
+                readiness_score = EXCLUDED.readiness_score,
+                updated_at = NOW()
+            RETURNING check_date, sleep_quality, fatigue, muscle_soreness,
+                      available_minutes, note, readiness_score, updated_at
+            """,
+            (
+                customer_id,
+                body.sleep_quality,
+                body.fatigue,
+                body.muscle_soreness,
+                body.available_minutes,
+                note,
+                score,
+            ),
+        )
+        saved = _serialize_readiness(cur.fetchone())
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {"checkin": saved}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("dashboard_save_readiness: DB error")
+        raise HTTPException(500, "훈련 준비도를 저장하지 못했습니다.")
+
+
+@router.delete("/readiness")
+def dashboard_delete_readiness(swimtech_token: str = Cookie(default=None)):
+    """오늘 체크인을 초기화한다. QA 정리와 사용자의 재입력을 모두 지원한다."""
+    customer_id = _customer_id(swimtech_token)
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        _ensure_readiness_table(cur)
+        cur.execute(
+            "DELETE FROM training_readiness WHERE customer_id = %s AND check_date = CURRENT_DATE",
+            (customer_id,),
+        )
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {"status": "deleted", "deleted": deleted}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("dashboard_delete_readiness: DB error")
+        raise HTTPException(500, "훈련 준비도를 초기화하지 못했습니다.")
+
+
 @router.get("/weekly")
 def dashboard_weekly(swimtech_token: str = Cookie(default=None)):
     """이번 주 운동 일수와 거리 목표 진행률을 반환한다."""
@@ -319,9 +521,29 @@ def dashboard_training_advisor(swimtech_token: str = Cookie(default=None)):
             )
             plan_completion_count = int((cur.fetchone() or [0])[0] or 0)
 
+        _ensure_readiness_table(cur)
+        cur.execute(
+            """
+            SELECT check_date, sleep_quality, fatigue, muscle_soreness,
+                   available_minutes, note, readiness_score, updated_at
+            FROM training_readiness
+            WHERE customer_id = %s AND check_date = CURRENT_DATE
+            LIMIT 1
+            """,
+            (customer_id,),
+        )
+        readiness = _serialize_readiness(cur.fetchone())
+
+        conn.commit()
         cur.close()
         conn.close()
-        return _build_training_advisor(week_rows, recent_rows, weekly_goal, plan_completion_count)
+        return _build_training_advisor(
+            week_rows,
+            recent_rows,
+            weekly_goal,
+            plan_completion_count,
+            readiness,
+        )
     except HTTPException:
         raise
     except Exception:
