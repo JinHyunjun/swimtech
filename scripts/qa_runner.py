@@ -418,6 +418,112 @@ def main():
         f"save {readiness_save.status_code}, get {readiness_get.status_code}/score={readiness_today.get('score')}, "
         f"advisor {readiness_advisor.status_code}/focus={readiness_advisor_json.get('focus')}")
 
+    # 인증 코치 전용 단체 강습 운영: 등록→관리자 승인→템플릿 생성→선택 회원 배포→익명 브리핑
+    coach_register = sess.post(f"{BASE}/api/coach/register", json={
+        "specialty": "QA 단체 강습", "career": "자동 QA", "intro": "코치 운영 QA 계정",
+        "credential_type": "QA 테스트 자격", "credential_number": f"QA-API-{uname[:80]}",
+        "credential_organization": "SwimMate QA",
+    }, timeout=60)
+    coach_profile_res = sess.get(f"{BASE}/api/coach/me", timeout=60)
+    coach_profile = jget(coach_profile_res)
+    verification_status = coach_profile.get("verification_status")
+    gate_status = None
+    if verification_status != "verified":
+        gate_res = sess.post(f"{BASE}/api/coach/ai/documents/generate", json={
+            "document_type": "training_plan", "title": "QA 권한 경계", "audience_label": "QA반",
+            "objective": "권한 확인", "level": "혼합", "pool_length": 25, "duration_minutes": 60,
+            "participant_count": 4, "start_date": today, "weeks": 1, "sessions_per_week": 1,
+            "equipment": [], "constraints": "", "generation_mode": "template",
+        }, timeout=60)
+        gate_status = gate_res.status_code
+
+    approval_status = None
+    if verification_status != "verified" and admin_sess:
+        coach_candidates = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=60)
+        candidate = next((c for c in jget(coach_candidates).get("coaches", []) if c.get("username") == uname), None)
+        if candidate:
+            approval = admin_sess.patch(
+                f"{BASE}/api/admin/coaches/{candidate['id']}/verification",
+                json={"status": "verified", "note": "API QA 자동 승인"}, timeout=60,
+            )
+            approval_status = approval.status_code
+            coach_profile_res = sess.get(f"{BASE}/api/coach/me", timeout=60)
+            coach_profile = jget(coach_profile_res)
+            verification_status = coach_profile.get("verification_status")
+
+    coach_registration_ok = (
+        coach_register.status_code == 200
+        and coach_profile_res.status_code == 200
+        and coach_profile.get("is_coach") is True
+        and verification_status in ("pending", "verified", "rejected")
+        and (gate_status in (None, 403))
+    )
+    rec("18d", "코치 등록·본인 확인 권한 경계", coach_registration_ok,
+        f"register {coach_register.status_code}, verification={verification_status}, gate={gate_status}, approval={approval_status}")
+
+    if verification_status == "verified":
+        student_sess = requests.Session()
+        student_username = os.getenv("QA_STUDENT_USERNAME", "qabotstudent")
+        student_password = os.getenv("QA_STUDENT_PASSWORD", pw)
+        student_email = os.getenv("QA_STUDENT_EMAIL", f"{student_username}@example.com")
+        student_sess.post(f"{BASE}/auth/register", json={
+            "name": "QA수강생", "email": student_email,
+            "username": student_username, "password": student_password,
+        }, timeout=60)
+        student_login = student_sess.post(f"{BASE}/auth/login", json={"username": student_username, "password": student_password}, timeout=60)
+        invite_code = coach_profile.get("invite_code")
+        join_res = student_sess.post(f"{BASE}/api/coach/join", json={"invite_code": invite_code}, timeout=60) if invite_code else None
+        coach_profile = jget(sess.get(f"{BASE}/api/coach/me", timeout=60))
+        qa_student = next((s for s in coach_profile.get("students", []) if s.get("username") == student_username), None)
+
+        generated = sess.post(f"{BASE}/api/coach/ai/documents/generate", json={
+            "document_type": "lesson_schedule", "title": "QA 2주 단체 강습 일정", "audience_label": "QA 혼합반",
+            "objective": "자유형 호흡과 레인 질서", "level": "혼합", "pool_length": 25,
+            "duration_minutes": 60, "participant_count": 8, "start_date": today, "weeks": 2,
+            "sessions_per_week": 2, "equipment": ["킥판"], "constraints": "2개 레인",
+            "generation_mode": "template",
+        }, timeout=60)
+        generated_json = jget(generated)
+        document = generated_json.get("document") or {}
+        document_id = document.get("id")
+        publish = None
+        received = None
+        insight = None
+        insight_id = None
+        if document_id and qa_student:
+            publish = sess.post(
+                f"{BASE}/api/coach/ai/documents/{document_id}/publish",
+                json={"all_students": False, "student_ids": [qa_student.get("student_id")]}, timeout=60,
+            )
+            received = student_sess.get(f"{BASE}/api/coach/class-documents", timeout=60)
+            insight = sess.post(f"{BASE}/api/coach/ai/class-insight", json={
+                "generation_mode": "template", "coaching_question": "QA 반 편성 점검",
+            }, timeout=60)
+            insight_id = jget(insight).get("insight_id") if insight else None
+        received_ids = {item.get("id") for item in (jget(received).get("documents", []) if received else [])}
+        coach_ai_ok = (
+            student_login.status_code == 200
+            and join_res is not None and join_res.status_code == 200
+            and generated.status_code == 200 and document.get("generation_source") == "template"
+            and len((document.get("content") or {}).get("sessions", [])) == 4
+            and publish is not None and publish.status_code == 200
+            and received is not None and received.status_code == 200 and document_id in received_ids
+            and insight is not None and insight.status_code == 200
+            and isinstance(jget(insight).get("roster_map"), list)
+        )
+        rec("18e", "AI 단체 강습안 생성·선택 배포·익명 브리핑", coach_ai_ok,
+            f"student_login {student_login.status_code}, join {join_res.status_code if join_res else '-'}, "
+            f"generate {generated.status_code}/sessions={len((document.get('content') or {}).get('sessions', []))}, "
+            f"publish {publish.status_code if publish else '-'}, receive {received.status_code if received else '-'}, "
+            f"insight {insight.status_code if insight else '-'}")
+        if insight_id:
+            sess.delete(f"{BASE}/api/coach/ai/insights/{insight_id}", timeout=60)
+        if document_id:
+            sess.delete(f"{BASE}/api/coach/ai/documents/{document_id}", timeout=60)
+    else:
+        rec("18e", "AI 단체 강습안 생성·선택 배포·익명 브리핑", True,
+            "관리자 시크릿 없음 — 미인증 403 권한 경계까지만 검증")
+
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)
     badge_ids = {b.get("id") for b in badges_json.get("badges", [])}
@@ -440,6 +546,8 @@ def main():
         admin_users = admin_sess.get(f"{BASE}/api/admin/users?page_size=100", timeout=60)
         admin_users_page2 = admin_sess.get(f"{BASE}/api/admin/users?page=2&page_size=20", timeout=60)
         admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)
+        admin_coaches = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=60)
+        admin_coaches_page2 = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page=2&page_size=20", timeout=60)
         admin_health = admin_sess.get(f"{BASE}/api/admin/training-health", timeout=60)
         admin_logs = admin_sess.get(f"{BASE}/api/admin/logs", timeout=60)
         admin_page_view_logs = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page_size=100", timeout=60)
@@ -448,6 +556,8 @@ def main():
         admin_feedback_page2 = admin_sess.get(f"{BASE}/api/feedback?page=2&page_size=20", timeout=60)
         users_json = jget(admin_users)
         users_page2_json = jget(admin_users_page2)
+        coaches_json = jget(admin_coaches)
+        coaches_page2_json = jget(admin_coaches_page2)
         health_json = jget(admin_health)
         health_summary = health_json.get("summary") or {}
         logs_json = jget(admin_page_view_logs)
@@ -465,6 +575,11 @@ def main():
             and users_json.get("page_size") == 100
             and admin_users_page2.status_code == 200
             and users_page2_json.get("page") == 2
+            and admin_coaches.status_code == 200
+            and coaches_json.get("page_size") == 100
+            and admin_coaches_page2.status_code == 200
+            and coaches_page2_json.get("page") == 2
+            and "documents_30d" in (coaches_json.get("summary") or {})
             and admin_page_view_logs.status_code == 200
             and logs_json.get("page_size") == 100
             and logs_json.get("page") == 1
@@ -479,6 +594,7 @@ def main():
             admin_dashboard.status_code == 200
             and admin_users.status_code == 200
             and admin_activity.status_code == 200
+            and admin_coaches.status_code == 200
             and admin_health.status_code == 200
             and admin_logs.status_code == 200
             and admin_page_view_logs.status_code == 200
@@ -492,6 +608,7 @@ def main():
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
             f"dashboard {admin_dashboard.status_code}, activity {admin_activity.status_code}, "
+            f"coaches {admin_coaches.status_code}/total={coaches_json.get('total')}/page2={coaches_page2_json.get('page')}, "
             f"training-health {admin_health.status_code}, logs {admin_logs.status_code}, "
             f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "

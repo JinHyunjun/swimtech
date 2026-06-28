@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, pool, chat, admin, health_import
+from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, coach_ai, pool, chat, admin, health_import
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
@@ -285,6 +285,7 @@ app.include_router(report.router,         prefix="/api/report",          tags=["
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
 app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
 app.include_router(coach.router,          prefix="/api/coach",           tags=["코치"])
+app.include_router(coach_ai.router,       prefix="/api/coach",           tags=["코치 AI 강습 운영"])
 app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
 

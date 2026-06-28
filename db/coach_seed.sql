@@ -13,12 +13,22 @@ WHERE NOT EXISTS (SELECT 1 FROM customers WHERE username = 'student_lee');
 
 -- ── 코치 등록 (초대코드: SWIM-TEST) ─────────────────────────────────────────
 
-INSERT INTO coaches (customer_id, specialty, career, intro, invite_code)
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_organization VARCHAR(120);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'pending';
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100);
+
+INSERT INTO coaches (customer_id, specialty, career, intro, invite_code,
+                     credential_type, credential_number, credential_organization,
+                     verification_status, verified_at, verified_by)
 SELECT c.id,
        '자유형·접영',
        '15년 경력 수영 강사, 전국 동호인 대회 입상',
        '안녕하세요! 맞춤형 기술 코칭으로 실력 향상을 도와드립니다.',
-       'SWIM-TEST'
+       'SWIM-TEST', '생활스포츠지도사', 'SEED-COACH-001', '샘플 발급기관',
+       'verified', NOW(), 'seed'
 FROM customers c
 WHERE c.username = 'coach_kim'
   AND NOT EXISTS (SELECT 1 FROM coaches WHERE invite_code = 'SWIM-TEST');

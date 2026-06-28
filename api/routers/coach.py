@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""SwimMate — 코치-수강생 연동 라우터 (v2.5.2)"""
+"""SwimMate — 코치-수강생 연동 및 자격 확인 라우터."""
 import os
 import random
 import string
@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import psycopg2
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from datetime import date
 import json
@@ -61,6 +61,16 @@ def _ensure_tables():
             created_at  TIMESTAMP DEFAULT NOW()
         );
     """)
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_organization VARCHAR(120)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'pending'")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_note TEXT")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100)")
+    cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_coaches_unique_credential
+                   ON coaches(credential_organization, credential_number)
+                   WHERE credential_organization IS NOT NULL AND credential_number IS NOT NULL""")
     conn.commit()
     cur.close()
     conn.close()
@@ -91,12 +101,35 @@ def _gen_invite_code() -> str:
     return "SWIM-" + "".join(random.choices(chars, k=4))
 
 
+def _require_verified_coach(cur, customer_id: int) -> int:
+    """코치 전용 운영 기능은 관리자 자격 확인을 통과한 계정에만 허용한다."""
+    cur.execute(
+        "SELECT id, COALESCE(verification_status, 'pending') FROM coaches WHERE customer_id = %s",
+        (customer_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(403, "코치 프로필이 없습니다.")
+    if row[1] != "verified":
+        raise HTTPException(403, "코치 본인 확인이 완료된 뒤 사용할 수 있습니다.")
+    return int(row[0])
+
+
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    specialty: Optional[str] = ""
-    career:    Optional[str] = ""
-    intro:     Optional[str] = ""
+    specialty: Optional[str] = Field(default="", max_length=100)
+    career:    Optional[str] = Field(default="", max_length=500)
+    intro:     Optional[str] = Field(default="", max_length=1000)
+    credential_type: Optional[str] = Field(default="", max_length=60)
+    credential_number: Optional[str] = Field(default="", max_length=120)
+    credential_organization: Optional[str] = Field(default="", max_length=120)
+
+
+class VerificationRequest(BaseModel):
+    credential_type: str = Field(..., min_length=2, max_length=60)
+    credential_number: str = Field(..., min_length=2, max_length=120)
+    credential_organization: str = Field(..., min_length=2, max_length=120)
 
 
 class JoinRequest(BaseModel):
@@ -176,7 +209,11 @@ def share_swim(req: ShareSwimRequest, request: Request):
     try:
         sid = _get_customer_id(conn, username)
         cur.execute(
-            "SELECT coach_id FROM coach_students WHERE student_id = %s AND status = 'active' LIMIT 1",
+            """SELECT cs.coach_id FROM coach_students cs
+               JOIN coaches co ON co.id = cs.coach_id
+               WHERE cs.student_id = %s AND cs.status = 'active'
+                 AND COALESCE(co.verification_status, 'pending') = 'verified'
+               LIMIT 1""",
             (sid,),
         )
         row = cur.fetchone()
@@ -233,11 +270,7 @@ def list_swim_shares(request: Request):
     cur = conn.cursor()
     try:
         cid = _get_customer_id(conn, username)
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        crow = cur.fetchone()
-        if not crow:
-            raise HTTPException(403, "코치 프로필이 없습니다")
-        coach_id = crow[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             """SELECT s.id, c.name, s.swim_date, s.stroke, s.distance_m, s.duration_min, s.notes, s.created_at, s.strokes
                FROM swim_shares s JOIN customers c ON c.id = s.student_id
@@ -297,11 +330,7 @@ def create_lesson(req: LessonRequest, request: Request):
     cur = conn.cursor()
     try:
         cid = _get_customer_id(conn, username)
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        crow = cur.fetchone()
-        if not crow:
-            raise HTTPException(403, "코치 프로필이 없습니다")
-        coach_id = crow[0]
+        coach_id = _require_verified_coach(cur, cid)
         if req.lesson_date:
             try:
                 ldate = date.fromisoformat(req.lesson_date)
@@ -358,11 +387,8 @@ def list_lessons(request: Request):
     cur = conn.cursor()
     try:
         cid = _get_customer_id(conn, username)
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        crow = cur.fetchone()
-        if not crow:
-            raise HTTPException(403, "코치 프로필이 없습니다")
-        lessons = _fetch_lessons(cur, crow[0])
+        coach_id = _require_verified_coach(cur, cid)
+        lessons = _fetch_lessons(cur, coach_id)
         cur.close()
         return {"lessons": lessons}
     except HTTPException:
@@ -383,7 +409,11 @@ def my_lessons(request: Request):
     try:
         sid = _get_customer_id(conn, username)
         cur.execute(
-            "SELECT coach_id FROM coach_students WHERE student_id = %s AND status = 'active' LIMIT 1",
+            """SELECT cs.coach_id FROM coach_students cs
+               JOIN coaches co ON co.id = cs.coach_id
+               WHERE cs.student_id = %s AND cs.status = 'active'
+                 AND COALESCE(co.verification_status, 'pending') = 'verified'
+               LIMIT 1""",
             (sid,),
         )
         row = cur.fetchone()
@@ -403,18 +433,66 @@ def my_lessons(request: Request):
 
 @router.post("/register")
 def register_coach(req: RegisterRequest, request: Request):
-    """코치 프로필 등록 + 초대코드 발급."""
+    """코치 프로필과 자격 정보를 등록하고 관리자 본인 확인을 요청한다."""
     _ensure_tables()
     username = _require_user(request)
     conn = _get_db()
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id, invite_code FROM coaches WHERE customer_id = %s", (cid,))
+        cur.execute(
+            "SELECT id, invite_code, COALESCE(verification_status, 'pending') "
+            "FROM coaches WHERE customer_id = %s",
+            (cid,),
+        )
         existing = cur.fetchone()
         if existing:
+            credential_values = [
+                (req.credential_type or "").strip(),
+                (req.credential_number or "").strip(),
+                (req.credential_organization or "").strip(),
+            ]
+            if all(credential_values) and existing[2] != "verified":
+                cur.execute(
+                    """SELECT id FROM coaches
+                       WHERE credential_organization = %s AND credential_number = %s AND id <> %s""",
+                    (credential_values[2], credential_values[1], existing[0]),
+                )
+                if cur.fetchone():
+                    raise HTTPException(409, "이미 다른 계정에서 검토 중이거나 등록된 자격 정보입니다.")
+                cur.execute(
+                    """
+                    UPDATE coaches SET specialty = %s, career = %s, intro = %s,
+                        credential_type = %s, credential_number = %s,
+                        credential_organization = %s, verification_status = 'pending',
+                        verification_note = NULL, verified_at = NULL, verified_by = NULL
+                    WHERE id = %s
+                    """,
+                    (
+                        (req.specialty or "").strip(), (req.career or "").strip(),
+                        (req.intro or "").strip(), *credential_values, existing[0],
+                    ),
+                )
+                conn.commit()
             cur.close()
-            return {"coach_id": existing[0], "invite_code": existing[1], "already_exists": True}
+            return {
+                "coach_id": existing[0],
+                "invite_code": existing[1] if existing[2] == "verified" else None,
+                "verification_status": "pending" if all(credential_values) and existing[2] != "verified" else existing[2],
+                "already_exists": True,
+            }
+
+        credential_type = (req.credential_type or "").strip()
+        credential_number = (req.credential_number or "").strip()
+        credential_organization = (req.credential_organization or "").strip()
+        if not all((credential_type, credential_number, credential_organization)):
+            raise HTTPException(400, "코치 자격 종류, 자격 번호, 발급 기관을 모두 입력해주세요.")
+        cur.execute(
+            "SELECT id FROM coaches WHERE credential_organization = %s AND credential_number = %s",
+            (credential_organization, credential_number),
+        )
+        if cur.fetchone():
+            raise HTTPException(409, "이미 다른 계정에서 검토 중이거나 등록된 자격 정보입니다.")
 
         invite_code = _gen_invite_code()
         for _ in range(10):
@@ -424,20 +502,74 @@ def register_coach(req: RegisterRequest, request: Request):
             invite_code = _gen_invite_code()
 
         cur.execute(
-            """INSERT INTO coaches (customer_id, specialty, career, intro, invite_code)
-               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-            (cid, req.specialty, req.career, req.intro, invite_code),
+            """INSERT INTO coaches
+                   (customer_id, specialty, career, intro, invite_code,
+                    credential_type, credential_number, credential_organization,
+                    verification_status)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending') RETURNING id""",
+            (
+                cid, (req.specialty or "").strip(), (req.career or "").strip(),
+                (req.intro or "").strip(), invite_code, credential_type,
+                credential_number, credential_organization,
+            ),
         )
         coach_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        return {"coach_id": coach_id, "invite_code": invite_code}
+        return {"coach_id": coach_id, "invite_code": None, "verification_status": "pending"}
     except HTTPException:
         raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(500, f"DB 오류: {e}")
     finally:
+        conn.close()
+
+
+@router.put("/verification")
+def resubmit_coach_verification(req: VerificationRequest, request: Request):
+    """반려되었거나 대기 중인 코치가 자격 정보를 수정해 다시 검토 요청한다."""
+    _ensure_tables()
+    username = _require_user(request)
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cid = _get_customer_id(conn, username)
+        cur.execute("SELECT id, verification_status FROM coaches WHERE customer_id = %s", (cid,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "코치 프로필이 없습니다.")
+        if row[1] == "verified":
+            raise HTTPException(400, "이미 본인 확인이 완료된 코치입니다.")
+        cur.execute(
+            """SELECT id FROM coaches
+               WHERE credential_organization = %s AND credential_number = %s AND id <> %s""",
+            (req.credential_organization.strip(), req.credential_number.strip(), row[0]),
+        )
+        if cur.fetchone():
+            raise HTTPException(409, "이미 다른 계정에서 검토 중이거나 등록된 자격 정보입니다.")
+        cur.execute(
+            """
+            UPDATE coaches SET credential_type = %s, credential_number = %s,
+                credential_organization = %s, verification_status = 'pending',
+                verification_note = NULL, verified_at = NULL, verified_by = NULL
+            WHERE id = %s
+            """,
+            (
+                req.credential_type.strip(), req.credential_number.strip(),
+                req.credential_organization.strip(), row[0],
+            ),
+        )
+        conn.commit()
+        return {"coach_id": row[0], "verification_status": "pending"}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"DB 오류: {e}")
+    finally:
+        cur.close()
         conn.close()
 
 
@@ -451,7 +583,10 @@ def get_my_coach_profile(request: Request):
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, specialty, career, intro, invite_code, created_at FROM coaches WHERE customer_id = %s",
+            """SELECT id, specialty, career, intro, invite_code, created_at,
+                      COALESCE(verification_status, 'pending'), verification_note,
+                      credential_type, credential_organization, verified_at
+               FROM coaches WHERE customer_id = %s""",
             (cid,),
         )
         coach = cur.fetchone()
@@ -460,18 +595,20 @@ def get_my_coach_profile(request: Request):
             return {"is_coach": False}
 
         coach_id = coach[0]
-        cur.execute(
-            """SELECT cs.id, cs.student_id, c.username, c.name, cs.status, cs.created_at
-               FROM coach_students cs
-               JOIN customers c ON cs.student_id = c.id
-               WHERE cs.coach_id = %s ORDER BY cs.created_at DESC""",
-            (coach_id,),
-        )
-        students = [
-            {"relation_id": r[0], "student_id": r[1], "username": r[2],
-             "name": r[3], "status": r[4], "joined_at": str(r[5])}
-            for r in cur.fetchall()
-        ]
+        students = []
+        if coach[6] == "verified":
+            cur.execute(
+                """SELECT cs.id, cs.student_id, c.username, c.name, cs.status, cs.created_at
+                   FROM coach_students cs
+                   JOIN customers c ON cs.student_id = c.id
+                   WHERE cs.coach_id = %s ORDER BY cs.created_at DESC""",
+                (coach_id,),
+            )
+            students = [
+                {"relation_id": r[0], "student_id": r[1], "username": r[2],
+                 "name": r[3], "status": r[4], "joined_at": str(r[5])}
+                for r in cur.fetchall()
+            ]
         cur.close()
         return {
             "is_coach": True,
@@ -479,8 +616,13 @@ def get_my_coach_profile(request: Request):
             "specialty": coach[1],
             "career": coach[2],
             "intro": coach[3],
-            "invite_code": coach[4],
+            "invite_code": coach[4] if coach[6] == "verified" else None,
             "created_at": str(coach[5]),
+            "verification_status": coach[6],
+            "verification_note": coach[7],
+            "credential_type": coach[8],
+            "credential_organization": coach[9],
+            "verified_at": str(coach[10]) if coach[10] else None,
             "students": students,
         }
     except HTTPException:
@@ -501,11 +643,17 @@ def join_coach(req: JoinRequest, request: Request):
         student_cid = _get_customer_id(conn, username)
         cur = conn.cursor()
         code = req.invite_code.strip().upper()
-        cur.execute("SELECT id, customer_id FROM coaches WHERE invite_code = %s", (code,))
+        cur.execute(
+            "SELECT id, customer_id, COALESCE(verification_status, 'pending') "
+            "FROM coaches WHERE invite_code = %s",
+            (code,),
+        )
         coach_row = cur.fetchone()
         if not coach_row:
             raise HTTPException(404, "유효하지 않은 초대코드입니다.")
         coach_id = coach_row[0]
+        if coach_row[2] != "verified":
+            raise HTTPException(403, "본인 확인이 완료된 코치의 초대코드만 사용할 수 있습니다.")
         if coach_row[1] == student_cid:
             raise HTTPException(400, "자신의 초대코드로는 연동할 수 없습니다.")
 
@@ -544,11 +692,7 @@ def list_students(request: Request):
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        coach_row = cur.fetchone()
-        if not coach_row:
-            raise HTTPException(403, "코치 프로필이 없습니다.")
-        coach_id = coach_row[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             """SELECT cs.student_id, c.username, c.name, cs.status, cs.created_at
                FROM coach_students cs JOIN customers c ON cs.student_id = c.id
@@ -579,11 +723,7 @@ def get_student_logs(student_id: int, request: Request):
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        coach_row = cur.fetchone()
-        if not coach_row:
-            raise HTTPException(403, "코치 프로필이 없습니다.")
-        coach_id = coach_row[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             "SELECT 1 FROM coach_students WHERE coach_id = %s AND student_id = %s AND status = 'active'",
             (coach_id, student_id),
@@ -625,11 +765,7 @@ def post_feedback(req: FeedbackRequest, request: Request):
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        coach_row = cur.fetchone()
-        if not coach_row:
-            raise HTTPException(403, "코치 프로필이 없습니다.")
-        coach_id = coach_row[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             "SELECT 1 FROM coach_students WHERE coach_id = %s AND student_id = %s AND status = 'active'",
             (coach_id, req.student_id),
@@ -666,11 +802,13 @@ def get_my_coach(request: Request):
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
         cur.execute(
-            """SELECT cs.coach_id, c2.username, c2.name, co.specialty, co.career, co.intro, cs.status
+            """SELECT cs.coach_id, c2.username, c2.name, co.specialty, co.career, co.intro, cs.status,
+                      COALESCE(co.verification_status, 'pending')
                FROM coach_students cs
                JOIN coaches co ON cs.coach_id = co.id
                JOIN customers c2 ON co.customer_id = c2.id
                WHERE cs.student_id = %s AND cs.status = 'active'
+                 AND COALESCE(co.verification_status, 'pending') = 'verified'
                ORDER BY cs.created_at DESC LIMIT 1""",
             (cid,),
         )
@@ -713,6 +851,7 @@ def get_my_coach(request: Request):
             "career": coach_row[4],
             "intro": coach_row[5],
             "status": coach_row[6],
+            "coach_verified": coach_row[7] == "verified",
             "feedbacks": feedbacks,
         }
     except HTTPException:
@@ -763,11 +902,7 @@ def send_coach_plan(req: PlanRequest, request: Request):
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        coach_row = cur.fetchone()
-        if not coach_row:
-            raise HTTPException(403, "코치 프로필이 없습니다.")
-        coach_id = coach_row[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             "SELECT 1 FROM coach_students WHERE coach_id = %s AND student_id = %s AND status = 'active'",
             (coach_id, req.student_id),
@@ -812,11 +947,7 @@ def remove_student(student_id: int, request: Request):
     try:
         cid = _get_customer_id(conn, username)
         cur = conn.cursor()
-        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (cid,))
-        coach_row = cur.fetchone()
-        if not coach_row:
-            raise HTTPException(403, "코치 프로필이 없습니다.")
-        coach_id = coach_row[0]
+        coach_id = _require_verified_coach(cur, cid)
         cur.execute(
             "DELETE FROM coach_students WHERE coach_id = %s AND student_id = %s RETURNING id",
             (coach_id, student_id),

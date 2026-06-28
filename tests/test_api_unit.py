@@ -1,6 +1,8 @@
 """API unit tests — no browser, no DB, no MinIO required.
 Runs in CI via: pytest tests/test_api_unit.py
 """
+from datetime import date
+
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -167,3 +169,44 @@ class TestNotificationRouterMethods:
         from routers.notifications import router
         methods = {m for r in router.routes for m in getattr(r, "methods", [])}
         assert "PUT" in methods
+
+
+# ---------------------------------------------------------------------------
+# 6. Verified coach AI class-operation templates
+# ---------------------------------------------------------------------------
+class TestCoachAiClassOperations:
+    def test_group_template_has_fixed_dates_and_operational_sets(self):
+        from routers.coach_ai import GenerateClassDocumentRequest, _render_document, _template_document
+
+        request = GenerateClassDocumentRequest(
+            document_type="lesson_schedule",
+            title="2주 혼합반",
+            objective="자유형 호흡",
+            start_date=date(2026, 6, 29),
+            weeks=2,
+            sessions_per_week=2,
+        )
+        result = _template_document(request)
+        rendered = _render_document(request.title, request.audience_label, result)
+
+        assert len(result.sessions) == 4
+        assert result.sessions[0].session_date == "2026-06-29"
+        assert "출석·안전 확인" in rendered
+        assert "레인" in rendered
+        assert "입문·초급 조정" in rendered
+
+    def test_cohort_template_uses_anonymous_member_refs(self):
+        from routers.coach_ai import _template_insight
+
+        result = _template_insight([{
+            "member_ref": "S1",
+            "sessions_30d": 0,
+            "distance_30d": 0,
+            "avg_distance_30d": 0,
+            "days_since_last": None,
+            "hard_sessions_14d": 0,
+            "latest_readiness_score": None,
+        }])
+
+        assert result.groups[0].member_refs == ["S1"]
+        assert all("이름" not in group.rationale for group in result.groups)

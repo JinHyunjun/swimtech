@@ -30,16 +30,34 @@ ON CONFLICT (username) DO NOTHING;
 
 -- ── 코치 프로필 등록 (초대코드: SWIM-TEST1) ────────────────────────────────
 
-INSERT INTO coaches (customer_id, specialty, career, intro, invite_code)
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_organization VARCHAR(120);
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'pending';
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_note TEXT;
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100);
+
+INSERT INTO coaches (customer_id, specialty, career, intro, invite_code,
+                     credential_type, credential_number, credential_organization,
+                     verification_status, verified_at, verified_by)
 SELECT c.id,
        '자유형·접영',
        '테스트용 코치 계정 (자동 생성)',
        '테스트 코치 프로필입니다.',
-       'SWIM-TEST1'
+       'SWIM-TEST1',
+       'QA 테스트 자격', 'QA-COACH-001', 'SwimMate QA',
+       'verified', NOW(), 'test_seed'
 FROM customers c
 WHERE c.username = 'coach_test'
   AND NOT EXISTS (SELECT 1 FROM coaches WHERE invite_code = 'SWIM-TEST1')
 ON CONFLICT DO NOTHING;
+
+UPDATE coaches SET
+    credential_type = 'QA 테스트 자격', credential_number = 'QA-COACH-001',
+    credential_organization = 'SwimMate QA', verification_status = 'verified',
+    verified_at = COALESCE(verified_at, NOW()), verified_by = 'test_seed'
+WHERE customer_id = (SELECT id FROM customers WHERE username = 'coach_test');
 
 -- ── 코치 ↔ 수강생 active 연동 등록 ───────────────────────────────────────
 

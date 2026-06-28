@@ -6,6 +6,7 @@ role='admin' 컬럼 기반 권한 체계.
 import os
 import psycopg2
 from fastapi import APIRouter, Request, HTTPException, Cookie
+from pydantic import BaseModel, Field
 from routers.auth import decode_token
 from activity_log import log_activity, resolve_menu_name
 
@@ -68,6 +69,35 @@ def _safe_float(value, default=0.0):
 def _normalize_page_size(value, default=20):
     size = _safe_int(value, default)
     return size if size in (20, 50, 100) else default
+
+
+def _ensure_coach_verification(cur):
+    cur.execute("SELECT to_regclass('public.coaches')")
+    if not cur.fetchone()[0]:
+        return False
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_organization VARCHAR(120)")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_status VARCHAR(12) NOT NULL DEFAULT 'pending'")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verification_note TEXT")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ")
+    cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS verified_by VARCHAR(100)")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS coach_verification_events (
+            id          SERIAL PRIMARY KEY,
+            coach_id    INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+            reviewer    VARCHAR(100) NOT NULL,
+            status      VARCHAR(12) NOT NULL,
+            note        TEXT,
+            created_at  TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
+    return True
+
+
+class CoachVerificationBody(BaseModel):
+    status: str = Field(..., max_length=12)
+    note: str | None = Field(default=None, max_length=500)
 
 
 def _require_admin(swimtech_token: str):
@@ -283,6 +313,139 @@ def get_activity(swimtech_token: str = Cookie(default=None)):
         "training_log_writes_7d": counts.get("training_log_create", 0),
         "plan_shares_7d": counts.get("plan_share", 0),
     }
+
+
+@router.get("/coaches")
+def list_coach_verifications(
+    swimtech_token: str = Cookie(default=None),
+    status: str = "pending",
+    page: int = 1,
+    page_size: int = 20,
+):
+    """코치 자격 검토 목록. 자격 번호는 관리자에게만 노출한다."""
+    _require_admin(swimtech_token)
+    page = max(1, _safe_int(page, 1))
+    page_size = _normalize_page_size(page_size, 20)
+    offset = (page - 1) * page_size
+    status = status if status in ("pending", "verified", "rejected", "all") else "pending"
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        if not _ensure_coach_verification(cur):
+            conn.commit()
+            return {"coaches": [], "total": 0, "page": page, "page_size": page_size, "status": status,
+                    "summary": {"pending": 0, "verified": 0, "rejected": 0, "documents_30d": 0, "published_30d": 0}}
+        cur.execute("""
+            SELECT COUNT(*) FILTER (WHERE COALESCE(verification_status, 'pending') = 'pending'),
+                   COUNT(*) FILTER (WHERE verification_status = 'verified'),
+                   COUNT(*) FILTER (WHERE verification_status = 'rejected')
+            FROM coaches
+        """)
+        counts = cur.fetchone()
+        summary = {
+            "pending": _safe_int(counts[0]), "verified": _safe_int(counts[1]),
+            "rejected": _safe_int(counts[2]), "documents_30d": 0, "published_30d": 0,
+        }
+        cur.execute("SELECT to_regclass('public.coach_ai_documents')")
+        if cur.fetchone()[0]:
+            cur.execute("""
+                SELECT COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),
+                       COUNT(*) FILTER (WHERE published_at >= NOW() - INTERVAL '30 days')
+                FROM coach_ai_documents
+            """)
+            docs = cur.fetchone()
+            summary["documents_30d"] = _safe_int(docs[0])
+            summary["published_30d"] = _safe_int(docs[1])
+        where = "" if status == "all" else "WHERE COALESCE(co.verification_status, 'pending') = %s"
+        params = [] if status == "all" else [status]
+        cur.execute(
+            f"""
+            SELECT co.id, c.name, c.username, c.email, co.specialty, co.career,
+                   co.credential_type, co.credential_number, co.credential_organization,
+                   COALESCE(co.verification_status, 'pending'), co.verification_note,
+                   co.created_at, co.verified_at, co.verified_by
+            FROM coaches co JOIN customers c ON c.id = co.customer_id
+            {where}
+            ORDER BY CASE COALESCE(co.verification_status, 'pending') WHEN 'pending' THEN 0 ELSE 1 END,
+                     co.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, page_size, offset),
+        )
+        coaches = [{
+            "id": r[0], "name": r[1], "username": r[2], "email": r[3],
+            "specialty": r[4], "career": r[5], "credential_type": r[6],
+            "credential_number": r[7], "credential_organization": r[8],
+            "verification_status": r[9], "verification_note": r[10],
+            "created_at": str(r[11]), "verified_at": str(r[12]) if r[12] else None,
+            "verified_by": r[13],
+        } for r in cur.fetchall()]
+        cur.execute(
+            f"SELECT COUNT(*) FROM coaches co {where}",
+            tuple(params),
+        )
+        total = _safe_int(cur.fetchone()[0])
+        conn.commit()
+        return {"coaches": coaches, "total": total, "page": page, "page_size": page_size,
+                "status": status, "summary": summary}
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.patch("/coaches/{coach_id}/verification")
+def update_coach_verification(
+    coach_id: int,
+    body: CoachVerificationBody,
+    swimtech_token: str = Cookie(default=None),
+):
+    """관리자가 코치 자격을 승인하거나 사유와 함께 반려한다."""
+    reviewer = _require_admin(swimtech_token)
+    status = (body.status or "").strip().lower()
+    note = (body.note or "").strip() or None
+    if status not in ("verified", "rejected"):
+        raise HTTPException(400, "승인 또는 반려 상태만 선택할 수 있습니다.")
+    if status == "rejected" and not note:
+        raise HTTPException(400, "반려 사유를 입력해주세요.")
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        if not _ensure_coach_verification(cur):
+            raise HTTPException(404, "코치 정보를 찾을 수 없습니다.")
+        cur.execute(
+            """
+            UPDATE coaches SET verification_status = %s, verification_note = %s,
+                verified_at = CASE WHEN %s = 'verified' THEN NOW() ELSE NULL END,
+                verified_by = CASE WHEN %s = 'verified' THEN %s ELSE NULL END
+            WHERE id = %s RETURNING customer_id
+            """,
+            (status, note, status, status, reviewer, coach_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "코치 정보를 찾을 수 없습니다.")
+        cur.execute(
+            "INSERT INTO coach_verification_events (coach_id, reviewer, status, note) VALUES (%s,%s,%s,%s)",
+            (coach_id, reviewer, status, note),
+        )
+        cur.execute("SELECT to_regclass('public.notifications')")
+        if cur.fetchone()[0]:
+            message = "코치 본인 확인이 완료되었습니다." if status == "verified" else f"코치 본인 확인이 반려되었습니다: {note}"
+            cur.execute(
+                "INSERT INTO notifications (customer_id, type, message, target_id) VALUES (%s,%s,%s,%s)",
+                (row[0], "coach_verification", message, coach_id),
+            )
+        conn.commit()
+        return {"coach_id": coach_id, "verification_status": status, "reviewer": reviewer}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, f"코치 인증 처리 오류: {e}")
+    finally:
+        cur.close()
+        conn.close()
 
 
 @router.get("/training-health")

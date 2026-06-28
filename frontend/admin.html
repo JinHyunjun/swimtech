@@ -149,6 +149,12 @@
 .pill.deleted  { background: rgba(248,113,113,.12); color: var(--status-danger); }
 .pill.success  { background: rgba(74,222,128,.12); color: var(--status-success); }
 .pill.fail     { background: rgba(248,113,113,.12); color: var(--status-danger); }
+.pill.pending  { background: rgba(251,191,36,.12); color: #fbbf24; }
+.pill.rejected { background: rgba(248,113,113,.12); color: var(--status-danger); }
+.verify-actions { display:flex; gap:6px; }
+.verify-btn { border:.5px solid var(--border); border-radius:var(--radius-sm); padding:5px 9px; background:var(--bg); color:var(--text); cursor:pointer; font-size:var(--fs-caption); }
+.verify-btn.approve { border-color:rgba(74,222,128,.45); color:var(--status-success); }
+.verify-btn.reject { border-color:rgba(248,113,113,.45); color:var(--status-danger); }
 
 .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
 .search-input {
@@ -301,6 +307,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="dashboard">대시보드</button>
     <button class="admin-tab" data-tab="users">사용자 관리</button>
+    <button class="admin-tab" data-tab="coaches">코치 인증</button>
     <button class="admin-tab" data-tab="activity">메뉴 사용 분석</button>
     <button class="admin-tab" data-tab="training-health">훈련 운영</button>
     <button class="admin-tab" data-tab="logs">운영 로그</button>
@@ -383,7 +390,51 @@
     </div>
   </section>
 
-  <!-- 3) 메뉴 사용 분석 -->
+  <!-- 3) 코치 자격 인증 -->
+  <section class="admin-section" id="tab-coaches">
+    <div class="panel">
+      <div class="summary-cards">
+        <div class="summary-card"><div class="label">인증 검토 대기</div><div class="value energy" id="c-pending">—</div></div>
+        <div class="summary-card"><div class="label">인증 완료 코치</div><div class="value" id="c-verified">—</div></div>
+        <div class="summary-card"><div class="label">30일 AI 강습안</div><div class="value" id="c-documents">—</div></div>
+        <div class="summary-card"><div class="label">30일 회원 배포</div><div class="value" id="c-published">—</div></div>
+      </div>
+      <div class="table-controls">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <label class="page-size-control">검토 상태
+            <select class="page-size-select" id="c-status">
+              <option value="pending">검토 대기</option>
+              <option value="verified">승인 완료</option>
+              <option value="rejected">반려</option>
+              <option value="all">전체</option>
+            </select>
+          </label>
+          <label class="page-size-control">표시 개수
+            <select class="page-size-select" id="c-page-size" data-list="coaches">
+              <option value="20">20개</option><option value="50">50개</option><option value="100">100개</option>
+            </select>
+          </label>
+        </div>
+        <div class="pager">
+          <button class="pager-btn pager-action" id="c-first" data-list="coaches" data-target="first">처음</button>
+          <button class="pager-btn pager-action" id="c-prev" data-list="coaches" data-dir="-1">이전</button>
+          <span class="pager-pages" id="c-page-numbers"></span>
+          <span class="pager-info" id="c-page-info">—</span>
+          <button class="pager-btn pager-action" id="c-next" data-list="coaches" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="c-last" data-list="coaches" data-target="last">끝</button>
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:var(--fs-caption);margin-bottom:12px;">자격 종류·번호·발급 기관과 회원 정보를 대조한 뒤 승인하세요. 처리 이력은 별도로 보관됩니다.</div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>신청자</th><th>전문 분야/경력</th><th>자격 정보</th><th>상태</th><th>신청·처리일</th><th>처리</th></tr></thead>
+          <tbody id="c-body"><tr><td colspan="6" class="loading-state">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4) 메뉴 사용 분석 -->
   <section class="admin-section" id="tab-activity">
     <div class="panel">
       <div class="panel-title">오늘 가장 많이 사용한 메뉴</div>
@@ -588,10 +639,11 @@ const EVENT_LABEL = {
 const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
 const listState = {
   users: { page: 1, pageSize: 20, q: '', totalPages: 1 },
+  coaches: { page: 1, pageSize: 20, status: 'pending', totalPages: 1 },
   logs: { page: 1, pageSize: 50, eventType: '', totalPages: 1 },
   feedback: { page: 1, pageSize: 50, feedbackType: '', totalPages: 1 },
 };
-const prefixList = { u: 'users', l: 'logs', f: 'feedback' };
+const prefixList = { u: 'users', c: 'coaches', l: 'logs', f: 'feedback' };
 
 function fmtDate(s) {
   if (!s) return '-';
@@ -652,6 +704,7 @@ function renderPageNumbers(list, currentPage, totalPages) {
 }
 function reloadList(list) {
   if (list === 'users') return loadUsers();
+  if (list === 'coaches') return loadCoaches();
   if (list === 'logs') return loadLogs();
   if (list === 'feedback') return loadFeedback();
 }
@@ -748,7 +801,55 @@ document.getElementById('u-search').addEventListener('keydown', e => {
   }
 });
 
-// 3) 메뉴 사용 분석
+// 3) 코치 자격 인증
+const COACH_STATUS_LABEL = { pending:'검토 대기', verified:'승인 완료', rejected:'반려' };
+async function loadCoaches() {
+  const body = document.getElementById('c-body');
+  body.innerHTML = '<tr><td colspan="6" class="loading-state">불러오는 중...</td></tr>';
+  try {
+    const query = buildQuery({ status:listState.coaches.status, page:listState.coaches.page, page_size:listState.coaches.pageSize });
+    const data = await authedFetch('/api/admin/coaches?' + query);
+    const summary = data.summary || {};
+    document.getElementById('c-pending').textContent = fmtNumber(summary.pending);
+    document.getElementById('c-verified').textContent = fmtNumber(summary.verified);
+    document.getElementById('c-documents').textContent = fmtNumber(summary.documents_30d);
+    document.getElementById('c-published').textContent = fmtNumber(summary.published_30d);
+    updatePager('c', data.total, data.page || listState.coaches.page, data.page_size || listState.coaches.pageSize);
+    if (!data.coaches.length) {
+      body.innerHTML = '<tr><td colspan="6" class="empty-state">해당 상태의 코치 신청이 없습니다.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.coaches.map(c => `
+      <tr>
+        <td><strong>${escapeHtml(c.name || '-')}</strong><div style="font-size:11px;color:var(--muted);">@${escapeHtml(c.username || '-')} · ${escapeHtml(c.email || '-')}</div></td>
+        <td>${escapeHtml(c.specialty || '-')}<div style="font-size:11px;color:var(--muted);max-width:220px;white-space:normal;">${escapeHtml(c.career || '-')}</div></td>
+        <td><strong>${escapeHtml(c.credential_type || '-')}</strong><div style="font-size:11px;color:var(--muted);">${escapeHtml(c.credential_organization || '-')} · ${escapeHtml(c.credential_number || '-')}</div></td>
+        <td><span class="pill ${c.verification_status}">${COACH_STATUS_LABEL[c.verification_status] || c.verification_status}</span>${c.verification_note ? `<div style="font-size:11px;color:var(--muted);margin-top:4px;white-space:normal;">${escapeHtml(c.verification_note)}</div>` : ''}</td>
+        <td>${fmtDate(c.created_at)}${c.verified_at ? `<div style="font-size:11px;color:var(--muted);">처리 ${fmtDate(c.verified_at)}</div>` : ''}</td>
+        <td>${c.verification_status === 'pending' ? `<div class="verify-actions"><button class="verify-btn approve" onclick="reviewCoach(${c.id},'verified')">승인</button><button class="verify-btn reject" onclick="reviewCoach(${c.id},'rejected')">반려</button></div>` : '-'}</td>
+      </tr>`).join('');
+  } catch (e) { console.error(e); }
+}
+document.getElementById('c-status').addEventListener('change', e => {
+  listState.coaches.status = e.target.value;
+  listState.coaches.page = 1;
+  loadCoaches();
+});
+async function reviewCoach(coachId, status) {
+  const note = status === 'rejected' ? prompt('반려 사유를 입력해주세요.') : prompt('승인 메모가 있으면 입력해주세요. (선택)');
+  if (status === 'rejected' && !String(note || '').trim()) return;
+  if (status === 'verified' && note === null) return;
+  try {
+    const response = await fetch(`/api/admin/coaches/${coachId}/verification`, {
+      method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status, note:String(note || '').trim() || null})
+    });
+    if (!response.ok) throw new Error((await response.json()).detail || '처리하지 못했습니다.');
+    await loadCoaches();
+  } catch (error) { alert(error.message || '처리하지 못했습니다.'); }
+}
+
+// 4) 메뉴 사용 분석
 function renderMenuBars(containerId, items) {
   const el = document.getElementById(containerId);
   if (!items.length) { el.innerHTML = '<div class="empty-state">아직 데이터가 없습니다.</div>'; return; }
@@ -949,6 +1050,7 @@ document.addEventListener('click', e => {
 // 초기 로드
 loadDashboard();
 loadUsers();
+loadCoaches();
 loadActivity();
 loadTrainingHealth();
 loadLogs();

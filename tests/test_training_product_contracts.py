@@ -302,6 +302,48 @@ def test_admin_header_does_not_link_to_member_dashboard():
     assert "← 대시보드" not in admin_page
 
 
+def test_plan_p6_verified_coach_ai_class_operations_are_connected():
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    coach_api = (ROOT / "api" / "routers" / "coach.py").read_text(encoding="utf-8")
+    coach_ai = (ROOT / "api" / "routers" / "coach_ai.py").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    coach_page = (ROOT / "frontend" / "coach.html").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    assert "## P6 — 완료" in checklist
+    assert "AI 단체 강습 훈련표·강의 일정표 제작" in checklist
+    assert "coach_ai.router" in main
+    assert "verification_status" in coach_api
+    assert "credential_number" in coach_api
+    assert "_require_verified_coach" in coach_api
+    assert '@router.put("/verification")' in coach_api
+    assert "COALESCE(co.verification_status, 'pending') = 'verified'" in coach_api
+    assert '@router.post("/ai/documents/generate")' in coach_ai
+    assert '@router.post("/ai/documents/{document_id}/publish")' in coach_ai
+    assert '@router.get("/class-documents")' in coach_ai
+    assert '@router.post("/ai/class-insight")' in coach_ai
+    assert "response_schema=ClassDocumentResult" in coach_ai
+    assert "member_ref" in coach_ai and "roster_map" in coach_ai
+    assert "generation_mode" in coach_ai and "template" in coach_ai
+    assert '@router.get("/coaches")' in admin_api
+    assert '@router.patch("/coaches/{coach_id}/verification")' in admin_api
+    assert "coach_verification_events" in admin_api
+    assert 'id="coach-verification-card"' in coach_page
+    assert 'id="coach-ai-studio"' in coach_page
+    assert 'id="coach-ai-insight"' in coach_page
+    assert 'id="my-class-documents"' in coach_page
+    assert 'data-tab="coaches"' in admin_page
+    assert 'id="c-page-size"' in admin_page
+    assert 'id="c-documents"' in admin_page
+    assert "코치 등록·본인 확인 권한 경계" in api_qa
+    assert "AI 단체 강습안 생성·선택 배포·익명 브리핑" in api_qa
+    assert "#coach-ai-studio" in ui_qa
+    assert "#tab-coaches" in ui_qa
+
+
 def test_admin_feedback_shows_author_nickname_contract():
     feedback_api = (ROOT / "api" / "routers" / "feedback.py").read_text(encoding="utf-8")
     admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
