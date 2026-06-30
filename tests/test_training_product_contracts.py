@@ -13,6 +13,19 @@ def test_analysis_routers_are_not_publicly_registered():
     assert "include_router(stream.router" not in main
 
 
+def test_readme_describes_current_training_helper_and_retires_analysis_claims():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "# 🏊 SwimMate — 수영 훈련을 기록하고 설계하는 올인원 도우미" in readme
+    assert "영상 영법 분석 — 개선 중 · 공개 서비스 비활성" in readme
+    assert "Vercel 프론트엔드 + Render FastAPI + Neon PostgreSQL" in readme
+    assert "코치 코드" in readme and "비회원 체험" in readme
+    assert "AI 수영 영법 분석 & 올인원 트레이닝 플랫폼" not in readme
+    assert "영법 분류 정확도 **94.4%**" not in readme
+    assert "관절 검출 정확도 **81.5%**" not in readme
+    assert "[데모 영상 / 스크린샷 자리]" not in readme
+
+
 def test_legacy_analysis_urls_are_redirected_or_retired():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     # Vercel serves the frontend directory; its tracked config is the deploy source.
