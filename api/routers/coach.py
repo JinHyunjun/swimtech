@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from datetime import date
 import json
+from integrations.jira_client import JiraApiError, JiraClient, JiraConfigurationError
 from routers.auth import verify_token
 
 router = APIRouter()
@@ -60,6 +61,21 @@ def _ensure_tables():
             content     TEXT NOT NULL,
             created_at  TIMESTAMP DEFAULT NOW()
         );
+        CREATE TABLE IF NOT EXISTS coach_action_items (
+            id              SERIAL PRIMARY KEY,
+            coach_id        INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+            student_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+            category        VARCHAR(30) NOT NULL,
+            title           VARCHAR(200) NOT NULL,
+            description     TEXT,
+            status          VARCHAR(20) NOT NULL DEFAULT 'open',
+            sync_status     VARCHAR(20) NOT NULL DEFAULT 'pending',
+            jira_issue_key  VARCHAR(40),
+            jira_issue_url  TEXT,
+            sync_error      TEXT,
+            created_at      TIMESTAMPTZ DEFAULT NOW(),
+            updated_at      TIMESTAMPTZ DEFAULT NOW()
+        );
     """)
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_type VARCHAR(60)")
     cur.execute("ALTER TABLE coaches ADD COLUMN IF NOT EXISTS credential_number VARCHAR(120)")
@@ -72,6 +88,8 @@ def _ensure_tables():
     cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_coaches_unique_credential
                    ON coaches(credential_organization, credential_number)
                    WHERE credential_organization IS NOT NULL AND credential_number IS NOT NULL""")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_action_items_coach ON coach_action_items(coach_id, created_at DESC)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_action_items_student ON coach_action_items(student_id, created_at DESC)")
     conn.commit()
     cur.close()
     conn.close()
@@ -142,6 +160,13 @@ class PlanRequest(BaseModel):
     student_id: int
     content:    str
     plan_meta:  Optional[Dict[str, Any]] = None
+
+
+class CoachActionItemRequest(BaseModel):
+    student_id: int
+    category: str = Field(default="technique", pattern="^(technique|recovery|attendance|training-plan)$")
+    title: str = Field(..., min_length=3, max_length=200)
+    description: str = Field(default="", max_length=3000)
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -637,6 +662,209 @@ def get_my_coach_profile(request: Request):
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
     finally:
+        conn.close()
+
+
+def _crew_member_signal(
+    *,
+    last_training_date: date | None,
+    readiness_score: int | None,
+    hard_sessions_14d: int,
+) -> dict[str, str]:
+    if readiness_score is not None and readiness_score < 50:
+        return {"level": "attention", "label": "회복 확인"}
+    if hard_sessions_14d >= 2:
+        return {"level": "attention", "label": "고강도 연속"}
+    if last_training_date is None:
+        return {"level": "watch", "label": "훈련 기록 없음"}
+    if (date.today() - last_training_date).days >= 10:
+        return {"level": "watch", "label": "10일 이상 공백"}
+    return {"level": "steady", "label": "안정적"}
+
+
+@router.get("/crew-dashboard")
+def get_crew_dashboard(request: Request):
+    """Coach-facing roster snapshot built from the canonical training logs."""
+    _ensure_tables()
+    username = _require_user(request)
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        customer_id = _get_customer_id(conn, username)
+        coach_id = _require_coach(cur, customer_id)
+        cur.execute(
+            """
+            SELECT cs.student_id,
+                   COALESCE(NULLIF(c.nickname, ''), NULLIF(c.name, ''), c.username),
+                   c.username,
+                   COUNT(tl.id) FILTER (WHERE tl.log_date >= CURRENT_DATE - INTERVAL '30 days'),
+                   COALESCE(SUM(tl.total_distance) FILTER (WHERE tl.log_date >= CURRENT_DATE - INTERVAL '30 days'), 0),
+                   MAX(tl.log_date),
+                   COUNT(tl.id) FILTER (
+                       WHERE tl.log_date >= CURRENT_DATE - INTERVAL '14 days'
+                         AND tl.intensity = '힘듦'
+                   )
+            FROM coach_students cs
+            JOIN customers c ON c.id = cs.student_id
+            LEFT JOIN training_logs tl ON tl.customer_id = cs.student_id
+            WHERE cs.coach_id = %s AND cs.status = 'active'
+            GROUP BY cs.student_id, c.nickname, c.name, c.username, cs.created_at
+            ORDER BY cs.created_at DESC
+            """,
+            (coach_id,),
+        )
+        rows = cur.fetchall()
+
+        cur.execute("SELECT to_regclass('public.training_readiness')")
+        has_readiness = bool(cur.fetchone()[0])
+        members = []
+        for row in rows:
+            readiness_score = None
+            if has_readiness:
+                cur.execute(
+                    """SELECT readiness_score FROM training_readiness
+                       WHERE customer_id = %s ORDER BY check_date DESC LIMIT 1""",
+                    (row[0],),
+                )
+                readiness_row = cur.fetchone()
+                readiness_score = int(readiness_row[0]) if readiness_row else None
+            signal = _crew_member_signal(
+                last_training_date=row[5],
+                readiness_score=readiness_score,
+                hard_sessions_14d=int(row[6] or 0),
+            )
+            members.append({
+                "student_id": int(row[0]),
+                "display_name": row[1] or row[2],
+                "sessions_30d": int(row[3] or 0),
+                "distance_30d": int(row[4] or 0),
+                "last_training_date": str(row[5]) if row[5] else None,
+                "readiness_score": readiness_score,
+                "hard_sessions_14d": int(row[6] or 0),
+                "signal": signal,
+            })
+
+        members.sort(key=lambda item: {"attention": 0, "watch": 1, "steady": 2}[item["signal"]["level"]])
+        cur.execute(
+            """
+            SELECT cai.id, cai.student_id,
+                   COALESCE(NULLIF(c.nickname, ''), NULLIF(c.name, ''), c.username),
+                   cai.category, cai.title, cai.status, cai.sync_status,
+                   cai.jira_issue_key, cai.jira_issue_url, cai.created_at
+            FROM coach_action_items cai
+            JOIN customers c ON c.id = cai.student_id
+            WHERE cai.coach_id = %s
+            ORDER BY cai.created_at DESC LIMIT 8
+            """,
+            (coach_id,),
+        )
+        action_items = [{
+            "id": int(row[0]), "student_id": int(row[1]), "student_name": row[2],
+            "category": row[3], "title": row[4], "status": row[5],
+            "sync_status": row[6], "jira_issue_key": row[7], "jira_issue_url": row[8],
+            "created_at": str(row[9]),
+        } for row in cur.fetchall()]
+
+        return {
+            "summary": {
+                "member_count": len(members),
+                "sessions_30d": sum(item["sessions_30d"] for item in members),
+                "distance_30d": sum(item["distance_30d"] for item in members),
+                "attention_count": sum(item["signal"]["level"] != "steady" for item in members),
+            },
+            "members": members,
+            "action_items": action_items,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"크루 현황을 불러오지 못했습니다: {exc}") from exc
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.post("/action-items", status_code=201)
+def create_coach_action_item(body: CoachActionItemRequest, request: Request):
+    """Persist a coach task first, then mirror it to Jira when configured."""
+    _ensure_tables()
+    username = _require_user(request)
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        customer_id = _get_customer_id(conn, username)
+        coach_id = _require_coach(cur, customer_id)
+        cur.execute(
+            """SELECT COALESCE(NULLIF(c.nickname, ''), NULLIF(c.name, ''), c.username)
+               FROM coach_students cs JOIN customers c ON c.id = cs.student_id
+               WHERE cs.coach_id = %s AND cs.student_id = %s AND cs.status = 'active'""",
+            (coach_id, body.student_id),
+        )
+        student = cur.fetchone()
+        if not student:
+            raise HTTPException(403, "연동된 수강생에게만 코칭 과제를 만들 수 있습니다.")
+
+        title = body.title.strip()
+        description = body.description.strip()
+        cur.execute(
+            """INSERT INTO coach_action_items
+                   (coach_id, student_id, category, title, description, sync_status)
+               VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id""",
+            (coach_id, body.student_id, body.category, title, description or None),
+        )
+        action_id = int(cur.fetchone()[0])
+        conn.commit()
+
+        category_names = {
+            "technique": "영법 교정",
+            "recovery": "회복 확인",
+            "attendance": "출석 확인",
+            "training-plan": "훈련 계획",
+        }
+        jira_description = (
+            "SwimMate 크루 코칭 과제\n"
+            f"회원: {student[0]}\n"
+            f"분류: {category_names[body.category]}\n\n"
+            f"{description or '코치가 SwimMate에서 생성한 확인 과제입니다.'}"
+        )
+        try:
+            issue = JiraClient().create_issue(
+                summary=title,
+                description=jira_description,
+                labels=["swimmate", body.category],
+            )
+            cur.execute(
+                """UPDATE coach_action_items
+                   SET sync_status = 'synced', jira_issue_key = %s, jira_issue_url = %s,
+                       sync_error = NULL, updated_at = NOW()
+                   WHERE id = %s""",
+                (issue["key"], issue["url"], action_id),
+            )
+            conn.commit()
+            return {
+                "id": action_id, "sync_status": "synced",
+                "jira_issue_key": issue["key"], "jira_issue_url": issue["url"],
+            }
+        except (JiraApiError, JiraConfigurationError) as exc:
+            cur.execute(
+                """UPDATE coach_action_items
+                   SET sync_status = 'failed', sync_error = %s, updated_at = NOW()
+                   WHERE id = %s""",
+                (str(exc)[:500], action_id),
+            )
+            conn.commit()
+            return {
+                "id": action_id, "sync_status": "failed",
+                "message": "SwimMate에는 저장했지만 Jira 동기화에 실패했습니다.",
+            }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise HTTPException(500, f"코칭 과제를 만들지 못했습니다: {exc}") from exc
+    finally:
+        cur.close()
         conn.close()
 
 

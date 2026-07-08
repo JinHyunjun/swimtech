@@ -57,6 +57,10 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SMTP_EMAIL=${SMTP_EMAIL}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - JIRA_BASE_URL=${JIRA_BASE_URL}
+      - JIRA_EMAIL=${JIRA_EMAIL}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis

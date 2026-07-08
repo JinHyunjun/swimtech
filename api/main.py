@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, coach_ai, pool, chat, admin, health_import
+from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, coach_ai, pool, chat, admin, health_import, jira
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
@@ -112,6 +112,23 @@ CREATE TABLE IF NOT EXISTS coach_plans (
     content     TEXT NOT NULL,
     created_at  TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS coach_action_items (
+    id              SERIAL PRIMARY KEY,
+    coach_id        INTEGER NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,
+    student_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    category        VARCHAR(30) NOT NULL,
+    title           VARCHAR(200) NOT NULL,
+    description     TEXT,
+    status          VARCHAR(20) NOT NULL DEFAULT 'open',
+    sync_status     VARCHAR(20) NOT NULL DEFAULT 'pending',
+    jira_issue_key  VARCHAR(40),
+    jira_issue_url  TEXT,
+    sync_error      TEXT,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_coach_action_items_coach ON coach_action_items(coach_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coach_action_items_student ON coach_action_items(student_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS pool_favorites (
     id         SERIAL PRIMARY KEY,
     username   VARCHAR(100) NOT NULL,
@@ -288,6 +305,7 @@ app.include_router(coach.router,          prefix="/api/coach",           tags=["
 app.include_router(coach_ai.router,       prefix="/api/coach",           tags=["코치 AI 강습 운영"])
 app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
+app.include_router(jira.router,           prefix="/api/jira",            tags=["Jira 연동"])
 
 @app.get("/api/health")
 def health():

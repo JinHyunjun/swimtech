@@ -213,6 +213,12 @@ POSTGRES_DB=swimmate
 MINIO_ROOT_USER=swimmate
 MINIO_ROOT_PASSWORD=change-me-too
 SECRET_KEY=replace-with-a-long-random-string
+
+# Jira coach action-item integration (optional)
+JIRA_BASE_URL=https://your-site.atlassian.net
+JIRA_EMAIL=your-atlassian-account@example.com
+JIRA_API_TOKEN=your-api-token
+JIRA_PROJECT_KEY=KAN
 ```
 
 선택 기능에 따라 `GEMINI_API_KEY`, Google/Kakao OAuth 키, `KAKAO_JS_KEY`, `NOTION_TOKEN`, 관리자 계정 정보를 추가합니다.

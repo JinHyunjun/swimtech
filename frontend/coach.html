@@ -156,6 +156,31 @@
 .coach-plan-generate { padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 700; background: rgba(250,204,21,.12); color: #facc15; border: 0.5px solid rgba(250,204,21,.35); cursor: pointer; }
 .coach-plan-generate:hover { background: rgba(250,204,21,.2); }
 
+/* ── 크루 운영 대시보드 ── */
+.crew-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.jira-state { padding:4px 9px; border-radius:var(--radius-pill); font-size:var(--fs-caption); font-weight:700; background:rgba(148,163,184,.12); color:var(--muted); white-space:nowrap; }
+.jira-state.connected { background:rgba(74,222,128,.14); color:var(--green); }
+.jira-state.failed { background:rgba(248,113,113,.14); color:#f87171; }
+.crew-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px; }
+.crew-metric { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-sm); padding:12px; }
+.crew-metric strong { display:block; color:var(--text); font-size:var(--fs-body-lg); margin-bottom:2px; }
+.crew-metric span { color:var(--muted); font-size:var(--fs-caption); }
+.crew-member { display:grid; grid-template-columns:minmax(120px,1.2fr) repeat(3,minmax(70px,.7fr)) auto; align-items:center; gap:10px; padding:12px 0; border-top:0.5px solid var(--border); }
+.crew-member-name { font-weight:700; color:var(--text); }
+.crew-member-stat { color:var(--muted); font-size:var(--fs-caption); }
+.crew-member-stat strong { color:var(--text); display:block; font-size:var(--fs-body); }
+.crew-signal { display:inline-flex; align-items:center; padding:3px 8px; border-radius:var(--radius-pill); font-size:var(--fs-caption); font-weight:700; }
+.crew-signal.steady { background:rgba(74,222,128,.12); color:var(--green); }
+.crew-signal.watch { background:rgba(250,204,21,.12); color:#facc15; }
+.crew-signal.attention { background:rgba(248,113,113,.12); color:#f87171; }
+.crew-action-btn { border:0.5px solid rgba(0,180,216,.4); background:rgba(0,180,216,.1); color:var(--blue); padding:7px 10px; border-radius:var(--radius-sm); font-size:var(--fs-caption); font-weight:700; cursor:pointer; }
+.crew-action-btn:hover { background:rgba(0,180,216,.18); }
+.action-list-title { margin-top:18px; color:var(--muted); font-size:var(--fs-caption); font-weight:700; }
+.action-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-top:0.5px solid var(--border); }
+.action-item-title { color:var(--text); font-size:var(--fs-caption); }
+.action-item-meta { color:var(--muted); font-size:var(--fs-caption); margin-top:2px; }
+.jira-link { color:var(--blue); font-size:var(--fs-caption); font-weight:700; text-decoration:none; white-space:nowrap; }
+
 /* ── 상태 배지 ── */
 .badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
 .badge-pending { background: rgba(250,204,21,.15); color: #facc15; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
@@ -207,6 +232,10 @@
 @media (max-width: 500px) {
   .student-actions { flex-wrap: wrap; gap: 6px; }
   .coach-profile { flex-direction: column; }
+  .crew-summary { grid-template-columns:repeat(2,1fr); }
+  .crew-member { grid-template-columns:1fr 1fr; }
+  .crew-member-name { grid-column:1 / -1; }
+  .crew-action-btn { grid-column:1 / -1; }
 }
 
 /* 자유수영 공유 */
@@ -360,6 +389,20 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <div style="font-size: var(--fs-caption);color:var(--muted);">학생이 <strong>수강생 탭</strong>에서 코드를 직접 입력하면 연동됩니다.</div>
         </div>
 
+        <!-- 크루 훈련 운영판 -->
+        <div class="c-card coach-only-tool" id="crew-operations-card">
+          <div class="crew-header">
+            <div>
+              <div class="c-card-title" style="margin-bottom:4px;">📊 크루 훈련 운영판</div>
+              <div style="font-size:var(--fs-caption);color:var(--muted);">최근 30일 훈련 흐름과 확인이 필요한 회원을 한눈에 봅니다.</div>
+            </div>
+            <span class="jira-state" id="jira-state">Jira 확인 중</span>
+          </div>
+          <div class="crew-summary" id="crew-summary"></div>
+          <div id="crew-members"><div class="c-loading">크루 현황을 불러오는 중...</div></div>
+          <div id="crew-action-items"></div>
+        </div>
+
         <!-- 수강생 목록 -->
         <div class="c-card coach-only-tool">
           <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size: var(--fs-caption);color:var(--muted);font-weight:400;"></span></div>
@@ -503,6 +546,38 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <div id="my-class-documents"><div class="c-loading">불러오는 중...</div></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Jira 코칭 과제 모달 -->
+<div id="modal-action-item" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-action-item')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('modal-action-item')">✕</button>
+    <div class="modal-title">🎯 코칭 과제 만들기</div>
+    <input type="hidden" id="action-student-id">
+    <div style="font-size:var(--fs-caption);color:var(--muted);margin-bottom:12px;">수강생: <strong id="action-student-name"></strong></div>
+    <div class="c-field">
+      <div class="c-label">분류</div>
+      <select id="action-category" class="c-input">
+        <option value="technique">영법 교정</option>
+        <option value="recovery">회복 확인</option>
+        <option value="attendance">출석 확인</option>
+        <option value="training-plan">훈련 계획</option>
+      </select>
+    </div>
+    <div class="c-field">
+      <div class="c-label">제목</div>
+      <input id="action-title" class="c-input" maxlength="200" placeholder="예: 자유형 호흡 타이밍 확인">
+    </div>
+    <div class="c-field">
+      <div class="c-label">코치 메모</div>
+      <textarea id="action-description" class="c-textarea" maxlength="3000" placeholder="확인할 내용과 다음 훈련에서 적용할 방법을 적어주세요."></textarea>
+    </div>
+    <div style="font-size:var(--fs-caption);color:var(--muted);">저장하면 SwimMate 과제와 Jira 업무가 함께 생성됩니다.</div>
+    <div class="modal-actions">
+      <button class="c-btn c-btn-ghost" onclick="closeModal('modal-action-item')">취소</button>
+      <button class="c-btn c-btn-primary" id="action-submit-btn" onclick="submitActionItem()">과제 만들기</button>
     </div>
   </div>
 </div>
@@ -699,6 +774,122 @@ async function loadMyClassDocuments() {
   } catch { el.innerHTML = '<div class="ssh-empty">불러올 수 없습니다.</div>'; }
 }
 
+function formatCrewDistance(metres) {
+  const value = Number(metres || 0);
+  return value >= 1000 ? `${(value / 1000).toFixed(1)}km` : `${value}m`;
+}
+
+async function loadJiraStatus() {
+  const badge = document.getElementById('jira-state');
+  if (!badge) return;
+  badge.className = 'jira-state';
+  badge.textContent = 'Jira 확인 중';
+  try {
+    const response = await fetch('/api/jira/status', {credentials:'include'});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.connected) throw new Error(data.detail || '연결 실패');
+    badge.className = 'jira-state connected';
+    badge.textContent = `Jira ${data.project_key} 연결됨`;
+  } catch (error) {
+    badge.className = 'jira-state failed';
+    badge.textContent = 'Jira 연결 확인 필요';
+  }
+}
+
+async function loadCrewDashboard() {
+  const memberEl = document.getElementById('crew-members');
+  const summaryEl = document.getElementById('crew-summary');
+  const actionEl = document.getElementById('crew-action-items');
+  if (!memberEl || !summaryEl || !actionEl) return;
+  try {
+    const response = await fetch('/api/coach/crew-dashboard', {credentials:'include'});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '크루 현황을 불러오지 못했습니다.');
+    const summary = data.summary || {};
+    summaryEl.innerHTML = `
+      <div class="crew-metric"><strong>${summary.member_count || 0}명</strong><span>연동 회원</span></div>
+      <div class="crew-metric"><strong>${summary.sessions_30d || 0}회</strong><span>30일 훈련</span></div>
+      <div class="crew-metric"><strong>${formatCrewDistance(summary.distance_30d)}</strong><span>30일 거리</span></div>
+      <div class="crew-metric"><strong>${summary.attention_count || 0}명</strong><span>확인 필요</span></div>`;
+
+    const members = data.members || [];
+    if (!members.length) {
+      memberEl.innerHTML = '<div class="c-empty"><div class="c-empty-text">연동된 회원이 생기면 훈련 현황이 여기에 표시됩니다.</div></div>';
+    } else {
+      memberEl.innerHTML = members.map(member => {
+        const name = esc(member.display_name || '회원');
+        const readiness = member.readiness_score == null ? '—' : member.readiness_score;
+        const lastDate = member.last_training_date || '기록 없음';
+        const signal = member.signal || {level:'steady', label:'안정적'};
+        return `<div class="crew-member">
+          <div><div class="crew-member-name">${name}</div><span class="crew-signal ${esc(signal.level)}">${esc(signal.label)}</span></div>
+          <div class="crew-member-stat"><strong>${member.sessions_30d || 0}회</strong>30일 훈련</div>
+          <div class="crew-member-stat"><strong>${formatCrewDistance(member.distance_30d)}</strong>누적 거리</div>
+          <div class="crew-member-stat"><strong>${readiness}</strong>${esc(lastDate)}</div>
+          <button class="crew-action-btn" data-student-id="${member.student_id}" data-student-name="${name}" data-signal="${esc(signal.label)}" onclick="openActionItemFromButton(this)">코칭 과제</button>
+        </div>`;
+      }).join('');
+    }
+
+    const actionItems = data.action_items || [];
+    if (!actionItems.length) {
+      actionEl.innerHTML = '<div class="action-list-title">아직 생성한 코칭 과제가 없습니다.</div>';
+    } else {
+      actionEl.innerHTML = '<div class="action-list-title">최근 코칭 과제</div>' + actionItems.map(item => {
+        const link = item.jira_issue_url
+          ? `<a class="jira-link" href="${esc(item.jira_issue_url)}" target="_blank" rel="noopener">${esc(item.jira_issue_key)} ↗</a>`
+          : `<span class="jira-state failed">동기화 실패</span>`;
+        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)}</div></div>${link}</div>`;
+      }).join('');
+    }
+  } catch (error) {
+    summaryEl.innerHTML = '';
+    memberEl.innerHTML = `<div class="c-empty"><div class="c-empty-text">${esc(error.message)}</div></div>`;
+    actionEl.innerHTML = '';
+  }
+}
+
+function openActionItemFromButton(button) {
+  const studentId = button.dataset.studentId;
+  const studentName = button.dataset.studentName || '회원';
+  const signal = button.dataset.signal || '';
+  document.getElementById('action-student-id').value = studentId;
+  document.getElementById('action-student-name').textContent = studentName;
+  document.getElementById('action-category').value = signal.includes('회복') ? 'recovery' : signal.includes('공백') || signal.includes('기록') ? 'attendance' : 'technique';
+  document.getElementById('action-title').value = signal && signal !== '안정적' ? `[${signal}] ${studentName} 코칭 확인` : `${studentName} 코칭 과제`;
+  document.getElementById('action-description').value = '';
+  openModal('modal-action-item');
+}
+
+async function submitActionItem() {
+  const button = document.getElementById('action-submit-btn');
+  const body = {
+    student_id: Number(document.getElementById('action-student-id').value),
+    category: document.getElementById('action-category').value,
+    title: document.getElementById('action-title').value.trim(),
+    description: document.getElementById('action-description').value.trim(),
+  };
+  if (!body.title) { toast('과제 제목을 입력해주세요.', false); return; }
+  button.disabled = true;
+  button.textContent = '생성 중...';
+  try {
+    const response = await fetch('/api/coach/action-items', {
+      method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '과제를 만들지 못했습니다.');
+    closeModal('modal-action-item');
+    if (data.sync_status === 'synced') toast(`${data.jira_issue_key} Jira 과제가 생성되었습니다.`);
+    else toast(data.message || 'SwimMate에 저장했지만 Jira 연결을 확인해주세요.', false);
+    loadCrewDashboard();
+  } catch (error) {
+    toast(error.message || '네트워크 오류', false);
+  } finally {
+    button.disabled = false;
+    button.textContent = '과제 만들기';
+  }
+}
+
 async function loadCoachTab() {
   const start = document.getElementById('ai-start');
   if (start && !start.value) start.value = new Date().toISOString().slice(0,10);
@@ -720,6 +911,8 @@ async function loadCoachTab() {
       loadLessons();
       loadSwimShares();
       loadClassDocuments();
+      loadCrewDashboard();
+      loadJiraStatus();
     } else {
       document.getElementById("coach-unregistered").style.display = "";
     }

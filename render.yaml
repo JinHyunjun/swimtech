@@ -24,6 +24,15 @@ services:
         sync: false
       - key: ADMIN_PW
         sync: false
+      # Jira coach action-item integration
+      - key: JIRA_BASE_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: JIRA_PROJECT_KEY
+        sync: false
       # ── 소셜 로그인/지도 (쓰면) ────────────
       - key: KAKAO_CLIENT_ID
         sync: false
