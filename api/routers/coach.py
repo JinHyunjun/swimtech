@@ -3,19 +3,29 @@
 import os
 import random
 import string
+import time
 from typing import Any, Dict, List, Optional
 
 import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 import json
 from integrations.jira_client import JiraApiError, JiraClient, JiraConfigurationError
 from routers.auth import verify_token
 
 router = APIRouter()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
+_JIRA_ANALYTICS_TTL_SECONDS = 300
+_JIRA_ANALYTICS_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
+_JIRA_CATEGORY_LABELS = {
+    "technique": "영법 교정",
+    "recovery": "회복 확인",
+    "attendance": "출석 확인",
+    "training-plan": "훈련 계획",
+    "other": "기타",
+}
 
 
 def _get_db():
@@ -682,6 +692,209 @@ def _crew_member_signal(
     return {"level": "steady", "label": "안정적"}
 
 
+def _parse_jira_datetime(value: Any) -> datetime | None:
+    if not value or not isinstance(value, str):
+        return None
+    clean = value.replace("Z", "+00:00")
+    if len(clean) >= 5 and clean[-5] in ("+", "-") and clean[-3] != ":":
+        clean = f"{clean[:-2]}:{clean[-2:]}"
+    try:
+        parsed = datetime.fromisoformat(clean)
+    except ValueError:
+        try:
+            parsed = datetime.strptime(value[:19], "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _week_start(day: date) -> date:
+    return day - timedelta(days=day.weekday())
+
+
+def _week_label(day: date) -> str:
+    return f"{day.month}/{day.day:02d}"
+
+
+def _jira_category_from_labels(labels: Any) -> str:
+    label_set = {str(label) for label in (labels or [])}
+    for key in ("technique", "recovery", "attendance", "training-plan"):
+        if key in label_set:
+            return key
+    return "other"
+
+
+def _empty_jira_analytics(
+    project_key: str | None = None,
+    *,
+    available: bool = False,
+    error: str | None = None,
+) -> Dict[str, Any]:
+    today = date.today()
+    week_starts = [_week_start(today) - timedelta(days=7 * offset) for offset in range(5, -1, -1)]
+    return {
+        "available": available,
+        "project_key": project_key,
+        "error": error,
+        "open_count": 0,
+        "done_count": 0,
+        "done_this_week": 0,
+        "average_resolution_days": None,
+        "category_counts": [
+            {"key": key, "label": label, "count": 0}
+            for key, label in _JIRA_CATEGORY_LABELS.items()
+        ],
+        "status_counts": [],
+        "weekly_flow": [
+            {"week": _week_label(week), "created": 0, "done": 0}
+            for week in week_starts
+        ],
+        "stale_items": [],
+        "cache": {"hit": False, "ttl_seconds": _JIRA_ANALYTICS_TTL_SECONDS},
+    }
+
+
+def _build_jira_analytics(
+    issues: List[Dict[str, Any]],
+    project_key: str,
+    base_url: str = "",
+) -> Dict[str, Any]:
+    today = date.today()
+    current_week = _week_start(today)
+    week_starts = [_week_start(today) - timedelta(days=7 * offset) for offset in range(5, -1, -1)]
+    weekly = {week: {"week": _week_label(week), "created": 0, "done": 0} for week in week_starts}
+    category_counts = {key: 0 for key in _JIRA_CATEGORY_LABELS}
+    status_counts: Dict[str, Dict[str, Any]] = {}
+    stale_candidates = []
+    open_count = 0
+    done_count = 0
+    done_this_week = 0
+    resolution_days: List[float] = []
+
+    for issue in issues:
+        fields = issue.get("fields") or {}
+        status = fields.get("status") or {}
+        status_category = (status.get("statusCategory") or {}).get("key") or ""
+        status_key = str(status_category).lower()
+        status_name = status.get("name") or "상태 없음"
+        is_done = status_key == "done" or bool(fields.get("resolutiondate"))
+
+        status_bucket = status_counts.setdefault(
+            status_name,
+            {"name": status_name, "category": status_key or "unknown", "count": 0},
+        )
+        status_bucket["count"] += 1
+
+        category_key = _jira_category_from_labels(fields.get("labels"))
+        category_counts[category_key] = category_counts.get(category_key, 0) + 1
+
+        created_at = _parse_jira_datetime(fields.get("created"))
+        updated_at = _parse_jira_datetime(fields.get("updated"))
+        resolved_at = _parse_jira_datetime(fields.get("resolutiondate"))
+
+        if created_at:
+            created_week = _week_start(created_at.date())
+            if created_week in weekly:
+                weekly[created_week]["created"] += 1
+        if resolved_at:
+            resolved_week = _week_start(resolved_at.date())
+            if resolved_week in weekly:
+                weekly[resolved_week]["done"] += 1
+            if resolved_week >= current_week:
+                done_this_week += 1
+            if created_at:
+                resolution_days.append(max((resolved_at - created_at).total_seconds() / 86400, 0))
+
+        if is_done:
+            done_count += 1
+        else:
+            open_count += 1
+            last_touched = updated_at or created_at
+            if last_touched and (datetime.now(timezone.utc) - last_touched).days >= 7:
+                key = issue.get("key") or ""
+                stale_candidates.append({
+                    "key": key,
+                    "title": fields.get("summary") or key,
+                    "status": status_name,
+                    "updated": last_touched.date().isoformat(),
+                    "url": f"{base_url}/browse/{key}" if base_url and key else None,
+                })
+
+    status_order = {"new": 0, "indeterminate": 1, "done": 2}
+    ordered_statuses = sorted(
+        status_counts.values(),
+        key=lambda item: (status_order.get(str(item["category"]), 99), item["name"]),
+    )
+
+    return {
+        "available": True,
+        "project_key": project_key,
+        "error": None,
+        "open_count": open_count,
+        "done_count": done_count,
+        "done_this_week": done_this_week,
+        "average_resolution_days": round(sum(resolution_days) / len(resolution_days), 1) if resolution_days else None,
+        "category_counts": [
+            {"key": key, "label": label, "count": category_counts.get(key, 0)}
+            for key, label in _JIRA_CATEGORY_LABELS.items()
+        ],
+        "status_counts": ordered_statuses,
+        "weekly_flow": list(weekly.values()),
+        "stale_items": stale_candidates[:5],
+        "cache": {"hit": False, "ttl_seconds": _JIRA_ANALYTICS_TTL_SECONDS},
+    }
+
+
+def _safe_jira_issue_keys(keys: List[str]) -> List[str]:
+    safe_keys = []
+    for key in keys:
+        value = str(key or "").strip().upper()
+        if value and "-" in value and value.replace("-", "").replace("_", "").isalnum():
+            safe_keys.append(value)
+    return safe_keys[:100]
+
+
+def _get_jira_analytics(issue_keys: List[str] | None = None) -> Dict[str, Any]:
+    try:
+        client = JiraClient()
+        safe_keys = _safe_jira_issue_keys(issue_keys or [])
+        key_part = ",".join(sorted(safe_keys)) or "project-labels"
+        cache_key = f"{client.settings.base_url}|{client.settings.project_key}|{key_part}"
+        now = time.time()
+        cached = _JIRA_ANALYTICS_CACHE.get(cache_key)
+        if cached and now - cached[0] < _JIRA_ANALYTICS_TTL_SECONDS:
+            cached_value = dict(cached[1])
+            cached_value["cache"] = {"hit": True, "ttl_seconds": _JIRA_ANALYTICS_TTL_SECONDS}
+            return cached_value
+
+        if safe_keys:
+            jql = f"issuekey in ({','.join(safe_keys)}) ORDER BY created DESC"
+        else:
+            jql = f"project = {client.settings.project_key} AND labels = swimmate ORDER BY created DESC"
+        result = client.search_issues(
+            jql=jql,
+            fields=["summary", "status", "labels", "created", "updated", "resolutiondate"],
+            max_results=100,
+        )
+        analytics = _build_jira_analytics(
+            result.get("issues", []),
+            client.settings.project_key,
+            client.settings.base_url,
+        )
+        _JIRA_ANALYTICS_CACHE[cache_key] = (now, analytics)
+        return analytics
+    except JiraConfigurationError as exc:
+        return _empty_jira_analytics(error=str(exc))
+    except JiraApiError as exc:
+        return _empty_jira_analytics(error=str(exc))
+
+
+def _invalidate_jira_analytics_cache() -> None:
+    _JIRA_ANALYTICS_CACHE.clear()
+
+
 @router.get("/crew-dashboard")
 def get_crew_dashboard(request: Request):
     """Coach-facing roster snapshot built from the canonical training logs."""
@@ -764,6 +977,16 @@ def get_crew_dashboard(request: Request):
             "sync_status": row[6], "jira_issue_key": row[7], "jira_issue_url": row[8],
             "created_at": str(row[9]),
         } for row in cur.fetchall()]
+        cur.execute(
+            """
+            SELECT jira_issue_key
+            FROM coach_action_items
+            WHERE coach_id = %s AND jira_issue_key IS NOT NULL
+            ORDER BY created_at DESC LIMIT 100
+            """,
+            (coach_id,),
+        )
+        jira_issue_keys = [row[0] for row in cur.fetchall()]
 
         return {
             "summary": {
@@ -774,6 +997,7 @@ def get_crew_dashboard(request: Request):
             },
             "members": members,
             "action_items": action_items,
+            "jira_analytics": _get_jira_analytics(jira_issue_keys),
         }
     except HTTPException:
         raise
@@ -841,6 +1065,7 @@ def create_coach_action_item(body: CoachActionItemRequest, request: Request):
                 (issue["key"], issue["url"], action_id),
             )
             conn.commit()
+            _invalidate_jira_analytics_cache()
             return {
                 "id": action_id, "sync_status": "synced",
                 "jira_issue_key": issue["key"], "jira_issue_url": issue["url"],

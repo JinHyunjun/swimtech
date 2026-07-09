@@ -94,6 +94,8 @@ class JiraClient:
                 message = "Jira 인증 또는 프로젝트 권한을 확인해주세요."
             elif response.status_code == 404:
                 message = "Jira 사이트 주소 또는 프로젝트 키를 확인해주세요."
+            elif response.status_code == 429:
+                message = "Jira 요청이 많습니다. 잠시 후 다시 시도해주세요."
             else:
                 message = "Jira 요청을 처리하지 못했습니다."
             raise JiraApiError(message, response.status_code)
@@ -159,3 +161,27 @@ class JiraClient:
             "url": f"{self.settings.base_url}/browse/{key}",
         }
 
+    def search_issues(
+        self,
+        *,
+        jql: str,
+        fields: list[str] | None = None,
+        max_results: int = 100,
+    ) -> dict[str, Any]:
+        """Search Jira issues with the current enhanced JQL search endpoint.
+
+        The caller supplies a narrow field list so dashboard reads stay cheap and
+        do not pull full issue payloads.
+        """
+        body: dict[str, Any] = {
+            "jql": jql,
+            "maxResults": max(1, min(max_results, 100)),
+        }
+        if fields:
+            body["fields"] = fields
+        return self._request(
+            "POST",
+            "/rest/api/3/search/jql",
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            json=body,
+        )

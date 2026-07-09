@@ -56,6 +56,27 @@ def test_create_issue_uses_project_task_type_and_adf_description():
     assert result["url"].endswith("/browse/KAN-1")
 
 
+def test_search_issues_uses_enhanced_jql_endpoint_with_narrow_fields():
+    captured = {}
+
+    def handler(request: httpx.Request):
+        captured["path"] = request.url.path
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"issues": [{"key": "KAN-1"}], "isLast": True})
+
+    client = JiraClient(SETTINGS, transport=httpx.MockTransport(handler))
+    result = client.search_issues(
+        jql="project = KAN AND labels = swimmate ORDER BY created DESC",
+        fields=["summary", "status", "labels"],
+        max_results=500,
+    )
+
+    assert captured["path"] == "/rest/api/3/search/jql"
+    assert captured["body"]["fields"] == ["summary", "status", "labels"]
+    assert captured["body"]["maxResults"] == 100
+    assert result["issues"][0]["key"] == "KAN-1"
+
+
 def test_api_error_never_exposes_token_or_response_body():
     def handler(_request: httpx.Request):
         return httpx.Response(401, json={"error": "secret-token"})
@@ -64,4 +85,3 @@ def test_api_error_never_exposes_token_or_response_body():
     with pytest.raises(JiraApiError) as caught:
         client.connection_status()
     assert "secret-token" not in str(caught.value)
-
