@@ -17,7 +17,7 @@ from routers.auth import verify_token
 
 router = APIRouter()
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-_JIRA_ANALYTICS_TTL_SECONDS = 300
+_JIRA_ANALYTICS_TTL_SECONDS = 60
 _JIRA_ANALYTICS_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
 _JIRA_CATEGORY_LABELS = {
     "technique": "영법 교정",

@@ -38,7 +38,7 @@ def test_coach_router_exposes_crew_dashboard_and_local_first_action_items():
 
 
 def test_jira_analytics_groups_categories_statuses_and_weekly_flow():
-    from routers.coach import _build_jira_analytics
+    from routers.coach import _JIRA_ANALYTICS_TTL_SECONDS, _build_jira_analytics
 
     now = datetime.now(timezone.utc)
     old = now - timedelta(days=9)
@@ -78,6 +78,8 @@ def test_jira_analytics_groups_categories_statuses_and_weekly_flow():
     assert category_counts["recovery"] == 1
     assert analytics["stale_items"][0]["key"] == "KAN-10"
     assert sum(item["created"] for item in analytics["weekly_flow"]) >= 1
+    assert analytics["cache"]["ttl_seconds"] == 60
+    assert _JIRA_ANALYTICS_TTL_SECONDS == 60
 
 
 def test_coach_page_connects_dashboard_and_jira_action_modal():

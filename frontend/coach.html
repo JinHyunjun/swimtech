@@ -939,7 +939,7 @@ function renderCrewAnalytics(analytics) {
         <div class="crew-chart-canvas"><canvas id="jira-weekly-chart"></canvas><div id="jira-weekly-fallback"></div></div>
       </div>
       <div class="crew-chart-card" style="grid-column:1/-1;min-height:auto;">
-        <div class="crew-chart-title">상태 흐름과 멈춘 과제 <span>최대 ${analytics.cache?.ttl_seconds || 300}초 캐시</span></div>
+        <div class="crew-chart-title">상태 흐름과 멈춘 과제 <span>최대 ${analytics.cache?.ttl_seconds || 60}초 캐시</span></div>
         <div class="crew-pipeline" id="jira-status-pipeline"></div>
         <div id="jira-stale-items"></div>
       </div>
