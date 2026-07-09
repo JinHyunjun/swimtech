@@ -9,6 +9,7 @@ import os
 import re
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -159,6 +160,67 @@ class JiraClient:
             "key": key,
             "id": result.get("id"),
             "url": f"{self.settings.base_url}/browse/{key}",
+        }
+
+    def issue_status(self, issue_key: str) -> dict[str, Any]:
+        key = quote(issue_key.strip().upper(), safe="")
+        issue = self._request("GET", f"/rest/api/3/issue/{key}?fields=status")
+        status = (issue.get("fields") or {}).get("status") or {}
+        category = status.get("statusCategory") or {}
+        return {
+            "name": status.get("name"),
+            "category_key": str(category.get("key") or "").lower(),
+        }
+
+    def transition_issue_to_done(self, issue_key: str) -> dict[str, Any]:
+        """Move a Jira issue to the first available done/completed transition."""
+        key = issue_key.strip().upper()
+        if not key:
+            raise JiraApiError("Jira issue key is required", 400)
+
+        current = self.issue_status(key)
+        if current["category_key"] in {"done", "completed"}:
+            return {"transitioned": False, "already_done": True, "status": current["name"]}
+
+        encoded_key = quote(key, safe="")
+        transitions = self._request(
+            "GET",
+            f"/rest/api/3/issue/{encoded_key}/transitions",
+        ).get("transitions", [])
+        done_transition = next(
+            (
+                item
+                for item in transitions
+                if str(((item.get("to") or {}).get("statusCategory") or {}).get("key") or "").lower()
+                in {"done", "completed"}
+            ),
+            None,
+        )
+        if not done_transition:
+            done_transition = next(
+                (
+                    item
+                    for item in transitions
+                    if any(
+                        token in str(item.get("name") or "").lower()
+                        for token in ("done", "complete", "close", "resolve", "완료", "닫")
+                    )
+                ),
+                None,
+            )
+        if not done_transition:
+            raise JiraApiError("Jira에서 완료 전환을 찾지 못했습니다.", 400)
+
+        self._request(
+            "POST",
+            f"/rest/api/3/issue/{encoded_key}/transitions",
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            json={"transition": {"id": str(done_transition["id"])}},
+        )
+        return {
+            "transitioned": True,
+            "transition_id": str(done_transition["id"]),
+            "transition_name": done_transition.get("name"),
         }
 
     def search_issues(

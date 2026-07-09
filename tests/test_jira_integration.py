@@ -78,6 +78,54 @@ def test_search_issues_uses_enhanced_jql_endpoint_with_narrow_fields():
     assert result["issues"][0]["key"] == "KAN-1"
 
 
+def test_transition_issue_to_done_uses_available_done_transition():
+    captured = {}
+
+    def handler(request: httpx.Request):
+        if request.method == "GET" and request.url.path.endswith("/KAN-1"):
+            return httpx.Response(
+                200,
+                json={"fields": {"status": {"name": "To Do", "statusCategory": {"key": "new"}}}},
+            )
+        if request.method == "GET" and request.url.path.endswith("/transitions"):
+            return httpx.Response(
+                200,
+                json={
+                    "transitions": [
+                        {"id": "11", "name": "Start", "to": {"statusCategory": {"key": "indeterminate"}}},
+                        {"id": "31", "name": "Done", "to": {"statusCategory": {"key": "done"}}},
+                    ]
+                },
+            )
+        captured["path"] = request.url.path
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(204)
+
+    client = JiraClient(SETTINGS, transport=httpx.MockTransport(handler))
+    result = client.transition_issue_to_done("KAN-1")
+
+    assert result["transitioned"] is True
+    assert captured["path"] == "/rest/api/3/issue/KAN-1/transitions"
+    assert captured["body"] == {"transition": {"id": "31"}}
+
+
+def test_transition_issue_to_done_skips_already_done_issue():
+    requests = []
+
+    def handler(request: httpx.Request):
+        requests.append((request.method, request.url.path))
+        return httpx.Response(
+            200,
+            json={"fields": {"status": {"name": "Done", "statusCategory": {"key": "done"}}}},
+        )
+
+    client = JiraClient(SETTINGS, transport=httpx.MockTransport(handler))
+    result = client.transition_issue_to_done("KAN-1")
+
+    assert result["already_done"] is True
+    assert requests == [("GET", "/rest/api/3/issue/KAN-1")]
+
+
 def test_api_error_never_exposes_token_or_response_body():
     def handler(_request: httpx.Request):
         return httpx.Response(401, json={"error": "secret-token"})

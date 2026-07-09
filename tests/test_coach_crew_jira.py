@@ -32,8 +32,10 @@ def test_coach_router_exposes_crew_dashboard_and_local_first_action_items():
 
     assert '@router.get("/crew-dashboard")' in source
     assert '@router.post("/action-items", status_code=201)' in source
+    assert '@router.post("/action-items/{action_item_id}/complete")' in source
     assert "CREATE TABLE IF NOT EXISTS coach_action_items" in source
     assert source.index("INSERT INTO coach_action_items") < source.index("JiraClient().create_issue")
+    assert "transition_issue_to_done" in source
     assert "cs.status = 'active'" in source
 
 
@@ -92,9 +94,11 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
     assert 'id="modal-action-item"' in page
     assert "/api/coach/crew-dashboard" in page
     assert "/api/coach/action-items" in page
+    assert "/api/coach/action-items/${actionItemId}/complete" in page
     assert "/api/jira/status" in page
     assert "openActionItemFromButton" in page
     assert "submitActionItem" in page
+    assert "completeActionItem" in page
     assert "renderCrewAnalytics" in page
     assert "Jira 완료" in page
 

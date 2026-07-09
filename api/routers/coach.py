@@ -1094,6 +1094,82 @@ def create_coach_action_item(body: CoachActionItemRequest, request: Request):
         conn.close()
 
 
+@router.post("/action-items/{action_item_id}/complete")
+def complete_coach_action_item(action_item_id: int, request: Request):
+    """Mark a coach action item complete and mirror the completion to Jira."""
+    _ensure_tables()
+    username = _require_user(request)
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        customer_id = _get_customer_id(conn, username)
+        coach_id = _require_coach(cur, customer_id)
+        cur.execute(
+            """
+            SELECT id, status, jira_issue_key, jira_issue_url
+            FROM coach_action_items
+            WHERE id = %s AND coach_id = %s
+            """,
+            (action_item_id, coach_id),
+        )
+        item = cur.fetchone()
+        if not item:
+            raise HTTPException(404, "코칭 과제를 찾지 못했습니다.")
+        if item[1] == "done":
+            return {
+                "id": int(item[0]),
+                "status": "done",
+                "jira_issue_key": item[2],
+                "jira_issue_url": item[3],
+                "already_done": True,
+            }
+
+        jira_result: dict[str, Any] | None = None
+        if item[2]:
+            try:
+                jira_result = JiraClient().transition_issue_to_done(str(item[2]))
+            except (JiraApiError, JiraConfigurationError) as exc:
+                cur.execute(
+                    """UPDATE coach_action_items
+                       SET sync_status = 'failed', sync_error = %s, updated_at = NOW()
+                       WHERE id = %s""",
+                    (str(exc)[:500], action_item_id),
+                )
+                conn.commit()
+                raise HTTPException(
+                    getattr(exc, "status_code", 502),
+                    "Jira 완료 처리에 실패했습니다. Jira 화면에서 상태를 확인해주세요.",
+                ) from exc
+
+        cur.execute(
+            """UPDATE coach_action_items
+               SET status = 'done', sync_status = CASE WHEN jira_issue_key IS NULL THEN sync_status ELSE 'synced' END,
+                   sync_error = NULL, updated_at = NOW()
+               WHERE id = %s
+               RETURNING id, jira_issue_key, jira_issue_url""",
+            (action_item_id,),
+        )
+        updated = cur.fetchone()
+        conn.commit()
+        _invalidate_jira_analytics_cache()
+        return {
+            "id": int(updated[0]),
+            "status": "done",
+            "jira_issue_key": updated[1],
+            "jira_issue_url": updated[2],
+            "jira": jira_result or {"transitioned": False, "local_only": True},
+        }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise HTTPException(500, f"코칭 과제 완료 처리에 실패했습니다: {exc}") from exc
+    finally:
+        cur.close()
+        conn.close()
+
+
 @router.post("/join")
 def join_coach(req: JoinRequest, request: Request):
     """수강생이 초대코드로 코치 연동."""

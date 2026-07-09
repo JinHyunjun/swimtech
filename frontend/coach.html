@@ -196,6 +196,8 @@
 .action-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-top:0.5px solid var(--border); }
 .action-item-title { color:var(--text); font-size:var(--fs-caption); }
 .action-item-meta { color:var(--muted); font-size:var(--fs-caption); margin-top:2px; }
+.action-item-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.action-complete-btn { padding:5px 9px; color:var(--green); border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.08); }
 .jira-link { color:var(--blue); font-size:var(--fs-caption); font-weight:700; text-decoration:none; white-space:nowrap; }
 
 /* ── 상태 배지 ── */
@@ -1013,7 +1015,10 @@ async function loadCrewDashboard() {
           : `<span class="jira-state failed">동기화 실패</span>`;
         const stateLabel = item.status === 'done' ? 'Jira 완료' : item.status === 'deleted' ? 'Jira 삭제됨' : '진행 중';
         const stateClass = item.status === 'done' ? 'connected' : item.status === 'deleted' ? 'failed' : '';
-        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)} · <span class="jira-state ${stateClass}">${stateLabel}</span></div></div>${link}</div>`;
+        const completeButton = item.status === 'done' || item.status === 'deleted'
+          ? ''
+          : `<button class="crew-action-btn action-complete-btn" onclick="completeActionItem(event, ${Number(item.id)})">완료</button>`;
+        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)} · <span class="jira-state ${stateClass}">${stateLabel}</span></div></div><div class="action-item-actions">${completeButton}${link}</div></div>`;
       }).join('');
     }
   } catch (error) {
@@ -1062,6 +1067,32 @@ async function submitActionItem() {
   } finally {
     button.disabled = false;
     button.textContent = '과제 만들기';
+  }
+}
+
+async function completeActionItem(event, actionItemId) {
+  const button = event?.currentTarget;
+  if (!actionItemId) return;
+  if (button) {
+    button.disabled = true;
+    button.textContent = '처리 중...';
+  }
+  try {
+    const response = await fetch(`/api/coach/action-items/${actionItemId}/complete`, {
+      method:'POST',
+      credentials:'include',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '완료 처리에 실패했습니다.');
+    if (data.jira_issue_key) toast(`${data.jira_issue_key} Jira까지 완료 처리했습니다.`);
+    else toast('SwimMate 코칭 과제를 완료 처리했습니다.');
+    loadCrewDashboard();
+  } catch (error) {
+    toast(error.message || '네트워크 오류', false);
+    if (button) {
+      button.disabled = false;
+      button.textContent = '완료';
+    }
   }
 }
 
