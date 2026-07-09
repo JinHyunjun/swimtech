@@ -112,6 +112,16 @@ class JiraClient:
         )
         project_key = str(project.get("key") or self.settings.project_key).upper()
         project_path = f"/jira/software/projects/{quote(project_key, safe='')}"
+        board_id: str | None = None
+        try:
+            board_id = self._project_board_id(project_key)
+        except JiraApiError:
+            board_id = None
+        board_path = (
+            f"{project_path}/boards/{quote(board_id, safe='')}"
+            if board_id
+            else f"{project_path}/boards"
+        )
         return {
             "connected": True,
             "account_name": account.get("displayName"),
@@ -119,10 +129,26 @@ class JiraClient:
             "project_name": project.get("name"),
             "project_url": f"{self.settings.base_url}{project_path}/list",
             "list_url": f"{self.settings.base_url}{project_path}/list",
-            "board_url": f"{self.settings.base_url}{project_path}/boards",
-            "calendar_url": f"{self.settings.base_url}{project_path}/calendar",
-            "timeline_url": f"{self.settings.base_url}{project_path}/timeline",
+            "board_url": f"{self.settings.base_url}{board_path}",
+            "calendar_url": f"{self.settings.base_url}{board_path}/calendar" if board_id else None,
+            "timeline_url": f"{self.settings.base_url}{board_path}/timeline" if board_id else None,
         }
+
+    def _project_board_id(self, project_key: str | None = None) -> str | None:
+        key = quote((project_key or self.settings.project_key).strip().upper(), safe="")
+        data = self._request(
+            "GET",
+            f"/rest/agile/1.0/board?projectKeyOrId={key}",
+        )
+        boards = data.get("values") or []
+        project_key_upper = (project_key or self.settings.project_key).strip().upper()
+        for board in boards:
+            location = board.get("location") or {}
+            if str(location.get("projectKey") or "").upper() == project_key_upper:
+                return str(board.get("id"))
+        if boards:
+            return str(boards[0].get("id"))
+        return None
 
     def _default_issue_type_id(self) -> str:
         data = self._request(

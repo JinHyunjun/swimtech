@@ -90,6 +90,9 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
     assert 'id="crew-operations-card"' in page
     assert 'id="crew-jira-analytics"' in page
     assert 'id="jira-shortcuts"' in page
+    assert "coach-quick-nav" in page
+    assert "coach-panel" in page
+    assert "openCoachPanel" in page
     assert "jira-category-chart" in page
     assert "jira-weekly-chart" in page
     assert 'id="modal-action-item"' in page

@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
-.coach-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+.coach-page { max-width: 1080px; margin: 0 auto; padding: 24px 16px 80px; }
 
 .coach-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .back-btn {
@@ -44,6 +44,23 @@
   font-size: var(--fs-body); font-weight: 700; color: var(--text); margin-bottom: 14px;
   display: flex; align-items: center; gap: 8px;
 }
+.coach-quick-nav { display:flex; gap:8px; flex-wrap:wrap; margin:-8px 0 16px; }
+.coach-quick-link { display:inline-flex; align-items:center; gap:6px; padding:8px 11px; border-radius:var(--radius-pill); background:rgba(0,180,216,.08); border:.5px solid rgba(0,180,216,.25); color:var(--blue); text-decoration:none; font-size:var(--fs-caption); font-weight:800; }
+.coach-quick-link:hover { background:rgba(0,180,216,.16); }
+.coach-overview-grid { display:grid; grid-template-columns:minmax(260px,.9fr) minmax(320px,1.1fr); gap:12px; align-items:stretch; }
+.coach-overview-grid .c-card { margin-bottom:12px; }
+.coach-panel { padding:0; overflow:hidden; }
+.coach-panel > summary { list-style:none; cursor:pointer; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.coach-panel > summary::-webkit-details-marker { display:none; }
+.coach-panel-heading { min-width:0; }
+.coach-panel-heading .c-card-title { margin-bottom:4px; }
+.coach-panel-desc { color:var(--muted); font-size:var(--fs-caption); line-height:1.45; }
+.coach-panel-toggle { flex-shrink:0; border:.5px solid var(--border); border-radius:var(--radius-pill); padding:5px 9px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; }
+.coach-panel-toggle::after { content:'펼치기'; }
+.coach-panel[open] .coach-panel-toggle::after { content:'접기'; }
+.coach-panel-body { padding:0 22px 22px; }
+.coach-panel.compact .coach-panel-body { padding-top:0; }
+.coach-panel + .coach-panel { margin-top:12px; }
 
 /* ── 폼 ── */
 .c-field { margin-bottom: 14px; }
@@ -256,6 +273,11 @@
 @media (max-width: 500px) {
   .student-actions { flex-wrap: wrap; gap: 6px; }
   .coach-profile { flex-direction: column; }
+  .coach-page { padding: 18px 12px 72px; }
+  .coach-overview-grid { grid-template-columns:1fr; }
+  .coach-panel > summary { padding:16px; align-items:flex-start; }
+  .coach-panel-body { padding:0 16px 18px; }
+  .coach-quick-link { flex:1 1 calc(50% - 8px); justify-content:center; }
   .crew-summary { grid-template-columns:repeat(2,1fr); }
   .crew-analytics-kpis { grid-template-columns:1fr; }
   .crew-chart-grid { grid-template-columns:1fr; }
@@ -327,7 +349,10 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
 .ai-doc-item:first-child { border-top:0; }
 .ai-doc-meta { color:var(--muted); font-size:var(--fs-caption); margin-top:4px; }
 .ai-insight { white-space:pre-wrap; color:var(--text); line-height:1.6; font-size:var(--fs-body); background:var(--bg); border-radius:var(--radius-sm); padding:14px; margin-top:10px; }
-@media(max-width:720px){.ai-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:720px){
+  .coach-overview-grid { grid-template-columns:1fr; }
+  .ai-grid{grid-template-columns:1fr 1fr;}
+}
 @media(max-width:480px){.ai-grid{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -388,6 +413,13 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
 
       <!-- 코치 등록 완료 대시보드 -->
       <div id="coach-dashboard" style="display:none">
+        <div class="coach-quick-nav coach-only-tool" aria-label="코치 운영 빠른 이동">
+          <a class="coach-quick-link" href="#crew-operations-card" onclick="openCoachPanel('crew-operations-card')">📊 운영판</a>
+          <a class="coach-quick-link" href="#coach-students-panel" onclick="openCoachPanel('coach-students-panel')">🏊 수강생</a>
+          <a class="coach-quick-link" href="#lesson-log-card" onclick="openCoachPanel('lesson-log-card')">📋 강습 일지</a>
+          <a class="coach-quick-link" href="#coach-ai-studio" onclick="openCoachPanel('coach-ai-studio')">✨ AI 강습안</a>
+        </div>
+        <div class="coach-overview-grid">
         <div class="c-card verification-card" id="coach-verification-card">
           <div class="c-card-title">🪪 선택 사항 · 코치 자격 인증</div>
           <div class="verification-status" id="coach-verification-status">검토 대기</div>
@@ -415,38 +447,67 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           </div>
           <div style="font-size: var(--fs-caption);color:var(--muted);">학생이 <strong>수강생 탭</strong>에서 코드를 직접 입력하면 연동됩니다.</div>
         </div>
+        </div>
 
         <!-- 크루 훈련 운영판 -->
-        <div class="c-card coach-only-tool" id="crew-operations-card">
-          <div class="crew-header">
-            <div>
+        <details class="c-card coach-only-tool coach-panel" id="crew-operations-card" open>
+          <summary>
+            <div class="coach-panel-heading">
               <div class="c-card-title" style="margin-bottom:4px;">📊 크루 훈련 운영판</div>
-              <div style="font-size:var(--fs-caption);color:var(--muted);">최근 30일 훈련 흐름과 확인이 필요한 회원을 한눈에 봅니다.</div>
+              <div class="coach-panel-desc">최근 30일 훈련 흐름, 확인 필요 회원, Jira 코칭 과제를 한눈에 봅니다.</div>
             </div>
-            <span class="jira-state" id="jira-state">Jira 확인 중</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+              <span class="jira-state" id="jira-state">Jira 확인 중</span>
+              <span class="coach-panel-toggle"></span>
+            </div>
+          </summary>
+          <div class="coach-panel-body">
+            <div class="jira-shortcuts is-hidden" id="jira-shortcuts"></div>
+            <div class="crew-summary" id="crew-summary"></div>
+            <div class="crew-analytics" id="crew-jira-analytics"></div>
+            <div id="crew-members"><div class="c-loading">크루 현황을 불러오는 중...</div></div>
+            <div id="crew-action-items"></div>
           </div>
-          <div class="jira-shortcuts is-hidden" id="jira-shortcuts"></div>
-          <div class="crew-summary" id="crew-summary"></div>
-          <div class="crew-analytics" id="crew-jira-analytics"></div>
-          <div id="crew-members"><div class="c-loading">크루 현황을 불러오는 중...</div></div>
-          <div id="crew-action-items"></div>
-        </div>
+        </details>
 
         <!-- 수강생 목록 -->
-        <div class="c-card coach-only-tool">
-          <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size: var(--fs-caption);color:var(--muted);font-weight:400;"></span></div>
-          <div id="student-list"><div class="c-loading">불러오는 중...</div></div>
-        </div>
+        <details class="c-card coach-only-tool coach-panel" id="coach-students-panel" open>
+          <summary>
+            <div class="coach-panel-heading">
+              <div class="c-card-title">🏊 수강생 목록 <span id="student-count" style="font-size: var(--fs-caption);color:var(--muted);font-weight:400;"></span></div>
+              <div class="coach-panel-desc">연동 회원의 일지, 피드백, 개인 플랜을 관리합니다.</div>
+            </div>
+            <span class="coach-panel-toggle"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div id="student-list"><div class="c-loading">불러오는 중...</div></div>
+          </div>
+        </details>
 
         <!-- 받은 자유수영 -->
-        <div class="c-card coach-only-tool" id="swim-shares-card">
-          <div class="c-card-title">🏊 받은 자유수영</div>
-          <div id="swim-shares-list"><div class="c-loading">불러오는 중...</div></div>
-        </div>
+        <details class="c-card coach-only-tool coach-panel compact" id="swim-shares-card">
+          <summary>
+            <div class="coach-panel-heading">
+              <div class="c-card-title">🏊 받은 자유수영</div>
+              <div class="coach-panel-desc">수강생이 공유한 자유수영 기록을 확인합니다.</div>
+            </div>
+            <span class="coach-panel-toggle"></span>
+          </summary>
+          <div class="coach-panel-body">
+            <div id="swim-shares-list"><div class="c-loading">불러오는 중...</div></div>
+          </div>
+        </details>
 
         <!-- 강습 일지 (일괄 공유) -->
-        <div class="c-card coach-only-tool" id="lesson-log-card">
-          <div class="c-card-title">📋 강습 일지 <span style="font-size:var(--fs-caption);color:var(--muted);font-weight:400;">전체 수강생에게 공유</span></div>
+        <details class="c-card coach-only-tool coach-panel" id="lesson-log-card">
+          <summary>
+            <div class="coach-panel-heading">
+              <div class="c-card-title">📋 강습 일지 <span style="font-size:var(--fs-caption);color:var(--muted);font-weight:400;">전체 수강생에게 공유</span></div>
+              <div class="coach-panel-desc">오늘 예정, 어제 강습, 공지를 한 번에 남깁니다.</div>
+            </div>
+            <span class="coach-panel-toggle"></span>
+          </summary>
+          <div class="coach-panel-body">
           <div class="c-field"><div class="c-label">구분</div>
             <select id="lesson-kind" class="c-input">
               <option value="오늘 예정">오늘 예정 강습</option>
@@ -459,12 +520,19 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <div class="lesson-msg" id="lesson-msg"></div>
           <button class="c-btn c-btn-primary" onclick="submitLesson()">전체 수강생에게 공유</button>
           <div id="lessons-list" style="margin-top:16px;"><div class="c-loading">불러오는 중...</div></div>
-        </div>
+          </div>
+        </details>
 
-        <div class="c-card ai-card coach-only-tool" id="coach-ai-studio">
-          <div class="ai-kicker">AI CLASS OPERATIONS</div>
-          <div class="c-card-title">✨ 단체 강습 설계·일정 배포</div>
-          <div style="color:var(--muted);font-size:var(--fs-caption);line-height:1.55;margin-bottom:14px;">개인 운동 플랜이 아니라 레인 운영, 그룹 순환, 수준별 변형과 안전 확인이 포함된 강습용 초안을 만듭니다. 생성 후 반드시 검토·수정한 뒤 배포하세요.</div>
+        <details class="c-card ai-card coach-only-tool coach-panel" id="coach-ai-studio">
+          <summary>
+            <div class="coach-panel-heading">
+              <div class="ai-kicker">AI CLASS OPERATIONS</div>
+              <div class="c-card-title">✨ 단체 강습 설계·일정 배포</div>
+              <div class="coach-panel-desc">레인 운영, 그룹 순환, 수준별 변형과 안전 확인이 포함된 강습용 초안을 만듭니다.</div>
+            </div>
+            <span class="coach-panel-toggle"></span>
+          </summary>
+          <div class="coach-panel-body">
           <div class="ai-grid">
             <div class="c-field"><div class="c-label">문서 종류</div><select id="ai-doc-type" class="c-input"><option value="training_plan">단체 훈련표</option><option value="lesson_schedule">강의 일정표</option></select></div>
             <div class="c-field"><div class="c-label">제목</div><input id="ai-title" class="c-input" value="4주 영법 향상 강습" maxlength="160"></div>
@@ -494,18 +562,26 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
             </div>
           </div>
           <div style="margin-top:18px;"><div class="c-label">최근 생성 문서</div><div id="ai-documents"><div class="c-loading">불러오는 중...</div></div></div>
-        </div>
+          </div>
+        </details>
 
-        <div class="c-card ai-card coach-only-tool" id="coach-ai-insight">
-          <div class="ai-kicker">PRIVACY-FIRST COHORT INSIGHT</div>
-          <div class="c-card-title">🧭 AI 수업 브리핑</div>
-          <div style="color:var(--muted);font-size:var(--fs-caption);line-height:1.55;">연동 회원의 최근 거리·공백·강도·준비도를 실명 없이 분석해 반 편성, 회복 관찰, 다음 수업 초점을 제안합니다.</div>
+        <details class="c-card ai-card coach-only-tool coach-panel" id="coach-ai-insight">
+          <summary>
+            <div class="coach-panel-heading">
+              <div class="ai-kicker">PRIVACY-FIRST COHORT INSIGHT</div>
+              <div class="c-card-title">🧭 AI 수업 브리핑</div>
+              <div class="coach-panel-desc">연동 회원의 최근 거리·공백·강도·준비도를 실명 없이 분석합니다.</div>
+            </div>
+            <span class="coach-panel-toggle"></span>
+          </summary>
+          <div class="coach-panel-body">
           <div class="c-field" style="margin-top:12px;"><div class="c-label">코치가 궁금한 점</div><input id="insight-question" class="c-input" value="다음 단체 수업의 반 편성과 핵심 초점을 제안해줘." maxlength="300"></div>
           <div class="ai-actions"><button class="c-btn c-btn-primary" id="insight-btn" onclick="generateClassInsight('ai')">AI 브리핑 만들기</button><button class="c-btn c-btn-ghost" id="insight-template-btn" onclick="generateClassInsight('template')">빠른 기록 분석</button></div>
           <div class="ai-source" id="insight-source"></div>
           <div class="ai-insight" id="insight-result" style="display:none;"></div>
           <div class="recipient-grid" id="insight-roster"></div>
-        </div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -727,6 +803,11 @@ function switchTab(tab) {
 
   if (tab === "coach")   loadCoachTab();
   if (tab === "student") loadStudentTab();
+}
+
+function openCoachPanel(panelId) {
+  const panel = document.getElementById(panelId);
+  if (panel && panel.tagName === 'DETAILS') panel.open = true;
 }
 
 // ──────────────── 코치 탭 ────────────────

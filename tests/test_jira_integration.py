@@ -19,6 +19,19 @@ def test_connection_status_returns_safe_project_details():
     def handler(request: httpx.Request):
         if request.url.path.endswith("/myself"):
             return httpx.Response(200, json={"displayName": "Coach"})
+        if request.url.path.endswith("/board"):
+            return httpx.Response(
+                200,
+                json={
+                    "values": [
+                        {
+                            "id": 7,
+                            "name": "KAN board",
+                            "location": {"projectKey": "KAN"},
+                        }
+                    ]
+                },
+            )
         return httpx.Response(200, json={"key": "KAN", "name": "Crew Coach"})
 
     client = JiraClient(SETTINGS, transport=httpx.MockTransport(handler))
@@ -29,9 +42,9 @@ def test_connection_status_returns_safe_project_details():
         "project_name": "Crew Coach",
         "project_url": "https://example.atlassian.net/jira/software/projects/KAN/list",
         "list_url": "https://example.atlassian.net/jira/software/projects/KAN/list",
-        "board_url": "https://example.atlassian.net/jira/software/projects/KAN/boards",
-        "calendar_url": "https://example.atlassian.net/jira/software/projects/KAN/calendar",
-        "timeline_url": "https://example.atlassian.net/jira/software/projects/KAN/timeline",
+        "board_url": "https://example.atlassian.net/jira/software/projects/KAN/boards/7",
+        "calendar_url": "https://example.atlassian.net/jira/software/projects/KAN/boards/7/calendar",
+        "timeline_url": "https://example.atlassian.net/jira/software/projects/KAN/boards/7/timeline",
     }
 
 
