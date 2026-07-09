@@ -61,6 +61,7 @@ services:
       - JIRA_EMAIL=${JIRA_EMAIL}
       - JIRA_API_TOKEN=${JIRA_API_TOKEN}
       - JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}
+      - JIRA_WEBHOOK_SECRET=${JIRA_WEBHOOK_SECRET}
     volumes:
       - ./api:/app
       - ./analysis:/app/analysis

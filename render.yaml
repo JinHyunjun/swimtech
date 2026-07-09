@@ -33,6 +33,8 @@ services:
         sync: false
       - key: JIRA_PROJECT_KEY
         sync: false
+      - key: JIRA_WEBHOOK_SECRET  # Jira webhook 서명 검증용 비밀 키 (secrets.token_hex(32))
+        sync: false
       # ── 소셜 로그인/지도 (쓰면) ────────────
       - key: KAKAO_CLIENT_ID
         sync: false
