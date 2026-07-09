@@ -162,6 +162,47 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 | Optional/Local | Redis, MinIO, Caddy |
 | Quality | pytest, Playwright, API 시나리오 QA, UI 크롤러 |
 
+## 처음 보는 사람을 위한 기술 스택 설명
+
+SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서버”, “기록을 저장하는 데이터베이스”를 나누어 둔 구조입니다. 사용자가 보는 화면은 Vercel이 빠르게 내려주고, 버튼을 눌러 기록 저장·로그인·AI 대화 같은 작업을 할 때는 Render의 FastAPI 서버가 처리한 뒤 Neon PostgreSQL에 저장합니다.
+
+| 기술 | 쉽게 말하면 | SwimMate에서 하는 일 |
+| --- | --- | --- |
+| HTML/CSS/Vanilla JavaScript | 웹 화면을 직접 구성하는 기본 재료 | 대시보드, 훈련 플랜, 일지, 리포트, 코치 화면의 UI와 상호작용 |
+| Chart.js | 숫자를 그래프로 보여주는 도구 | 월간 성장 리포트, Jira 분석, 거리·빈도 추이 시각화 |
+| Kakao Maps SDK | 카카오 지도 기능을 웹에 붙이는 도구 | 주변 수영장 검색과 지도 표시 |
+| Vercel | 정적 웹사이트를 배포하는 서비스 | 사용자가 접속하는 프론트엔드 화면 제공, `/api/*` 요청을 백엔드로 전달 |
+| FastAPI | Python으로 API 서버를 만드는 프레임워크 | 로그인, 훈련 기록, 코치 연동, 커뮤니티, 관리자 API 처리 |
+| Pydantic | 서버로 들어오는 데이터의 형식을 검사하는 도구 | 잘못된 요청을 막고 AI가 만든 JSON 결과도 구조화해 검증 |
+| Neon PostgreSQL | 클라우드 PostgreSQL 데이터베이스 | 회원, 훈련 일지, 플랜, 리포트, 코치-학생 관계, 커뮤니티 데이터 저장 |
+| psycopg2 | Python 서버가 PostgreSQL과 대화하는 연결 도구 | FastAPI 라우터에서 SQL을 실행 |
+| JWT HttpOnly Cookie | 로그인 상태를 안전하게 유지하는 방식 | 사용자가 새로고침해도 로그인 상태를 유지하고 JavaScript 직접 접근을 줄임 |
+| SlowAPI | 요청을 너무 많이 보내는 사용자를 제한하는 도구 | AI 채팅, 코치 AI 생성 등 비용이 생길 수 있는 API 호출 보호 |
+| Google Gemini | 생성형 AI 모델 | 수영 질문 답변, 코치용 단체 강습안·브리핑 생성 |
+| Jira Cloud API | 외부 업무 관리 서비스와 연결하는 API | 코치가 만든 후속 과제를 Jira 업무로 동기화하고 상태를 다시 받아옴 |
+| Notion API | Notion 문서를 웹 서비스와 연결하는 API | 공개 릴리즈 노트 `/changelog` 연동 |
+| GitHub Actions | 저장소 변경 후 자동 작업을 실행하는 도구 | 백엔드 변경 시 Render 배포 훅 호출과 health check |
+| Docker Compose | 로컬에서 여러 서비스를 한 번에 띄우는 도구 | 개발 환경에서 API, DB, Redis, MinIO 등을 함께 실행 |
+| pytest / Playwright | 코드와 화면을 자동으로 검사하는 도구 | API 계약, 주요 사용자 흐름, 화면 오류를 회귀 테스트 |
+
+핵심은 AI가 모든 판단을 대신하는 서비스가 아니라는 점입니다. 훈련 준비도, 주간 추천, 리포트 계산은 설명 가능한 규칙과 DB 집계로 처리하고, Gemini는 질문 답변과 코치 문서 초안처럼 “문장을 만들어야 하는 곳”에만 씁니다.
+
+## 무료 티어 운영 범위
+
+현재 구조는 소규모 포트폴리오·비공개 베타·개인 운영 단계에서는 무료 범위에 맞춰져 있습니다. 다만 사용자 수가 늘면 다음 항목부터 먼저 확인해야 합니다.
+
+| 서비스 | 현재 역할 | 무료 범위 판단 |
+| --- | --- | --- |
+| Vercel Hobby | 프론트엔드 정적 화면과 API rewrite | 개인·비상업 프로젝트 기준으로 적합. 상업 운영이나 큰 트래픽은 Pro 검토 필요 |
+| Render Free Web Service | FastAPI 백엔드 | 무료 인스턴스는 15분 무요청 시 내려가고, 월 750 free instance hours를 공유. 서버가 항상 깨어 있으면 한 달 한도에 가까워짐 |
+| Neon Free | PostgreSQL 운영 DB | 0.5GB 저장소와 100 CU-hours/월 기준. 현재 텍스트 중심 기록에는 적합하지만 사용자가 늘거나 항상 DB가 깨어 있으면 초과 가능 |
+| Gemini Free | AI 코치 대화와 코치 문서 생성 | `/api/chat/send`는 10/minute, 코치 AI 생성은 6/hour로 제한되어 있지만 서비스 전체 일일 RPD 상한은 별도 관리가 필요 |
+| Jira Free | 코치 운영 과제판 | Jira 사용자는 최대 10명 기준. 일반 수영 회원을 Jira 사용자로 초대하지 않고 코치·운영자만 쓰는 구조가 안전 |
+| Kakao Maps / Google OAuth / Kakao OAuth | 지도와 로그인 | 무료 여부와 쿼터는 각 콘솔에서 앱별 사용량 확인 필요 |
+| Notion API | 릴리즈 노트 | 작은 문서 동기화에는 적합. 공개 화면은 실패 시 서비스 핵심 기능과 분리 |
+
+무료 운영을 오래 유지하려면 AI 호출을 사용자 수에 그대로 비례시키지 않고, 코치 문서 생성과 채팅에 전역 일일 예산을 추가하는 것이 다음 단계입니다. Render 백엔드는 cold start가 있으므로 공개 체험이 많아질 경우 Vercel/Cloudflare 계열로 통합하거나 Render 유료 인스턴스로 전환하는 선택지가 있습니다.
+
 ---
 
 ## 테스트와 QA
