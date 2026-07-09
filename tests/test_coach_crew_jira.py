@@ -89,6 +89,7 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
 
     assert 'id="crew-operations-card"' in page
     assert 'id="crew-jira-analytics"' in page
+    assert 'id="jira-shortcuts"' in page
     assert "jira-category-chart" in page
     assert "jira-weekly-chart" in page
     assert 'id="modal-action-item"' in page
@@ -100,6 +101,8 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
     assert "submitActionItem" in page
     assert "completeActionItem" in page
     assert "renderCrewAnalytics" in page
+    assert "renderJiraShortcuts" in page
+    assert "timeline_url" in page
     assert "Jira 완료" in page
 
 

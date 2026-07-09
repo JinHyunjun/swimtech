@@ -110,11 +110,18 @@ class JiraClient:
         project = self._request(
             "GET", f"/rest/api/3/project/{self.settings.project_key}"
         )
+        project_key = str(project.get("key") or self.settings.project_key).upper()
+        project_path = f"/jira/software/projects/{quote(project_key, safe='')}"
         return {
             "connected": True,
             "account_name": account.get("displayName"),
-            "project_key": project.get("key"),
+            "project_key": project_key,
             "project_name": project.get("name"),
+            "project_url": f"{self.settings.base_url}{project_path}/list",
+            "list_url": f"{self.settings.base_url}{project_path}/list",
+            "board_url": f"{self.settings.base_url}{project_path}/boards",
+            "calendar_url": f"{self.settings.base_url}{project_path}/calendar",
+            "timeline_url": f"{self.settings.base_url}{project_path}/timeline",
         }
 
     def _default_issue_type_id(self) -> str:

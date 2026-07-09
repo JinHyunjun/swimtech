@@ -75,7 +75,9 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 - 코치 화면에서 연동 회원의 최근 30일 훈련 횟수, 누적 거리, 마지막 훈련일, 준비도 신호를 한 번에 확인합니다.
 - 코칭 과제를 만들면 SwimMate DB에 먼저 저장하고 Jira 업무로 동기화해 처리 흐름을 이어갑니다.
 - Jira 분석 그래프는 코치가 만든 과제 키를 기준으로 과제 유형, 주간 생성·완료 흐름, 상태별 분포, 7일 이상 멈춘 과제를 보여줍니다.
-- 무료 티어 부담을 줄이기 위해 Jira 분석은 최대 100개 과제를 한 번에 검색하고 5분 동안 서버 캐시를 사용합니다.
+- Jira 상태 변경 웹훅과 SwimMate 완료 버튼을 통해 양방향 완료 동기화를 지원합니다.
+- 코치 화면에서 Jira 목록, 보드, 캘린더, 타임라인을 바로 열어 팀 운영 상황을 공유할 수 있습니다.
+- 무료 티어 부담을 줄이기 위해 Jira 분석은 최대 100개 과제를 한 번에 검색하고 최대 60초 동안 서버 캐시를 사용합니다.
 
 ### 3. 동기부여와 커뮤니티
 
@@ -137,9 +139,10 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
                     ┌──────────────┼──────────────┐
                     ▼              ▼              ▼
             Neon PostgreSQL   Google Gemini   외부 연동
-                                               ├─ Google/Kakao OAuth
-                                               ├─ Kakao Maps
-                                               └─ Notion 변경 이력
+                                                ├─ Google/Kakao OAuth
+                                                ├─ Kakao Maps
+                                                ├─ Jira Cloud
+                                                └─ Notion 변경 이력
 ```
 
 - Vercel rewrite로 동일 출처의 `/api/*`, `/auth/*` 요청을 Render 백엔드에 전달합니다.
@@ -155,6 +158,7 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 | Database | PostgreSQL · Neon |
 | AI | Google Gemini, 구조화 출력, 규칙 기반 폴백 |
 | Infra | Vercel, Render, GitHub Actions, Docker Compose |
+| Collaboration/Ops | Jira Cloud REST API·Webhook, Notion 변경 이력 |
 | Optional/Local | Redis, MinIO, Caddy |
 | Quality | pytest, Playwright, API 시나리오 QA, UI 크롤러 |
 

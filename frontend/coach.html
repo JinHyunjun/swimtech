@@ -199,6 +199,11 @@
 .action-item-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .action-complete-btn { padding:5px 9px; color:var(--green); border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.08); }
 .jira-link { color:var(--blue); font-size:var(--fs-caption); font-weight:700; text-decoration:none; white-space:nowrap; }
+.jira-shortcuts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:-4px 0 14px; }
+.jira-shortcuts.is-hidden { display:none; }
+.jira-shortcut-link { display:inline-flex; align-items:center; gap:5px; padding:7px 10px; border-radius:var(--radius-sm); border:0.5px solid rgba(0,180,216,.35); background:rgba(0,180,216,.08); color:var(--blue); font-size:var(--fs-caption); font-weight:800; text-decoration:none; }
+.jira-shortcut-link.primary { border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.1); color:var(--green); }
+.jira-shortcut-hint { flex-basis:100%; color:var(--muted); font-size:var(--fs-caption); line-height:1.45; }
 
 /* ── 상태 배지 ── */
 .badge-active  { background: rgba(74,222,128,.15); color: #4ade80; padding: 2px 8px; border-radius: var(--radius-md); font-size: var(--fs-caption); font-weight: 700; }
@@ -420,6 +425,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
             </div>
             <span class="jira-state" id="jira-state">Jira 확인 중</span>
           </div>
+          <div class="jira-shortcuts is-hidden" id="jira-shortcuts"></div>
           <div class="crew-summary" id="crew-summary"></div>
           <div class="crew-analytics" id="crew-jira-analytics"></div>
           <div id="crew-members"><div class="c-loading">크루 현황을 불러오는 중...</div></div>
@@ -952,20 +958,49 @@ function renderCrewAnalytics(analytics) {
   renderCrewStaleItems(analytics);
 }
 
+function renderJiraShortcuts(status) {
+  const el = document.getElementById('jira-shortcuts');
+  if (!el) return;
+  if (!status || !status.connected) {
+    el.className = 'jira-shortcuts is-hidden';
+    el.innerHTML = '';
+    return;
+  }
+  const links = [
+    ['Jira 목록', status.list_url || status.project_url, 'primary'],
+    ['보드', status.board_url, ''],
+    ['캘린더', status.calendar_url, ''],
+    ['타임라인', status.timeline_url, '']
+  ].filter(([, url]) => /^https:\/\//.test(String(url || '')));
+  if (!links.length) {
+    el.className = 'jira-shortcuts is-hidden';
+    el.innerHTML = '';
+    return;
+  }
+  const projectName = status.project_name || status.project_key || 'Jira 프로젝트';
+  el.className = 'jira-shortcuts';
+  el.innerHTML = links.map(([label, url, tone]) =>
+    `<a class="jira-shortcut-link ${tone}" href="${esc(url)}" target="_blank" rel="noopener">${esc(label)} ↗</a>`
+  ).join('') + `<div class="jira-shortcut-hint">${esc(projectName)}에서 코치 과제, 프로젝트 일정, 운영 타임라인을 바로 열어 공유할 수 있습니다.</div>`;
+}
+
 async function loadJiraStatus() {
   const badge = document.getElementById('jira-state');
   if (!badge) return;
   badge.className = 'jira-state';
   badge.textContent = 'Jira 확인 중';
+  renderJiraShortcuts(null);
   try {
     const response = await fetch('/api/jira/status', {credentials:'include'});
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.connected) throw new Error(data.detail || '연결 실패');
     badge.className = 'jira-state connected';
     badge.textContent = `Jira ${data.project_key} 연결됨`;
+    renderJiraShortcuts(data);
   } catch (error) {
     badge.className = 'jira-state failed';
     badge.textContent = 'Jira 연결 확인 필요';
+    renderJiraShortcuts(null);
   }
 }
 

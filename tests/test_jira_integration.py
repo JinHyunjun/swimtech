@@ -27,6 +27,11 @@ def test_connection_status_returns_safe_project_details():
         "account_name": "Coach",
         "project_key": "KAN",
         "project_name": "Crew Coach",
+        "project_url": "https://example.atlassian.net/jira/software/projects/KAN/list",
+        "list_url": "https://example.atlassian.net/jira/software/projects/KAN/list",
+        "board_url": "https://example.atlassian.net/jira/software/projects/KAN/boards",
+        "calendar_url": "https://example.atlassian.net/jira/software/projects/KAN/calendar",
+        "timeline_url": "https://example.atlassian.net/jira/software/projects/KAN/timeline",
     }
 
 
