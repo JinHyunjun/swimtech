@@ -100,6 +100,7 @@ def _ensure_tables():
                    WHERE credential_organization IS NOT NULL AND credential_number IS NOT NULL""")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_action_items_coach ON coach_action_items(coach_id, created_at DESC)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_action_items_student ON coach_action_items(student_id, created_at DESC)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_coach_action_items_jira_key ON coach_action_items(jira_issue_key)")
     conn.commit()
     cur.close()
     conn.close()

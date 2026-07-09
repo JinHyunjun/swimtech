@@ -2,6 +2,7 @@ import json
 
 import httpx
 import pytest
+from fastapi import HTTPException
 
 from integrations.jira_client import JiraApiError, JiraClient, JiraSettings
 
@@ -85,3 +86,46 @@ def test_api_error_never_exposes_token_or_response_body():
     with pytest.raises(JiraApiError) as caught:
         client.connection_status()
     assert "secret-token" not in str(caught.value)
+
+
+def test_jira_webhook_signature_uses_atlassian_hmac_format():
+    from routers.jira import _verify_jira_webhook_signature
+
+    secret = "It's a Secret to Everybody"
+    payload = b"Hello World!"
+    signature = "sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"
+
+    _verify_jira_webhook_signature(payload, signature, secret)
+    with pytest.raises(HTTPException) as caught:
+        _verify_jira_webhook_signature(payload, "sha256=bad", secret)
+    assert caught.value.status_code == 401
+
+
+def test_jira_webhook_status_payload_maps_done_and_open_states():
+    from routers.jira import _jira_local_status
+
+    done_payload = {
+        "webhookEvent": "jira:issue_updated",
+        "issue": {
+            "key": "KAN-7",
+            "fields": {
+                "status": {"name": "Done", "statusCategory": {"key": "done"}},
+                "resolutiondate": "2026-07-09T01:00:00.000+0000",
+            },
+        },
+    }
+    open_payload = {
+        "webhookEvent": "jira:issue_updated",
+        "issue": {
+            "key": "KAN-8",
+            "fields": {"status": {"name": "In Progress", "statusCategory": {"key": "indeterminate"}}},
+        },
+    }
+    deleted_payload = {
+        "webhookEvent": "jira:issue_deleted",
+        "issue": {"key": "KAN-9", "fields": {}},
+    }
+
+    assert _jira_local_status(done_payload)["local_status"] == "done"
+    assert _jira_local_status(open_payload)["local_status"] == "open"
+    assert _jira_local_status(deleted_payload)["local_status"] == "deleted"

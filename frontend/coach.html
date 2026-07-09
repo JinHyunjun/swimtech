@@ -1011,7 +1011,9 @@ async function loadCrewDashboard() {
         const link = item.jira_issue_url
           ? `<a class="jira-link" href="${esc(item.jira_issue_url)}" target="_blank" rel="noopener">${esc(item.jira_issue_key)} ↗</a>`
           : `<span class="jira-state failed">동기화 실패</span>`;
-        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)}</div></div>${link}</div>`;
+        const stateLabel = item.status === 'done' ? 'Jira 완료' : item.status === 'deleted' ? 'Jira 삭제됨' : '진행 중';
+        const stateClass = item.status === 'done' ? 'connected' : item.status === 'deleted' ? 'failed' : '';
+        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)} · <span class="jira-state ${stateClass}">${stateLabel}</span></div></div>${link}</div>`;
       }).join('');
     }
   } catch (error) {

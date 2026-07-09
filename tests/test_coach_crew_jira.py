@@ -96,3 +96,14 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
     assert "openActionItemFromButton" in page
     assert "submitActionItem" in page
     assert "renderCrewAnalytics" in page
+    assert "Jira 완료" in page
+
+
+def test_landing_pwa_banner_stays_hidden_until_install_prompt():
+    page = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+
+    banner_start = page.index('id="pwa-banner"')
+    banner_opening_tag = page[banner_start:page.index(">", banner_start)]
+    assert "display:none" in banner_opening_tag
+    assert "display:flex" not in banner_opening_tag
+    assert "beforeinstallprompt" in page

@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS coach_action_items (
 );
 CREATE INDEX IF NOT EXISTS idx_coach_action_items_coach ON coach_action_items(coach_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_coach_action_items_student ON coach_action_items(student_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coach_action_items_jira_key ON coach_action_items(jira_issue_key);
 CREATE TABLE IF NOT EXISTS pool_favorites (
     id         SERIAL PRIMARY KEY,
     username   VARCHAR(100) NOT NULL,
