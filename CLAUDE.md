@@ -2,30 +2,32 @@
 
 ## Project Overview
 
-SwimMate is a swimming technique analysis web app. It uses AI/ML to analyze swimmer video, provides coaching via chat, and helps users find nearby pools.
+SwimMate is a swimming training helper and coach operations web app. The public product focuses on training logs, plans, readiness, reports, community, coach-student workflows, AI coach chat, and coach class-document generation. Video stroke analysis remains retired from the public service until a separate quality, privacy, and infrastructure gate is met.
 
-**Stack**: Python (FastAPI backend), HTML/CSS/JS frontend (multi-page), pytest-playwright for E2E tests.
+**Stack**: Python (FastAPI backend), HTML/CSS/Vanilla JS frontend (multi-page), PostgreSQL, Gemini, Jira/Notion/Kakao integrations, pytest, Playwright, API QA scripts, and UI crawler QA.
 
 ---
 
 ## Mandatory Rule: Tests Must Accompany New Features
 
-> **Every new page or API endpoint requires test coverage.**
+> **Every new page, API endpoint, external integration, admin metric, or cross-screen data flow requires test coverage and QA mapping.**
 
 When you add or modify any of the following, you **must** also add test cases to `tests/test_swimtech.py`:
 
 | What you add | What to test |
 |---|---|
-| New frontend page (`/newpage`) | Load test + primary interactions |
-| New API route (`/api/v1/...`) | Response status + payload shape |
-| New UI component (modal, tab, card) | Visibility + interaction |
-| Modified selector or element ID | Update existing tests to match |
+| New frontend page (`/newpage`) | Load test + primary interactions + UI crawler expectation |
+| New API route (`/api/v1/...`) | Response status + payload shape + permission boundary |
+| New UI component (modal, tab, card) | Visibility + interaction + no console errors |
+| New admin metric | Admin API + `/admin` DOM + read-only QA mapping |
+| New AI/Jira/Notion/Kakao/OAuth integration | Normal path + missing key/failure fallback |
+| Modified selector or element ID | Update existing tests and `PAGE_EXPECTATIONS` to match |
 
 ---
 
 ## Verification Workflow
 
-After every feature change, run the test suite from the project root:
+After every feature change, follow the detailed matrix in `docs/QUALITY_GATE.md` and run the relevant test suite from the project root:
 
 ```bat
 tests\run_tests.bat
@@ -105,6 +107,8 @@ C:\swim\
 
 ## 모든 기능 추가/개선 시 필수 검증 절차
 
+상세 기준은 `docs/QUALITY_GATE.md`를 우선한다. 이 문서는 빠른 작업 체크리스트이고, 기능 유형별 세부 게이트는 품질 문서에 유지한다.
+
 ### 1. 구현 완료 후 자동 검증 순서
 
 ```powershell
@@ -128,6 +132,8 @@ pytest tests/test_swimtech.py --html=tests/report.html --self-contained-html
 | 새 API 엔드포인트 | `test_{기능명}_api` | 1개 |
 | 모달 / 인터랙션 | `test_{기능명}_interaction` | 1개 |
 | 운영 QA 대상 기능 | `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py` 매핑 갱신 | 1개 |
+| 관리자 지표 | 관리자 API + `/admin` DOM + 읽기 전용 QA | 1세트 |
+| 외부 연동 / AI | 정상 경로 + 실패 폴백 + rate limit 또는 캐시 | 1세트 |
 
 ### 2-1. 운영 QA 스크립트 갱신 규칙
 

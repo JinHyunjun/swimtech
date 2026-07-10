@@ -481,3 +481,31 @@ def test_frontend_visible_branding_uses_swimmate():
     assert "SwimMate" in (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
     assert "SwimMate" in (ROOT / "frontend" / "static" / "icons" / "logo.svg").read_text(encoding="utf-8")
     assert checked
+
+
+def test_quality_gate_documentation_is_kept_current():
+    quality_doc = (ROOT / "docs" / "QUALITY_GATE.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
+    claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    pytest_ini = (ROOT / "tests" / "pytest.ini").read_text(encoding="utf-8")
+
+    assert "SwimMate 품질 검증 게이트" in quality_doc
+    assert "단위·계약 59개" in quality_doc
+    assert "Playwright E2E 104개" in quality_doc
+    assert "총 163개" in quality_doc
+    for required in [
+        "준비도·주간 어드바이저",
+        "헬스 데이터 가져오기",
+        "코치 AI 강습 운영",
+        "Jira 운영판",
+        "슈퍼 관리자",
+        "릴리즈·문서",
+        "영상 분석 재활성화",
+    ]:
+        assert required in quality_doc
+    assert "[품질 검증 게이트](./docs/QUALITY_GATE.md)" in readme
+    assert "docs/QUALITY_GATE.md" in checklist
+    assert "품질 검증 게이트 문서화" in checklist
+    assert "docs/QUALITY_GATE.md" in claude
+    assert "section25:" in pytest_ini
