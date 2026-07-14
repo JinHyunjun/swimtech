@@ -13,8 +13,6 @@
 .plan-topbar-title { flex: 1; min-width: 0; }
 .plan-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .plan-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
-.back-btn { background: none; border: 0.5px solid var(--border); color: var(--muted); border-radius: var(--radius-sm); padding: 6px 14px; font-size: var(--fs-caption); cursor: pointer; text-decoration: none; transition: all .2s; white-space: nowrap; }
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
 .btn-create-plan { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); font-weight: 600; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; cursor: pointer; transition: opacity .2s, transform .15s; white-space: nowrap; }
 .btn-create-plan:hover { opacity: .88; transform: translateY(-1px); }
 
@@ -3825,6 +3823,8 @@ async function sharePresetPlan(key, title) {
 })();
 </script>
 <script src="/static/theme.js"></script>
+    <script src="/static/utils.js"></script>
+    <script src="/static/api.js"></script>
 <style id="plan-category-scroll-fix">
   .plan-category-scroll-fix {
     display: flex !important;

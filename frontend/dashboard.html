@@ -12,8 +12,6 @@
 <style>
 .dash-page { max-width: 1120px; margin: 0 auto; padding: 24px 16px 72px; }
 .dash-topbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-.back-btn { background:none; border:.5px solid var(--border); color:var(--muted); border-radius:var(--radius-sm); padding:6px 14px; font-size:var(--fs-caption); text-decoration:none; cursor:pointer; }
-.back-btn:hover { border-color:var(--blue); color:var(--blue); }
 .dash-title { font-size:var(--fs-title); font-style:italic; font-weight:800; letter-spacing:-.02em; color:var(--text); }
 .dash-subtitle { margin:4px 0 0; color:var(--muted); font-size:var(--fs-caption); }
 .demo-banner { display:none; align-items:flex-start; gap:10px; margin-bottom:16px; padding:13px 15px; border:.5px solid rgba(72,202,228,.35); border-radius:var(--radius-md); background:rgba(72,202,228,.10); color:var(--text); font-size:var(--fs-caption); line-height:1.55; }
@@ -384,5 +382,7 @@ async function logout() { await fetch('/auth/logout', {method:'POST',credentials
 </script>
 <script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
 <script src="/static/theme.js"></script>
+    <script src="/static/utils.js"></script>
+    <script src="/static/api.js"></script>
 </body>
 </html>

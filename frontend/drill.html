@@ -21,19 +21,6 @@
   margin-bottom: 28px;
 }
 
-.back-btn {
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  transition: all .2s;
-  text-decoration: none;
-}
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
-
 .drill-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .drill-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
@@ -242,7 +229,7 @@
     </div>
 
     <!-- 자유형 -->
-    <div id="tab-freestyle" class="tab-content active">
+    <div id="tab-freestyle" class="tab-content active" data-tab="freestyle">
       <div class="drill-grid st-stagger">
 
         <div class="drill-card">
@@ -399,7 +386,7 @@
     </div>
 
     <!-- 배영 -->
-    <div id="tab-backstroke" class="tab-content">
+    <div id="tab-backstroke" class="tab-content" data-tab="backstroke">
       <div class="drill-grid st-stagger">
 
         <div class="drill-card">
@@ -526,7 +513,7 @@
     </div>
 
     <!-- 평영 -->
-    <div id="tab-breaststroke" class="tab-content">
+    <div id="tab-breaststroke" class="tab-content" data-tab="breaststroke">
       <div class="drill-grid st-stagger">
 
         <div class="drill-card">
@@ -653,7 +640,7 @@
     </div>
 
     <!-- 접영 -->
-    <div id="tab-butterfly" class="tab-content">
+    <div id="tab-butterfly" class="tab-content" data-tab="butterfly">
       <div class="drill-grid st-stagger">
 
         <div class="drill-card">
@@ -787,17 +774,11 @@
 
 <script>
 "use strict";
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-  });
-});
+SW.initTabs('.tab-bar', '.tab-content');
 </script>
 <script src="/static/theme.js"></script>
+    <script src="/static/utils.js"></script>
+    <script src="/static/api.js"></script>
 </body>
 </html>
 

@@ -21,20 +21,6 @@
   margin-bottom: 28px;
 }
 
-.back-btn {
-  background: none;
-  border: 0.5px solid var(--border);
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  transition: all .2s;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.back-btn:hover { border-color: var(--blue); color: var(--blue); }
-
 .eq-title { font-size: var(--fs-title); font-weight: 600; color: var(--text); }
 .eq-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
@@ -315,17 +301,17 @@
     </div>
 
     <!-- 전체 탭 -->
-    <div id="tab-all" class="tab-content active">
+    <div id="tab-all" class="tab-content active" data-tab="all">
       <div class="eq-grid" id="grid-all"></div>
     </div>
 
     <!-- 기초장비 탭 -->
-    <div id="tab-basic" class="tab-content">
+    <div id="tab-basic" class="tab-content" data-tab="basic">
       <div class="eq-grid" id="grid-basic"></div>
     </div>
 
     <!-- 상급장비 탭 -->
-    <div id="tab-advanced" class="tab-content">
+    <div id="tab-advanced" class="tab-content" data-tab="advanced">
       <div class="eq-grid" id="grid-advanced"></div>
     </div>
 
@@ -333,6 +319,8 @@
 </div>
 
 <script src="/static/theme.js"></script>
+    <script src="/static/utils.js"></script>
+    <script src="/static/api.js"></script>
 <script>
 "use strict";
 
@@ -560,16 +548,7 @@ function renderGrids() {
   });
 }
 
-// 탭 전환
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    const target = document.getElementById('tab-' + btn.dataset.tab);
-    if (target) target.classList.add('active');
-  });
-});
+SW.initTabs('.tab-bar', '.tab-content');
 
 renderGrids();
 </script>
