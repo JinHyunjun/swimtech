@@ -10,6 +10,7 @@ import uuid
 from typing import List, Optional
 
 import psycopg2
+from db import DATABASE_URL, get_db as _get_db
 from fastapi import APIRouter, Cookie, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from minio import Minio
@@ -20,7 +21,6 @@ from routers.auth import decode_token
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-DATABASE_URL     = os.getenv("DATABASE_URL", "")
 ADMIN_ID         = os.getenv("ADMIN_ID", "admin")
 MINIO_ENDPOINT   = os.getenv("MINIO_ENDPOINT",  "minio:9000")
 MINIO_ACCESS     = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
@@ -40,10 +40,6 @@ _MENTION_RE  = re.compile(r"@(\w+)")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 def init_db() -> None:
     if not DATABASE_URL:

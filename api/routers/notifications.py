@@ -9,20 +9,13 @@ import logging
 import os
 from typing import Optional
 
-import psycopg2
 from fastapi import APIRouter, Cookie, HTTPException
 
 from routers.auth import decode_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
-
-
 def _require_login(token: Optional[str]) -> dict:
     if not token:
         raise HTTPException(401, "로그인이 필요합니다.")

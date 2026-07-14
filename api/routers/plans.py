@@ -4,20 +4,13 @@ import os
 import secrets
 from typing import Any, Dict
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from routers.auth import verify_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
-
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 def _ensure_table():
     conn = _get_db()

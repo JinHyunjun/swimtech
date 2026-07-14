@@ -13,7 +13,8 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 
-from routers.training_log import _get_customer_id, _get_db
+from routers.training_log import _get_customer_id
+from db import get_db as _get_db
 
 router = APIRouter()
 

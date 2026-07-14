@@ -4,9 +4,9 @@ import os
 import re
 import uuid
 
-import psycopg2
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from minio import Minio
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -19,16 +19,10 @@ minio_client = Minio(
 )
 
 BUCKET       = os.getenv("MINIO_BUCKET",  "swim-videos")
-DATABASE_URL = os.getenv("DATABASE_URL",  "")
-
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 MAX_FILE_SIZE      = 500 * 1024 * 1024  # 500 MB
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9가-힣_\-]')
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _sanitize_filename(filename: str) -> str:

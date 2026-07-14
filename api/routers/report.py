@@ -6,18 +6,13 @@ import os
 from datetime import date
 from typing import Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from routers.auth import decode_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 logger = logging.getLogger(__name__)
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _get_token_payload(request: Request) -> Optional[dict]:

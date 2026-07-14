@@ -8,6 +8,7 @@ import os
 from typing import Any
 
 import psycopg2
+from db import DATABASE_URL, get_db
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 

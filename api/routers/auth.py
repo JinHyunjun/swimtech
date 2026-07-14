@@ -15,9 +15,9 @@ from fastapi import APIRouter, HTTPException, Request, Response, Cookie
 from fastapi.responses import JSONResponse, RedirectResponse
 from jose import jwt
 from pydantic import BaseModel
-import psycopg2
 import bcrypt
 from activity_log import log_activity
+from db import get_db
 
 from rate_limit import limiter
 
@@ -39,8 +39,7 @@ DEMO_EMAIL = os.getenv("DEMO_EMAIL", "portfolio-demo@swimmate.local")
 DEMO_NAME = os.getenv("DEMO_NAME", "비회원 체험 사용자")
 DEMO_NICKNAME = os.getenv("DEMO_NICKNAME", "체험 사용자")
 
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-REDIS_URL    = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 GOOGLE_OAUTH_FILE   = "/app/credentials/google_oauth_client.json"
 
@@ -65,9 +64,6 @@ _NICKNAME_RE = re.compile(r'^[가-힣a-zA-Z0-9]{2,20}$')
 
 
 # ── DB / Redis helpers ────────────────────────────────────────────────────────
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _get_redis():

@@ -3,15 +3,13 @@ import os
 from datetime import date
 from typing import Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from routers.auth import verify_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
 _SEED = [
     {
         "title": "5월 100km 챌린지",
@@ -47,10 +45,6 @@ class ChallengeCreate(BaseModel):
     goal_distance: int                 # distance=미터, streak=일수
     start_date: str                    # YYYY-MM-DD
     end_date: str
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _ensure_tables():

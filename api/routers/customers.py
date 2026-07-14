@@ -3,17 +3,11 @@ import os
 from fastapi import APIRouter, Cookie, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-import psycopg2
 from routers.admin import _require_admin
+from db import DATABASE_URL, get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 class CustomerCreate(BaseModel):
     name: str

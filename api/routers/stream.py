@@ -8,8 +8,8 @@ from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import StreamingResponse
 from minio import Minio
 import tempfile
-import psycopg2
 from routers.auth import decode_token, verify_token
+from db import DATABASE_URL, get_db
 
 router = APIRouter()
 
@@ -17,15 +17,9 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
 MINIO_ACCESS   = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET   = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
 MINIO_BUCKET   = os.getenv("MINIO_BUCKET", "swim-videos")
-DATABASE_URL   = os.getenv("DATABASE_URL", "")
-
 def get_minio():
     return Minio(MINIO_ENDPOINT, access_key=MINIO_ACCESS,
                  secret_key=MINIO_SECRET, secure=False)
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 def sse(data: dict) -> str:
     """SSE 포맷으로 직렬화"""

@@ -6,7 +6,6 @@ import string
 import time
 from typing import Any, Dict, List, Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -14,9 +13,9 @@ from datetime import date, datetime, timedelta, timezone
 import json
 from integrations.jira_client import JiraApiError, JiraClient, JiraConfigurationError
 from routers.auth import verify_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 _JIRA_ANALYTICS_TTL_SECONDS = 60
 _JIRA_ANALYTICS_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
 _JIRA_CATEGORY_LABELS = {
@@ -26,10 +25,6 @@ _JIRA_CATEGORY_LABELS = {
     "training-plan": "훈련 계획",
     "other": "기타",
 }
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _ensure_tables():

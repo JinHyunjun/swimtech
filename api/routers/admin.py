@@ -4,18 +4,18 @@ role='admin' 컬럼 기반 권한 체계.
 대시보드 / 사용자 관리 / 메뉴 사용 분석 / 훈련 운영 / 운영 로그.
 """
 import os
-import psycopg2
 from fastapi import APIRouter, Request, HTTPException, Cookie
 from pydantic import BaseModel, Field
 from routers.auth import decode_token
 from activity_log import log_activity, resolve_menu_name
+from db import get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 
 def _get_db():
-    conn = psycopg2.connect(DATABASE_URL)
+    """관리자 전용: 서울 타임존으로 커넥션 초기화."""
+    conn = get_db()
     cur = conn.cursor()
     cur.execute("SET TIME ZONE 'Asia/Seoul'")
     cur.close()

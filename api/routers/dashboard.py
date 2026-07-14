@@ -3,21 +3,14 @@ import logging
 import os
 from datetime import date, timedelta
 
-import psycopg2
 from fastapi import APIRouter, Cookie, HTTPException
 from pydantic import BaseModel, Field
 
 from routers.auth import decode_token, verify_token
+from db import DATABASE_URL, get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
-
-
 def _ensure_readiness_table(cur):
     """오늘의 컨디션을 기기와 세션을 넘어 유지할 수 있도록 저장소를 보장한다."""
     # 배포 직후 readiness/advisor 요청이 동시에 들어와도 DDL이 경합하지 않도록 직렬화한다.

@@ -4,14 +4,13 @@ import json
 from datetime import datetime
 from fastapi import APIRouter, Request, Cookie, HTTPException
 from fastapi.responses import HTMLResponse
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
 
 CREDENTIALS_FILE = "/app/credentials/google_oauth_client.json"
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 REDIRECT_URI = "https://localhost/api/sheets/callback"
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
 # localhost HTTP 허용 (개발용)
 os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
 
@@ -21,13 +20,6 @@ STROKE_KO = {"freestyle": "자유형", "backstroke": "배영",
              "breaststroke": "평영", "butterfly": "접영", "unknown": "미확인"}
 PURPOSE_KO = {"record": "기록 단축", "health": "건강하게 오래",
               "technique": "영법 교정", "competition": "대회 준비", "hobby": "취미/건강유지"}
-
-
-import psycopg2
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _require_customer(token: str | None) -> int:

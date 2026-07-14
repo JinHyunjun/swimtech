@@ -10,25 +10,20 @@ import os
 from datetime import date, timedelta
 from typing import Literal, Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field, model_validator
 
+from db import get_db as _get_db
 from rate_limit import limiter
 from routers.coach import _ensure_tables, _get_customer_id, _require_coach, _require_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 MODEL_FALLBACKS = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"]
 _client = None
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _get_client():

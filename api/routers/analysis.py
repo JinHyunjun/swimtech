@@ -1,16 +1,10 @@
 import os
 import uuid
 from fastapi import APIRouter, HTTPException, Request
-import psycopg2
 from routers.auth import decode_token, verify_token
+from db import DATABASE_URL, get_db
 
 router = APIRouter()
-
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 @router.get("/{video_id}")
 def get_analysis(video_id: int):

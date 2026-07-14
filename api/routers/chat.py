@@ -2,7 +2,6 @@
 import os
 from typing import Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from google import genai
@@ -10,9 +9,9 @@ from google.genai import types
 
 from routers.auth import verify_token
 from rate_limit import limiter
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 SYSTEM_PROMPT_BASE = (
@@ -90,10 +89,6 @@ def _get_client() -> genai.Client:
             raise HTTPException(500, "GEMINI_API_KEY가 설정되지 않았습니다")
         _client = genai.Client(api_key=GEMINI_API_KEY)
     return _client
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _get_username(request: Request) -> Optional[str]:

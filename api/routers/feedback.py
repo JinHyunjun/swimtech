@@ -3,22 +3,15 @@ import os
 import logging
 from typing import Optional
 
-import psycopg2
 from fastapi import APIRouter, HTTPException, Cookie
 from pydantic import BaseModel
 
 from routers.admin import _require_admin
 from routers.auth import decode_token
+from db import DATABASE_URL, get_db as _get_db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-
-def _get_db():
-    return psycopg2.connect(DATABASE_URL)
-
 
 def _ensure_table():
     conn = _get_db()

@@ -2,12 +2,10 @@
 import os
 from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException, Cookie
-import psycopg2
 from routers.auth import verify_token, decode_token
+from db import DATABASE_URL, get_db
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
 BADGES = {
     # ── 훈련 일지 기반 뱃지 ──
     "first_log": {
@@ -370,10 +368,6 @@ _STROKE_KEYWORDS = {
     "평영": ["평영", "breaststroke", "breast"],
     "접영": ["접영", "butterfly", "fly"],
 }
-
-
-def get_db():
-    return psycopg2.connect(DATABASE_URL)
 
 
 def _table_exists(cur, table_name: str) -> bool:
