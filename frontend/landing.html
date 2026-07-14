@@ -276,7 +276,31 @@
 }
 .menu-card.hot .menu-btn { background: var(--energy); color: #2a0f06; }
 
+/* ── 훈련 관리: 피처드 레이아웃 (대시보드 강조) ── */
+.train-featured {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+}
+.train-featured .menu-card:first-child {
+  grid-row: span 2;
+  justify-content: flex-start;
+  text-align: left;
+  align-items: flex-start;
+  padding: 26px 24px;
+}
+.train-featured .menu-card:first-child .menu-title { font-size: var(--fs-body-lg); }
+.train-featured .menu-card:first-child .menu-desc { font-size: var(--fs-body); line-height: 1.7; }
+.train-featured .menu-card:first-child .menu-icon { margin-bottom: 8px; }
+
 /* ── 모바일: 2열 reflow, 패딩·폰트 축소 ── */
+@media (max-width: 600px) {
+  .train-featured { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+  .train-featured .menu-card:first-child { grid-row: auto; text-align: center; align-items: center; padding: 12px 8px; }
+  .train-featured .menu-card:first-child .menu-title { font-size: var(--fs-body); }
+  .train-featured .menu-card:first-child .menu-desc { font-size: var(--fs-caption); }
+}
 @media (max-width: 540px) {
   .home-wrap { padding: 20px 12px 40px; }
   .home-title h1 { font-size: var(--fs-title); }
@@ -346,7 +370,7 @@
       <!-- 🏊 훈련 관리 -->
       <div class="menu-section">
         <div class="section-label"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg> 훈련 관리</div>
-        <div class="menu-grid st-stagger">
+        <div class="train-featured st-stagger">
           <a href="/dashboard" class="menu-card train">
             <div class="menu-icon"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#icon-dashboard"/></svg></div>
             <div class="menu-title">훈련 대시보드</div>

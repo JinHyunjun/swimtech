@@ -39,7 +39,7 @@
 .readiness-score.good { color:var(--green); border-color:rgba(74,222,128,.38); background:rgba(74,222,128,.08); }
 .readiness-score.adjust { color:var(--energy); border-color:rgba(251,146,60,.38); background:rgba(251,146,60,.08); }
 .readiness-score.recovery { color:var(--red); border-color:rgba(248,113,113,.38); background:rgba(248,113,113,.08); }
-.readiness-form { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.readiness-form { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 .readiness-field { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:var(--fs-caption); }
 .readiness-field select,.readiness-note { width:100%; box-sizing:border-box; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); padding:9px 10px; font:inherit; }
 .readiness-field select:focus,.readiness-note:focus { outline:none; border-color:var(--blue); }
@@ -85,7 +85,12 @@
 .history-distance { color:var(--text); font-size:var(--fs-body-lg); font-style:italic; font-weight:900; text-align:right; }
 .history-change { color:var(--muted); font-size:var(--fs-caption); text-align:right; margin-top:3px; }.history-change.up { color:var(--green); }.history-change.down { color:var(--red); }
 .empty-msg { color:var(--muted); font-size:var(--fs-body); text-align:center; padding:34px 0; }
-@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; }.advisor-grid { grid-template-columns:1fr 1fr; }.readiness-form { grid-template-columns:1fr 1fr; } }
+/* ── 2-column dashboard layout ── */
+.dash-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start; }
+.dash-sidebar { display:flex; flex-direction:column; gap:16px; position:sticky; top:16px; }
+.dash-main { display:flex; flex-direction:column; gap:0; }
+@media (max-width:1020px) { .dash-layout { grid-template-columns:1fr; } .dash-sidebar { position:static; } }
+@media (max-width:900px) { .summary-cards { grid-template-columns:repeat(2,1fr); }.charts-grid { grid-template-columns:1fr; }.advisor-grid { grid-template-columns:1fr 1fr; } }
 @media (max-width:500px) { .dash-page { padding:18px 12px 56px; }.history-card { gap:8px; }.history-date { min-width:48px; }.history-distance { font-size:var(--fs-body); }.advisor-head { display:block; }.advisor-pill { display:inline-flex; margin-top:12px; }.advisor-grid,.readiness-form { grid-template-columns:1fr; }.readiness-note-row { grid-template-columns:1fr; }.readiness-save { width:100%; } }
 </style>
 </head>
@@ -109,105 +114,113 @@
       <div><div class="dash-title">내 훈련 현황</div><p class="dash-subtitle">기록을 쌓고, 이번 주 목표를 완성해 보세요.</p></div>
     </div>
 
-    <nav class="quick-actions" aria-label="빠른 작업">
-      <a class="quick-action primary" href="/training-log?quick=1">+ 훈련 기록하기</a>
-      <a class="quick-action" href="/plan">훈련 플랜 보기</a>
-      <a class="quick-action" href="/report">월간 리포트</a>
-    </nav>
+    <div class="dash-layout">
+      <!-- ── 사이드바 ── -->
+      <aside class="dash-sidebar">
+        <nav class="quick-actions" aria-label="빠른 작업">
+          <a class="quick-action primary" href="/training-log?quick=1">+ 훈련 기록하기</a>
+          <a class="quick-action" href="/plan">훈련 플랜 보기</a>
+          <a class="quick-action" href="/report">월간 리포트</a>
+        </nav>
 
-    <section class="weekly-card" aria-labelledby="weekly-title">
-      <div class="weekly-header">
-        <span class="weekly-title" id="weekly-title">📅 이번 주 훈련 목표</span>
-        <span class="weekly-stats" id="weekly-stats">불러오는 중...</span>
-      </div>
-      <div class="weekly-bar-bg"><div class="weekly-bar-fill" id="weekly-bar"></div></div>
-      <div class="weekly-footer">
-        <span class="weekly-msg" id="weekly-msg"></span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <select id="goal-select" class="weekly-goal-select" onchange="saveGoal(this.value)"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
-          <button class="weekly-goal-btn" id="goal-edit-btn" onclick="toggleGoalEdit()">목표 변경</button>
-        </div>
-      </div>
-    </section>
+        <section class="readiness-card" aria-labelledby="readiness-title">
+          <div class="readiness-head">
+            <div>
+              <h2 class="readiness-title" id="readiness-title">오늘의 훈련 준비도</h2>
+              <p class="readiness-desc">수면과 피로를 20초만 기록하면 아래 훈련 추천이 오늘 컨디션에 맞게 바뀝니다.</p>
+            </div>
+            <div class="readiness-score" id="readiness-score" aria-live="polite">체크인 전</div>
+          </div>
+          <form class="readiness-form" id="readiness-form">
+            <label class="readiness-field">수면 상태
+              <select id="readiness-sleep" name="sleep_quality">
+                <option value="1">1 · 매우 부족</option><option value="2">2 · 부족</option><option value="3" selected>3 · 보통</option><option value="4">4 · 좋음</option><option value="5">5 · 매우 좋음</option>
+              </select>
+            </label>
+            <label class="readiness-field">피로도
+              <select id="readiness-fatigue" name="fatigue">
+                <option value="1">1 · 매우 가벼움</option><option value="2">2 · 가벼움</option><option value="3" selected>3 · 보통</option><option value="4">4 · 피곤함</option><option value="5">5 · 매우 피곤함</option>
+              </select>
+            </label>
+            <label class="readiness-field">근육 뻐근함
+              <select id="readiness-soreness" name="muscle_soreness">
+                <option value="1">1 · 없음</option><option value="2">2 · 약함</option><option value="3" selected>3 · 보통</option><option value="4">4 · 강함</option><option value="5">5 · 매우 강함</option>
+              </select>
+            </label>
+            <label class="readiness-field">오늘 가능한 시간
+              <select id="readiness-minutes" name="available_minutes">
+                <option value="20">20분</option><option value="30">30분</option><option value="45">45분</option><option value="60" selected>60분</option><option value="90">90분</option><option value="120">120분</option>
+              </select>
+            </label>
+          </form>
+          <div class="readiness-note-row">
+            <label class="readiness-field">메모 (선택)
+              <input class="readiness-note" id="readiness-note" form="readiness-form" maxlength="160" placeholder="예: 어깨가 조금 뻐근해요">
+            </label>
+            <button class="readiness-save" id="readiness-save" type="submit" form="readiness-form">체크인 저장</button>
+          </div>
+          <div class="readiness-meta" id="readiness-meta" aria-live="polite">저장하면 오늘의 추천 강도와 세션이 즉시 다시 계산됩니다.</div>
+        </section>
 
-    <section class="readiness-card" aria-labelledby="readiness-title">
-      <div class="readiness-head">
-        <div>
-          <h2 class="readiness-title" id="readiness-title">오늘의 훈련 준비도</h2>
-          <p class="readiness-desc">수면과 피로를 20초만 기록하면 아래 훈련 추천이 오늘 컨디션에 맞게 바뀝니다.</p>
-        </div>
-        <div class="readiness-score" id="readiness-score" aria-live="polite">체크인 전</div>
-      </div>
-      <form class="readiness-form" id="readiness-form">
-        <label class="readiness-field">수면 상태
-          <select id="readiness-sleep" name="sleep_quality">
-            <option value="1">1 · 매우 부족</option><option value="2">2 · 부족</option><option value="3" selected>3 · 보통</option><option value="4">4 · 좋음</option><option value="5">5 · 매우 좋음</option>
-          </select>
-        </label>
-        <label class="readiness-field">피로도
-          <select id="readiness-fatigue" name="fatigue">
-            <option value="1">1 · 매우 가벼움</option><option value="2">2 · 가벼움</option><option value="3" selected>3 · 보통</option><option value="4">4 · 피곤함</option><option value="5">5 · 매우 피곤함</option>
-          </select>
-        </label>
-        <label class="readiness-field">근육 뻐근함
-          <select id="readiness-soreness" name="muscle_soreness">
-            <option value="1">1 · 없음</option><option value="2">2 · 약함</option><option value="3" selected>3 · 보통</option><option value="4">4 · 강함</option><option value="5">5 · 매우 강함</option>
-          </select>
-        </label>
-        <label class="readiness-field">오늘 가능한 시간
-          <select id="readiness-minutes" name="available_minutes">
-            <option value="20">20분</option><option value="30">30분</option><option value="45">45분</option><option value="60" selected>60분</option><option value="90">90분</option><option value="120">120분</option>
-          </select>
-        </label>
-      </form>
-      <div class="readiness-note-row">
-        <label class="readiness-field">메모 (선택)
-          <input class="readiness-note" id="readiness-note" form="readiness-form" maxlength="160" placeholder="예: 어깨가 조금 뻐근해요">
-        </label>
-        <button class="readiness-save" id="readiness-save" type="submit" form="readiness-form">체크인 저장</button>
-      </div>
-      <div class="readiness-meta" id="readiness-meta" aria-live="polite">저장하면 오늘의 추천 강도와 세션이 즉시 다시 계산됩니다.</div>
-    </section>
+        <section class="mini-badge-row" aria-label="획득 뱃지">
+          <span class="mini-badge-label">🏅 내 뱃지</span><div class="mini-badge-emojis" id="mini-badge-emojis"><span style="color:var(--muted);font-size:var(--fs-body);">불러오는 중...</span></div><a href="/badges" class="mini-badge-link">전체 보기 →</a>
+        </section>
+      </aside>
 
-    <section class="advisor-card" aria-labelledby="advisor-title">
-      <div class="advisor-kicker">이번 주 훈련 추천</div>
-      <div class="advisor-head">
-        <div>
-          <h2 class="advisor-title" id="advisor-title">다음 훈련 추천을 준비 중...</h2>
-          <p class="advisor-desc" id="advisor-message">최근 기록과 주간 목표를 확인하고 있어요.</p>
-        </div>
-        <span class="advisor-pill" id="advisor-intensity">강도 계산 중</span>
+      <!-- ── 메인 컬럼 ── -->
+      <div class="dash-main">
+        <section class="weekly-card" aria-labelledby="weekly-title">
+          <div class="weekly-header">
+            <span class="weekly-title" id="weekly-title">📅 이번 주 훈련 목표</span>
+            <span class="weekly-stats" id="weekly-stats">불러오는 중...</span>
+          </div>
+          <div class="weekly-bar-bg"><div class="weekly-bar-fill" id="weekly-bar"></div></div>
+          <div class="weekly-footer">
+            <span class="weekly-msg" id="weekly-msg"></span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select id="goal-select" class="weekly-goal-select" onchange="saveGoal(this.value)"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <button class="weekly-goal-btn" id="goal-edit-btn" onclick="toggleGoalEdit()">목표 변경</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="advisor-card" aria-labelledby="advisor-title">
+          <div class="advisor-kicker">이번 주 훈련 추천</div>
+          <div class="advisor-head">
+            <div>
+              <h2 class="advisor-title" id="advisor-title">다음 훈련 추천을 준비 중...</h2>
+              <p class="advisor-desc" id="advisor-message">최근 기록과 주간 목표를 확인하고 있어요.</p>
+            </div>
+            <span class="advisor-pill" id="advisor-intensity">강도 계산 중</span>
+          </div>
+          <div class="advisor-grid" aria-label="추천 훈련 요약">
+            <div class="advisor-metric"><span>추천 세션</span><strong id="advisor-session">—</strong></div>
+            <div class="advisor-metric"><span>이번 주 진행</span><strong id="advisor-week">—</strong></div>
+            <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
+            <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
+            <div class="advisor-metric"><span>오늘 준비도</span><strong id="advisor-readiness">체크인 전</strong></div>
+          </div>
+          <div class="advisor-actions" id="advisor-actions">
+            <a class="advisor-action" href="/plan">추천 플랜 고르기</a>
+            <a class="advisor-action secondary" href="/training-log?quick=1">오늘 훈련 기록</a>
+          </div>
+        </section>
+
+        <section class="summary-cards" aria-label="훈련 요약">
+          <article class="summary-card"><div class="summary-card-label">누적 거리</div><div class="summary-card-value blue" id="card-total-distance">—</div><div class="summary-card-unit">m</div></article>
+          <article class="summary-card"><div class="summary-card-label">이번 달 거리</div><div class="summary-card-value green" id="card-month-distance">—</div><div class="summary-card-unit">m</div></article>
+          <article class="summary-card"><div class="summary-card-label">현재 연속 출석</div><div class="summary-card-value energy" id="card-streak">—</div><div class="summary-card-unit">일</div></article>
+          <article class="summary-card"><div class="summary-card-label">누적 훈련 시간</div><div class="summary-card-value cyan" id="card-total-hours">—</div><div class="summary-card-unit">시간</div></article>
+        </section>
+
+        <section class="charts-grid" aria-label="훈련 추이">
+          <article class="chart-card"><div class="chart-card-title">최근 훈련 거리</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></article>
+          <article class="chart-card"><div class="chart-card-title">영법별 훈련 분포</div><div class="chart-wrap"><canvas id="chart-stroke"></canvas></div></article>
+        </section>
+
+        <section class="history-section"><div class="history-header">최근 훈련 기록</div><div id="history-list" class="history-list"><div class="empty-msg">훈련 기록을 불러오는 중...</div></div></section>
       </div>
-      <div class="advisor-grid" aria-label="추천 훈련 요약">
-        <div class="advisor-metric"><span>추천 세션</span><strong id="advisor-session">—</strong></div>
-        <div class="advisor-metric"><span>이번 주 진행</span><strong id="advisor-week">—</strong></div>
-        <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
-        <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
-        <div class="advisor-metric"><span>오늘 준비도</span><strong id="advisor-readiness">체크인 전</strong></div>
-      </div>
-      <div class="advisor-actions" id="advisor-actions">
-        <a class="advisor-action" href="/plan">추천 플랜 고르기</a>
-        <a class="advisor-action secondary" href="/training-log?quick=1">오늘 훈련 기록</a>
-      </div>
-    </section>
-
-    <section class="summary-cards" aria-label="훈련 요약">
-      <article class="summary-card"><div class="summary-card-label">누적 거리</div><div class="summary-card-value blue" id="card-total-distance">—</div><div class="summary-card-unit">m</div></article>
-      <article class="summary-card"><div class="summary-card-label">이번 달 거리</div><div class="summary-card-value green" id="card-month-distance">—</div><div class="summary-card-unit">m</div></article>
-      <article class="summary-card"><div class="summary-card-label">현재 연속 출석</div><div class="summary-card-value energy" id="card-streak">—</div><div class="summary-card-unit">일</div></article>
-      <article class="summary-card"><div class="summary-card-label">누적 훈련 시간</div><div class="summary-card-value cyan" id="card-total-hours">—</div><div class="summary-card-unit">시간</div></article>
-    </section>
-
-    <section class="charts-grid" aria-label="훈련 추이">
-      <article class="chart-card"><div class="chart-card-title">최근 훈련 거리</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></article>
-      <article class="chart-card"><div class="chart-card-title">영법별 훈련 분포</div><div class="chart-wrap"><canvas id="chart-stroke"></canvas></div></article>
-    </section>
-
-    <section class="mini-badge-row" aria-label="획득 뱃지">
-      <span class="mini-badge-label">🏅 내 뱃지</span><div class="mini-badge-emojis" id="mini-badge-emojis"><span style="color:var(--muted);font-size:var(--fs-body);">불러오는 중...</span></div><a href="/badges" class="mini-badge-link">전체 보기 →</a>
-    </section>
-
-    <section class="history-section"><div class="history-header">최근 훈련 기록</div><div id="history-list" class="history-list"><div class="empty-msg">훈련 기록을 불러오는 중...</div></div></section>
+    </div>
   </main>
 </div>
 

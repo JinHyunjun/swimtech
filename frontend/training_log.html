@@ -206,9 +206,14 @@ select.form-control option { background: var(--surface); }
 }
 .btn-cancel:hover { border-color: var(--blue); color: var(--blue); }
 
+/* ── 2-column layout ── */
+.tl-layout { display: grid; grid-template-columns: 272px 1fr; gap: 20px; align-items: start; }
+.tl-left { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; }
+.tl-right { display: flex; flex-direction: column; }
+@media (max-width: 860px) { .tl-layout { grid-template-columns: 1fr; } .tl-left { position: static; } }
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .tl-month-nav { display: none; }
+  .tl-month-nav { display: flex !important; }
 }
 
 /* ── 월간 목표 ── */
@@ -247,85 +252,91 @@ select.form-control option { background: var(--surface); }
 
 <div class="tl-page">
 
-  <!-- 상단 네비 -->
+  <!-- 상단 타이틀 -->
   <div class="tl-topbar">
     <h1 class="tl-title">훈련 일지</h1>
-    <div class="tl-month-nav">
-      <button class="tl-month-btn" id="prev-month">&#8249;</button>
-      <span class="tl-month-label" id="month-label"></span>
-      <button class="tl-month-btn" id="next-month">&#8250;</button>
-    </div>
   </div>
 
-  <!-- 월간 목표 -->
-  <div class="goal-section" id="goal-section">
-    <div class="goal-header">
-      <span class="goal-label">이번 달 목표 거리</span>
-      <button class="btn-set-goal" id="btn-set-goal" onclick="openGoalModal()">목표 설정</button>
-    </div>
-    <div id="goal-body" style="display:none;">
-      <div class="goal-progress-wrap">
-        <div class="goal-progress-bar" id="goal-progress-bar"></div>
+  <div class="tl-layout">
+    <!-- ── 왼쪽: 달력 패널 ── -->
+    <div class="tl-left">
+      <div class="tl-month-nav" style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:4px;">
+        <button class="tl-month-btn" id="prev-month">&#8249;</button>
+        <span class="tl-month-label" id="month-label"></span>
+        <button class="tl-month-btn" id="next-month">&#8250;</button>
       </div>
-      <div class="goal-progress-label">
-        <span id="goal-achieved">0</span>m / <span id="goal-target">0</span>m
-        (<span id="goal-pct">0</span>%)
+      <div class="cal-wrap" style="margin-bottom:0;">
+        <div class="cal-head">
+          <div>일</div><div>월</div><div>화</div><div>수</div>
+          <div>목</div><div>금</div><div>토</div>
+        </div>
+        <div class="cal-body" id="cal-body"></div>
       </div>
-      <div class="goal-congrats" id="goal-congrats" style="display:none;">🎉 이번 달 목표를 달성했어요!</div>
+      <!-- 월간 목표 -->
+      <div class="goal-section" id="goal-section" style="margin-bottom:0;">
+        <div class="goal-header">
+          <span class="goal-label">이번 달 목표 거리</span>
+          <button class="btn-set-goal" id="btn-set-goal" onclick="openGoalModal()">목표 설정</button>
+        </div>
+        <div id="goal-body" style="display:none;">
+          <div class="goal-progress-wrap">
+            <div class="goal-progress-bar" id="goal-progress-bar"></div>
+          </div>
+          <div class="goal-progress-label">
+            <span id="goal-achieved">0</span>m / <span id="goal-target">0</span>m
+            (<span id="goal-pct">0</span>%)
+          </div>
+          <div class="goal-congrats" id="goal-congrats" style="display:none;">🎉 이번 달 목표를 달성했어요!</div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- 이번 달 통계 -->
-  <div class="stats-grid st-stagger" id="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
-      <div class="stat-value" id="stat-count">—</div>
-      <div class="stat-label">훈련 횟수</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg></div>
-      <div class="stat-value" id="stat-total">—</div>
-      <div class="stat-label">총 거리 (m)</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-report"/></svg></div>
-      <div class="stat-value" id="stat-avg">—</div>
-      <div class="stat-label">평균 거리 (m)</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
-      <div class="stat-value energy" id="stat-streak">—</div>
-      <div class="stat-label">연속 출석 (일)</div>
-    </div>
-  </div>
+    <!-- ── 오른쪽: 통계 + 차트 + 기록 ── -->
+    <div class="tl-right">
+      <!-- 이번 달 통계 -->
+      <div class="stats-grid st-stagger" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
+          <div class="stat-value" id="stat-count">—</div>
+          <div class="stat-label">훈련 횟수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-drill"/></svg></div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">총 거리 (m)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-report"/></svg></div>
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-label">평균 거리 (m)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
+          <div class="stat-value energy" id="stat-streak">—</div>
+          <div class="stat-label">연속 출석 (일)</div>
+        </div>
+      </div>
 
-  <!-- 캘린더 뷰 -->
-  <div class="cal-wrap">
-    <div class="cal-head">
-      <div>일</div><div>월</div><div>화</div><div>수</div>
-      <div>목</div><div>금</div><div>토</div>
-    </div>
-    <div class="cal-body" id="cal-body"></div>
-  </div>
+      <!-- 주간 거리 차트 -->
+      <div class="chart-wrap">
+        <div class="chart-title">이번 달 누적 거리 추이 (m)</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="dist-chart"></canvas>
+        </div>
+      </div>
 
-  <!-- 주간 거리 차트 -->
-  <div class="chart-wrap">
-    <div class="chart-title">이번 달 누적 거리 추이 (m)</div>
-    <div class="chart-canvas-wrap">
-      <canvas id="dist-chart"></canvas>
+      <!-- 기록 목록 -->
+      <div class="log-list-head">
+        <div class="log-list-title" id="log-list-title">기록 목록</div>
+        <div class="log-list-head-actions">
+          <button class="btn-import-log" id="btn-open-import">⤓ 워치 데이터 가져오기</button>
+          <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
+          <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
+        </div>
+      </div>
+      <div id="log-list"></div>
     </div>
   </div>
-
-  <!-- 기록 목록 -->
-  <div class="log-list-head">
-    <div class="log-list-title" id="log-list-title">기록 목록</div>
-    <div class="log-list-head-actions">
-      <button class="btn-import-log" id="btn-open-import">⤓ 워치 데이터 가져오기</button>
-      <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
-      <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
-    </div>
-  </div>
-  <div id="log-list"></div>
 
 </div>
 
