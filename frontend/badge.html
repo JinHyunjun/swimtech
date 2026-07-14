@@ -10,8 +10,21 @@
 <style>
 .badge-page {
   padding: 24px;
-  max-width: 860px;
+  max-width: 1060px;
   margin: 0 auto;
+}
+.badge-layout {
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  gap: 20px;
+  margin-top: 4px;
+  align-items: start;
+}
+.badge-sidebar { position: sticky; top: 16px; }
+.badge-main { min-width: 0; }
+@media (max-width: 860px) {
+  .badge-layout { grid-template-columns: 1fr; }
+  .badge-sidebar { position: static; }
 }
 
 .badge-topbar {
@@ -333,37 +346,43 @@
       </div>
     </div>
 
-    <!-- 진행 현황 -->
-    <div class="progress-card">
-      <div class="progress-label">획득한 뱃지</div>
-      <div class="progress-count" id="prog-count"><span id="prog-earned">—</span> / <span id="prog-total">—</span></div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
-      </div>
-    </div>
-
-    <!-- 다음 목표 -->
-    <div class="next-badge-panel" id="next-badge-panel">
-      <div class="next-badge-head">
-        <div>
-          <div class="next-badge-title">다음으로 노릴 뱃지</div>
-          <div class="next-badge-sub">각 여정에서 아직 열리지 않은 첫 단계예요</div>
+    <div class="badge-layout">
+      <div class="badge-sidebar">
+        <!-- 진행 현황 -->
+        <div class="progress-card">
+          <div class="progress-label">획득한 뱃지</div>
+          <div class="progress-count" id="prog-count"><span id="prog-earned">—</span> / <span id="prog-total">—</span></div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
+          </div>
         </div>
-      </div>
-      <div class="next-badge-list" id="next-badge-list"></div>
-    </div>
 
-    <!-- 단계별 여정 -->
-    <div class="badge-section-title">🧭 단계별 뱃지 여정</div>
-    <div id="series-grid" class="series-grid"></div>
+        <!-- 다음 목표 -->
+        <div class="next-badge-panel" id="next-badge-panel">
+          <div class="next-badge-head">
+            <div>
+              <div class="next-badge-title">다음으로 노릴 뱃지</div>
+              <div class="next-badge-sub">각 여정에서 아직 열리지 않은 첫 단계예요</div>
+            </div>
+          </div>
+          <div class="next-badge-list" id="next-badge-list"></div>
+        </div>
+      </div><!-- /.badge-sidebar -->
 
-    <!-- 획득 뱃지 -->
-    <div class="badge-section-title">✅ 획득한 뱃지</div>
-    <div id="earned-grid" class="badge-grid"></div>
+      <div class="badge-main">
+        <!-- 단계별 여정 -->
+        <div class="badge-section-title">🧭 단계별 뱃지 여정</div>
+        <div id="series-grid" class="series-grid"></div>
 
-    <!-- 미획득 뱃지 -->
-    <div class="badge-section-title">🔒 도전 중인 뱃지</div>
-    <div id="locked-grid" class="badge-grid"></div>
+        <!-- 획득 뱃지 -->
+        <div class="badge-section-title">✅ 획득한 뱃지</div>
+        <div id="earned-grid" class="badge-grid"></div>
+
+        <!-- 미획득 뱃지 -->
+        <div class="badge-section-title">🔒 도전 중인 뱃지</div>
+        <div id="locked-grid" class="badge-grid"></div>
+      </div><!-- /.badge-main -->
+    </div><!-- /.badge-layout -->
   </div>
 
 </div>

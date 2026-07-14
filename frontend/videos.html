@@ -246,12 +246,62 @@
   margin-bottom: 14px;
 }
 
+/* 2-column layout */
+.vids-layout { display: grid; grid-template-columns: 176px 1fr; gap: 20px; align-items: start; }
+.vids-sidebar { position: sticky; top: 16px; }
+.vids-main { min-width: 0; }
+.vids-sidebar-label { font-size: var(--fs-caption); font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; padding: 0 4px; }
+.vids-sidebar-label:first-child { margin-top: 0; }
+
+.vids-sidebar .tab-bar {
+  flex-direction: column;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  gap: 2px;
+  overflow-x: visible;
+  margin-bottom: 0;
+}
+.vids-sidebar .tab-btn {
+  flex: 0 0 auto;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  border: 0.5px solid transparent;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+}
+.vids-sidebar .tab-btn.active {
+  background: rgba(0,180,216,.12);
+  border-color: rgba(0,180,216,.28);
+  color: var(--blue);
+}
+.vids-sidebar .level-filter-bar {
+  flex-direction: column;
+  gap: 3px;
+}
+.vids-sidebar .level-btn {
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 720px) {
+  .vids-layout { grid-template-columns: 1fr; }
+  .vids-sidebar { position: static; }
+  .vids-sidebar .tab-bar { flex-direction: row; overflow-x: auto; }
+  .vids-sidebar .tab-btn { flex: 0 0 auto; width: auto; }
+  .vids-sidebar .level-filter-bar { flex-direction: row; flex-wrap: wrap; }
+  .vids-sidebar .level-btn { width: auto; }
+}
 @media (max-width: 600px) {
   .vids-page { padding: 14px; }
   .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
   .card-body { padding: 10px; }
   .card-title { font-size: var(--fs-caption); }
-  .tab-btn { font-size: var(--fs-caption); padding: 7px 8px; }
 }
 </style>
 </head>
@@ -281,31 +331,35 @@
       <input type="text" id="search-input" placeholder="영상 제목 또는 채널명 검색..." autocomplete="off">
     </div>
 
-    <!-- 카테고리 탭 -->
-    <div class="tab-bar" id="cat-tab-bar">
-      <button class="tab-btn active" data-tab="all">전체</button>
-      <button class="tab-btn" data-tab="freestyle"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-freestyle"/></svg> 자유형</button>
-      <button class="tab-btn" data-tab="backstroke"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-backstroke"/></svg> 배영</button>
-      <button class="tab-btn" data-tab="breaststroke">🐸 평영</button>
-      <button class="tab-btn" data-tab="butterfly">🦋 접영</button>
-      <button class="tab-btn" data-tab="drill">🏋️ 드릴</button>
-      <button class="tab-btn" data-tab="training">💪 훈련</button>
-    </div>
+    <div class="vids-layout">
+      <!-- 사이드바: 카테고리 + 난이도 -->
+      <div class="vids-sidebar">
+        <div class="vids-sidebar-label">카테고리</div>
+        <div class="tab-bar" id="cat-tab-bar">
+          <button class="tab-btn active" data-tab="all">전체</button>
+          <button class="tab-btn" data-tab="freestyle"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-freestyle"/></svg> 자유형</button>
+          <button class="tab-btn" data-tab="backstroke"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-backstroke"/></svg> 배영</button>
+          <button class="tab-btn" data-tab="breaststroke">🐸 평영</button>
+          <button class="tab-btn" data-tab="butterfly">🦋 접영</button>
+          <button class="tab-btn" data-tab="drill">🏋️ 드릴</button>
+          <button class="tab-btn" data-tab="training">💪 훈련</button>
+        </div>
+        <div class="vids-sidebar-label">난이도</div>
+        <div class="level-filter-bar" id="level-filter-bar">
+          <button class="level-btn active" data-level="all">전체</button>
+          <button class="level-btn" data-level="입문">🟢 입문</button>
+          <button class="level-btn" data-level="초급">🟩 초급</button>
+          <button class="level-btn" data-level="중급">🟡 중급</button>
+          <button class="level-btn" data-level="고급">🔴 고급</button>
+        </div>
+      </div><!-- /.vids-sidebar -->
 
-    <!-- 난이도 필터 -->
-    <div class="level-filter-bar" id="level-filter-bar">
-      <button class="level-btn active" data-level="all">전체</button>
-      <button class="level-btn" data-level="입문">🟢 입문</button>
-      <button class="level-btn" data-level="초급">🟩 초급</button>
-      <button class="level-btn" data-level="중급">🟡 중급</button>
-      <button class="level-btn" data-level="고급">🔴 고급</button>
-    </div>
-
-    <!-- 결과 수 -->
-    <div class="result-count" id="result-count"></div>
-
-    <!-- 영상 그리드 -->
-    <div class="video-grid" id="video-grid"></div>
+      <!-- 메인: 결과 수 + 영상 그리드 -->
+      <div class="vids-main">
+        <div class="result-count" id="result-count"></div>
+        <div class="video-grid" id="video-grid"></div>
+      </div><!-- /.vids-main -->
+    </div><!-- /.vids-layout -->
 
   </div>
 </div>

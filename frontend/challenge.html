@@ -113,6 +113,19 @@
 /* ── 로딩 ── */
 .ch-loading { text-align: center; padding: 40px; color: var(--muted); font-size: var(--fs-body); }
 
+/* ── 챌린지 히어로 배너 ── */
+.ch-hero {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; background: linear-gradient(135deg, var(--energy-soft), rgba(255,106,61,.06));
+  border: 0.5px solid rgba(255,106,61,.3); border-radius: var(--radius-md);
+  padding: 18px 24px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.ch-hero-stat { flex: 1; text-align: center; min-width: 80px; padding: 4px 12px; }
+.ch-hero-val { font-size: var(--fs-heading); font-style: italic; font-weight: 900; letter-spacing: -.02em; color: var(--energy); }
+.ch-hero-lbl { font-size: var(--fs-caption); color: var(--muted); margin-top: 3px; }
+.ch-hero-divider { width: 1px; height: 40px; background: rgba(255,106,61,.2); flex-shrink: 0; }
+@media (max-width: 480px) { .ch-hero-divider { display: none; } .ch-hero-stat { min-width: 50%; } }
+
 /* 챌린지 만들기 버튼/모달 */
 .ch-create-btn { margin-left: auto; padding: 9px 16px; border-radius: var(--radius-pill); border: none; background: var(--energy); color: #2a0f06; font-weight: 800; font-size: var(--fs-caption); cursor: pointer; transition: transform .2s, box-shadow .2s; }
 .ch-create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255,106,61,.4); }
@@ -157,6 +170,29 @@
       <h1 class="ch-title">수영 챌린지</h1>
       <span class="ch-live"><span class="ch-live-dot"></span>실시간</span>
       <button class="ch-create-btn" onclick="openCreateModal()">+ 챌린지 만들기</button>
+    </div>
+
+    <!-- 챌린지 히어로 배너 -->
+    <div class="ch-hero" id="ch-hero">
+      <div class="ch-hero-stat">
+        <div class="ch-hero-val" id="hero-total">—</div>
+        <div class="ch-hero-lbl">전체 챌린지</div>
+      </div>
+      <div class="ch-hero-divider"></div>
+      <div class="ch-hero-stat">
+        <div class="ch-hero-val" id="hero-active">—</div>
+        <div class="ch-hero-lbl">진행 중</div>
+      </div>
+      <div class="ch-hero-divider"></div>
+      <div class="ch-hero-stat">
+        <div class="ch-hero-val" id="hero-my">—</div>
+        <div class="ch-hero-lbl">내가 참여 중</div>
+      </div>
+      <div class="ch-hero-divider"></div>
+      <div class="ch-hero-stat">
+        <div class="ch-hero-val" id="hero-participants">—</div>
+        <div class="ch-hero-lbl">총 참여자</div>
+      </div>
     </div>
 
     <div class="ch-tabs">
@@ -259,6 +295,10 @@ async function loadAll() {
     const res = await fetch('/api/challenge', { credentials: 'include' });
     const d = await res.json();
     allChallenges = d.challenges || [];
+    const totalParticipants = allChallenges.reduce((s, c) => s + (c.participant_count || 0), 0);
+    document.getElementById('hero-total').textContent = allChallenges.length;
+    document.getElementById('hero-active').textContent = allChallenges.filter(c => c.status === 'active' || !c.status).length;
+    document.getElementById('hero-participants').textContent = totalParticipants.toLocaleString('ko-KR');
     if (!allChallenges.length) {
       panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🏆</div><div>진행 중인 챌린지가 없습니다</div></div>';
       return;
@@ -280,6 +320,7 @@ async function loadMy() {
     if (!res.ok) { panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🔒</div><div>로그인 후 확인할 수 있습니다</div></div>'; return; }
     const d = await res.json();
     const list = d.challenges || [];
+    document.getElementById('hero-my').textContent = list.length;
     if (!list.length) {
       panel.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🏊</div><div>아직 참여한 챌린지가 없습니다<br><br><a href="#" onclick="switchTab(\'all\');return false;" style="color:var(--blue);">챌린지 둘러보기</a></div></div>';
       return;

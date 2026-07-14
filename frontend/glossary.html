@@ -52,10 +52,34 @@
 }
 
 .glossary-inner {
-  max-width: 680px;
+  max-width: 940px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+.glossary-layout { display: grid; grid-template-columns: 148px 1fr; gap: 20px; align-items: start; margin-top: 4px; }
+.glossary-sidebar { position: sticky; top: 16px; }
+.glossary-main { min-width: 0; }
+
+.glossary-sidebar .tabs {
+  flex-direction: column;
+  gap: 3px;
+  overflow-x: visible;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.glossary-sidebar .tab {
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .glossary-layout { grid-template-columns: 1fr; }
+  .glossary-sidebar { position: static; }
+  .glossary-sidebar .tabs { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .glossary-sidebar .tab { width: auto; }
 }
 
 .glossary-header {
@@ -283,23 +307,29 @@
         <span class="search-count" id="search-count"></span>
       </div>
 
-      <!-- 카테고리 탭 -->
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-cat="all"     onclick="setTab(this)">전체</div>
-        <div class="tab"        data-cat="basic"   onclick="setTab(this)">영법 기초</div>
-        <div class="tab"        data-cat="technique" onclick="setTab(this)">자세/기술</div>
-        <div class="tab"        data-cat="training" onclick="setTab(this)">훈련 용어</div>
-        <!-- [영상분析_준비중] -->
-        <div class="tab"        data-cat="swimtech" onclick="setTab(this)" style="display:none">SwimMate 분석</div>
-        <!-- [/영상분析_준비중] -->
-      </div>
+      <div class="glossary-layout">
+        <!-- 카테고리 사이드바 -->
+        <div class="glossary-sidebar">
+          <div class="tabs" id="tabs">
+            <div class="tab active" data-cat="all"       onclick="setTab(this)">전체</div>
+            <div class="tab"        data-cat="basic"     onclick="setTab(this)">영법 기초</div>
+            <div class="tab"        data-cat="technique" onclick="setTab(this)">자세/기술</div>
+            <div class="tab"        data-cat="training"  onclick="setTab(this)">훈련 용어</div>
+            <!-- [영상분析_준비중] -->
+            <div class="tab"        data-cat="swimtech"  onclick="setTab(this)" style="display:none">SwimMate 분석</div>
+            <!-- [/영상분析_준비중] -->
+          </div>
+        </div><!-- /.glossary-sidebar -->
 
-      <!-- 용어 목록 -->
-      <div id="cards-container"></div>
-      <div class="empty-state hidden" id="empty-state">
-        <div class="empty-icon">🤔</div>
-        검색 결과가 없습니다
-      </div>
+        <!-- 용어 메인 -->
+        <div class="glossary-main">
+          <div id="cards-container"></div>
+          <div class="empty-state hidden" id="empty-state">
+            <div class="empty-icon">🤔</div>
+            검색 결과가 없습니다
+          </div>
+        </div><!-- /.glossary-main -->
+      </div><!-- /.glossary-layout -->
 
     </div>
   </div>

@@ -8,13 +8,20 @@
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
 <style>
-.plan-page { padding: 24px; max-width: 960px; margin: 0 auto; }
+.plan-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
 .plan-topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
 .plan-topbar-title { flex: 1; min-width: 0; }
 .plan-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .plan-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 .btn-create-plan { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); font-weight: 600; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; cursor: pointer; transition: opacity .2s, transform .15s; white-space: nowrap; }
 .btn-create-plan:hover { opacity: .88; transform: translateY(-1px); }
+
+/* ── 플랜 히어로 배너 ── */
+.plan-hero { display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 20px; background: linear-gradient(135deg, rgba(0,180,216,.1), rgba(72,202,228,.05)); border: 0.5px solid rgba(0,180,216,.22); border-radius: var(--radius-md); overflow: hidden; }
+.plan-hero-stat { display: flex; flex-direction: column; gap: 3px; padding: 14px 24px; border-right: 0.5px solid rgba(255,255,255,.07); flex: 1; min-width: 100px; }
+.plan-hero-stat:last-child { border-right: none; }
+.plan-hero-val { font-size: var(--fs-heading); font-weight: 800; color: var(--blue); line-height: 1; }
+.plan-hero-lbl { font-size: var(--fs-caption); color: var(--muted); white-space: nowrap; }
 
 .tab-bar { display: flex; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 4px; margin-bottom: 28px; overflow-x: auto; gap: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .tab-bar::-webkit-scrollbar { display: none; }
@@ -364,6 +371,26 @@
         </div>
       </div>
       <button class="btn-create-plan" id="open-modal-btn">🎲 내 플랜 만들기</button>
+    </div>
+
+    <!-- 플랜 현황 배너 -->
+    <div class="plan-hero" id="plan-hero" style="display:none">
+      <div class="plan-hero-stat">
+        <span class="plan-hero-val" id="hero-plan-total">0</span>
+        <span class="plan-hero-lbl">저장된 플랜</span>
+      </div>
+      <div class="plan-hero-stat">
+        <span class="plan-hero-val" id="hero-plan-cloud">0</span>
+        <span class="plan-hero-lbl">클라우드 플랜</span>
+      </div>
+      <div class="plan-hero-stat">
+        <span class="plan-hero-val" id="hero-plan-local">0</span>
+        <span class="plan-hero-lbl">로컬 플랜</span>
+      </div>
+      <div class="plan-hero-stat">
+        <span class="plan-hero-val" id="hero-plan-fav">0</span>
+        <span class="plan-hero-lbl">즐겨찾기</span>
+      </div>
     </div>
 
     <div class="tab-bar" id="tab-bar">
@@ -3223,6 +3250,16 @@ async function loadMyPlans() {
   const allPlans = [...cloudPlans, ...localPlans];
   myPlansCache = allPlans;
   myPresetFavoritesCache = presetFavorites;
+
+  const hero = document.getElementById('plan-hero');
+  if (hero && allPlans.length > 0) {
+    document.getElementById('hero-plan-total').textContent = allPlans.length;
+    document.getElementById('hero-plan-cloud').textContent = cloudPlans.length;
+    document.getElementById('hero-plan-local').textContent = localPlans.length;
+    document.getElementById('hero-plan-fav').textContent = presetFavorites.length;
+    hero.style.display = 'flex';
+  }
+
   renderMyPlanContent();
 }
 

@@ -11,9 +11,20 @@
 <style>
 .coach-page { max-width: 1080px; margin: 0 auto; padding: 24px 16px 80px; }
 
-.coach-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.coach-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .coach-title { font-size: var(--fs-title); font-style: italic; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .coach-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
+
+/* ── 역할 소개 배너 ── */
+.coach-role-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.coach-role-card { padding: 16px 20px; border-radius: var(--radius-md); border: 0.5px solid rgba(0,180,216,.22); background: rgba(0,180,216,.06); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .2s, background .2s; }
+.coach-role-card:hover { border-color: rgba(0,180,216,.45); background: rgba(0,180,216,.12); }
+.coach-role-card.active-role { border-color: rgba(0,180,216,.55); background: rgba(0,180,216,.14); }
+.coach-role-icon { font-size: var(--fs-heading); line-height: 1; flex-shrink: 0; }
+.coach-role-body { min-width: 0; }
+.coach-role-name { font-size: var(--fs-body-lg); font-weight: 800; color: var(--text); }
+.coach-role-desc { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; line-height: 1.45; }
+@media (max-width: 560px) { .coach-role-banner { grid-template-columns: 1fr; } }
 
 /* ── 탭 ── */
 .coach-tabs {
@@ -374,6 +385,24 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
       <div>
         <div class="coach-title">🤝 코치 연동</div>
         <div class="coach-sub">코치와 수강생을 연결해 훈련을 함께 관리하세요</div>
+      </div>
+    </div>
+
+    <!-- 역할 소개 배너 -->
+    <div class="coach-role-banner">
+      <div class="coach-role-card active-role" id="role-card-coach" onclick="switchTab('coach')">
+        <span class="coach-role-icon">👨‍🏫</span>
+        <div class="coach-role-body">
+          <div class="coach-role-name">코치로 활동</div>
+          <div class="coach-role-desc">수강생을 초대하고 훈련 일지·플랜을 함께 관리하세요</div>
+        </div>
+      </div>
+      <div class="coach-role-card" id="role-card-student" onclick="switchTab('student')">
+        <span class="coach-role-icon">🏊</span>
+        <div class="coach-role-body">
+          <div class="coach-role-name">수강생으로 참여</div>
+          <div class="coach-role-desc">코치 초대 코드를 입력해 연동하고 피드백을 받으세요</div>
+        </div>
       </div>
     </div>
 
@@ -797,6 +826,8 @@ function switchTab(tab) {
   document.getElementById("tab-student").style.display = tab === "student" ? "" : "none";
   document.getElementById("tab-btn-coach").classList.toggle("active",   tab === "coach");
   document.getElementById("tab-btn-student").classList.toggle("active", tab === "student");
+  document.getElementById("role-card-coach").classList.toggle("active-role",   tab === "coach");
+  document.getElementById("role-card-student").classList.toggle("active-role", tab === "student");
 
   if (tab === "coach")   loadCoachTab();
   if (tab === "student") loadStudentTab();

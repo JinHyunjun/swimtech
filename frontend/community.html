@@ -9,7 +9,11 @@
 <link rel="stylesheet" href="/static/style.css">
 <style>
 /* ── 레이아웃 ─────────────────────────────────────────── */
-.comm-wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px 60px; }
+.comm-wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 60px; }
+.comm-layout { display: grid; grid-template-columns: 192px 1fr; gap: 20px; align-items: start; }
+.comm-sidebar { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; }
+.comm-main { min-width: 0; }
+@media (max-width: 860px) { .comm-layout { grid-template-columns: 1fr; } .comm-sidebar { position: static; } }
 
 /* ── 상단 바 ─────────────────────────────────────────── */
 .comm-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -30,12 +34,14 @@
 }
 
 /* ── 카테고리 탭 ─────────────────────────────────────── */
-.cat-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.cat-tabs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0; }
+.cat-tabs-label { font-size: var(--fs-caption); font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
 .cat-tab {
-  padding: 6px 16px; border-radius: var(--radius-pill); border: 0.5px solid var(--border);
-  background: var(--surface); color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s;
+  padding: 8px 14px; border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: var(--fs-body); cursor: pointer; transition: all .2s; text-align: left;
 }
 .cat-tab.active, .cat-tab:hover { border-color: var(--blue); color: var(--blue); background: rgba(0,180,216,.08); }
+@media (max-width: 860px) { .cat-tabs { flex-direction: row; flex-wrap: wrap; gap: 6px; } .cat-tab { padding: 6px 14px; border-radius: var(--radius-pill); } }
 
 /* ── 정렬 버튼 ───────────────────────────────────────── */
 .sort-row { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; }
@@ -345,7 +351,7 @@
 
   <div class="comm-wrap">
 
-    <!-- 상단 바 -->
+    <!-- 상단 바 (전체 너비) -->
     <div class="comm-topbar">
       <div class="comm-search">
         <input id="search-input" type="text" placeholder="제목·내용 검색..." maxlength="100"
@@ -355,51 +361,62 @@
       <button id="write-btn" onclick="openWriteModal()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-feedback"/></svg> 글쓰기</button>
     </div>
 
-    <!-- 카테고리 탭 -->
-    <div class="cat-tabs">
-      <button class="cat-tab active" data-cat="전체" onclick="selectCat(this)">전체</button>
-      <button class="cat-tab" data-cat="자유" onclick="selectCat(this)">자유</button>
-      <button class="cat-tab" data-cat="질문" onclick="selectCat(this)">질문</button>
-      <button class="cat-tab" data-cat="훈련후기" onclick="selectCat(this)">훈련후기</button>
-      <button class="cat-tab" data-cat="공지" onclick="selectCat(this)">공지</button>
-    </div>
+    <div class="comm-layout">
+      <!-- ── 사이드바: 필터 + 인기글 + 태그 ── -->
+      <aside class="comm-sidebar">
+        <div>
+          <div class="cat-tabs-label">카테고리</div>
+          <div class="cat-tabs">
+            <button class="cat-tab active" data-cat="전체" onclick="selectCat(this)">전체</button>
+            <button class="cat-tab" data-cat="자유" onclick="selectCat(this)">자유</button>
+            <button class="cat-tab" data-cat="질문" onclick="selectCat(this)">질문</button>
+            <button class="cat-tab" data-cat="훈련후기" onclick="selectCat(this)">훈련후기</button>
+            <button class="cat-tab" data-cat="공지" onclick="selectCat(this)">공지</button>
+          </div>
+        </div>
 
-    <!-- 정렬 버튼 -->
-    <div class="sort-row">
-      <span class="sort-label">정렬:</span>
-      <button class="sort-btn active" data-sort="latest" onclick="selectSort(this)">최신순</button>
-      <button class="sort-btn" data-sort="popular" onclick="selectSort(this)">인기순</button>
-      <button class="sort-btn" data-sort="views" onclick="selectSort(this)">조회순</button>
-    </div>
+        <div>
+          <div class="cat-tabs-label">정렬</div>
+          <div class="sort-row" style="flex-direction:column;gap:4px;margin-bottom:0;">
+            <button class="sort-btn active" data-sort="latest" onclick="selectSort(this)" style="text-align:left;width:100%;padding:7px 14px;border-radius:var(--radius-sm);">최신순</button>
+            <button class="sort-btn" data-sort="popular" onclick="selectSort(this)" style="text-align:left;width:100%;padding:7px 14px;border-radius:var(--radius-sm);">인기순</button>
+            <button class="sort-btn" data-sort="views" onclick="selectSort(this)" style="text-align:left;width:100%;padding:7px 14px;border-radius:var(--radius-sm);">조회순</button>
+          </div>
+        </div>
 
-    <!-- 주간 인기글 -->
-    <div class="popular-section" id="popular-section" style="display:none;">
-      <div class="popular-header">
-        <span class="popular-title"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg> 이번 주 인기글</span>
+        <!-- 주간 인기글 -->
+        <div class="popular-section" id="popular-section" style="display:none;">
+          <div class="popular-header">
+            <span class="popular-title"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg> 이번 주 인기글</span>
+          </div>
+          <div id="popular-list"></div>
+        </div>
+
+        <!-- 인기 태그 -->
+        <div class="popular-tags-section" id="popular-tags-section">
+          <div class="popular-tags-label">인기 태그</div>
+          <div id="popular-tags-wrap"></div>
+        </div>
+      </aside>
+
+      <!-- ── 메인: 게시글 목록 ── -->
+      <div class="comm-main">
+        <!-- 태그 필터 바 -->
+        <div class="tag-filter-bar" id="tag-filter-bar">
+          <span>태그 필터:</span>
+          <strong id="tag-filter-label"></strong>
+          <button class="tag-clear-btn" onclick="clearTagFilter()" title="필터 해제">✕</button>
+        </div>
+
+        <!-- 게시글 목록 -->
+        <div class="post-list st-stagger" id="post-list">
+          <div class="empty-state">불러오는 중...</div>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination" id="pagination"></div>
       </div>
-      <div id="popular-list"></div>
-    </div>
-
-    <!-- 인기 태그 -->
-    <div class="popular-tags-section" id="popular-tags-section">
-      <div class="popular-tags-label">인기 태그</div>
-      <div id="popular-tags-wrap"></div>
-    </div>
-
-    <!-- 태그 필터 바 -->
-    <div class="tag-filter-bar" id="tag-filter-bar">
-      <span>태그 필터:</span>
-      <strong id="tag-filter-label"></strong>
-      <button class="tag-clear-btn" onclick="clearTagFilter()" title="필터 해제">✕</button>
-    </div>
-
-    <!-- 게시글 목록 -->
-    <div class="post-list st-stagger" id="post-list">
-      <div class="empty-state">불러오는 중...</div>
-    </div>
-
-    <!-- 페이지네이션 -->
-    <div class="pagination" id="pagination"></div>
+    </div><!-- /.comm-layout -->
 
   </div><!-- /comm-wrap -->
 </div><!-- /app -->

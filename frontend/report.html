@@ -13,7 +13,12 @@
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
-.rp-page { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+.rp-page { max-width: 1060px; margin: 0 auto; padding: 24px 16px 80px; }
+/* ── 2-column layout ── */
+.rp-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+.rp-sidebar { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
+.rp-main { display: flex; flex-direction: column; gap: 0; }
+@media (max-width: 860px) { .rp-layout { grid-template-columns: 1fr; } .rp-sidebar { position: static; } }
 
 .rp-topbar {
   display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
@@ -40,8 +45,9 @@
 
 /* ── 통계 카드 ── */
 .stat-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 0;
 }
+@media (max-width: 860px) { .stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); } }
 @media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 .stat-card {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
@@ -166,47 +172,52 @@
       </div>
     </div>
 
-    <!-- 통계 카드 -->
-    <div class="stat-grid st-stagger">
-      <div class="stat-card">
-        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
-        <div class="stat-value" id="stat-distance">—</div>
-        <div class="stat-label">총 거리 (m)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
-        <div class="stat-value" id="stat-count">—</div>
-        <div class="stat-label">총 훈련 횟수</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📊</div>
-        <div class="stat-value" id="stat-avg">—</div>
-        <div class="stat-label">평균 거리 (m)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-value" id="stat-time">—</div>
-        <div class="stat-label">총 시간 (분)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
-        <div class="stat-value energy" id="stat-cal">—</div>
-        <div class="stat-label">추정 칼로리 (kcal)</div>
-      </div>
-    </div>
+    <div class="rp-layout">
+      <!-- ── 사이드바: 통계 + 성장률 ── -->
+      <aside class="rp-sidebar">
+        <div class="stat-grid st-stagger">
+          <div class="stat-card">
+            <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-pool"/></svg></div>
+            <div class="stat-value" id="stat-distance">—</div>
+            <div class="stat-label">총 거리 (m)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg></div>
+            <div class="stat-value" id="stat-count">—</div>
+            <div class="stat-label">총 훈련 횟수</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="stat-avg">—</div>
+            <div class="stat-label">평균 거리 (m)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="stat-time">—</div>
+            <div class="stat-label">총 시간 (분)</div>
+          </div>
+          <div class="stat-card" style="grid-column:1/-1;">
+            <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
+            <div class="stat-value energy" id="stat-cal">—</div>
+            <div class="stat-label">추정 칼로리 (kcal)</div>
+          </div>
+        </div>
 
-    <!-- 성장률 배너 -->
-    <div class="growth-banner" id="growth-banner">
-      <div class="growth-arrow" id="growth-arrow">—</div>
-      <div class="growth-info">
-        <div class="growth-rate" id="growth-rate">—</div>
-        <div class="growth-desc" id="growth-desc">전월 대비 성장률</div>
-      </div>
-      <div class="growth-streak">
-        <div class="growth-streak-num" id="growth-streak">—</div>
-        <div class="growth-streak-lbl">최장 연속 출석</div>
-      </div>
-    </div>
+        <div class="growth-banner" id="growth-banner">
+          <div class="growth-arrow" id="growth-arrow">—</div>
+          <div class="growth-info">
+            <div class="growth-rate" id="growth-rate">—</div>
+            <div class="growth-desc" id="growth-desc">전월 대비 성장률</div>
+          </div>
+          <div class="growth-streak">
+            <div class="growth-streak-num" id="growth-streak">—</div>
+            <div class="growth-streak-lbl">최장 연속 출석</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ── 메인: 차트 + 히트맵 + 공유 ── -->
+      <div class="rp-main">
 
     <!-- 플랜 수행률 -->
     <div class="plan-performance" id="plan-performance">
@@ -281,8 +292,10 @@
       <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-chat"/></svg> 카카오톡 공유</button>
       <button class="share-btn link"  id="btn-link"  onclick="copyLink()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-link"/></svg> 링크 복사</button>
     </div>
-  </div>
-</div>
+      </div><!-- /.rp-main -->
+    </div><!-- /.rp-layout -->
+  </div><!-- /.rp-page -->
+</div><!-- /.app -->
 
 <script>
 "use strict";

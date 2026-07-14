@@ -47,10 +47,34 @@
 }
 
 .faq-inner {
-  max-width: 700px;
+  max-width: 940px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+.faq-layout { display: grid; grid-template-columns: 152px 1fr; gap: 20px; align-items: start; margin-top: 4px; }
+.faq-sidebar { position: sticky; top: 16px; }
+.faq-main { min-width: 0; }
+
+.faq-sidebar .tabs {
+  flex-direction: column;
+  gap: 3px;
+  overflow-x: visible;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.faq-sidebar .tab-pill {
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  white-space: normal;
+}
+@media (max-width: 720px) {
+  .faq-layout { grid-template-columns: 1fr; }
+  .faq-sidebar { position: static; }
+  .faq-sidebar .tabs { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .faq-sidebar .tab-pill { flex-shrink: 0; width: auto; white-space: nowrap; }
 }
 
 .faq-header {
@@ -256,20 +280,25 @@
         <span class="search-count" id="search-count"></span>
       </div>
 
-      <!-- 카테고리 탭 -->
-      <div class="tabs">
-        <button class="tab-pill active" data-cat="all" onclick="switchCat(this)">전체</button>
-        <button class="tab-pill" data-cat="shoot" onclick="switchCat(this)" style="display:none">📹 촬영</button>
-        <button class="tab-pill" data-cat="ai" onclick="switchCat(this)" style="display:none">🤖 분석</button>
-        <button class="tab-pill" data-cat="account" onclick="switchCat(this)">👤 계정</button>
-        <button class="tab-pill" data-cat="feature" onclick="switchCat(this)">🏊 기능</button>
-        <button class="tab-pill" data-cat="equipment" onclick="switchCat(this)">🥽 장비</button>
-        <button class="tab-pill" data-cat="training" onclick="switchCat(this)">💪 훈련</button>
-        <button class="tab-pill" data-cat="correction" onclick="switchCat(this)">🎯 영법 교정</button>
-      </div>
+      <div class="faq-layout">
+        <!-- 카테고리 사이드바 -->
+        <div class="faq-sidebar">
+          <div class="tabs">
+            <button class="tab-pill active" data-cat="all" onclick="switchCat(this)">전체</button>
+            <button class="tab-pill" data-cat="shoot" onclick="switchCat(this)" style="display:none">📹 촬영</button>
+            <button class="tab-pill" data-cat="ai" onclick="switchCat(this)" style="display:none">🤖 분석</button>
+            <button class="tab-pill" data-cat="account" onclick="switchCat(this)">👤 계정</button>
+            <button class="tab-pill" data-cat="feature" onclick="switchCat(this)">🏊 기능</button>
+            <button class="tab-pill" data-cat="equipment" onclick="switchCat(this)">🥽 장비</button>
+            <button class="tab-pill" data-cat="training" onclick="switchCat(this)">💪 훈련</button>
+            <button class="tab-pill" data-cat="correction" onclick="switchCat(this)">🎯 영법 교정</button>
+          </div>
+        </div><!-- /.faq-sidebar -->
 
-      <!-- FAQ 목록 -->
-      <div class="faq-list" id="faq-list">
+        <!-- FAQ 메인 -->
+        <div class="faq-main">
+        <!-- FAQ 목록 -->
+        <div class="faq-list" id="faq-list">
 
         <!-- 촬영 (AI 분석 완료 후 재활성화 예정) -->
         <div class="faq-item" data-cat="shoot" data-q="어떻게 촬영해야 분석이 잘 되나요" data-hidden="true" style="display:none">
@@ -818,6 +847,8 @@
       <div id="no-result" class="no-result" style="display:none;">
         검색 결과가 없습니다. 다른 키워드로 검색해보세요.
       </div>
+        </div><!-- /.faq-main -->
+      </div><!-- /.faq-layout -->
 
     </div>
   </div>
