@@ -171,54 +171,12 @@ Jira 이슈에는 코칭 과제 제목·설명·분류와 대상 학생 표시�
 
 외부 API secret은 GitHub Actions에서 실제로 사용하는 경우에만 최소 권한으로 추가한다.
 
-## 로컬 Docker Compose
-
-`docker-compose.yml`은 공개 배포의 최소 구성보다 크다.
-
-- Caddy
-- FastAPI
-- PostgreSQL
-- Redis
-- MinIO
-- Celery worker
-- Flowise
-- Flower
-
-worker·MinIO·Flowise는 과거 영상 분석 실험을 포함한다. 현재 제품만 개발할 때도 Compose가 이 서비스를 전부 시작할 수 있으므로 리소스 사용과 레거시 코드를 구분해야 한다.
-
-기본 준비:
-
-```dotenv
-HOST_IP=127.0.0.1
-API_EXTERNAL_PORT=58000
-POSTGRES_EXTERNAL_PORT=55432
-REDIS_EXTERNAL_PORT=56379
-MINIO_API_EXTERNAL_PORT=59000
-MINIO_CONSOLE_EXTERNAL_PORT=59001
-FLOWER_EXTERNAL_PORT=55555
-POSTGRES_USER=swimmate
-POSTGRES_PASSWORD=change-me
-POSTGRES_DB=swimmate
-MINIO_ROOT_USER=swimmate
-MINIO_ROOT_PASSWORD=change-me-too
-SECRET_KEY=replace-with-a-long-random-string
-BASE_URL=https://localhost
-```
-
-실행:
-
-```powershell
-docker compose up -d
-```
-
-기본 진입 주소는 `https://localhost`다.
-
 ## 배포 후 검증
 
 최소 smoke:
 
 1. `/api/health` 200
-2. 로컬 로그인, 로그아웃, refresh, 비회원 체험
+2. 일반 계정 로그인, 로그아웃, refresh, 비회원 체험
 3. 훈련 일지 생성 → 통계 → 월간 리포트 같은 거리·횟수 반영 → 테스트 데이터 삭제
 4. 준비도 저장 → 어드바이저 갱신 → 원래 상태 복원
 5. 플랜 생성·저장·일지 전송 → 리포트 플랜 수행률 반영

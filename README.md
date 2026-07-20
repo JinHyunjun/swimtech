@@ -2,9 +2,17 @@
 
 > 개인 수영인의 훈련 준비·플랜·일지·리포트부터 코치의 강습 운영까지 하나의 흐름으로 연결한 웹 서비스입니다.
 
-[서비스 체험](https://swimtech.vercel.app) · [기능 지도](./docs/FEATURE_MAP.md) · [기술 구조](./docs/ARCHITECTURE.md) · [배포 가이드](./docs/DEPLOYMENT.md) · [기능 체크리스트](./FEATURE_CHECKLIST.md) · [품질 검증 게이트](./docs/QUALITY_GATE.md)
+[웹서비스 바로가기](https://swimtech.vercel.app) · [기능 지도](./docs/FEATURE_MAP.md) · [기술 구조](./docs/ARCHITECTURE.md) · [배포 가이드](./docs/DEPLOYMENT.md) · [기능 체크리스트](./FEATURE_CHECKLIST.md) · [품질 검증 게이트](./docs/QUALITY_GATE.md)
 
 > 저장소와 배포 URL에는 초기 프로젝트명인 `swimtech`가 남아 있지만, 사용자에게 표시되는 서비스명은 **SwimMate**입니다.
+
+## 서비스 이용
+
+SwimMate는 별도의 프로그램이나 설치 마법사가 필요 없는 웹서비스입니다. PC와 모바일 브라우저에서 [swimtech.vercel.app](https://swimtech.vercel.app)에 접속하면 바로 이용할 수 있습니다.
+
+- 계정이 있다면 로그인 후 개인 기록과 코치 연동 기능을 이용할 수 있습니다.
+- 처음 방문했다면 로그인 화면의 **비회원으로 체험하기**에서 샘플 훈련 플랜·일지·리포트 흐름을 확인할 수 있습니다.
+- 지원 브라우저에서는 선택적으로 홈 화면에 추가할 수 있지만, PWA 설치는 필수가 아닙니다.
 
 ---
 
@@ -152,7 +160,6 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 
 - Vercel rewrite로 동일 출처의 `/api/*`, `/auth/*` 요청을 Render 백엔드에 전달합니다.
 - GitHub Actions가 백엔드 변경 시 Render 배포 훅을 호출하고 상태 확인 작업을 수행합니다.
-- `docker-compose.yml`은 로컬 통합 실행과 초기 실험 환경을 위한 구성입니다. 공개 서비스의 실제 배포 구조와는 다릅니다.
 
 ## 기술 스택
 
@@ -162,9 +169,8 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 | Backend | FastAPI, Pydantic, psycopg2, JWT 쿠키 인증, SlowAPI |
 | Database | PostgreSQL · Neon |
 | AI | Google Gemini, 구조화 출력, 규칙 기반 폴백 |
-| Infra | Vercel, Render, GitHub Actions, Docker Compose |
+| Infra | Vercel, Render, GitHub Actions |
 | Collaboration/Ops | Jira Cloud REST API·Webhook, Notion 변경 이력 |
-| Optional/Local | Redis, MinIO, Caddy |
 | Quality | pytest, Playwright, API 시나리오 QA, UI 크롤러 |
 
 ## 처음 보는 사람을 위한 기술 스택 설명
@@ -187,7 +193,6 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 | Jira Cloud API | 외부 업무 관리 서비스와 연결하는 API | 코치가 만든 후속 과제를 Jira 업무로 동기화하고 상태를 다시 받아옴 |
 | Notion API | Notion 문서를 웹 서비스와 연결하는 API | 공개 릴리즈 노트 `/changelog` 연동 |
 | GitHub Actions | 저장소 변경 후 자동 작업을 실행하는 도구 | 백엔드 변경 시 Render 배포 훅 호출과 health check |
-| Docker Compose | 로컬에서 여러 서비스를 한 번에 띄우는 도구 | 개발 환경에서 API, DB, Redis, MinIO 등을 함께 실행 |
 | pytest / Playwright | 코드와 화면을 자동으로 검사하는 도구 | API 계약, 주요 사용자 흐름, 화면 오류를 회귀 테스트 |
 
 핵심은 AI가 모든 판단을 대신하는 서비스가 아니라는 점입니다. 훈련 준비도, 주간 추천, 리포트 계산은 설명 가능한 규칙과 DB 집계로 처리하고, Gemini는 질문 답변과 코치 문서 초안처럼 “문장을 만들어야 하는 곳”에만 씁니다.
@@ -221,7 +226,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 - `scripts/qa_ui_crawler.py` — 주요 페이지 DOM, 콘솔 오류, 링크와 관리자 화면 매핑을 점검
 - `docs/QUALITY_GATE.md` — 기능 유형별로 반드시 넘어가야 할 검증 기준과 증적 산출물을 정리
 
-최근 로컬 검증(2026-07-20):
+최근 검증(2026-07-20):
 
 ```text
 72 passed
@@ -229,84 +234,11 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 176 total tests collected
 ```
 
-Playwright 104개는 실행 중인 로컬 통합 환경이 필요한 E2E 정의 수입니다. 이번 문서 갱신에서는 수집 여부까지만 확인했으며 104개 전체 통과를 의미하지 않습니다. 저장소의 `qa_report.json`, `qa_ui_report.json`도 생성 시점의 배포 증적이므로 현재 `main`의 통과 결과로 간주하지 않습니다.
+Playwright 104개는 실행 중인 검증 환경이 필요한 E2E 정의 수입니다. 이번 문서 갱신에서는 수집 여부까지만 확인했으며 104개 전체 통과를 의미하지 않습니다. 저장소의 `qa_report.json`, `qa_ui_report.json`도 생성 시점의 배포 증적이므로 현재 `main`의 통과 결과로 간주하지 않습니다.
 
 기능을 추가할 때는 코드만 수정하지 않고 체크리스트, API/UI QA, 계약 테스트와 품질 게이트 문서를 함께 갱신합니다. 특히 준비도, 헬스 데이터 가져오기, 플랜 품질 검증, 월간 리포트, 챌린지·뱃지, 커뮤니티·알림, 코치 AI, Jira, 관리자 지표는 서로 다른 화면과 데이터가 이어지므로 단순 200 응답보다 실제 데이터 반영과 권한 경계까지 확인합니다.
 
-```bash
-# PowerShell
-$env:PYTHONPATH="api"
-$env:PYTHONUTF8="1"
-python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py tests/test_coach_crew_jira.py tests/test_jira_integration.py -q
-python -m pytest tests/test_swimtech.py --collect-only -q
-```
-
-Playwright 전체 실행과 운영 QA에는 실행 중인 서비스, 테스트 계정과 선택적인 관리자 환경변수가 필요합니다.
-
----
-
-## 로컬 실행
-
-### Docker Compose
-
-1. 저장소를 복제합니다.
-
-```bash
-git clone https://github.com/JinHyunjun/swimtech.git
-cd swimtech
-```
-
-2. 루트에 `.env`를 만들고 환경변수를 설정합니다.
-
-필수 항목:
-
-```dotenv
-HOST_IP=127.0.0.1
-API_EXTERNAL_PORT=58000
-POSTGRES_EXTERNAL_PORT=55432
-REDIS_EXTERNAL_PORT=56379
-MINIO_API_EXTERNAL_PORT=59000
-MINIO_CONSOLE_EXTERNAL_PORT=59001
-FLOWER_EXTERNAL_PORT=55555
-
-POSTGRES_USER=swimmate
-POSTGRES_PASSWORD=change-me
-POSTGRES_DB=swimmate
-MINIO_ROOT_USER=swimmate
-MINIO_ROOT_PASSWORD=change-me-too
-SECRET_KEY=replace-with-a-long-random-string
-BASE_URL=https://localhost
-
-# AI coach / coach document generation (optional)
-GEMINI_API_KEY=your-gemini-api-key
-
-# Social login and Kakao Maps (optional)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-KAKAO_CLIENT_ID=
-KAKAO_CLIENT_SECRET=
-KAKAO_JS_KEY=
-
-# Public changelog (optional)
-NOTION_TOKEN=
-
-# Jira coach action-item integration (optional)
-JIRA_BASE_URL=https://your-site.atlassian.net
-JIRA_EMAIL=your-atlassian-account@example.com
-JIRA_API_TOKEN=your-api-token
-JIRA_PROJECT_KEY=KAN
-JIRA_WEBHOOK_SECRET=replace-with-a-random-webhook-secret
-```
-
-관리자 화면을 사용할 때는 `ADMIN_ID`, `ADMIN_PW`를 추가합니다. 실제 비밀값은 저장소에 커밋하지 않습니다.
-
-3. 서비스를 실행합니다.
-
-```bash
-docker compose up -d
-```
-
-로컬 기본 진입 주소는 `https://localhost`입니다. 외부 API 키가 없으면 소셜 로그인, 지도, AI 대화 등 해당 기능만 제한됩니다.
+Playwright 전체 실행과 운영 QA에는 배포된 서비스, 테스트 계정과 선택적인 관리자 환경변수가 필요합니다. 구체적인 개발자 검증 명령과 판정 기준은 [품질 검증 게이트](./docs/QUALITY_GATE.md)에서 관리합니다.
 
 ## 디렉터리 구성
 
@@ -316,10 +248,9 @@ frontend/               페이지별 HTML·CSS·Vanilla JavaScript
 docs/                   기능 지도, 아키텍처, 배포, 품질 문서
 scripts/                API QA와 UI 크롤러
 tests/                  단위·계약·Playwright E2E 테스트
-db/                     로컬 PostgreSQL 초기화 스크립트
+db/                     PostgreSQL 스키마와 초기 데이터 스크립트
 analysis/               현재 제품과 분리된 영상 분석 실험 코드
 FEATURE_CHECKLIST.md    기능 우선순위와 완료 기준
-docker-compose.yml      로컬 통합 실행 및 레거시 실험 환경
 vercel.json             프론트엔드 라우팅과 API rewrite
 render.yaml             FastAPI 배포 설정
 ```

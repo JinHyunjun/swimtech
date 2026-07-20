@@ -24,6 +24,12 @@ def test_readme_describes_current_training_helper_and_retires_analysis_claims():
     assert "영법 분류 정확도 **94.4%**" not in readme
     assert "관절 검출 정확도 **81.5%**" not in readme
     assert "[데모 영상 / 스크린샷 자리]" not in readme
+    assert "[웹서비스 바로가기](https://swimtech.vercel.app)" in readme
+    assert "별도의 프로그램이나 설치 마법사가 필요 없는 웹서비스" in readme
+    assert "비회원으로 체험하기" in readme
+    assert "## 로컬 실행" not in readme
+    assert "docker compose up" not in readme
+    assert not (ROOT / "실행파일_설치.zip").exists()
 
 
 def test_legacy_analysis_urls_are_redirected_or_retired():
