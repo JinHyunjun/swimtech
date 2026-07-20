@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# OpenCV 런타임 의존성 (Debian trixie 호환)
+# 로컬 레거시 worker/미디어 도구 호환용 시스템 패키지 (공개 영상 분석 라우터는 비활성)
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libgl1 \

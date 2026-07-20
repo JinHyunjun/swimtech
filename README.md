@@ -2,7 +2,7 @@
 
 > 개인 수영인의 훈련 준비·플랜·일지·리포트부터 코치의 강습 운영까지 하나의 흐름으로 연결한 웹 서비스입니다.
 
-[서비스 체험](https://swimtech.vercel.app) · [기능 체크리스트](./FEATURE_CHECKLIST.md) · [품질 검증 게이트](./docs/QUALITY_GATE.md)
+[서비스 체험](https://swimtech.vercel.app) · [기능 지도](./docs/FEATURE_MAP.md) · [기술 구조](./docs/ARCHITECTURE.md) · [배포 가이드](./docs/DEPLOYMENT.md) · [기능 체크리스트](./FEATURE_CHECKLIST.md) · [품질 검증 게이트](./docs/QUALITY_GATE.md)
 
 > 저장소와 배포 URL에는 초기 프로젝트명인 `swimtech`가 남아 있지만, 사용자에게 표시되는 서비스명은 **SwimMate**입니다.
 
@@ -47,10 +47,11 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
   - 25m/50m 수영장, 초급/중급/상급 사이클, 드릴/대시 구성과 세부 세트별 출발 사이클을 선택할 수 있습니다.
   - 랜덤 생성, 직접 구성, 템플릿 저장·복제, 즐겨찾기·공유, 모바일 버튼 정렬을 지원합니다.
   - 거리·강도·휴식·사이클·웜업/메인/쿨다운 비율을 저장 전에 점검합니다.
-- **훈련 일지와 운동 데이터 가져오기**
+- **훈련 일지와 파일 기반 운동 데이터 가져오기**
   - 영법, 거리, 시간, 강도, 기분, 메모와 수영장 길이를 기록합니다.
   - 월간 목표, 캘린더, 총 거리, 평균 거리, 연속 출석을 함께 보여줍니다.
-  - Apple Health와 Samsung Health에서 내보낸 운동 데이터의 미리보기·가져오기 흐름을 제공합니다.
+  - Health Auto Export JSON, Apple 건강 내보내기 ZIP, Samsung Health CSV/ZIP을 미리 확인한 뒤 선택한 수영 기록만 일지로 가져옵니다.
+  - Apple Watch나 Galaxy Watch와 실시간으로 동기화하는 기능은 아닙니다. 사용자가 건강 앱에서 내보낸 파일을 직접 올리는 방식입니다.
 - **월간 성장 리포트**
   - 훈련 일지를 기준으로 총 거리, 횟수, 평균 거리, 시간, 추정 칼로리를 집계합니다.
   - 영법별 거리, 주차별 추이, 훈련 빈도, 전월 대비 성장률과 최장 연속 출석을 시각화합니다.
@@ -62,6 +63,7 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 - 학생이 코드를 직접 입력한 경우에만 코치가 해당 학생의 일지 열람, 피드백 작성과 개인 플랜 전달을 할 수 있습니다.
 - 학생은 새 코치 코드로 관계를 교체하거나 직접 연동을 해제할 수 있습니다.
 - 자격 정보 제출은 기능을 막는 필수 승인 절차가 아니라 선택 인증이며, 완료 시 학생에게 `본인 확인 코치` 배지가 표시됩니다.
+- 코치는 연동 학생의 최근 기록을 확인하고 피드백·개별 플랜을 전달하며, 자유수영 공유와 전체 수강생 대상 강습 일지도 운영할 수 있습니다.
 
 #### 코치용 AI 강습 운영
 
@@ -97,6 +99,7 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 ### 5. 포트폴리오 데모와 운영 도구
 
 - **비회원 체험** — 로그인 화면에서 별도 가입 없이 샘플 훈련 일지, 플랜, 리포트와 뱃지를 확인할 수 있습니다.
+- **PWA 설치** — 지원 브라우저에서는 홈 화면 설치 안내를 제공하며, 정적 자산과 기본 진입 화면을 네트워크 우선 방식으로 캐시합니다.
 - **슈퍼 관리자** — 사용자, 페이지 조회·운영 로그, 피드백 작성자, 훈련 운영 상태, 준비도, 코치 등록·선택 인증과 AI 강습 배포 현황을 조회합니다.
 - 모든 주요 관리자 목록은 20/50/100개 표시와 번호 기반 페이지 이동을 지원합니다.
 
@@ -110,6 +113,8 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 2. 등록 코치의 **단체 강습표·일정표 및 익명 수업 브리핑 생성**
 
 훈련 준비도와 주간 추천은 생성형 AI가 아니라 사용자의 최근 기록과 회복 상태를 설명 가능한 규칙으로 계산합니다. 외부 AI가 응답하지 않아도 코치 강습 운영이 중단되지 않도록 템플릿 폴백을 제공합니다.
+
+훈련 플랜의 `교정 포인트 추천`은 영상 분석 API 연동 기능이 아닙니다. 사용자가 캐치·호흡·킥·자세 같은 고민을 직접 선택하면 저장된 드릴 세트 규칙으로 플랜을 구성합니다.
 
 ### 영상 영법 분석 — 개선 중 · 공개 서비스 비활성
 
@@ -189,15 +194,15 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 
 ## 무료 티어 운영 범위
 
-현재 구조는 소규모 포트폴리오·비공개 베타·개인 운영 단계에서는 무료 범위에 맞춰져 있습니다. 다만 사용자 수가 늘면 다음 항목부터 먼저 확인해야 합니다.
+아래 내용은 2026-07-20에 각 서비스의 공식 안내를 다시 확인한 운영 참고값입니다. 요금제와 쿼터는 바뀔 수 있으므로 실제 배포 전에는 링크된 공식 페이지와 각 콘솔의 현재 사용량을 다시 확인해야 합니다.
 
 | 서비스 | 현재 역할 | 무료 범위 판단 |
 | --- | --- | --- |
-| Vercel Hobby | 프론트엔드 정적 화면과 API rewrite | 개인·비상업 프로젝트 기준으로 적합. 상업 운영이나 큰 트래픽은 Pro 검토 필요 |
-| Render Free Web Service | FastAPI 백엔드 | 무료 인스턴스는 15분 무요청 시 내려가고, 월 750 free instance hours를 공유. 서버가 항상 깨어 있으면 한 달 한도에 가까워짐 |
-| Neon Free | PostgreSQL 운영 DB | 0.5GB 저장소와 100 CU-hours/월 기준. 현재 텍스트 중심 기록에는 적합하지만 사용자가 늘거나 항상 DB가 깨어 있으면 초과 가능 |
-| Gemini Free | AI 코치 대화와 코치 문서 생성 | `/api/chat/send`는 10/minute, 코치 AI 생성은 6/hour로 제한되어 있지만 서비스 전체 일일 RPD 상한은 별도 관리가 필요 |
-| Jira Free | 코치 운영 과제판 | Jira 사용자는 최대 10명 기준. 일반 수영 회원을 Jira 사용자로 초대하지 않고 코치·운영자만 쓰는 구조가 안전 |
+| Vercel Hobby | 프론트엔드 정적 화면과 API rewrite | [Hobby 약관](https://vercel.com/legal/terms)상 개인·비상업 용도입니다. 상업 운영 전에는 Pro 등 적합한 요금제를 검토해야 합니다. |
+| Render Free Web Service | FastAPI 백엔드 | [공식 무료 안내](https://render.com/docs/free) 기준 15분 동안 인바운드 트래픽이 없으면 중지되고, 워크스페이스당 월 750시간을 공유합니다. 로컬 파일은 영속 저장소로 사용하면 안 됩니다. |
+| Neon Free | PostgreSQL 운영 DB | [공식 가격표](https://neon.com/pricing)의 프로젝트별 저장소·CU-hour 한도를 기준으로 운영합니다. 사용량은 Neon 콘솔에서 확인합니다. |
+| Gemini API | AI 코치 대화와 코치 문서 생성 | 앱 자체 제한은 채팅 10회/분, 코치 문서·브리핑 각각 6회/시간입니다. 모델·프로젝트별 실제 RPM/TPM/RPD는 [AI Studio의 활성 한도](https://ai.google.dev/gemini-api/docs/rate-limits)를 따릅니다. |
+| Jira Free | 코치 운영 과제판 | [Jira 가격표](https://www.atlassian.com/software/jira/jira/pricing) 기준 최대 10명의 Jira 사용자와 2GB 저장소를 제공합니다. 일반 수영 회원을 Jira 사용자로 만들지 않는 구조입니다. |
 | Kakao Maps / Google OAuth / Kakao OAuth | 지도와 로그인 | 무료 여부와 쿼터는 각 콘솔에서 앱별 사용량 확인 필요 |
 | Notion API | 릴리즈 노트 | 작은 문서 동기화에는 적합. 공개 화면은 실패 시 서비스 핵심 기능과 분리 |
 
@@ -207,20 +212,24 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 
 ## 테스트와 QA
 
-2026-07-10 기준으로 자동 수집되는 테스트는 총 **163개**입니다.
+2026-07-20 기준으로 자동 수집되는 테스트 정의는 총 **176개**입니다.
 
-- 로컬 단위·계약 테스트 59개
-- Chromium 기반 Playwright E2E 시나리오 104개
+- 단위·계약·Jira 통합 테스트 72개
+- Chromium 기반 Playwright E2E 정의 104개
+- GitHub Actions CI는 `main`에서 단위·계약·Jira 테스트 72개를 실행합니다.
 - `scripts/qa_runner.py` — 인증, 훈련 기록·리포트, 코치 코드 연동, 관리자 API를 실제 사용자 흐름으로 점검
 - `scripts/qa_ui_crawler.py` — 주요 페이지 DOM, 콘솔 오류, 링크와 관리자 화면 매핑을 점검
 - `docs/QUALITY_GATE.md` — 기능 유형별로 반드시 넘어가야 할 검증 기준과 증적 산출물을 정리
 
-최근 로컬 검증:
+최근 로컬 검증(2026-07-20):
 
 ```text
-59 passed
-163 tests collected
+72 passed
+104 Playwright tests collected
+176 total tests collected
 ```
+
+Playwright 104개는 실행 중인 로컬 통합 환경이 필요한 E2E 정의 수입니다. 이번 문서 갱신에서는 수집 여부까지만 확인했으며 104개 전체 통과를 의미하지 않습니다. 저장소의 `qa_report.json`, `qa_ui_report.json`도 생성 시점의 배포 증적이므로 현재 `main`의 통과 결과로 간주하지 않습니다.
 
 기능을 추가할 때는 코드만 수정하지 않고 체크리스트, API/UI QA, 계약 테스트와 품질 게이트 문서를 함께 갱신합니다. 특히 준비도, 헬스 데이터 가져오기, 플랜 품질 검증, 월간 리포트, 챌린지·뱃지, 커뮤니티·알림, 코치 AI, Jira, 관리자 지표는 서로 다른 화면과 데이터가 이어지므로 단순 200 응답보다 실제 데이터 반영과 권한 경계까지 확인합니다.
 
@@ -228,7 +237,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 # PowerShell
 $env:PYTHONPATH="api"
 $env:PYTHONUTF8="1"
-python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py -q
+python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py tests/test_coach_crew_jira.py tests/test_jira_integration.py -q
 python -m pytest tests/test_swimtech.py --collect-only -q
 ```
 
@@ -266,15 +275,30 @@ POSTGRES_DB=swimmate
 MINIO_ROOT_USER=swimmate
 MINIO_ROOT_PASSWORD=change-me-too
 SECRET_KEY=replace-with-a-long-random-string
+BASE_URL=https://localhost
+
+# AI coach / coach document generation (optional)
+GEMINI_API_KEY=your-gemini-api-key
+
+# Social login and Kakao Maps (optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+KAKAO_CLIENT_ID=
+KAKAO_CLIENT_SECRET=
+KAKAO_JS_KEY=
+
+# Public changelog (optional)
+NOTION_TOKEN=
 
 # Jira coach action-item integration (optional)
 JIRA_BASE_URL=https://your-site.atlassian.net
 JIRA_EMAIL=your-atlassian-account@example.com
 JIRA_API_TOKEN=your-api-token
 JIRA_PROJECT_KEY=KAN
+JIRA_WEBHOOK_SECRET=replace-with-a-random-webhook-secret
 ```
 
-선택 기능에 따라 `GEMINI_API_KEY`, Google/Kakao OAuth 키, `KAKAO_JS_KEY`, `NOTION_TOKEN`, 관리자 계정 정보를 추가합니다.
+관리자 화면을 사용할 때는 `ADMIN_ID`, `ADMIN_PW`를 추가합니다. 실제 비밀값은 저장소에 커밋하지 않습니다.
 
 3. 서비스를 실행합니다.
 
@@ -289,6 +313,7 @@ docker compose up -d
 ```text
 api/                    FastAPI 애플리케이션과 도메인별 라우터
 frontend/               페이지별 HTML·CSS·Vanilla JavaScript
+docs/                   기능 지도, 아키텍처, 배포, 품질 문서
 scripts/                API QA와 UI 크롤러
 tests/                  단위·계약·Playwright E2E 테스트
 db/                     로컬 PostgreSQL 초기화 스크립트

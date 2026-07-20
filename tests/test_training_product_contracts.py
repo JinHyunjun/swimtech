@@ -138,6 +138,9 @@ def test_plan_p2_improvements_are_kept():
     assert 'data-tab="analysis"' in plan
     assert "ANALYSIS_ISSUES" in plan
     assert "generateAnalysisRecommendationPlan" in plan
+    assert "교정 포인트 기반 플랜 추천" in plan
+    assert "영상 분석에서 확인한 교정 포인트" not in plan
+    assert "AI 분석 결과 기반 플랜 추천" not in plan
     assert 'data-tab="race"' in plan
     assert "RACE_EVENT_PROFILES" in plan
     assert "generateRacePreparationPlan" in plan
@@ -480,6 +483,11 @@ def test_frontend_visible_branding_uses_swimmate():
         assert "SwimTech" not in text, f"old visible brand remains in {path}"
     assert "SwimMate" in (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
     assert "SwimMate" in (ROOT / "frontend" / "static" / "icons" / "logo.svg").read_text(encoding="utf-8")
+    manifest = (ROOT / "frontend" / "manifest.json").read_text(encoding="utf-8")
+    assert '"name": "SwimMate' in manifest
+    assert '"short_name": "SwimMate"' in manifest
+    assert "SwimTech" not in manifest
+    assert "영상을 업로드" not in manifest
     assert checked
 
 
@@ -489,23 +497,35 @@ def test_quality_gate_documentation_is_kept_current():
     checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
     claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     pytest_ini = (ROOT / "tests" / "pytest.ini").read_text(encoding="utf-8")
+    privacy = (ROOT / "frontend" / "privacy.html").read_text(encoding="utf-8")
+    terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약 59개" in quality_doc
-    assert "Playwright E2E 104개" in quality_doc
-    assert "총 163개" in quality_doc
+    assert "단위·계약·Jira 통합 72개" in quality_doc
+    assert "Playwright E2E 정의 104개" in quality_doc
+    assert "총 176개" in quality_doc
     for required in [
         "준비도·주간 어드바이저",
         "헬스 데이터 가져오기",
         "코치 AI 강습 운영",
         "Jira 운영판",
         "슈퍼 관리자",
+        "공개 메타데이터·정책",
         "릴리즈·문서",
         "영상 분석 재활성화",
     ]:
         assert required in quality_doc
     assert "[품질 검증 게이트](./docs/QUALITY_GATE.md)" in readme
+    assert "[기능 지도](./docs/FEATURE_MAP.md)" in readme
+    assert "[기술 구조](./docs/ARCHITECTURE.md)" in readme
+    assert "[배포 가이드](./docs/DEPLOYMENT.md)" in readme
     assert "docs/QUALITY_GATE.md" in checklist
     assert "품질 검증 게이트 문서화" in checklist
     assert "docs/QUALITY_GATE.md" in claude
     assert "section25:" in pytest_ini
+    assert "건강 앱에서 내보낸 수영 운동 파일" in privacy
+    assert "Google Gemini" in privacy and "Atlassian Jira" in privacy
+    assert "swimtech_token" in privacy and "swimtech_refresh_token" in privacy
+    assert "영상 업로드 기반 영법 분석" in terms
+    assert "현재 공개 서비스에서 제공하지 않습니다" in terms
+    assert "style=\"display:none\"" not in terms

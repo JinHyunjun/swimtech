@@ -133,7 +133,7 @@ td { color: #aaccd8; }
   </div>
 
   <div class="page-title">개인정보처리방침</div>
-  <div class="page-meta">시행일: 2026년 6월 15일</div>
+  <div class="page-meta">시행일: 2026년 7월 20일</div>
 
   <!-- 1. 수집 항목 -->
   <div class="section">
@@ -142,9 +142,10 @@ td { color: #aaccd8; }
     <div class="sub-title">회원가입 시</div>
     <table>
       <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
-      <tr><td>이메일 주소</td><td><span class="badge badge-req">필수</span></td><td>회원 식별, 로그인</td></tr>
+      <tr><td>아이디, 이메일 주소</td><td><span class="badge badge-req">필수</span></td><td>회원 식별, 로그인</td></tr>
       <tr><td>비밀번호 (암호화 저장)</td><td><span class="badge badge-req">필수</span></td><td>본인 인증</td></tr>
-      <tr><td>닉네임</td><td><span class="badge badge-req">필수</span></td><td>서비스 내 표시명</td></tr>
+      <tr><td>이름</td><td><span class="badge badge-req">필수</span></td><td>가입 정보와 기본 표시명</td></tr>
+      <tr><td>닉네임</td><td><span class="badge badge-opt">선택</span></td><td>커뮤니티 등 서비스 내 표시명</td></tr>
     </table>
 
     <div class="sub-title">소셜 로그인 시 (Google / 카카오)</div>
@@ -155,30 +156,22 @@ td { color: #aaccd8; }
       <tr><td>소셜 계정 고유 ID</td><td>소셜 로그인 연동</td></tr>
     </table>
 
+    <div class="sub-title">훈련·커뮤니티·코치 기능 이용 시</div>
+    <table>
+      <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
+      <tr><td>훈련 일지, 준비도, 목표, 플랜, 뱃지·챌린지 진행 정보</td><td><span class="badge badge-opt">선택</span></td><td>대시보드, 추천, 월간 리포트와 성취 기능 제공</td></tr>
+      <tr><td>건강 앱에서 내보낸 수영 운동 파일과 선택한 운동 기록</td><td><span class="badge badge-opt">선택</span></td><td>가져오기 미리보기, 중복 방지, 훈련 일지 변환</td></tr>
+      <tr><td>커뮤니티 글·댓글·이미지·좋아요·북마크·신고·멘션</td><td><span class="badge badge-opt">선택</span></td><td>커뮤니티와 알림 제공, 신고 처리</td></tr>
+      <tr><td>코치 프로필·선택 자격정보, 코치-수강생 관계, 피드백·강습안·과제</td><td><span class="badge badge-opt">선택</span></td><td>코치 연동, 강습 운영과 선택 인증</td></tr>
+      <tr><td>AI 코치 대화 내용, 코치가 입력한 강습 조건</td><td><span class="badge badge-opt">선택</span></td><td>AI 답변과 강습 문서 초안 생성</td></tr>
+    </table>
+
     <div class="sub-title">서비스 이용 시 자동 수집</div>
     <table>
       <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
-      <!-- [영상분석_준비중] 업로드한 수영 영상 행 -->
-      <tr style="display:none"><td>업로드한 수영 영상</td><td><span class="badge badge-auto">자동</span></td><td>AI 영법 분석</td></tr>
-      <!-- [/영상분석_준비중] -->
-      <!-- [영상분석_준비중] 분석 결과 데이터 행 -->
-      <tr style="display:none"><td>분석 결과 데이터</td><td><span class="badge badge-auto">자동</span></td><td>개인 대시보드, 성장 추이 분석</td></tr>
-      <!-- [/영상분석_준비중] -->
       <tr><td>접속 IP, 브라우저 정보</td><td><span class="badge badge-auto">자동</span></td><td>보안 및 서비스 안정성</td></tr>
-      <tr><td>서비스 이용 기록</td><td><span class="badge badge-auto">자동</span></td><td>서비스 개선</td></tr>
+      <tr><td>페이지 조회, 메뉴·기능 이용 기록, 오류 정보</td><td><span class="badge badge-auto">자동</span></td><td>운영 상태 확인과 서비스 개선</td></tr>
     </table>
-
-    
-    <!-- [영상분석_준비중] Google Sheets 연동 소절 -->
-    <div style="display:none">
-    <div class="sub-title">Google Sheets 연동 시 <span style="font-weight:400;color:#6fa8c0">(선택)</span></div>
-    <table>
-      <tr><th>항목</th><th>구분</th><th>이용 목적</th></tr>
-      <tr><td>Google OAuth 토큰</td><td><span class="badge badge-opt">선택</span></td><td>Google Sheets 자동 저장</td></tr>
-      <tr><td>Google Sheets ID</td><td><span class="badge badge-opt">선택</span></td><td>분석 결과 저장 대상 시트 식별</td></tr>
-    </table>
-    </div>
-    <!-- [/영상분석_준비중] -->
   </div>
 
   <!-- 2. 이용 목적 -->
@@ -186,15 +179,11 @@ td { color: #aaccd8; }
     <div class="section-title">2. 개인정보 수집 및 이용 목적</div>
     <ul>
       <li><strong>회원 관리:</strong> 회원 가입, 본인 확인, 로그인, 탈퇴 처리</li>
-      <!-- [영상분析_준비중] 서비스 제공 항목 -->
-      <li style="display:none"><strong>서비스 제공:</strong> 수영 영상 AI 분析, 맞춤 피드백, 개인 대시보드</li>
-      <!-- [/영상分析_준비중] -->
-      <li><strong>서비스 제공:</strong> AI 코치, 수영장 찾기, 드릴 가이드, 훈련 플랜 등<!-- [영상분析_준비중] <span style="color:#6fa8c0;font-size: var(--fs-caption)">(영상 AI 분析 기능 준비 중)</span> [/영상분析_준비중] --></li>
-      <!-- [영상分析_준비중] 데이터 연동 항목 -->
-      <li style="display:none"><strong>데이터 연동:</strong> Google Sheets 자동 저장 (동의한 경우)</li>
-      <!-- [/영상分析_준비중] -->
+      <li><strong>개인 훈련 관리:</strong> 준비도, 플랜, 일지, 월간 리포트, 뱃지와 챌린지 제공</li>
+      <li><strong>코치 강습 운영:</strong> 학생 연동, 피드백, 강습안·일정·코칭 과제 배포</li>
+      <li><strong>정보·커뮤니티:</strong> AI 코치, 수영장 찾기, 가이드, 게시글과 알림 제공</li>
       <li><strong>보안 및 안전:</strong> 부정 이용 방지, 로그인 시도 제한</li>
-      <li><strong>서비스 개선:</strong> 신규 기능 개발</li>
+      <li><strong>서비스 운영·개선:</strong> 기능 사용 현황과 오류 확인, 신규 기능 개발</li>
     </ul>
   </div>
 
@@ -203,15 +192,10 @@ td { color: #aaccd8; }
     <div class="section-title">3. 개인정보 보유 및 이용 기간</div>
     <table>
       <tr><th>항목</th><th>보유 기간</th></tr>
-      <tr><td>회원 정보 (이메일, 닉네임)</td><td>회원 탈퇴 시까지</td></tr>
-      <!-- [영상分析_준비중] 영상 파일 보유 행 -->
-      <tr style="display:none"><td>수영 영상 파일</td><td>분析 완료 후 즉시 삭제</td></tr>
-      <!-- [/영상分析_준비중] -->
-      <!-- [영상分析_준비중] 분析결과 보유 행 -->
-      <tr style="display:none"><td>분析 결과 데이터</td><td>회원 탈퇴 시까지</td></tr>
-      <!-- [/영상分析_준비중] -->
-      <tr><td>Google OAuth 토큰</td><td>연동 해제 시까지</td></tr>
-      <tr><td>접속 로그</td><td>3개월</td></tr>
+      <tr><td>회원 식별 정보</td><td>회원 탈퇴 시 식별 불가능한 값으로 변경</td></tr>
+      <tr><td>훈련·플랜·리포트·커뮤니티·코치 운영 데이터</td><td>회원 탈퇴 또는 개별 기능에서 삭제할 때까지. 관계 보존이 필요한 기록은 식별정보를 제거한 뒤 남을 수 있음</td></tr>
+      <tr><td>건강 앱 가져오기 원본 운동 정보와 변환 이력</td><td>계정과 연결해 보관하며, 탈퇴 후에는 식별정보를 제거한 계정에 연결된 상태로 남을 수 있음. 별도 삭제 요청 가능</td></tr>
+      <tr><td>접속·운영 로그</td><td>서비스 운영 목적 달성 시까지. 삭제 요청은 개인정보 보호 책임자에게 접수</td></tr>
     </table>
   </div>
 
@@ -228,9 +212,9 @@ td { color: #aaccd8; }
       <tr><th>서비스</th><th>제공 항목</th><th>목적</th></tr>
       <tr><td>Google (소셜 로그인)</td><td>이메일, 소셜 ID</td><td>소셜 로그인 인증</td></tr>
       <tr><td>카카오 (소셜 로그인)</td><td>이메일, 소셜 ID</td><td>소셜 로그인 인증</td></tr>
-      <!-- [영상分析_준비중] Google Sheets 제3자 제공 행 -->
-      <tr style="display:none"><td>Google Sheets <span style="color:#6fa8c0;font-size: var(--fs-caption)">(선택)</span></td><td>OAuth 토큰</td><td>분析 결과 시트 저장</td></tr>
-      <!-- [/영상分析_준비중] -->
+      <tr><td>Google Gemini</td><td>AI 코치 질문, 코치가 입력한 강습 조건. 수업 브리핑은 학생 이름 대신 익명 참조 사용</td><td>답변과 강습 문서 초안 생성</td></tr>
+      <tr><td>Atlassian Jira (코치 기능)</td><td>코칭 과제 제목·설명·분류와 대상 학생 표시명</td><td>코치 업무 과제 동기화</td></tr>
+      <tr><td>카카오맵</td><td>지도 조회와 사용자가 입력한 장소 검색어</td><td>주변 수영장 검색</td></tr>
     </table>
   </div>
 
@@ -253,9 +237,9 @@ td { color: #aaccd8; }
     <ul>
       <li>비밀번호 <strong>bcrypt</strong> 단방향 암호화 저장</li>
       <li>JWT <strong>HttpOnly 쿠키</strong> (8시간 만료)</li>
-      <li><strong>HTTPS</strong> 통신 암호화 (Caddy 리버스 프록시)</li>
-      <li>로그인 5회 실패 시 <strong>15분 잠금</strong></li>
-      <li>Rate Limiting (IP당 100회/분)</li>
+      <li><strong>HTTPS</strong> 통신 암호화 (Vercel·Render 운영 환경, 로컬 Caddy)</li>
+      <li>Redis가 연결된 환경에서 동일 IP 로그인 5회 실패 시 <strong>15분 잠금</strong></li>
+      <li>로그인·체험 로그인·AI 요청별 Rate Limiting</li>
       <li>파일 업로드 유형 및 크기 검증</li>
     </ul>
   </div>
@@ -266,8 +250,8 @@ td { color: #aaccd8; }
     <p>서비스는 로그인 유지를 위해 쿠키를 사용합니다.</p>
     <table>
       <tr><th>쿠키명</th><th>목적</th><th>보유 기간</th></tr>
-      <tr><td>access_token</td><td>로그인 세션 유지</td><td>8시간</td></tr>
-      <tr><td>refresh_token</td><td>토큰 갱신</td><td>7일</td></tr>
+      <tr><td>swimtech_token</td><td>로그인 세션 유지</td><td>8시간</td></tr>
+      <tr><td>swimtech_refresh_token</td><td>토큰 갱신</td><td>7일</td></tr>
     </table>
   </div>
 
@@ -284,6 +268,11 @@ td { color: #aaccd8; }
   <!-- 9. 개정 이력 -->
   <div class="section">
     <div class="section-title">9. 개정 이력</div>
+    <div class="history-row">
+      <span class="ver">v1.1</span>
+      <span>2026.07.20</span>
+      <span>현재 훈련·커뮤니티·코치·AI·외부 연동 데이터 처리 내용 반영</span>
+    </div>
     <div class="history-row">
       <span class="ver">v1.0</span>
       <span>2026.06.15</span>

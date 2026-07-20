@@ -1,8 +1,8 @@
-# Render Blueprint — FinKick(SwimTech) FastAPI 백엔드 (무료 웹서비스)
+# Render Blueprint — SwimMate FastAPI backend
 # 레포 루트에 render.yaml 로 두고 Render에서 "New > Blueprint" 로 연결.
 services:
   - type: web
-    name: finkick-api
+    name: swimtech-api
     runtime: python
     plan: free
     rootDir: api                       # FastAPI 앱이 api/ 안에 있음
@@ -20,6 +20,8 @@ services:
         sync: false
       - key: NOTION_TOKEN        # /changelog 연동
         sync: false
+      - key: GEMINI_API_KEY      # AI coach chat and coach document generation
+        sync: false
       - key: ADMIN_ID
         sync: false
       - key: ADMIN_PW
@@ -36,6 +38,10 @@ services:
       - key: JIRA_WEBHOOK_SECRET  # Jira webhook 서명 검증용 비밀 키 (secrets.token_hex(32))
         sync: false
       # ── 소셜 로그인/지도 (쓰면) ────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
       - key: KAKAO_CLIENT_ID
         sync: false
       - key: KAKAO_CLIENT_SECRET

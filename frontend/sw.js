@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swimtech-v1';
+const CACHE_NAME = 'swimmate-v2';
 const CACHE_URLS = [
   '/static/style.css',
   '/landing',

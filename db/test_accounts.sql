@@ -1,4 +1,4 @@
--- SwimTech 고정 테스트 계정 (v2.5.2)
+-- SwimMate 고정 테스트 계정
 -- 실행: psql $DATABASE_URL -f db/test_accounts.sql
 -- 비고: 모든 INSERT 에 ON CONFLICT DO NOTHING 적용 — 재실행 안전
 

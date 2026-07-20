@@ -403,7 +403,7 @@
       <button class="tab-btn" data-tab="masters"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-challenge"/></svg> 마스터즈</button>
       <button class="tab-btn" data-tab="fitness">⚡ 체력 향상</button>
       <button class="tab-btn" data-tab="correction">🔧 교정 집중</button>
-      <button class="tab-btn" data-tab="analysis">🧠 분석 추천</button>
+      <button class="tab-btn" data-tab="analysis">🧠 교정 포인트</button>
       <button class="tab-btn" data-tab="race">🏁 대회 준비</button>
       <button class="tab-btn" data-tab="random">🎲 랜덤 생성</button>
       <button class="tab-btn" data-tab="builder">🛠 직접 구성</button>
@@ -456,13 +456,13 @@
     <div id="tab-fitness"          class="tab-content"></div>
     <div id="tab-correction"       class="tab-content"></div>
 
-    <!-- 🧠 분석 추천 -->
+    <!-- 🧠 교정 포인트 추천 -->
     <div id="tab-analysis" class="tab-content">
       <div class="p2-panel">
         <div class="p2-panel-header">
           <div class="plan-card-icon">🧠</div>
-          <div class="plan-card-title">AI 분석 결과 기반 플랜 추천</div>
-          <div class="plan-card-desc">영상 분석에서 확인한 교정 포인트를 선택하면 드릴 가이드와 훈련 플랜으로 바로 연결합니다.</div>
+          <div class="plan-card-title">교정 포인트 기반 플랜 추천</div>
+          <div class="plan-card-desc">직접 개선하고 싶은 동작을 선택하면 관련 드릴과 훈련 세트를 규칙 기반으로 구성합니다.</div>
         </div>
         <div class="form-section">
           <div class="p2-grid">
@@ -505,7 +505,7 @@
             </div>
           </div>
           <div class="p2-field">
-            <label for="analysis-note">분석 메모 / 코치 피드백</label>
+            <label for="analysis-note">내 메모 / 코치 피드백</label>
             <textarea id="analysis-note" class="p2-textarea" placeholder="예: 호흡 때 머리가 많이 들리고, 오른쪽 캐치가 늦게 잡힘"></textarea>
           </div>
           <div class="p2-action-row">
@@ -1955,7 +1955,7 @@ function pickAnalysisSets(stroke, issueKey, level, poolLength, count, weekIndex)
   const matched = source.filter(item => itemMatchesKeywords(item, issue.keywords));
   const candidates = matched.length ? matched : source;
   const rotated = candidates.slice(weekIndex % Math.max(candidates.length, 1)).concat(candidates.slice(0, weekIndex % Math.max(candidates.length, 1)));
-  return pickUnique(rotated, count).map(item => ({ ...getPoolAdjustedSet(item), tags: [...(item.tags || []), '분석추천'], goal: issue.goal }));
+  return pickUnique(rotated, count).map(item => ({ ...getPoolAdjustedSet(item), tags: [...(item.tags || []), '교정추천'], goal: issue.goal }));
 }
 
 function buildAnalysisPlan(params) {
@@ -1989,7 +1989,7 @@ function buildAnalysisPlan(params) {
           drill: '분석 재촬영 + 비교 수영',
           purpose: `${issue.label} 개선 확인`,
           cycle: '',
-          tags: ['분석추천','점검'],
+          tags: ['교정추천','점검'],
           goal: issue.goal,
         });
       }
@@ -2010,7 +2010,7 @@ function buildAnalysisPlan(params) {
   return {
     pool_length: params.pool_length,
     session_style: 'analysis',
-    summary: `분석 추천 · ${params.stroke} · ${issue.label} · ${params.pool_length}m 풀 · ${params.level}`,
+    summary: `교정 포인트 · ${params.stroke} · ${issue.label} · ${params.pool_length}m 풀 · ${params.level}`,
     analysis_issue: params.issue,
     analysis_note: params.note,
     weeks,
@@ -2167,7 +2167,7 @@ function generateAnalysisRecommendationPlan() {
   const issueKey = document.getElementById('analysis-issue').value;
   const issue = ANALYSIS_ISSUES[issueKey] || ANALYSIS_ISSUES.catch;
   const params = {
-    plan_name: `${document.getElementById('analysis-stroke').value} ${issue.label} 분석 추천 플랜`,
+    plan_name: `${document.getElementById('analysis-stroke').value} ${issue.label} 교정 플랜`,
     goal: issue.goal,
     sessions_per_week: Number(document.getElementById('analysis-sessions').value || 3),
     session_duration: 60,
@@ -3604,7 +3604,7 @@ async function loadPlanCompletions() {
 function getSessionStyleLabel(style) {
   if (style === 'preset') return '추천 플랜';
   if (style === 'custom') return '직접 구성';
-  if (style === 'analysis') return '분석 추천';
+  if (style === 'analysis') return '교정 포인트';
   if (style === 'race') return '대회 준비';
   return SESSION_STYLE_LABELS[style] || style || '추천 플랜';
 }

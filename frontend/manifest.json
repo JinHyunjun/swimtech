@@ -1,11 +1,11 @@
 {
-  "name": "SwimTech — 수영 훈련 관리",
-  "short_name": "SwimTech",
-  "description": "수영 영상을 업로드하면 AI가 실시간으로 영법을 분석해드립니다",
-  "start_url": "/",
+  "name": "SwimMate — 나만의 수영 훈련 도우미",
+  "short_name": "SwimMate",
+  "description": "훈련 준비도, 플랜, 일지, 월간 리포트와 코치 강습 운영을 연결하는 수영 훈련 도우미",
+  "start_url": "/landing",
   "display": "standalone",
-  "background_color": "#0a0a1a",
-  "theme_color": "#3b82f6",
+  "background_color": "#06121c",
+  "theme_color": "#00b4d8",
   "orientation": "portrait",
   "icons": [
     { "src": "/static/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },

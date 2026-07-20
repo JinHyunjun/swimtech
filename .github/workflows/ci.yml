@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
-    branches: [main, dev]
+    branches: [main]
 
 jobs:
   test:
@@ -35,7 +35,8 @@ jobs:
       - name: Run unit tests (no Playwright)
         working-directory: api
         run: |
-          python -m pytest ../tests/test_api_unit.py ../tests/test_training_product_contracts.py -v --tb=short \
+          python -m pytest ../tests/test_api_unit.py ../tests/test_training_product_contracts.py \
+            ../tests/test_coach_crew_jira.py ../tests/test_jira_integration.py -v --tb=short \
             --html=../tests/ci_report.html --self-contained-html \
             --junitxml=../tests/ci_results.xml
 

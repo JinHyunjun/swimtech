@@ -1,7 +1,7 @@
 version: "3.9"
 
 # ================================================
-# SwimTech — docker-compose.yml
+# SwimMate — docker-compose.yml
 # 실행: docker-compose up -d
 # 중지: docker-compose down
 # 로그: docker-compose logs -f [서비스명]

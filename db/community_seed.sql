@@ -1,4 +1,4 @@
--- SwimTech 커뮤니티 초기 콘텐츠 시드 데이터
+-- SwimMate 커뮤니티 초기 콘텐츠 시드 데이터
 -- admin 계정(username='admin') 작성, 중복 삽입 방지 포함
 -- 실행: psql $DATABASE_URL -f db/community_seed.sql
 
@@ -7,8 +7,8 @@
 INSERT INTO posts (customer_id, category, title, content, created_at)
 SELECT c.id,
        '공지',
-       'SwimTech 커뮤니티 이용 안내',
-       '안녕하세요, SwimTech 커뮤니티에 오신 것을 환영합니다! 🏊
+       'SwimMate 커뮤니티 이용 안내',
+       '안녕하세요, SwimMate 커뮤니티에 오신 것을 환영합니다! 🏊
 
 커뮤니티 이용 시 아래 규칙을 꼭 지켜주세요.
 
@@ -25,14 +25,14 @@ WHERE c.username = 'admin'
   AND NOT EXISTS (
     SELECT 1 FROM posts p
     WHERE p.customer_id = c.id
-      AND p.title = 'SwimTech 커뮤니티 이용 안내'
+      AND p.title = 'SwimMate 커뮤니티 이용 안내'
   );
 
 INSERT INTO posts (customer_id, category, title, content, created_at)
 SELECT c.id,
        '공지',
-       'v2.4 업데이트 안내 — 이미지 첨부·알림·북마크 출시',
-       '안녕하세요! SwimTech v2.4 업데이트 내용을 안내드립니다.
+       '커뮤니티 기능 안내 — 이미지·알림·북마크',
+       '안녕하세요! SwimMate 커뮤니티 업데이트 내용을 안내드립니다.
 
 ■ 새 기능
 • 이미지 첨부 — 게시글에 최대 3장(jpg/png/webp, 장당 5MB)을 첨부할 수 있습니다.
@@ -54,7 +54,7 @@ WHERE c.username = 'admin'
   AND NOT EXISTS (
     SELECT 1 FROM posts p
     WHERE p.customer_id = c.id
-      AND p.title = 'v2.4 업데이트 안내 — 이미지 첨부·알림·북마크 출시'
+      AND p.title = '커뮤니티 기능 안내 — 이미지·알림·북마크'
   );
 
 INSERT INTO posts (customer_id, category, title, content, created_at)
@@ -94,7 +94,7 @@ SELECT c.id,
        '오늘 드디어 쉬지 않고 1km를 완주했습니다! 🎉
 
 3개월 전에는 25m도 힘들었는데 이렇게 성장할 수 있을 줄 몰랐어요.
-자유형 팔 동작이 처음에는 너무 어색했는데, SwimTech 분석으로 팔꿈치 각도를 교정하고 나서
+자유형 팔 동작이 처음에는 너무 어색했는데, SwimMate 드릴 가이드와 교정 플랜으로 팔꿈치 동작을 연습하고 나서
 훨씬 부드러워진 것 같습니다.
 
 기록: 1000m / 23분 15초 (완전 느리지만 제겐 감동...)
@@ -170,7 +170,7 @@ SELECT c.id,
 2. 원 암 버터플라이 — 주 3회
 
 혹시 팔 입수 타이밍을 잡는 데 도움 되는 드릴이나 팁이 있으시면 공유해 주세요!
-영상 분석도 해보고 싶은데 SwimTech로 접영도 분석이 가능한가요?',
+SwimMate 접영 드릴 가이드에서 함께 참고할 만한 동작이 있을까요?',
        NOW() - INTERVAL '4 days'
 FROM customers c
 WHERE c.username = 'admin'
@@ -235,7 +235,7 @@ INSERT INTO posts (customer_id, category, title, content, created_at)
 SELECT c.id,
        '훈련후기',
        '배영 교정 후 2주 — 팔꿈치 각도 바꾸니 확실히 달라요',
-       'SwimTech AI 분석을 통해 배영 팔꿈치 각도 문제를 발견하고 2주간 교정 훈련을 한 결과입니다.
+       'SwimMate 드릴 가이드에서 배영 팔 동작을 확인하고 2주간 교정 훈련을 한 결과입니다.
 
 [Before] 팔꿈치가 너무 일찍 구부러져서 추진력 손실이 컸음
 [After] 팔꿈치 각도를 90도로 유지하며 S자 풀링 연습
@@ -266,19 +266,19 @@ WHERE c.username = 'admin'
 INSERT INTO post_tags (post_id, tag)
 SELECT p.id, '커뮤니티규칙'
 FROM posts p JOIN customers c ON p.customer_id = c.id
-WHERE c.username = 'admin' AND p.title = 'SwimTech 커뮤니티 이용 안내'
+WHERE c.username = 'admin' AND p.title = 'SwimMate 커뮤니티 이용 안내'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO post_tags (post_id, tag)
 SELECT p.id, '공지'
 FROM posts p JOIN customers c ON p.customer_id = c.id
-WHERE c.username = 'admin' AND p.title = 'v2.4 업데이트 안내 — 이미지 첨부·알림·북마크 출시'
+WHERE c.username = 'admin' AND p.title = '커뮤니티 기능 안내 — 이미지·알림·북마크'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO post_tags (post_id, tag)
 SELECT p.id, '업데이트'
 FROM posts p JOIN customers c ON p.customer_id = c.id
-WHERE c.username = 'admin' AND p.title = 'v2.4 업데이트 안내 — 이미지 첨부·알림·북마크 출시'
+WHERE c.username = 'admin' AND p.title = '커뮤니티 기능 안내 — 이미지·알림·북마크'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO post_tags (post_id, tag)
@@ -324,7 +324,7 @@ WHERE c.username = 'admin' AND p.title = '배영 교정 후 2주 — 팔꿈치 �
 ON CONFLICT DO NOTHING;
 
 INSERT INTO post_tags (post_id, tag)
-SELECT p.id, 'AI분석'
+SELECT p.id, '교정훈련'
 FROM posts p JOIN customers c ON p.customer_id = c.id
 WHERE c.username = 'admin' AND p.title = '배영 교정 후 2주 — 팔꿈치 각도 바꾸니 확실히 달라요'
 ON CONFLICT DO NOTHING;
@@ -340,7 +340,7 @@ SELECT c.id, '자유', '올해 수영 목표 세워봤습니다',
 3. 주 4회 꾸준히 나가기
 4. 전국 수영 동호인 대회 1회 참가
 
-작년에는 목표 없이 다니다 보니 성취감이 없었는데, 올해는 SwimTech 분석으로 폼도 교정하면서 체계적으로 해보려고요.
+작년에는 목표 없이 다니다 보니 성취감이 없었는데, 올해는 SwimMate 훈련 플랜과 일지로 자세도 점검하면서 체계적으로 해보려고요.
 다들 올해 목표가 있으신가요?',
 NOW() - INTERVAL '20 days'
 FROM customers c WHERE c.username = 'admin'
@@ -408,7 +408,7 @@ SELECT c.id, '자유', '다음 달 수영 대회 참가 예정입니다!',
 현재 훈련 상황:
 - 주 5회, 회당 2km 내외
 - 스타트·턴 집중 연습 중
-- SwimTech로 팔 당김 각도 교정 완료
+- SwimMate 교정 플랜으로 팔 당김 동작 집중 연습
 
 대회 경험 있으신 분들 조언 부탁드립니다!
 특히 대회 당일 웜업 루틴이나 멘탈 관리 팁 있으시면 공유해 주세요 🙏',
@@ -514,7 +514,7 @@ SELECT c.id, '훈련후기', '접영 첫 25m 완주 — 3개월 드릴 연습 �
 [3개월차] 전체 동작 통합, 거리 늘리기
 
 가장 어려웠던 점: 팔 입수 타이밍과 킥 싱크를 맞추는 것.
-해결 방법: SwimTech 분석으로 슬로우 모션으로 보니까 킥이 너무 일렀습니다. 2킥 타이밍 의식 후 바로 개선됐어요.
+해결 방법: 코치 피드백과 SwimMate 드릴 가이드를 참고해 보니 킥이 너무 이르다는 걸 알았습니다. 2킥 타이밍을 의식한 뒤 바로 개선됐어요.
 
 다음 목표: 접영 50m!',
 NOW() - INTERVAL '22 days'

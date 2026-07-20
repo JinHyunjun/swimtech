@@ -11,12 +11,12 @@ asyncpg==0.29.0
 alembic==1.13.1
 psycopg2-binary==2.9.9
 
-# Optional services
+# Optional local/legacy services (not required by the public training-helper path)
 celery==5.4.0
 redis==5.0.4
 minio==7.2.7
 
-# Computer Vision disabled for Path A deploy
+# Legacy computer-vision pipeline disabled in the public deployment
 # [deploy-trim] opencv-python-headless==4.9.0.80
 # [deploy-trim] mediapipe==0.10.11
 numpy==1.26.4
@@ -33,7 +33,7 @@ passlib[bcrypt]==1.7.4
 google-auth-oauthlib==1.2.0
 google-api-python-client==2.132.0
 
-# AI / Notion
+# Legacy SDK and Notion client (active Gemini integration uses google-genai above)
 anthropic==0.49.0
 notion-client==2.2.1
 

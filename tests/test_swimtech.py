@@ -24,7 +24,7 @@ Each new route (e.g. /settings, /profile) should have at minimum:
     2. Interaction tests — covers primary user actions on that page
 
 After adding tests, run:
-    cd C:\swim
+    cd C:/swim
     tests\run_tests.bat
 --------------------------------------------------------------------------------
 """
@@ -194,38 +194,23 @@ def test_login_wrong_password(browser, browser_context_args):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# 3. /upload
+# 3. retired video-analysis routes
 # ══════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
-def test_upload_ui(page: Page):
-    page.evaluate("""() => {
-        sessionStorage.setItem('swimtech_stroke', 'freestyle');
-        sessionStorage.setItem('swimtech_context', 'free_swim');
-        sessionStorage.setItem('swimtech_purpose', 'health');
-    }""")
-    page.goto("https://localhost/upload")
-
-    expect(page.locator("#upload-zone")).to_be_visible()
-    # 파일 input은 hidden이지만 DOM에 존재해야 함
-    expect(page.locator("#file-input")).to_have_count(1)
-
-    shot(page, "03_upload")
+def test_retired_analysis_pages_redirect(page: Page):
+    """과거 영상 분석 페이지는 공개 화면을 노출하지 않고 홈으로 이동한다."""
+    for path in ("/upload", "/meta", "/viewer"):
+        page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded")
+        assert "/landing" in page.url, f"{path}가 /landing으로 이동하지 않음: {page.url}"
+    shot(page, "03_retired_analysis_redirect")
 
 
-@pytest.mark.skip(reason="AI 분석 기능 정식 배포 전 비활성화 - 내부 테스트 전용")
-def test_upload_zone_drag_style(page: Page):
-    """드래그 존 호버 시 drag-over 클래스 진입 여부."""
-    page.evaluate("""() => {
-        sessionStorage.setItem('swimtech_stroke', 'freestyle');
-        sessionStorage.setItem('swimtech_context', 'free_swim');
-        sessionStorage.setItem('swimtech_purpose', 'health');
-    }""")
-    page.goto("https://localhost/upload")
-    zone = page.locator("#upload-zone")
-    zone.dispatch_event("dragenter")
-    page.wait_for_timeout(300)
-    shot(page, "03_upload_dragenter")
+def test_retired_analysis_apis_return_gone(page: Page):
+    """과거 영상 공유·스트리밍 API는 명시적으로 410을 반환한다."""
+    shared = page.request.get(f"{BASE_URL}/api/share/retired-token")
+    stream = page.request.get(f"{BASE_URL}/api/video-stream/retired.mp4")
+    assert shared.status == 410
+    assert stream.status == 410
 
 
 def test_upload_redirects_non_admin(browser, browser_context_args):
@@ -273,7 +258,7 @@ def test_upload_redirects_non_admin(browser, browser_context_args):
 # ══════════════════════════════════════════════════════════════════════════
 
 def test_dashboard_cards(page: Page):
-    """AI 분析 섹션은 숨겨지고 뱃지 섹션과 준비 중 안내는 표시 확인."""
+    """레거시 분석 카드는 숨기고 현재 뱃지·안내 영역을 표시한다."""
     goto(page, "/dashboard")
     page.wait_for_timeout(1000)
 
@@ -281,7 +266,7 @@ def test_dashboard_cards(page: Page):
     expect(page.locator(".mini-badge-row")).to_be_visible()
     # 준비 중 안내 표시
     expect(page.locator("#analysis-coming-soon")).to_be_visible()
-    # 분析 카드 섹션은 숨김
+    # 레거시 분석 카드 섹션은 숨김
     expect(page.locator(".summary-cards")).to_be_hidden()
 
     shot(page, "04_dashboard_cards")
@@ -297,10 +282,10 @@ def test_dashboard_charts(page: Page):
 
 
 def test_dashboard_history(page: Page):
-    """분析 히스토리 섹션 숨김, 대시보드 기본 구조 확인."""
+    """레거시 분석 히스토리를 숨기고 대시보드 기본 구조를 유지한다."""
     goto(page, "/dashboard")
     page.wait_for_timeout(500)
-    # 분析 테이블 숨김
+    # 레거시 분석 테이블 숨김
     expect(page.locator(".table-card")).to_be_hidden()
     # 페이지 구조 유지
     expect(page.locator(".dash-page")).to_be_visible()

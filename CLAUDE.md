@@ -1,210 +1,144 @@
-# SwimMate — Claude Code Guide
+# SwimMate 저장소 작업 가이드
 
-## Project Overview
+## 제품 기준
 
-SwimMate is a swimming training helper and coach operations web app. The public product focuses on training logs, plans, readiness, reports, community, coach-student workflows, AI coach chat, and coach class-document generation. Video stroke analysis remains retired from the public service until a separate quality, privacy, and infrastructure gate is met.
+SwimMate는 개인 수영인의 `준비도 → 플랜 → 일지 → 월간 리포트 → 다음 훈련` 흐름과 코치의 수강생·강습 운영을 연결하는 웹 서비스다.
 
-**Stack**: Python (FastAPI backend), HTML/CSS/Vanilla JS frontend (multi-page), PostgreSQL, Gemini, Jira/Notion/Kakao integrations, pytest, Playwright, API QA scripts, and UI crawler QA.
+- 사용자에게 보이는 서비스명: **SwimMate**
+- 저장소·배포 URL·인증 쿠키 등에 남은 `swimtech`는 레거시 기술 식별자다.
+- 공개 AI 기능: AI 코치 대화, 등록 코치용 강습표·일정표·익명 수업 브리핑 초안
+- 규칙 기반 기능: 준비도 점수, 주간 훈련 어드바이저, 교정 포인트 플랜, 템플릿 폴백
+- 공개하지 않는 기능: 영상 업로드 기반 영법 분석, 분석 결과 공유, 영상 스트리밍
+- 지원하지 않는 연동: Apple Watch·Galaxy Watch 직접/실시간 동기화. 건강 앱에서 내보낸 지원 파일의 수동 가져오기만 제공한다.
 
----
+제품 범위와 페이지·API 매핑은 `docs/FEATURE_MAP.md`, 기술 구조는 `docs/ARCHITECTURE.md`를 기준으로 한다.
 
-## Mandatory Rule: Tests Must Accompany New Features
+## 기술 구조
 
-> **Every new page, API endpoint, external integration, admin metric, or cross-screen data flow requires test coverage and QA mapping.**
+- Frontend: HTML, CSS, Vanilla JavaScript, Chart.js, Kakao Maps SDK
+- Backend: FastAPI, Pydantic, psycopg2, JWT HttpOnly Cookie, SlowAPI
+- Database: Neon PostgreSQL
+- AI: Google Gemini + 구조화 템플릿 폴백
+- External: Google/Kakao OAuth, Jira Cloud REST/Webhook, Notion changelog
+- Deployment: Vercel frontend + Render FastAPI + Neon PostgreSQL
+- Quality: pytest, Playwright, 운영 API QA, 운영 UI crawler
 
-When you add or modify any of the following, you **must** also add test cases to `tests/test_swimtech.py`:
+백엔드 진입점은 `api/main.py`다. `api/worker.py`와 `analysis/`는 공개 영상 분석 경로가 아니라 로컬 레거시 실험 자산이다. `docker-compose.yml`도 이 실험 서비스를 포함하므로 공개 배포 구조와 동일하다고 가정하지 않는다.
 
-| What you add | What to test |
-|---|---|
-| New frontend page (`/newpage`) | Load test + primary interactions + UI crawler expectation |
-| New API route (`/api/v1/...`) | Response status + payload shape + permission boundary |
-| New UI component (modal, tab, card) | Visibility + interaction + no console errors |
-| New admin metric | Admin API + `/admin` DOM + read-only QA mapping |
-| New AI/Jira/Notion/Kakao/OAuth integration | Normal path + missing key/failure fallback |
-| Modified selector or element ID | Update existing tests and `PAGE_EXPECTATIONS` to match |
+## 반드시 지킬 작업 원칙
 
----
+1. 사용자의 기존 미커밋 변경과 작업물을 보존한다.
+2. 새 페이지·API·관리자 지표·외부 연동에는 자동 테스트와 운영 QA 매핑을 함께 추가한다.
+3. 사용자 식별, 코치-수강생 관계, 관리자 데이터는 권한 경계를 테스트한다.
+4. AI·Jira·OAuth·Kakao·Notion은 정상 경로뿐 아니라 키 없음, 할당량 초과, 외부 실패 시 동작도 확인한다.
+5. 훈련 일지는 대시보드, 리포트, 뱃지, 챌린지의 기준 데이터다. 화면별 집계를 별도 데이터처럼 만들지 않는다.
+6. 기능 완료 후 README, `FEATURE_CHECKLIST.md`, 기능 지도, 아키텍처와 품질 문서의 영향을 확인한다.
+7. Notion 릴리즈 노트와 서비스 설명서는 배포 환경에서 기능·데이터 연동·권한·오류·회귀가 모두 확인된 뒤에만 갱신한다.
+8. 비밀값, 테스트 비밀번호, API 토큰과 개인 인증 파일은 커밋하지 않는다.
 
-## Verification Workflow
+세부 완료 기준은 `docs/QUALITY_GATE.md`를 따른다.
 
-After every feature change, follow the detailed matrix in `docs/QUALITY_GATE.md` and run the relevant test suite from the project root:
+### 운영 QA 스크립트 갱신 규칙
 
-```bat
+- 새 API 또는 화면 흐름은 `scripts/qa_runner.py`나 `scripts/qa_ui_crawler.py`에 매핑한다.
+- 화면 간 데이터 연동은 200 응답뿐 아니라 저장값이 다른 화면의 집계에 반영되는지 확인한다.
+- 새 관리자 지표는 관리자 API, `/admin` DOM과 읽기 전용 운영 QA를 함께 갱신한다.
+- QA가 만든 임시 데이터는 삭제하거나 이전 상태로 복원한다.
+
+## 코드 구성
+
+```text
+api/
+  main.py                 FastAPI 앱, 공개 라우터, 페이지 서빙, 시작 마이그레이션
+  db.py                   공통 PostgreSQL 연결
+  deps.py                 공통 인증 의존성
+  routers/                인증·훈련·리포트·코치·커뮤니티·관리자 API
+  integrations/           Jira 등 외부 API 클라이언트
+frontend/
+  *.html                  다중 페이지 UI
+  static/api.js           공통 fetch·401·오류 처리
+  static/utils.js         이스케이프·날짜·토스트·탭 유틸리티
+  static/style.css        Vercel/Render에서 제공하는 공통 스타일
+  style.css               호환용 복제본. 공통 스타일 수정 시 두 파일을 함께 확인
+docs/
+  FEATURE_MAP.md          페이지·역할·API·상태 매핑
+  ARCHITECTURE.md         구성요소·데이터 흐름·외부 연동
+  DEPLOYMENT.md           Vercel·Render·Neon 배포와 환경변수
+  QUALITY_GATE.md         변경 유형별 필수 검증
+scripts/
+  qa_runner.py            배포 API 시나리오 QA
+  qa_ui_crawler.py        배포 UI·DOM·콘솔 오류 QA
+tests/
+  test_api_unit.py
+  test_training_product_contracts.py
+  test_coach_crew_jira.py
+  test_jira_integration.py
+  test_swimtech.py        로컬 통합 Playwright E2E
+```
+
+## 검증 명령
+
+저장소 루트에서 실행한다.
+
+```powershell
+$env:PYTHONPATH="api"
+$env:PYTHONUTF8="1"
+python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py tests/test_coach_crew_jira.py tests/test_jira_integration.py -q
+python -m pytest tests/test_swimtech.py --collect-only -q
+```
+
+실행 중인 로컬 Docker Compose 환경에서 Playwright 전체를 검증할 때:
+
+```powershell
 tests\run_tests.bat
 ```
 
-This will:
-1. Run `pytest tests/test_swimtech.py`
-2. Save a full HTML report to `tests/report.html`
-3. Print a summary of any failed tests to the console
-
-Open `tests/report.html` in a browser for screenshots and detailed failure output.
-
----
-
-## Adding Tests — Quick Reference
-
-Test file: `tests/test_swimtech.py`
-
-```python
-# Minimum test for a new page /example
-def test_example_load(page: Page):
-    goto(page, "/example")
-    expect(page.locator("#main-element")).to_be_visible()
-    shot(page, "XX_example_load")
-
-def test_example_interaction(page: Page):
-    goto(page, "/example")
-    page.click("#action-btn")
-    page.wait_for_timeout(500)
-    expect(page.locator("#result")).to_be_visible()
-    shot(page, "XX_example_action")
-```
-
-Screenshots are saved to `tests/screenshots/` automatically.
-
----
-
-## Project Structure
-
-```
-C:\swim\
-├── api/                  # FastAPI backend
-│   ├── worker.py         # Main app entry + ML inference
-│   └── routers/
-│       └── customers.py  # User/auth routes
-├── analysis/             # ML model training & inference
-│   └── train/
-├── tests/
-│   ├── test_swimtech.py  # E2E test suite (ADD TESTS HERE)
-│   ├── run_tests.bat     # One-command test runner
-│   ├── conftest.py       # pytest fixtures
-│   ├── pytest.ini        # pytest config
-│   ├── report.html       # Last test run report
-│   └── screenshots/      # Auto-captured test screenshots
-├── video/                # Sample swimmer videos
-├── CLAUDE.md             # This file
-└── README.md
-```
-
----
-
-## Key Conventions
-
-- **Base URL**: `https://localhost` (SSL cert errors are suppressed in tests)
-- **Test credentials**: `admin` / `swimtech1234`
-- **Selectors**: Use `#id` selectors where possible for stability
-- **Screenshots**: Call `shot(page, "NN_pagename_action")` at end of each test
-- **Waits**: Use `page.wait_for_timeout(ms)` only when waiting for animations or async API calls; prefer `expect(...).to_be_visible()` otherwise
-
-## ML Model Notes
-
-- Model file: `analysis/pose_landmarker.task`
-- Classifies 4 strokes: freestyle, backstroke, breaststroke, butterfly
-- Retraining pipeline: see recent commits for automated ML retraining setup
-
----
-
-## 모든 기능 추가/개선 시 필수 검증 절차
-
-상세 기준은 `docs/QUALITY_GATE.md`를 우선한다. 이 문서는 빠른 작업 체크리스트이고, 기능 유형별 세부 게이트는 품질 문서에 유지한다.
-
-### 1. 구현 완료 후 자동 검증 순서
+배포 환경 QA는 테스트 계정과 선택적인 관리자 환경변수를 준비한 뒤 실행한다.
 
 ```powershell
-# 1) API·Worker 컨테이너 재생성 (새 코드 반영)
-docker compose up -d --force-recreate api worker
-
-# 2) 전체 테스트 실행 + HTML 리포트 생성
-pytest tests/test_swimtech.py --html=tests/report.html --self-contained-html
-
-# 3) 새 기능 스크린샷 저장 (Playwright가 자동 저장)
-#    경로: tests/screenshots/{페이지명}.png
+python scripts/qa_runner.py --base https://swimtech.vercel.app
+python scripts/qa_ui_crawler.py --base https://swimtech.vercel.app
 ```
 
-> `tests/report.html`을 브라우저에서 열어 스크린샷과 실패 원인을 확인한다.
+`qa_runner.py`는 쓰기 테스트 후 임시 데이터를 정리하거나 원상 복구해야 한다. 관리자 UI QA는 운영 데이터 보호를 위해 조회·탭·필터 중심으로 실행한다.
 
-### 2. 테스트 케이스 작성 규칙
+## 현재 테스트 기준
 
-| 추가 항목 | 필수 테스트 | 최소 개수 |
-|---|---|---|
-| 새 페이지 (`/newpage`) | `test_{페이지명}_load` + `test_{페이지명}_ui` | 2개 |
-| 새 API 엔드포인트 | `test_{기능명}_api` | 1개 |
-| 모달 / 인터랙션 | `test_{기능명}_interaction` | 1개 |
-| 운영 QA 대상 기능 | `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py` 매핑 갱신 | 1개 |
-| 관리자 지표 | 관리자 API + `/admin` DOM + 읽기 전용 QA | 1세트 |
-| 외부 연동 / AI | 정상 경로 + 실패 폴백 + rate limit 또는 캐시 | 1세트 |
+2026-07-20 수집 결과:
 
-### 2-1. 운영 QA 스크립트 갱신 규칙
+- 단위·계약·Jira 통합: 72개, 로컬 통과
+- Playwright E2E 정의: 104개, 수집 확인
+- 전체 정의: 176개
 
-- 새 기능 / 새 화면 / 새 API를 추가하면 반드시 `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py`에 검증 매핑을 추가한다.
-- 훈련 일지, 월간 리포트, 대시보드, 플랜, 관리자 화면처럼 서로 연동되는 기능은 단순 200 응답이 아니라 실제 데이터 반영값까지 확인한다.
-- 슈퍼계정(`administrator`/`ADMIN_ID`)에서 확인해야 하는 운영 지표가 늘어나면 `/admin` 화면과 관리자 QA 검증도 함께 갱신한다.
-- 관리자 QA는 운영 데이터 보호를 위해 읽기 전용 탭/필터/조회 액션만 수행한다.
+Playwright 수집 성공은 전체 E2E 통과를 의미하지 않는다. `qa_report.json`, `qa_ui_report.json`, `tests/report.html`도 생성 시점의 증적이며 현재 `main`의 통과 상태로 자동 간주하지 않는다.
 
-### 3. Caddyfile 라우트 확인
+## 브랜치와 배포
 
-- 새 페이지를 추가할 때마다 `caddy/Caddyfile`에 `handle` 블록을 추가한다.
-- 추가 후 반드시 아래 명령으로 Caddy를 재시작한다.
+- 기준 브랜치는 `main` 하나다. `origin/HEAD`와 실배포가 `main`을 가리킨다.
+- `dev`는 레거시 브랜치이며 새 작업 대상으로 사용하지 않는다.
+- Vercel은 `frontend/`, Render는 `api/`를 기준으로 배포한다.
+- 백엔드 관련 `main` 변경은 `.github/workflows/render-deploy.yml`이 Render deploy hook을 호출한다.
+- `main` 푸시는 운영 반영으로 이어질 수 있으므로 변경 파일과 검증 결과를 먼저 확인한다.
 
-```powershell
-docker compose restart caddy
-```
+## 영상 분석 레거시 경계
 
-### 4. 스크린샷 증적 규칙
+- `api/main.py`는 `analysis`, `videos`, `stream` 라우터를 공개 등록하지 않는다.
+- `/meta`, `/upload`, `/viewer`, `/share/*`는 홈으로 이동하거나 `410 Gone`을 반환한다.
+- `analysis/`, `api/tasks/analyze.py`, `api/worker.py`, Docker Compose의 worker·Redis·MinIO·Flowise는 공개 제품 기능의 근거로 문서화하지 않는다.
+- 훈련 플랜의 교정 포인트 추천은 사용자가 고민을 직접 선택하는 규칙 기반 도구다. 영상 분석 결과 자동 연동으로 표현하지 않는다.
+- 재활성화 전에는 평가 데이터셋, 개인정보 보관·삭제, 비동기 인프라, 비용과 배포 E2E 기준을 먼저 확정한다.
 
-- 저장 위치: `tests/screenshots/`
-- 파일명 형식: `{기능명}_{YYYYMMDD}.png`
-- `shot(page, "NN_pagename_action")` 호출이 각 테스트의 마지막 줄이어야 한다.
+## 문서 동기화
 
----
+기능이나 구조가 바뀌면 아래 순서로 영향 범위를 확인한다.
 
-## Branch Strategy
+1. `README.md`: 공개 소개, 실행, 기술 스택과 검증 현황
+2. `docs/FEATURE_MAP.md`: 페이지·역할·API 상태
+3. `docs/ARCHITECTURE.md`: 데이터 흐름·외부 연동·보안 경계
+4. `docs/DEPLOYMENT.md`: 환경변수·배포 절차
+5. `FEATURE_CHECKLIST.md`: 완료 이력과 다음 우선순위
+6. `docs/QUALITY_GATE.md`: 테스트 수와 변경 유형별 게이트
+7. `frontend/manifest.json`, `privacy.html`, `terms.html`: 공개 메타데이터와 정책
+8. 배포 QA 완료 후 Notion 릴리즈 노트와 서비스 설명서
 
-### 단일 브랜치 (`main`)
-
-- 모든 작업은 `main`에 직접 진행한다. 별도의 `dev` 브랜치 워크플로우는 더 이상 사용하지 않는다.
-- `dev` 브랜치는 2026-06-25에 `main`과 동일한 지점으로 fast-forward 동기화되었고, 그 이후로는 운영하지 않는다(필요 시 같은 지점으로 재동기화만 한다).
-- `main`은 실배포 대상이다 — `render.yaml`의 `autoDeploy: true`로 백엔드(Render)가, Vercel이 프론트엔드를 같은 브랜치에서 자동 배포한다. **`main`에 푸시 = 프로덕션 반영**이라는 점을 항상 인지한다.
-
-### AI 분석 기능
-
-- AI 영상 분석 관련 UI는 여전히 비활성화(숨김) 상태다. 더 이상 브랜치로 격리하지 않고, **`main` 안에서 feature-flag/숨김 처리로 관리**한다.
-- 숨김 처리된 항목: `onboarding` 슬라이드, `faq` 촬영·분석 탭, `injury` CTA, `landing` 영상 분석 카드
-- 이 영역을 다시 활성화하려면 위 항목들의 숨김 처리를 해제하고 정상 동작을 검증한 뒤 `main`에 커밋한다.
-
-### 현재 상태 (2026-06-25 기준)
-
-- `main` (`dev`도 동일 지점) : 훈련 플랜 P0/P1 개선, UI QA 크롤러 추가 완료. AI 분석 UI는 여전히 숨김.
-
----
-
-## 작업 완료 후 필수 Git 절차
-
-모든 기능 구현/수정 완료 후 반드시 아래를 자동 실행한다(사용자에게 매번 확인받지 않음 — 이 지침이 곧 사전 승인이다).
-
-```powershell
-git add .
-git commit -m "feat/fix: 작업 내용"
-git push origin main
-```
-
-> **충돌(conflict) 발생 시**: 머지를 중단하고 사용자에게 알림. 자동으로 강제 진행하지 않는다.
-> **위험도가 높은 변경**(스키마 마이그레이션, 인증/결제 로직, 대량 데이터 변경 등)은 푸시 전에 사용자에게 먼저 알린다.
-
----
-
-## Changelog Page (`/changelog`)
-
-- **Environment variable required**: `NOTION_TOKEN` must be set for the API to fetch release notes.
-  - Without it, `GET /api/changelog` returns `503` (expected — tests accept 200 or 503).
-- **Notion release notes page ID**: `362cb889-5490-81a7-bc1f-e15501550f60`
-- **Auto-reflection**: When a new version is released, update the Notion page and the web changelog updates automatically on next fetch (no redeploy needed).
-- **Router**: `api/routers/changelog.py`
-- **Frontend**: `frontend/changelog.html`
-- **Tests** (section 11 in `tests/test_swimtech.py`):
-  | Test | What it checks |
-  |---|---|
-  | `test_changelog_load` | Page renders header + one of loading/timeline/error |
-  | `test_changelog_api_responds` | `/api/changelog` returns 200 or 503, never 404/500 |
-  | `test_changelog_footer_link` | Landing page footer has a `/changelog` link |
+공개 릴리즈 노트는 `api/routers/changelog.py`가 Notion 페이지를 읽어 `/changelog`에 표시한다. `NOTION_TOKEN`이 없으면 `/api/changelog`의 `503`은 의도된 제한 상태다.
