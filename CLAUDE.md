@@ -76,41 +76,22 @@ tests/
   test_swimtech.py        로컬 통합 Playwright E2E
 ```
 
-## 검증 명령
+## 검증 방식
 
-저장소 루트에서 실행한다.
+필수 검증은 `.github/workflows/qa.yml`의 `Unified Quality Gate`로만 실행한다. 로컬 배치 파일이나 개인 계정에 의존하는 검증 절차를 추가하지 않는다.
 
-```powershell
-$env:PYTHONPATH="api"
-$env:PYTHONUTF8="1"
-python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py tests/test_coach_crew_jira.py tests/test_jira_integration.py -q
-python -m pytest tests/test_swimtech.py --collect-only -q
-```
-
-실행 중인 로컬 Docker Compose 환경에서 Playwright 전체를 검증할 때:
-
-```powershell
-tests\run_tests.bat
-```
-
-배포 환경 QA는 테스트 계정과 선택적인 관리자 환경변수를 준비한 뒤 실행한다.
-
-```powershell
-python scripts/qa_runner.py --base https://swimtech.vercel.app
-python scripts/qa_ui_crawler.py --base https://swimtech.vercel.app
-```
+- `main` Push·PR: 단위·계약·Jira 통합 핵심 테스트
+- 매일 09:00 KST·수동 `Run workflow`: 핵심 테스트 → 운영 API → 운영 브라우저 → 일괄 결과 판정
+- 로그인: GitHub Actions Secrets의 일반·학생·관리자 전용 QA 계정 사용
+- 시크릿 누락: 검사를 생략하지 않고 사전 검증에서 실패
 
 `qa_runner.py`는 쓰기 테스트 후 임시 데이터를 정리하거나 원상 복구해야 한다. 관리자 UI QA는 운영 데이터 보호를 위해 조회·탭·필터 중심으로 실행한다.
 
 ## 현재 테스트 기준
 
-2026-07-20 수집 결과:
-
-- 단위·계약·Jira 통합: 72개, 로컬 통과
-- Playwright E2E 정의: 104개, 수집 확인
-- 전체 정의: 176개
-
-Playwright 수집 성공은 전체 E2E 통과를 의미하지 않는다. `qa_report.json`, `qa_ui_report.json`, `tests/report.html`도 생성 시점의 증적이며 현재 `main`의 통과 상태로 자동 간주하지 않는다.
+- 단위·계약·Jira 통합: 72개
+- `tests/test_swimtech.py`의 Playwright E2E 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 게이트 통과 수에 포함하지 않는다.
+- 실제 배포 검증은 `qa_report.json`, `qa_ui_report.json`, `qa_ui_screenshots/`와 Actions 실행 상태로 판정한다.
 
 ## 브랜치와 배포
 

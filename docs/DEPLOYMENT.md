@@ -158,16 +158,18 @@ Jira 이슈에는 코칭 과제 제목·설명·분류와 대상 학생 표시�
 
 | Workflow | 트리거 | 역할 |
 | --- | --- | --- |
-| `ci.yml` | `main` push·PR | 단위·계약·Jira 통합 테스트와 리포트 |
 | `render-deploy.yml` | `main`의 `api/**`, `render.yaml` 변경 | Render deploy hook |
-| `qa.yml` | 매일 09:00 KST, 수동 | 배포 API QA와 UI crawler |
+| `qa.yml` | `main` push·PR, 매일 09:00 KST, 수동 | 일괄 품질 게이트. 핵심 테스트와 인증된 배포 API/UI 검사 |
 | `keep-warm.yml` | 14분 간격, 수동 | Render health ping |
 
 필요한 GitHub Secrets:
 
 - `RENDER_DEPLOY_HOOK`
-- `QA_USERNAME`, `QA_PASSWORD`, `QA_EMAIL`
-- 선택: `ADMIN_ID`, `ADMIN_PW`
+- 일반·코치 QA: `QA_USERNAME`, `QA_PASSWORD`, `QA_EMAIL`
+- 학생 QA: `QA_STUDENT_USERNAME`, `QA_STUDENT_PASSWORD`, `QA_STUDENT_EMAIL`
+- 관리자 QA: `ADMIN_ID`, `ADMIN_PW` — DB에서 `role='admin'`인 전용 계정
+
+운영 QA에서 위 8개 값은 모두 필수다. 하나라도 없으면 해당 권한 검사를 생략하지 않고 품질 게이트가 실패한다. 계정 값은 저장소 파일이나 Actions 로그에 직접 적지 않는다.
 
 외부 API secret은 GitHub Actions에서 실제로 사용하는 경우에만 최소 권한으로 추가한다.
 
@@ -187,12 +189,7 @@ Jira 이슈에는 코칭 과제 제목·설명·분류와 대상 학생 표시�
 10. 브라우저 콘솔 오류, 실패 API, 모바일 레이아웃
 11. `/meta`, `/upload`, `/viewer`가 영상 분석을 노출하지 않는지 확인
 
-명령:
-
-```powershell
-python scripts/qa_runner.py --base https://swimtech.vercel.app
-python scripts/qa_ui_crawler.py --base https://swimtech.vercel.app
-```
+검증은 GitHub Actions의 `Unified Quality Gate`에서 일괄 실행한다. 로컬 배치 파일은 사용하지 않으며 필요할 때 `Run workflow`로 같은 운영 검사를 다시 실행한다.
 
 자세한 완료 기준은 [품질 검증 게이트](./QUALITY_GATE.md)를 따른다.
 

@@ -13,8 +13,9 @@ Run:
 
 --------------------------------------------------------------------------------
 GUIDE FOR CONTRIBUTORS
-When adding a new page or feature, add the corresponding test case(s) to this
-file, then run `tests/run_tests.bat` from the project root to verify immediately.
+This legacy localhost suite is retained as a reference for detailed browser
+scenarios. The required unattended gate is `.github/workflows/qa.yml`; account
+credentials must be supplied through environment variables rather than source.
 
 Test naming convention:
     test_<page>_<what_is_verified>(page: Page)
@@ -23,9 +24,8 @@ Each new route (e.g. /settings, /profile) should have at minimum:
     1. A "load" test — confirms the page renders key elements
     2. Interaction tests — covers primary user actions on that page
 
-After adding tests, run:
-    cd C:/swim
-    tests\run_tests.bat
+New production coverage belongs in `scripts/qa_runner.py` and
+`scripts/qa_ui_crawler.py`, which are executed by the unified quality gate.
 --------------------------------------------------------------------------------
 """
 
@@ -64,18 +64,16 @@ def logged_in_state(browser, browser_context_args):
     ctx: BrowserContext = browser.new_context(**browser_context_args)
     page = ctx.new_page()
 
-    # 1차: TEST_USER/TEST_PASS 시도, 실패 시 admin/swimtech1234 폴백
-    for uid, pw in [(TEST_USER, TEST_PASS), ("admin", "swimtech1234")]:
-        page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
-        page.fill("#username", uid)
-        page.fill("#password", pw)
-        page.click("#login-btn")
-        page.wait_for_load_state("networkidle")
-        if "/login" not in page.url:
-            break
-        print(f"[WARN] 로그인 실패 ({uid}) — 다음 계정 시도")
-    else:
-        print(f"[ERROR] 모든 계정 로그인 실패 — 무인증 상태로 진행")
+    if not TEST_USER or not TEST_PASS:
+        pytest.fail("QA_USERNAME/QA_PASSWORD 환경변수가 필요합니다.")
+
+    page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
+    page.fill("#username", TEST_USER)
+    page.fill("#password", TEST_PASS)
+    page.click("#login-btn")
+    page.wait_for_load_state("networkidle")
+    if "/login" in page.url:
+        pytest.fail("고정 QA 계정 로그인에 실패했습니다.")
 
     page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
 

@@ -1,15 +1,16 @@
-"""pytest-playwright 전역 설정."""
+"""pytest-playwright 전역 설정.
+
+계정 정보는 저장소에 두지 않고 환경변수 또는 GitHub Actions Secrets로만 전달한다.
+"""
+import os
 import pytest
 
-# ── 메인 테스트 계정 (실제 DB의 kom1452 계정) ────────────────────────────
-TEST_ID = "kom1452"
-TEST_PW = "Jin337##"
-
-# ── 고정 테스트 계정 (db/test_accounts.sql 로 사전 생성) ──────────────────
-COACH_ID = "coach_test"
-COACH_PW = "TestCoach123!"
-STUDENT_ID = "student_test"
-STUDENT_PW = "TestStudent123!"
+TEST_ID = os.getenv("QA_USERNAME", "")
+TEST_PW = os.getenv("QA_PASSWORD", "")
+COACH_ID = os.getenv("QA_USERNAME", "")
+COACH_PW = os.getenv("QA_PASSWORD", "")
+STUDENT_ID = os.getenv("QA_STUDENT_USERNAME", "")
+STUDENT_PW = os.getenv("QA_STUDENT_PASSWORD", "")
 
 
 def pytest_configure(config):

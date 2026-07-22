@@ -14,10 +14,9 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Playwright E2E | `tests/test_swimtech.py` | 주요 페이지 로드, UI 상호작용, 스크린샷 회귀 검증 |
 | 운영 API QA | `scripts/qa_runner.py` | 실제 배포 URL에서 인증, 훈련 일지, 리포트, 준비도, 코치 AI, 관리자 API 흐름 점검 |
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
-| GitHub Actions CI | `.github/workflows/ci.yml` | `main`의 단위·계약·Jira 통합 테스트 실행 |
-| GitHub Actions 운영 QA | `.github/workflows/qa.yml` | 매일 09:00 KST 및 수동 실행으로 API/UI QA 리포트 보관 |
+| GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 수집 기준 테스트 수는 단위·계약·Jira 통합 72개, Playwright E2E 정의 104개, 총 176개다. 2026-07-20 로컬에서 72개는 모두 통과했고 Playwright는 104개가 수집되는 것까지만 확인했다. 실행 중인 로컬 통합 서비스가 필요한 Playwright 전체 통과 여부와 과거 `qa_report.json`·`qa_ui_report.json`은 별도의 배포 증적으로 관리한다.
+현재 핵심 자동 테스트는 단위·계약·Jira 통합 72개다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`와 `qa_ui_crawler.py`가 일괄 검증하고 실행별 리포트를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -35,7 +34,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 코치 코드·수강생 관계 | 코치 코드 즉시 발급, 학생 직접 연동·교체·해제, 코치의 접근 권한 제한 | `qa_runner.py` 18d~18f, `qa_ui_crawler.py` 사전 연동 |
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
-| 슈퍼 관리자 | 페이지네이션, 20/50/100 page size, 운영 지표, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `PAGE_EXPECTATIONS["/admin"]` |
+| 슈퍼 관리자 | 관리자 로그인·권한, 페이지네이션, 20/50/100 page size, 운영 지표, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `PAGE_EXPECTATIONS["/admin"]` |
 | AI·외부 연동 | Gemini rate limit, 구조화 출력 검증, 폴백, OAuth·Kakao·Notion 키 없음 상태 | 관련 라우터 계약 테스트, 운영 smoke |
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
 | 릴리즈·문서 | README, 기능 지도, 아키텍처, 배포, 기능 체크리스트, 품질 게이트를 코드와 함께 갱신. Notion 릴리즈 노트·서비스 설명서는 배포 검증이 끝난 기능만 갱신 | `test_quality_gate_documentation_is_kept_current` |
@@ -56,23 +55,26 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 9. 릴리즈 노트, 저장소 문서, PWA 메타데이터와 정책 문서가 실제 공개 기능과 같은 방향을 말한다.
 10. 과거 영상 분석 실험 코드나 워치 기기명이 남아 있어도 공개 기능·직접 연동으로 오해할 표현이 없어야 한다.
 
-## 권장 실행 순서
+## 자동 실행과 계정
 
-```powershell
-$env:PYTHONPATH="api"
-$env:PYTHONUTF8="1"
-python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py tests/test_coach_crew_jira.py tests/test_jira_integration.py -q
-python -m pytest tests/test_swimtech.py --collect-only -q
-python scripts/qa_runner.py --base https://swimtech.vercel.app
-python scripts/qa_ui_crawler.py --base https://swimtech.vercel.app
-```
+로컬 배치 파일은 사용하지 않는다. `.github/workflows/qa.yml`이 유일한 필수 품질 게이트다.
 
-Playwright 전체 E2E와 운영 QA는 실행 중인 서비스, 테스트 계정, 선택적인 관리자·Jira·Gemini 환경변수가 필요하다. 외부 키가 없는 환경에서는 해당 연동의 실패 격리와 폴백을 확인하고, 실제 키가 있는 운영 환경에서는 별도 smoke로 정상 경로를 확인한다.
+1. `main` Push·PR에서는 핵심 테스트를 실행한다.
+2. 매일 09:00 KST 및 `workflow_dispatch`에서는 핵심 테스트 통과 후 운영 API와 브라우저 검사를 순차 실행한다.
+3. API가 실패해도 브라우저 검사를 실행해 두 리포트를 모두 수집한다.
+4. 마지막 결과 작업이 필수 단계 전체를 판정한다.
+
+로그인 검사는 GitHub Actions Secrets의 전용 계정으로 수행한다. 누락된 계정이 있으면 관리자 검사를 생략하지 않고 사전 검증 단계에서 실패한다.
+
+- 일반·코치 역할: `QA_USERNAME`, `QA_PASSWORD`, `QA_EMAIL`
+- 학생 역할: `QA_STUDENT_USERNAME`, `QA_STUDENT_PASSWORD`, `QA_STUDENT_EMAIL`
+- 슈퍼 관리자 역할: `ADMIN_ID`, `ADMIN_PW` (`role='admin'` 계정)
+
+QA는 비로그인 401, 잘못된 비밀번호 401, 정상 로그인, 보안 쿠키, 로그아웃 후 세션 폐기, 일반·코치·학생·관리자 권한 경계를 확인한다. 계정 값은 코드와 리포트에 기록하지 않는다. Jira·Gemini 등 외부 키가 없는 환경에서는 해당 연동의 실패 격리와 폴백을 확인하고, 실제 키가 있는 운영 환경에서는 별도 smoke로 정상 경로를 확인한다.
 
 ## 산출물
 
-- `tests/report.html`: Playwright/pytest HTML 리포트
-- `tests/screenshots/`: E2E 스크린샷
+- `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷

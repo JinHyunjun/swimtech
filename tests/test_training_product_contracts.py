@@ -179,6 +179,7 @@ def test_qa_scripts_cover_training_report_and_advisor_flows():
     api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
     qa_workflow = (ROOT / ".github" / "workflows" / "qa.yml").read_text(encoding="utf-8")
+    credential_validator = (ROOT / "scripts" / "validate_qa_credentials.py").read_text(encoding="utf-8")
     admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
     admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
     checklist = (ROOT / "FEATURE_CHECKLIST.md").read_text(encoding="utf-8")
@@ -201,8 +202,23 @@ def test_qa_scripts_cover_training_report_and_advisor_flows():
     assert "[data-tab='training-health']" in ui_qa
     assert "P3 Training Advisor" in ui_qa
     assert "pip install playwright requests" in qa_workflow
-    assert "ADMIN_ID" in qa_workflow and "ADMIN_PW" in qa_workflow
+    for secret_name in [
+        "QA_USERNAME", "QA_PASSWORD", "QA_EMAIL",
+        "QA_STUDENT_USERNAME", "QA_STUDENT_PASSWORD", "QA_STUDENT_EMAIL",
+        "ADMIN_ID", "ADMIN_PW",
+    ]:
+        assert secret_name in qa_workflow
+        assert secret_name in credential_validator
+    assert "Unified Quality Gate" in qa_workflow
+    assert "needs: [core, production-api]" in qa_workflow
+    assert "validate_qa_credentials.py" in qa_workflow
+    assert "잘못된 비밀번호 거부" in api_qa
+    assert "인증 쿠키 보안 속성" in api_qa
+    assert "make_fallback_account" not in api_qa
+    assert "fallback_username" not in ui_qa
     assert "python scripts/qa_runner.py --no-admin" not in qa_workflow
+    assert not (ROOT / ".github" / "workflows" / "ci.yml").exists()
+    assert not (ROOT / "tests" / "run_tests.bat").exists()
     assert '@router.get("/training-health")' in admin_api
     assert "훈련 운영" in admin_page
     assert "새 기능 / 새 화면 / 새 API는 반드시" in checklist
@@ -509,7 +525,8 @@ def test_quality_gate_documentation_is_kept_current():
     assert "SwimMate 품질 검증 게이트" in quality_doc
     assert "단위·계약·Jira 통합 72개" in quality_doc
     assert "Playwright E2E 정의 104개" in quality_doc
-    assert "총 176개" in quality_doc
+    assert "유일한 필수 품질 게이트" in quality_doc
+    assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [
         "준비도·주간 어드바이저",
         "헬스 데이터 가져오기",

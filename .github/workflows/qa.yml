@@ -1,46 +1,108 @@
-# 정기 자동 QA — qa_runner.py 로 핵심 기능 회귀 검증
-# 공개 레포 기준 무료. 결과는 Actions 로그 + 아티팩트(qa_report.json)로 확인.
-name: qa
+name: Unified Quality Gate
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
-    - cron: "0 0 * * *"       # 매일 09:00 KST (UTC 00:00)
+    - cron: "0 0 * * *" # 매일 09:00 KST (UTC 00:00)
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: swimmate-quality-gate-${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'production' || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
 jobs:
-  qa:
+  core:
+    name: Core tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: pip install requests
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('api/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-      - name: Run QA
-        env:
-          # 고정 QA 계정 (DB 누적 방지). Secrets로 관리.
-          QA_USERNAME: ${{ secrets.QA_USERNAME }}
-          QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
-          QA_EMAIL:    ${{ secrets.QA_EMAIL }}
-          # 등록되어 있으면 관리자 운영 API까지 검증한다. 비어 있으면 qa_runner.py가 자동으로 건너뛴다.
-          ADMIN_ID: ${{ secrets.ADMIN_ID }}
-          ADMIN_PW: ${{ secrets.ADMIN_PW }}
+      - name: Install dependencies
         run: |
-          python scripts/qa_runner.py
+          python -m pip install -r api/requirements.txt
+          python -m pip install pytest pytest-html
 
-      - name: Upload QA report
+      - name: Run unit, contract, and integration tests
+        env:
+          PYTHONPATH: api
+          PYTHONUTF8: "1"
+        run: |
+          python -m pytest tests/test_api_unit.py tests/test_training_product_contracts.py \
+            tests/test_coach_crew_jira.py tests/test_jira_integration.py -v --tb=short \
+            --html=tests/ci_report.html --self-contained-html \
+            --junitxml=tests/ci_results.xml
+
+      - name: Annotate test failures
+        if: failure()
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path("tests/ci_results.xml")
+          if not report.exists():
+              raise SystemExit("JUnit report was not created.")
+
+          for case in ET.parse(report).iter("testcase"):
+              failure = case.find("failure")
+              if failure is None:
+                  failure = case.find("error")
+              if failure is None:
+                  continue
+              name = f"{case.get('classname', '')}::{case.get('name', '')}"
+              detail = (failure.get("message") or failure.text or "Test failed").strip()
+              detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title={name}::{detail[:1500]}")
+          PY
+
+      - name: Upload core test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-report
-          path: qa_report.json
+          name: core-test-report
+          path: |
+            tests/ci_report.html
+            tests/ci_results.xml
+          retention-days: 14
 
-  qa-ui:
+  production-api:
+    name: Production API scenarios
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: core
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      QA_BASE_URL: https://swimtech.vercel.app
+      QA_USERNAME: ${{ secrets.QA_USERNAME }}
+      QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+      QA_EMAIL: ${{ secrets.QA_EMAIL }}
+      QA_STUDENT_USERNAME: ${{ secrets.QA_STUDENT_USERNAME }}
+      QA_STUDENT_PASSWORD: ${{ secrets.QA_STUDENT_PASSWORD }}
+      QA_STUDENT_EMAIL: ${{ secrets.QA_STUDENT_EMAIL }}
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -48,28 +110,102 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Validate role credentials
+        run: python scripts/validate_qa_credentials.py
+
+      - name: Install dependencies
+        run: python -m pip install requests
+
+      - name: Run authenticated API scenarios
+        run: python scripts/qa_runner.py
+
+      - name: Upload API QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-api-report
+          path: qa_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  production-ui:
+    name: Production browser scenarios
+    if: >-
+      always() && needs.core.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [core, production-api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      QA_BASE_URL: https://swimtech.vercel.app
+      QA_USERNAME: ${{ secrets.QA_USERNAME }}
+      QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+      QA_EMAIL: ${{ secrets.QA_EMAIL }}
+      QA_STUDENT_USERNAME: ${{ secrets.QA_STUDENT_USERNAME }}
+      QA_STUDENT_PASSWORD: ${{ secrets.QA_STUDENT_PASSWORD }}
+      QA_STUDENT_EMAIL: ${{ secrets.QA_STUDENT_EMAIL }}
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate role credentials
+        run: python scripts/validate_qa_credentials.py
+
+      - name: Install browser dependencies
         run: |
-          pip install playwright requests
+          python -m pip install playwright requests
           playwright install --with-deps chromium
 
-      - name: Run UI QA (click-through + console error capture)
-        env:
-          # 고정 QA 계정 — qa_runner.py(API 체크)와 동일한 계정/시크릿 재사용
-          QA_USERNAME: ${{ secrets.QA_USERNAME }}
-          QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
-          # ADMIN_ID/PW가 시크릿에 등록돼 있을 때만 /admin을 읽기 전용(탭 전환만)으로 추가 검사한다.
-          # 비어 있으면 자동으로 /admin 검사는 건너뛴다.
-          ADMIN_ID: ${{ secrets.ADMIN_ID }}
-          ADMIN_PW: ${{ secrets.ADMIN_PW }}
-        run: |
-          python scripts/qa_ui_crawler.py
+      - name: Run authenticated browser scenarios
+        run: python scripts/qa_ui_crawler.py
 
-      - name: Upload UI QA report
+      - name: Upload browser QA report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-ui-report
+          name: production-ui-report
           path: |
             qa_ui_report.json
             qa_ui_screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+  result:
+    name: Quality gate result
+    if: always()
+    needs: [core, production-api, production-ui]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish and enforce result
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CORE_RESULT: ${{ needs.core.result }}
+          API_RESULT: ${{ needs.production-api.result }}
+          UI_RESULT: ${{ needs.production-ui.result }}
+        run: |
+          {
+            echo "## SwimMate quality gate"
+            echo "| 검사 | 결과 |"
+            echo "| --- | --- |"
+            echo "| 핵심 테스트 | $CORE_RESULT |"
+            echo "| 운영 API | $API_RESULT |"
+            echo "| 운영 브라우저 | $UI_RESULT |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$CORE_RESULT" != "success" ]; then
+            echo "::error::Core tests did not pass ($CORE_RESULT)."
+            exit 1
+          fi
+
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$API_RESULT" != "success" ] || [ "$UI_RESULT" != "success" ]; then
+              echo "::error::The full production quality gate did not pass (API=$API_RESULT, UI=$UI_RESULT)."
+              exit 1
+            fi
+          fi

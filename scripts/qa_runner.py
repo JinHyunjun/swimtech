@@ -4,8 +4,8 @@
 SwimMate 자동 QA 검증 스크립트 (API 레벨)
 ─────────────────────────────────────────────────────────
 하는 일:
-  1) 관리자 슈퍼계정 확인/생성 (ADMIN_ID 로 가입 시도 → 이미 있으면 로그인)
-  2) QA용 임시 계정 자동 개설 (qa_<타임스탬프>)
+  1) GitHub Actions Secrets의 일반·학생·관리자 QA 계정 확인
+  2) 고정 QA 계정으로 인증·권한 경계 검증
   3) 핵심 API 시나리오 순차 검증 → PASS/FAIL 표 + 종료코드
 
 검증 대상: https://swimtech.vercel.app  (실제 Vercel→Render 프록시 경로)
@@ -13,13 +13,10 @@ SwimMate 자동 QA 검증 스크립트 (API 레벨)
 
 사용법:
   pip install requests
-  # 관리자 계정 생성까지 하려면 (Render에 넣은 값과 동일하게):
-  set ADMIN_ID=...        (PowerShell:  $env:ADMIN_ID="..." )
-  set ADMIN_PW=...
+  # 로그인 정보는 GitHub Actions Secrets 또는 동일 이름의 환경변수로만 전달한다.
   python qa_runner.py
   # 옵션:
   python qa_runner.py --base https://swimtech.vercel.app
-  python qa_runner.py --no-admin     (관리자 생성 건너뛰기)
 """
 import os, sys, time, json, argparse, random, string
 
@@ -75,27 +72,20 @@ def cleanup_logs(sess, log_ids):
             ok = False
     return ok, ", ".join(details)
 
-def make_fallback_account(sess):
-    username = f"qa{int(time.time()) % 100000000}{rnd(4)}"
-    password = os.getenv("QA_FALLBACK_PASSWORD", "QaTest1234")
-    email = f"{username}@example.com"
-    reg = sess.post(f"{BASE}/auth/register", json={
-        "name": "QA임시봇",
-        "email": email,
-        "username": username,
-        "password": password,
-    }, timeout=60)
-    login = sess.post(f"{BASE}/auth/login", json={"username": username, "password": password}, timeout=60)
-    return username, password, email, reg, login
-
 # ─────────────────────────────────────────────────────────
 def main():
     global BASE
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=BASE)
-    ap.add_argument("--no-admin", action="store_true")
     args = ap.parse_args()
     BASE = args.base.rstrip("/")
+
+    from validate_qa_credentials import missing_credentials
+
+    missing = missing_credentials()
+    if missing:
+        print("❌ QA 계정 환경변수가 없습니다: " + ", ".join(missing))
+        sys.exit(2)
     print(f"\n=== SwimMate QA 검증 시작 ===\n대상: {BASE}\n")
 
     # ── 0. 배포/기본 접속 확인 ──────────────────────────
@@ -108,30 +98,43 @@ def main():
 
     admin_sess = None
 
-    # ── 관리자 슈퍼계정 확인/생성 ───────────────────────
-    if not args.no_admin:
-        admin_id, admin_pw = os.getenv("ADMIN_ID"), os.getenv("ADMIN_PW")
-        if admin_id and admin_pw:
-            s = requests.Session()
-            reg = s.post(f"{BASE}/auth/register", json={
-                "name": "관리자", "email": f"{admin_id}@swimtech.local",
-                "username": admin_id, "password": admin_pw}, timeout=60)
-            login = s.post(f"{BASE}/auth/login",
-                           json={"username": admin_id, "password": admin_pw}, timeout=60)
-            ok = login.status_code == 200
-            if ok:
-                admin_sess = s
-            note = "신규 생성" if reg.status_code == 200 else "이미 존재"
-            rec("A", f"관리자 슈퍼계정 ({admin_id})", ok, f"{note}, 로그인 {login.status_code}")
-        else:
-            print("  ⚠ 관리자 API QA 생략: ADMIN_ID/ADMIN_PW 환경변수 없음")
+    # ── 관리자 슈퍼계정 로그인 ──────────────────────────
+    # QA가 관리자 계정을 임의 생성하지 않는다. DB에서 role='admin'인 전용 계정을 사용한다.
+    admin_id, admin_pw = os.environ["ADMIN_ID"], os.environ["ADMIN_PW"]
+    s = requests.Session()
+    admin_login = s.post(
+        f"{BASE}/auth/login",
+        json={"username": admin_id, "password": admin_pw},
+        timeout=60,
+    )
+    admin_ok = admin_login.status_code == 200
+    if admin_ok:
+        admin_sess = s
+    rec("A", "관리자 전용 계정 로그인", admin_ok, f"status {admin_login.status_code}")
 
     # ── QA 계정 + 세션 준비 ─────────────────────────────
     sess = requests.Session()
     # 고정 QA 계정 재사용 (DB에 계정이 쌓이지 않도록). cron 반복 안전.
-    uname = os.getenv("QA_USERNAME", "qabot")
-    pw    = os.getenv("QA_PASSWORD", "QaTest1234")
-    email = os.getenv("QA_EMAIL", "qabot@example.com")
+    uname = os.environ["QA_USERNAME"]
+    pw = os.environ["QA_PASSWORD"]
+    email = os.environ["QA_EMAIL"]
+
+    anonymous = requests.Session()
+    anonymous_me = anonymous.get(f"{BASE}/auth/me", timeout=60)
+    anonymous_dashboard = anonymous.get(f"{BASE}/api/dashboard/summary", timeout=60)
+    rec(
+        "A1",
+        "비로그인 보호 경계",
+        anonymous_me.status_code == 401 and anonymous_dashboard.status_code == 401,
+        f"me {anonymous_me.status_code}, dashboard {anonymous_dashboard.status_code}",
+    )
+
+    wrong_login = anonymous.post(
+        f"{BASE}/auth/login",
+        json={"username": uname, "password": f"{pw}-invalid"},
+        timeout=60,
+    )
+    rec("A2", "잘못된 비밀번호 거부", wrong_login.status_code == 401, f"status {wrong_login.status_code}")
 
     # 1. 일반 회원가입 (이미 있으면 "이미 사용 중" 400도 정상으로 간주)
     print("\n[1-6] 계정/인증")
@@ -146,21 +149,20 @@ def main():
     r = sess.post(f"{BASE}/auth/login", json={"username": uname, "password": pw}, timeout=60)
     logged_in = r.status_code == 200
     has_cookie = "swimtech_token" in sess.cookies.get_dict()
-    if not logged_in:
-        original_status = r.status_code
-        fallback_sess = requests.Session()
-        fb_uname, fb_pw, fb_email, fb_reg, fb_login = make_fallback_account(fallback_sess)
-        if fb_login.status_code == 200:
-            sess = fallback_sess
-            uname, pw, email = fb_uname, fb_pw, fb_email
-            r = fb_login
-            logged_in = True
-            has_cookie = "swimtech_token" in sess.cookies.get_dict()
-            print(f"  ⚠ 기본 QA 계정 로그인 실패({original_status}) → 임시 계정으로 전환: {uname}")
-        else:
-            print(f"  ⚠ 임시 QA 계정 생성/로그인 실패: register {fb_reg.status_code}, login {fb_login.status_code}")
     rec(2, "일반 로그인 (+쿠키 발급)", logged_in and has_cookie,
         f"status {r.status_code}, 쿠키 {'있음' if has_cookie else '없음'}")
+
+    cookie_header = r.headers.get("set-cookie", "").lower()
+    cookie_secure = all(flag in cookie_header for flag in ("httponly", "secure", "samesite=lax"))
+    rec("2a", "인증 쿠키 보안 속성", logged_in and cookie_secure,
+        "HttpOnly/Secure/SameSite=Lax" if cookie_secure else "필수 속성 누락")
+
+    if not logged_in:
+        with open("qa_report.json", "w", encoding="utf-8") as fp:
+            json.dump([{"no": str(n), "name": nm, "status": st, "detail": d}
+                       for n, nm, st, d in RESULTS], fp, ensure_ascii=False, indent=2)
+        print("❌ 고정 QA 계정 로그인에 실패해 인증 이후 시나리오를 중단합니다.")
+        sys.exit(2)
 
     # 3. 새로고침 후 로그인 유지 (=같은 쿠키로 /me 200)
     r = sess.get(f"{BASE}/auth/me", timeout=60)
@@ -209,9 +211,12 @@ def main():
 
     baseline_stats = {}
     baseline_report = {}
+    baseline_goal_distance = 0
     try:
         baseline_stats = jget(sess.get(month_url("/api/training-log/stats", year, month), timeout=60))
         baseline_report = jget(sess.get(month_url("/api/report/monthly", year, month), timeout=60))
+        baseline_goal = jget(sess.get(month_url("/api/training-log/goal", year, month), timeout=60))
+        baseline_goal_distance = to_int(baseline_goal.get("goal_distance"))
     except Exception:
         pass
     baseline_distance = max(to_int(baseline_report.get("total_distance")), to_int(baseline_stats.get("total_distance")))
@@ -437,9 +442,9 @@ def main():
         f"register {coach_register.status_code}, verification={verification_status}, code={invite_code}")
 
     student_sess = requests.Session()
-    student_username = os.getenv("QA_STUDENT_USERNAME", "qabotstudent")
-    student_password = os.getenv("QA_STUDENT_PASSWORD", pw)
-    student_email = os.getenv("QA_STUDENT_EMAIL", f"{student_username}@example.com")
+    student_username = os.environ["QA_STUDENT_USERNAME"]
+    student_password = os.environ["QA_STUDENT_PASSWORD"]
+    student_email = os.environ["QA_STUDENT_EMAIL"]
     student_sess.post(f"{BASE}/auth/register", json={
         "name": "QA수강생", "email": student_email,
         "username": student_username, "password": student_password,
@@ -599,6 +604,13 @@ def main():
 
     cleanup_ok, cleanup_detail = cleanup_logs(sess, cleanup_ids)
     rec("C", "QA 생성 일지 정리", cleanup_ok, cleanup_detail or "정리할 일지 없음")
+    goal_cleanup = sess.post(f"{BASE}/api/training-log/goal", json={
+        "year": year,
+        "month": month,
+        "goal_distance": baseline_goal_distance,
+    }, timeout=60)
+    rec("C1", "QA 월간 목표 복원", goal_cleanup.status_code == 200,
+        f"{goal_cleanup.status_code}, goal={baseline_goal_distance}")
     if readiness_before:
         readiness_cleanup = sess.post(f"{BASE}/api/dashboard/readiness", json={
             "sleep_quality": readiness_before.get("sleep_quality"),

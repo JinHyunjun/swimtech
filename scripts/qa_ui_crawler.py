@@ -17,10 +17,10 @@ qa_runner.py(API 레벨 체크)와는 별개로, 로그인한 사용자가 보�
     python scripts/qa_ui_crawler.py --base https://swimtech.vercel.app --headed
 
 환경변수:
-    QA_USERNAME, QA_PASSWORD             — qa_runner.py와 동일한 고정 QA 계정 (기본 qabot/QaTest1234)
+    QA_USERNAME, QA_PASSWORD, QA_EMAIL   — qa_runner.py와 동일한 고정 QA 계정
     QA_STUDENT_USERNAME, QA_STUDENT_PASSWORD
-                                          — /coach 검증용 보조 학생 계정 (없으면 자동 생성, 기본 qabotstudent)
-    ADMIN_ID, ADMIN_PW                   — 있을 때만 /admin을 읽기 전용(탭 전환만)으로 추가 검사
+                                          — /coach 검증용 고정 학생 계정
+    ADMIN_ID, ADMIN_PW                   — /admin 읽기 전용 검사용 관리자 계정
 
 출력:
     qa_ui_report.json           — 페이지별/액션별 상세 결과
@@ -31,6 +31,7 @@ import re
 import sys
 import json
 import time
+import atexit
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -53,16 +54,16 @@ except ImportError:
     requests = None  # 코치 사전 연동 단계만 건너뛰고 나머지는 정상 동작
 
 BASE = os.getenv("QA_BASE_URL", "https://swimtech.vercel.app")
-USERNAME = os.getenv("QA_USERNAME", "qabot")
-PASSWORD = os.getenv("QA_PASSWORD", "QaTest1234")
-EMAIL = os.getenv("QA_EMAIL", f"{USERNAME}@example.com")
+USERNAME = os.getenv("QA_USERNAME", "")
+PASSWORD = os.getenv("QA_PASSWORD", "")
+EMAIL = os.getenv("QA_EMAIL", "")
 
-# /coach 검증용 — qabot을 코치로, 이 계정을 수강생으로 등록해 실제 연동 상태를 만든다
-STUDENT_USERNAME = os.getenv("QA_STUDENT_USERNAME", "qabotstudent")
-STUDENT_PASSWORD = os.getenv("QA_STUDENT_PASSWORD", PASSWORD)
-STUDENT_EMAIL = os.getenv("QA_STUDENT_EMAIL", f"{STUDENT_USERNAME}@example.com")
+# /coach 검증용 — 일반 QA 계정을 코치로, 보조 계정을 수강생으로 등록한다.
+STUDENT_USERNAME = os.getenv("QA_STUDENT_USERNAME", "")
+STUDENT_PASSWORD = os.getenv("QA_STUDENT_PASSWORD", "")
+STUDENT_EMAIL = os.getenv("QA_STUDENT_EMAIL", "")
 
-# /admin — 둘 다 있을 때만 검사 대상에 포함 (운영 계정이므로 기본은 비활성)
+# /admin — 전용 관리자 계정으로 항상 검증
 ADMIN_ID = os.getenv("ADMIN_ID", "")
 ADMIN_PW = os.getenv("ADMIN_PW", "")
 
@@ -201,23 +202,7 @@ def ensure_user_account(username=None, password=None, email=None, name="QA봇"):
         if r.status_code == 200:
             return username, password, email
 
-        suffix = re.sub(r"[^A-Za-z0-9]", "", username)[:4].lower() or "user"
-        fallback_username = f"qa{int(time.time()) % 100000000}{suffix}"
-        fallback_email = f"{fallback_username}@example.com"
-        s2 = requests.Session()
-        reg = s2.post(f"{BASE}/auth/register", json={
-            "name": "QA임시봇",
-            "email": fallback_email,
-            "username": fallback_username,
-            "password": password,
-        }, timeout=30)
-        login_res = s2.post(f"{BASE}/auth/login", json={"username": fallback_username, "password": password}, timeout=30)
-        if login_res.status_code == 200:
-            print(f"⚠ 기본 QA 계정 로그인 실패({r.status_code}) → 임시 계정으로 전환: {fallback_username}")
-            return fallback_username, password, fallback_email
-        raise RuntimeError(
-            f"{username} 로그인 실패({r.status_code}), 임시 계정도 실패(register {reg.status_code}, login {login_res.status_code})"
-        )
+        raise RuntimeError(f"{username} 고정 QA 계정 로그인 실패({r.status_code})")
     except Exception as e:
         raise RuntimeError(f"QA 계정 준비 실패 — {e}")
 
@@ -309,28 +294,23 @@ def check_public_demo_entry(context):
 
 
 def provision_coach_relationship():
-    """qabot을 코치로, 보조 계정을 수강생으로 연동해 /coach가 빈 화면이 아니게 만든다.
-    실패해도 전체 크롤을 막지 않고, /coach 검사만 건너뛰도록 False를 반환한다."""
+    """QA 코치와 보조 학생을 연결하고 실패 시 전체 품질 게이트를 중단한다."""
     if requests is None:
-        print("⚠ requests 미설치 — /coach 사전 연동을 건너뜁니다 (페이지는 빈 상태로 검사됩니다)")
-        return True
+        raise RuntimeError("requests 미설치 — 코치 권한 시나리오를 실행할 수 없습니다")
     try:
         s = requests.Session()
         r = s.post(f"{BASE}/auth/login", json={"username": USERNAME, "password": PASSWORD}, timeout=30)
         if r.status_code != 200:
-            print(f"⚠ qabot 로그인 실패({r.status_code}) — /coach 사전 연동 건너뜀")
-            return True
+            raise RuntimeError(f"QA 코치 계정 로그인 실패({r.status_code})")
         r = s.post(f"{BASE}/api/coach/register", json={
             "specialty": "QA", "career": "QA", "intro": "QA",
         }, timeout=30)
         if r.status_code != 200:
-            print(f"⚠ qabot 코치 등록 실패({r.status_code}) — /coach 사전 연동 건너뜀")
-            return True
+            raise RuntimeError(f"QA 코치 등록 실패({r.status_code})")
         profile = s.get(f"{BASE}/api/coach/me", timeout=30).json()
         invite_code = profile.get("invite_code")
         if not invite_code:
-            print("⚠ 코치 코드가 즉시 발급되지 않음 — /coach 사전 연동 건너뜀")
-            return True
+            raise RuntimeError("코치 코드가 즉시 발급되지 않았습니다")
 
         s2 = requests.Session()
         s2.post(f"{BASE}/auth/register", json={
@@ -339,14 +319,35 @@ def provision_coach_relationship():
         }, timeout=30)  # 이미 있으면 400 — 무시하고 로그인 시도
         r = s2.post(f"{BASE}/auth/login", json={"username": STUDENT_USERNAME, "password": STUDENT_PASSWORD}, timeout=30)
         if r.status_code != 200:
-            print(f"⚠ 보조 학생 계정 로그인 실패({r.status_code}) — /coach 사전 연동 건너뜀")
-            return True
+            raise RuntimeError(f"QA 학생 계정 로그인 실패({r.status_code})")
         if invite_code:
-            s2.post(f"{BASE}/api/coach/join", json={"invite_code": invite_code}, timeout=30)
+            join = s2.post(f"{BASE}/api/coach/join", json={"invite_code": invite_code}, timeout=30)
+            if join.status_code != 200:
+                raise RuntimeError(f"코치-학생 연동 실패({join.status_code})")
         return True
     except Exception as e:
-        print(f"⚠ /coach 사전 연동 중 오류({e}) — 페이지는 그대로 검사합니다")
-        return True
+        raise RuntimeError(f"/coach 사전 연동 중 오류: {e}") from e
+
+
+def cleanup_coach_relationship():
+    """전용 QA 학생 계정에 만든 코치 연결을 종료 시 정리한다."""
+    if requests is None or not STUDENT_USERNAME or not STUDENT_PASSWORD:
+        return
+    try:
+        session = requests.Session()
+        login_result = session.post(
+            f"{BASE}/auth/login",
+            json={"username": STUDENT_USERNAME, "password": STUDENT_PASSWORD},
+            timeout=30,
+        )
+        if login_result.status_code != 200:
+            print(f"⚠ QA 학생 연결 정리 로그인 실패({login_result.status_code})")
+            return
+        result = session.delete(f"{BASE}/api/coach/my-coach", timeout=30)
+        if result.status_code not in (200, 404):
+            print(f"⚠ QA 코치-학생 연결 정리 실패({result.status_code})")
+    except Exception as error:
+        print(f"⚠ QA 코치-학생 연결 정리 중 오류: {error}")
 
 
 def try_close_modal(page):
@@ -533,6 +534,13 @@ def main():
     args = ap.parse_args()
     BASE = args.base.rstrip("/")
 
+    from validate_qa_credentials import missing_credentials
+
+    missing = missing_credentials()
+    if missing:
+        print("❌ QA 계정 환경변수가 없습니다: " + ", ".join(missing))
+        sys.exit(2)
+
     pages = PAGES
     if args.only:
         wanted = set(args.only.split(","))
@@ -540,17 +548,22 @@ def main():
 
     try:
         USERNAME, PASSWORD, EMAIL = ensure_user_account()
-        print(f"✅ QA 계정 준비 완료: {USERNAME}")
+        print("✅ 일반 QA 계정 준비 완료")
     except Exception as e:
         print(f"❌ {e}")
         sys.exit(2)
 
-    do_admin = bool(ADMIN_ID and ADMIN_PW) and (not args.only or "/admin" in args.only.split(","))
+    do_admin = not args.only or "/admin" in args.only.split(",")
     if any(p[0] == "/coach" for p in pages):
         print("코치-수강생 연동 사전 준비 중...")
-        provision_coach_relationship()
+        try:
+            provision_coach_relationship()
+            atexit.register(cleanup_coach_relationship)
+        except Exception as e:
+            print(f"❌ {e}")
+            sys.exit(2)
 
-    print(f"\n=== SwimMate UI QA 크롤 시작 ===\n대상: {BASE}\n계정: {USERNAME}\n페이지 수: {len(pages)}"
+    print(f"\n=== SwimMate UI QA 크롤 시작 ===\n대상: {BASE}\n페이지 수: {len(pages)}"
           f"{' (+/admin)' if do_admin else ''}\n")
 
     with sync_playwright() as pw:
@@ -610,7 +623,7 @@ def main():
 
     # ── 리포트 저장 ──────────────────────────────────────
     summary = {
-        "base": BASE, "username": USERNAME, "ran_at": datetime.now().isoformat(),
+        "base": BASE, "role": "qa-user", "ran_at": datetime.now().isoformat(),
         "pages": RESULTS,
     }
     REPORT_PATH.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
