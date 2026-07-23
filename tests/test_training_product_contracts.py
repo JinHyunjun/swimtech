@@ -538,7 +538,12 @@ def test_landing_url_and_editable_onboarding_are_qa_mapped():
         "destination": "/landing",
         "permanent": False,
     } in frontend_vercel["redirects"]
-    assert not any(rule.get("source") == "/" for rule in frontend_vercel["rewrites"])
+    assert {
+        "source": "/app",
+        "destination": "/landing",
+        "permanent": False,
+    } in frontend_vercel["redirects"]
+    assert not any(rule.get("source") in {"/", "/app"} for rule in frontend_vercel["rewrites"])
 
     for html_path in (ROOT / "frontend").glob("*.html"):
         html = html_path.read_text(encoding="utf-8")
