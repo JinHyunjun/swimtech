@@ -13,6 +13,12 @@ def test_analysis_routers_are_not_publicly_registered():
     assert "include_router(stream.router" not in main
 
 
+def test_drill_loads_shared_utils_before_initializing_tabs():
+    drill = (ROOT / "frontend" / "drill.html").read_text(encoding="utf-8")
+
+    assert drill.index('/static/utils.js') < drill.index("SW.initTabs")
+
+
 def test_readme_describes_current_training_helper_and_retires_analysis_claims():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
