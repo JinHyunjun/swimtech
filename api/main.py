@@ -20,7 +20,7 @@ from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
-EXPECTED_SCHEMA_REVISION = "20260723_01"
+EXPECTED_SCHEMA_REVISION = "20260723_02"
 
 
 def upgrade_database_schema() -> None:

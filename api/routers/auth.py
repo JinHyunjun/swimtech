@@ -14,7 +14,7 @@ from email_validator import validate_email, EmailNotValidError
 from fastapi import APIRouter, HTTPException, Request, Response, Cookie
 from fastapi.responses import JSONResponse, RedirectResponse
 from jose import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import bcrypt
 from activity_log import log_activity
 from db import DATABASE_URL, get_db
@@ -163,6 +163,13 @@ class NicknameRequest(BaseModel):
     nickname: str
 
 
+class OnboardingRequest(BaseModel):
+    level: str
+    goal: str
+    weekly_goal: int = Field(ge=1, le=7)
+    preferred_pool_length: int
+
+
 # ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
 
 def create_token(username: str, customer_id: int | None = None, is_demo: bool = False) -> str:
@@ -200,6 +207,49 @@ def decode_token(token: str) -> dict:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
         return {}
+
+
+def _authenticated_customer(swimtech_token: str | None) -> tuple[dict, int]:
+    if not swimtech_token:
+        raise HTTPException(401, "로그인이 필요합니다.")
+    payload = decode_token(swimtech_token)
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(401, "세션이 만료되었습니다. 다시 로그인해주세요.")
+    customer_id = payload.get("customer_id")
+    if customer_id:
+        return payload, int(customer_id)
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
+        row = cur.fetchone()
+    finally:
+        cur.close()
+        conn.close()
+    if not row:
+        raise HTTPException(404, "계정 정보를 찾을 수 없습니다.")
+    return payload, int(row[0])
+
+
+def _needs_onboarding(customer_id: int | None) -> bool:
+    if not customer_id:
+        return False
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT onboarding_completed_at IS NULL FROM customers WHERE id = %s",
+            (customer_id,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return bool(row and row[0])
+    except Exception:
+        logger.warning("onboarding state lookup failed", exc_info=True)
+        return False
 
 
 def _set_auth_cookie(response: Response, token: str):
@@ -533,12 +583,13 @@ def login(request: Request, body: LoginRequest, response: Response):
     _check_login_blocked(ip)
 
     customer_id = None
+    onboarding_completed_at = None
 
     try:
         conn = get_db()
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, password_hash FROM customers WHERE username = %s",
+            "SELECT id, password_hash, onboarding_completed_at FROM customers WHERE username = %s",
             (body.username,),
         )
         row = cur.fetchone()
@@ -549,7 +600,7 @@ def login(request: Request, body: LoginRequest, response: Response):
         raise HTTPException(500, "내부 오류가 발생했습니다.")
 
     if row:
-        db_id, password_hash = row
+        db_id, password_hash, onboarding_completed_at = row
         pw_bytes = body.password.encode("utf-8")[:72]
         if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
             _increment_login_fail(ip)
@@ -584,7 +635,12 @@ def login(request: Request, body: LoginRequest, response: Response):
         except Exception:
             pass
 
-    return {"status": "ok", "message": f"{body.username}님 환영합니다!", "is_admin": is_admin}
+    return {
+        "status": "ok",
+        "message": f"{body.username}님 환영합니다!",
+        "is_admin": is_admin,
+        "needs_onboarding": bool(not is_admin and customer_id and onboarding_completed_at is None),
+    }
 
 
 @router.post("/demo")
@@ -758,25 +814,39 @@ def me(swimtech_token: str = Cookie(default=None)):
     customer_id     = payload.get("customer_id")
     nickname        = None
     social_provider = None
+    level = "초급"
+    goal = "건강"
+    weekly_goal = 3
+    preferred_pool_length = 25
+    onboarding_completed = False
 
     try:
         conn = get_db()
         cur = conn.cursor()
         if customer_id:
             cur.execute(
-                "SELECT nickname, social_provider FROM customers WHERE id = %s",
+                """
+                SELECT nickname, social_provider, level, goal, weekly_goal,
+                       preferred_pool_length, onboarding_completed_at IS NOT NULL
+                FROM customers WHERE id = %s
+                """,
                 (customer_id,),
             )
         else:
             # local 로그인은 토큰에 customer_id가 없으므로 username으로 조회
             cur.execute(
-                "SELECT nickname, social_provider FROM customers WHERE username = %s",
+                """
+                SELECT nickname, social_provider, level, goal, weekly_goal,
+                       preferred_pool_length, onboarding_completed_at IS NOT NULL
+                FROM customers WHERE username = %s
+                """,
                 (username,),
             )
         row = cur.fetchone()
         cur.close(); conn.close()
         if row:
-            nickname, social_provider = row
+            (nickname, social_provider, level, goal, weekly_goal,
+             preferred_pool_length, onboarding_completed) = row
     except Exception:
         logger.warning("me: DB lookup failed", exc_info=True)
 
@@ -787,7 +857,108 @@ def me(swimtech_token: str = Cookie(default=None)):
         "nickname":        nickname,
         "social_provider": social_provider,
         "needs_nickname":  False if is_demo else nickname is None,
+        "needs_onboarding": False if is_demo else not onboarding_completed,
+        "onboarding_completed": True if is_demo else onboarding_completed,
+        "training_profile": {
+            "level": level or "초급",
+            "goal": goal or "건강",
+            "weekly_goal": int(weekly_goal or 3),
+            "preferred_pool_length": int(preferred_pool_length or 25),
+        },
         "is_demo":         is_demo,
+    }
+
+
+@router.get("/onboarding")
+def get_onboarding(swimtech_token: str = Cookie(default=None)):
+    payload, customer_id = _authenticated_customer(swimtech_token)
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT level, goal, weekly_goal, preferred_pool_length,
+                   onboarding_completed_at IS NOT NULL
+            FROM customers
+            WHERE id = %s
+            """,
+            (customer_id,),
+        )
+        row = cur.fetchone()
+    finally:
+        cur.close()
+        conn.close()
+    if not row:
+        raise HTTPException(404, "계정 정보를 찾을 수 없습니다.")
+    return {
+        "level": row[0] or "초급",
+        "goal": row[1] or "건강",
+        "weekly_goal": int(row[2] or 3),
+        "preferred_pool_length": int(row[3] or 25),
+        "completed": bool(row[4]),
+        "read_only": bool(payload.get("is_demo")),
+    }
+
+
+@router.put("/onboarding")
+def save_onboarding(body: OnboardingRequest, swimtech_token: str = Cookie(default=None)):
+    payload, customer_id = _authenticated_customer(swimtech_token)
+    if payload.get("is_demo"):
+        raise HTTPException(403, "체험 모드의 맞춤 설정은 변경할 수 없습니다.")
+
+    allowed_levels = {"입문", "초급", "중급", "고급"}
+    allowed_goals = {"기록단축", "건강", "영법교정", "취미"}
+    if body.level not in allowed_levels:
+        raise HTTPException(400, "올바른 수영 수준을 선택해주세요.")
+    if body.goal not in allowed_goals:
+        raise HTTPException(400, "올바른 훈련 목표를 선택해주세요.")
+    if body.preferred_pool_length not in (25, 50):
+        raise HTTPException(400, "수영장 길이는 25m 또는 50m만 선택할 수 있습니다.")
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            UPDATE customers
+            SET level = %s,
+                goal = %s,
+                weekly_goal = %s,
+                preferred_pool_length = %s,
+                onboarding_completed_at = COALESCE(onboarding_completed_at, NOW()),
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING level, goal, weekly_goal, preferred_pool_length,
+                      onboarding_completed_at
+            """,
+            (body.level, body.goal, body.weekly_goal, body.preferred_pool_length, customer_id),
+        )
+        row = cur.fetchone()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logger.exception("save_onboarding: DB error")
+        raise HTTPException(500, "훈련 설정을 저장하지 못했습니다.")
+    finally:
+        cur.close()
+        conn.close()
+    if not row:
+        raise HTTPException(404, "계정 정보를 찾을 수 없습니다.")
+    log_activity(
+        customer_id=customer_id,
+        username=payload.get("sub"),
+        event_type="profile_update",
+        action="onboarding_complete",
+        metadata={"level": body.level, "goal": body.goal},
+    )
+    return {
+        "status": "ok",
+        "level": row[0],
+        "goal": row[1],
+        "weekly_goal": int(row[2]),
+        "preferred_pool_length": int(row[3]),
+        "completed": bool(row[4]),
+        "redirect": "/dashboard",
     }
 
 
@@ -913,7 +1084,7 @@ def google_callback(code: str):
     token   = create_token(username, customer_id)
     refresh = create_refresh_token(username, customer_id)
 
-    redirect_url = "/nickname" if is_new else "/"
+    redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
     resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)
@@ -975,7 +1146,7 @@ def kakao_callback(code: str):
     token   = create_token(username, customer_id)
     refresh = create_refresh_token(username, customer_id)
 
-    redirect_url = "/nickname" if is_new else "/"
+    redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
     resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)

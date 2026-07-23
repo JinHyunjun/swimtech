@@ -75,6 +75,7 @@ ACTION_TIMEOUT_MS = 5000
 # 로그인 후 둘러볼 메뉴 (api/main.py에 등록된 실제 라우트 기준)
 PAGES = [
     ("/landing", "랜딩"),
+    ("/onboarding", "맞춤 훈련 설정"),
     ("/dashboard", "대시보드"),
     ("/plan", "훈련 플랜"),
     ("/training-log", "훈련 일지"),
@@ -97,7 +98,7 @@ PAGES = [
 ]
 
 PROTECTED_PATHS = {
-    "/dashboard", "/plan", "/training-log", "/report", "/pool", "/badges",
+    "/onboarding", "/dashboard", "/plan", "/training-log", "/report", "/pool", "/badges",
     "/community", "/challenge", "/equipment", "/chat", "/videos",
     "/profile", "/injury", "/coach",
 }
@@ -134,6 +135,11 @@ RESULTS = []  # 페이지별 결과 dict 리스트
 PAGE_EXPECTATIONS = {
     "/login": {
         "selectors": ["#login-btn", "#demo-btn"],
+    },
+    "/onboarding": {
+        "selectors": ["#onboarding-form", "[data-field='level']", "[data-field='goal']", "[data-field='weekly_goal']", "[data-field='preferred_pool_length']", "#next-btn"],
+        "texts": ["내 수영에 맞는 기준부터 설정해요", "현재 수영 수준은 어떤가요?"],
+        "absent_texts": ["AI 분석", "영상을 촬영"],
     },
     "/dashboard": {
         "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness"],

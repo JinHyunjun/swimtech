@@ -15,6 +15,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     baseline = (
         ROOT / "api" / "alembic" / "versions" / "20260723_01_production_baseline.py"
     ).read_text(encoding="utf-8")
+    onboarding_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_02_personalized_onboarding.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -22,11 +25,15 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert "DATABASE_URL is required" in alembic_env
     assert "pg_advisory_xact_lock" in alembic_env
     assert 'revision: str = "20260723_01"' in baseline
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_01"' in main
+    assert 'revision: str = "20260723_02"' in onboarding_revision
+    assert 'down_revision: Union[str, None] = "20260723_01"' in onboarding_revision
+    assert "preferred_pool_length" in onboarding_revision
+    assert "onboarding_completed_at" in onboarding_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_02"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_01"' in (
+    assert 'health.get("schema_revision") == "20260723_02"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -281,7 +288,11 @@ def test_portfolio_demo_mode_contract():
     assert "demo-btn" in login_page
     assert "startDemo" in login_page
     assert "/auth/demo" in login_page
-    assert "onboarding_done" in login_page
+    assert "loginData.needs_onboarding" in login_page
+    assert "onboarding_done" not in login_page
+    assert '@router.get("/onboarding")' in auth_api
+    assert '@router.put("/onboarding")' in auth_api
+    assert "preferred_pool_length" in auth_api
     assert "demo-banner" in dashboard_page
     assert "me.is_demo" in dashboard_page
     assert "/auth/demo" in api_qa
@@ -298,6 +309,9 @@ def test_plan_p3_improvements_are_kept():
 
     assert '@router.get("/training-advisor")' in dashboard_api
     assert "_build_training_advisor" in dashboard_api
+    assert '"training_level": level' in dashboard_api
+    assert '"training_goal": goal' in dashboard_api
+    assert "preferred_pool_length" in dashboard_api
     assert "plan_completions" in dashboard_api
     assert "advisor-card" in dashboard_page
     assert "이번 주 훈련 추천" in dashboard_page

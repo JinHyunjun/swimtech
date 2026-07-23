@@ -1365,12 +1365,20 @@ const INTENSITY_MAP = {
 let selectedPoolLength = 25;
 let selectedCycleLevel = '중급';
 let planCycleOverrides = {};
+let hasStoredPoolPreference = false;
+let hasStoredLevelPreference = false;
 
 try {
   const savedPoolLength = Number(localStorage.getItem('swimtech_plan_pool_length'));
-  if (savedPoolLength === 25 || savedPoolLength === 50) selectedPoolLength = savedPoolLength;
+  if (savedPoolLength === 25 || savedPoolLength === 50) {
+    selectedPoolLength = savedPoolLength;
+    hasStoredPoolPreference = true;
+  }
   const savedCycleLevel = localStorage.getItem('swimtech_plan_cycle_level');
-  if (['입문','초급','중급','고급'].includes(savedCycleLevel)) selectedCycleLevel = savedCycleLevel;
+  if (['입문','초급','중급','고급'].includes(savedCycleLevel)) {
+    selectedCycleLevel = savedCycleLevel;
+    hasStoredLevelPreference = true;
+  }
   planCycleOverrides = JSON.parse(localStorage.getItem('swimtech_plan_cycle_overrides') || '{}');
 } catch (_) { /* 저장소를 사용할 수 없으면 기본값을 사용 */ }
 
@@ -3539,6 +3547,44 @@ function renderPresetPlans() {
   renderPlanTab('correction',       PLANS.correction,       'tab-correction');
 }
 
+function selectFormChip(groupId, value) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.chip').forEach(chip => {
+    chip.classList.toggle('selected', String(chip.dataset.val) === String(value));
+  });
+}
+
+async function applyOnboardingPlanDefaults() {
+  try {
+    const response = await fetch('/auth/onboarding', { credentials: 'include' });
+    if (!response.ok) return;
+    const profile = await response.json();
+    const levelAliases = { beginner: '입문', intermediate: '중급', advanced: '고급' };
+    const level = levelAliases[profile.level] || profile.level;
+    const poolLength = Number(profile.preferred_pool_length) === 50 ? 50 : 25;
+    const weeklyGoal = Math.min(7, Math.max(1, Number(profile.weekly_goal) || 3));
+    const goal = ['기록단축','건강','영법교정','취미'].includes(profile.goal) ? profile.goal : '건강';
+
+    if (!hasStoredPoolPreference) setSelectedPoolLength(poolLength);
+    if (!hasStoredLevelPreference && ['입문','초급','중급','고급'].includes(level)) setSelectedCycleLevel(level);
+    selectFormChip('r-chips-goal', goal);
+    selectFormChip('r-chips-sessions', weeklyGoal);
+    selectFormChip('r-chips-duration', 60);
+    selectFormChip('r-chips-pool', selectedPoolLength);
+    selectFormChip('r-chips-style', 'balanced');
+    selectFormChip('r-chips-stroke', '전체');
+    selectFormChip('r-chips-level', selectedCycleLevel);
+    const nameInput = document.getElementById('r-name');
+    if (nameInput && !nameInput.value) nameInput.value = `${goal} 맞춤 4주 플랜`;
+    const analysisLevel = document.getElementById('analysis-level');
+    if (analysisLevel && [...analysisLevel.options].some(option => option.value === level)) analysisLevel.value = level;
+    const analysisSessions = document.getElementById('analysis-sessions');
+    if (analysisSessions) analysisSessions.value = String(Math.min(4, Math.max(2, weeklyGoal)));
+    updateGenBtn();
+  } catch (_) { /* 프로필 연결 실패 시 기존 기본값을 유지 */ }
+}
+
 initPoolLengthControl();
 initPaceHelper();
 renderPresetPlans();
@@ -3550,6 +3596,7 @@ renderBuilderTemplates();
 loadPlanFavSet();
 loadPlanCompletions();
 loadTrainingFeedbackLoop();
+applyOnboardingPlanDefaults();
 
 // 공유/즐겨찾기 링크(#speed 등)로 들어왔을 때 해당 탭 자동 열기
 function applyHashTab() {

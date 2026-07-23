@@ -115,6 +115,9 @@ def _build_training_advisor(
     weekly_goal: int,
     plan_completion_count: int,
     readiness=None,
+    preferred_pool_length: int | None = None,
+    training_level: str | None = None,
+    training_goal: str | None = None,
 ):
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
@@ -124,7 +127,32 @@ def _build_training_advisor(
     week_distance = sum(int(row[1] or 0) for row in week_rows)
     week_minutes = sum(int(row[2] or 0) for row in week_rows)
     hard_sessions = sum(1 for row in week_rows if row[3] == "힘듦")
-    preferred_pool = _pool_preference(recent_rows)
+    preferred_pool = (
+        int(preferred_pool_length)
+        if preferred_pool_length in (25, 50)
+        else _pool_preference(recent_rows)
+    )
+    level_aliases = {
+        "beginner": "입문",
+        "intermediate": "중급",
+        "advanced": "고급",
+    }
+    level = level_aliases.get(training_level, training_level)
+    if level not in {"입문", "초급", "중급", "고급"}:
+        level = "초급"
+    goal = training_goal if training_goal in {"기록단축", "건강", "영법교정", "취미"} else "건강"
+    volume = {
+        "입문": {"adapt": "600~900m", "recovery": "700~1,000m", "easy": "600~900m", "main": "900~1,300m"},
+        "초급": {"adapt": "900~1,300m", "recovery": "1,000~1,400m", "easy": "800~1,100m", "main": "1,300~1,800m"},
+        "중급": {"adapt": "1,000~1,400m", "recovery": "1,200~1,800m", "easy": "800~1,200m", "main": "1,600~2,400m"},
+        "고급": {"adapt": "1,400~1,900m", "recovery": "1,600~2,200m", "easy": "1,200~1,600m", "main": "2,200~3,200m"},
+    }[level]
+    goal_focus = {
+        "기록단축": "페이스 유지 + 짧은 스피드",
+        "건강": "편안한 유산소 지구력",
+        "영법교정": "기술 드릴 + 자세 점검",
+        "취미": "다양한 영법을 섞은 즐거운 세션",
+    }[goal]
     remaining_sessions = max(0, weekly_goal - sessions_this_week)
 
     last_row = recent_rows[0] if recent_rows else None
@@ -148,37 +176,37 @@ def _build_training_advisor(
         message = "오늘 컨디션은 조절이 필요해요. 대시 비중을 줄이고 자세가 흐트러지기 전에 마무리하세요."
     elif not recent_rows:
         focus = "첫 기록 만들기"
-        session = f"{preferred_pool}m 풀 기준 기술 적응 1,000~1,400m"
+        session = f"{preferred_pool}m 풀 기준 기술 적응 {volume['adapt']}"
         intensity = "쉬움"
         message = "아직 기록이 없어요. 오늘은 무리하지 않고 기준 기록을 하나 남기는 것이 가장 좋아요."
     elif days_since_last is not None and days_since_last >= 4:
         focus = "재시동 세션"
-        session = f"{preferred_pool}m 풀 기준 회복 + 기초 지구력 1,200~1,800m"
+        session = f"{preferred_pool}m 풀 기준 회복 + 기초 지구력 {volume['recovery']}"
         intensity = "보통"
         message = f"마지막 훈련 후 {days_since_last}일이 지났어요. 대시보다 리듬 회복을 먼저 가져가면 좋아요."
     elif hard_sessions >= 2 or (last_intensity == "힘듦" and days_since_last is not None and days_since_last <= 1):
         focus = "회복·기술 정리"
-        session = f"{preferred_pool}m 풀 기준 드릴 중심 1,200~1,600m"
+        session = f"{preferred_pool}m 풀 기준 드릴 중심 {volume['recovery']}"
         intensity = "쉬움"
         message = "이번 주 강한 훈련이 충분히 들어갔어요. 다음 세션은 자세와 호흡을 정리하는 편이 안전해요."
     elif remaining_sessions == 0:
         focus = "목표 달성 유지"
-        session = f"{preferred_pool}m 풀 기준 가벼운 폼 점검 800~1,200m"
+        session = f"{preferred_pool}m 풀 기준 가벼운 폼 점검 {volume['easy']}"
         intensity = "쉬움"
         message = "이번 주 목표 일수를 채웠어요. 컨디션이 좋다면 짧게 물감각만 유지해도 충분합니다."
     elif sessions_this_week == 0:
         focus = "주간 루틴 시작"
-        session = f"{preferred_pool}m 풀 기준 지구력 빌드업 1,500~2,000m"
+        session = f"{preferred_pool}m 풀 기준 {goal_focus} {volume['main']}"
         intensity = "보통"
         message = "이번 주 첫 훈련을 시작할 차례예요. 너무 빠른 대시보다 일정한 페이스가 좋습니다."
     elif remaining_sessions >= 2:
         focus = "볼륨 확보"
-        session = f"{preferred_pool}m 풀 기준 메인셋 1,600~2,400m"
+        session = f"{preferred_pool}m 풀 기준 {goal_focus} {volume['main']}"
         intensity = "보통"
         message = f"목표까지 {remaining_sessions}회 남았어요. 오늘은 안정적인 거리 확보가 가장 효율적입니다."
     else:
         focus = "마무리 품질 세션"
-        session = f"{preferred_pool}m 풀 기준 짧은 대시 + 충분한 휴식"
+        session = f"{preferred_pool}m 풀 기준 {goal_focus} {volume['main']}"
         intensity = "보통"
         message = "이번 주 마무리 세션이에요. 피로가 적다면 짧은 대시로 페이스 감각을 확인해보세요."
 
@@ -201,6 +229,8 @@ def _build_training_advisor(
         "hard_sessions": hard_sessions,
         "plan_completion_count": int(plan_completion_count or 0),
         "preferred_pool_length": preferred_pool,
+        "training_level": level,
+        "training_goal": goal,
         "last_training_date": last_date.isoformat() if last_date else None,
         "days_since_last": days_since_last,
         "focus": focus,
@@ -494,9 +524,15 @@ def dashboard_training_advisor(swimtech_token: str = Cookie(default=None)):
             (customer_id,),
         )
         recent_rows = cur.fetchall()
-        cur.execute("SELECT weekly_goal FROM customers WHERE id = %s", (customer_id,))
+        cur.execute(
+            "SELECT weekly_goal, preferred_pool_length, level, goal FROM customers WHERE id = %s",
+            (customer_id,),
+        )
         row = cur.fetchone()
         weekly_goal = int(row[0]) if row and row[0] else 3
+        preferred_pool_length = int(row[1]) if row and row[1] else None
+        training_level = row[2] if row else None
+        training_goal = row[3] if row else None
 
         plan_completion_count = 0
         cur.execute("SELECT to_regclass('public.plan_completions')")
@@ -536,6 +572,9 @@ def dashboard_training_advisor(swimtech_token: str = Cookie(default=None)):
             weekly_goal,
             plan_completion_count,
             readiness,
+            preferred_pool_length,
+            training_level,
+            training_goal,
         )
     except HTTPException:
         raise

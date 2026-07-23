@@ -96,7 +96,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_01",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_02",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -128,11 +128,14 @@ def main():
     anonymous = requests.Session()
     anonymous_me = anonymous.get(f"{BASE}/auth/me", timeout=60)
     anonymous_dashboard = anonymous.get(f"{BASE}/api/dashboard/summary", timeout=60)
+    anonymous_onboarding = anonymous.get(f"{BASE}/auth/onboarding", timeout=60)
     rec(
         "A1",
         "비로그인 보호 경계",
-        anonymous_me.status_code == 401 and anonymous_dashboard.status_code == 401,
-        f"me {anonymous_me.status_code}, dashboard {anonymous_dashboard.status_code}",
+        anonymous_me.status_code == 401 and anonymous_dashboard.status_code == 401
+        and anonymous_onboarding.status_code == 401,
+        f"me {anonymous_me.status_code}, dashboard {anonymous_dashboard.status_code}, "
+        f"onboarding {anonymous_onboarding.status_code}",
     )
 
     wrong_login = anonymous.post(
@@ -189,6 +192,59 @@ def main():
     expected = r.status_code in (200, 400)
     note = "일반계정은 소셜전용(400) — 의도된 동작" if r.status_code == 400 else "설정됨"
     rec(6, "닉네임 설정", expected, f"{r.status_code} ({note})")
+
+    onboarding_before_res = sess.get(f"{BASE}/auth/onboarding", timeout=60)
+    onboarding_before = jget(onboarding_before_res)
+    level_aliases = {"beginner": "입문", "intermediate": "중급", "advanced": "고급"}
+    valid_levels = ["입문", "초급", "중급", "고급"]
+    valid_goals = ["기록단축", "건강", "영법교정", "취미"]
+    original_level = level_aliases.get(onboarding_before.get("level"), onboarding_before.get("level"))
+    if original_level not in valid_levels:
+        original_level = "초급"
+    original_goal = onboarding_before.get("goal")
+    if original_goal not in valid_goals:
+        original_goal = "건강"
+    original_weekly = min(7, max(1, to_int(onboarding_before.get("weekly_goal"), 3)))
+    original_pool = 50 if to_int(onboarding_before.get("preferred_pool_length")) == 50 else 25
+    probe = {
+        "level": "중급" if original_level != "중급" else "초급",
+        "goal": "영법교정" if original_goal != "영법교정" else "건강",
+        "weekly_goal": 4 if original_weekly != 4 else 3,
+        "preferred_pool_length": 50 if original_pool == 25 else 25,
+    }
+    onboarding_save = sess.put(f"{BASE}/auth/onboarding", json=probe, timeout=60)
+    onboarding_after = sess.get(f"{BASE}/auth/onboarding", timeout=60)
+    onboarding_me = sess.get(f"{BASE}/auth/me", timeout=60)
+    onboarding_advisor = sess.get(f"{BASE}/api/dashboard/training-advisor", timeout=60)
+    after_json = jget(onboarding_after)
+    me_profile = jget(onboarding_me).get("training_profile") or {}
+    advisor_profile = jget(onboarding_advisor)
+    onboarding_ok = (
+        onboarding_before_res.status_code == 200
+        and onboarding_save.status_code == 200
+        and onboarding_after.status_code == 200
+        and onboarding_me.status_code == 200
+        and onboarding_advisor.status_code == 200
+        and all(after_json.get(key) == value for key, value in probe.items())
+        and me_profile.get("preferred_pool_length") == probe["preferred_pool_length"]
+        and advisor_profile.get("preferred_pool_length") == probe["preferred_pool_length"]
+        and advisor_profile.get("training_level") == probe["level"]
+        and advisor_profile.get("training_goal") == probe["goal"]
+    )
+    rec("6a", "개인화 온보딩→내 정보·훈련 추천 연동", onboarding_ok,
+        f"get {onboarding_before_res.status_code}, save {onboarding_save.status_code}, "
+        f"me {onboarding_me.status_code}, advisor {onboarding_advisor.status_code}/"
+        f"pool={advisor_profile.get('preferred_pool_length')}/level={advisor_profile.get('training_level')}/"
+        f"goal={advisor_profile.get('training_goal')}")
+    try:
+        sess.put(f"{BASE}/auth/onboarding", json={
+            "level": original_level,
+            "goal": original_goal,
+            "weekly_goal": original_weekly,
+            "preferred_pool_length": original_pool,
+        }, timeout=60)
+    except Exception:
+        pass
 
     year, month = this_month()
 

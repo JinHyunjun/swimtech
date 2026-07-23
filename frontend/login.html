@@ -292,7 +292,7 @@ async function doLogin() {
       const loginData = await res.json();
       if (loginData.is_admin) {
         window.location.href = '/admin';
-      } else if (!localStorage.getItem('onboarding_done')) {
+      } else if (loginData.needs_onboarding) {
         window.location.href = '/onboarding';
       } else {
         window.location.href = '/';
@@ -326,7 +326,6 @@ async function startDemo() {
       showError(data.detail || '체험 모드를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
-    localStorage.setItem('onboarding_done', '1');
     window.location.href = data.redirect || '/dashboard';
   } catch (e) {
     showError('서버에 연결할 수 없습니다.');
