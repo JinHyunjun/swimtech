@@ -161,12 +161,10 @@ def test_login_success(browser, browser_context_args):
         page.fill("#username", TEST_USER)
         page.fill("#password", TEST_PASS)
         page.click("#login-btn")
+        page.wait_for_url(re.compile(r"/landing(?:\?.*)?$"), timeout=10_000)
         page.wait_for_load_state("networkidle")
-        if "/login" in page.url:
-            print(f"[WARN] 로그인 후 /login 잔류 — 계정({TEST_USER}) 확인 필요: {page.url}")
-        page.goto(f"{BASE_URL}/landing", wait_until="domcontentloaded")
         shot(page, "02_login_success")
-        assert "/login" not in page.url, f"로그인 후 /login 잔류: {page.url}"
+        assert "/landing" in page.url, f"로그인 후 대표 홈 URL 불일치: {page.url}"
     finally:
         page.close()
         ctx.close()
@@ -238,7 +236,7 @@ def test_upload_redirects_non_admin(browser, browser_context_args):
         page.fill("#username", "nonadmin01")
         page.fill("#password", "Nonadmin1")
         page.click("#login-btn")
-        page.wait_for_url(re.compile(r"/(landing|onboarding|$)"), timeout=10_000)
+        page.wait_for_url(re.compile(r"/landing(?:\?.*)?$"), timeout=10_000)
 
         # /upload 접근 → /landing 리다이렉트 확인
         page.goto(f"{BASE_URL}/upload", wait_until="domcontentloaded")

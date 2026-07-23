@@ -102,13 +102,13 @@
     <a class="brand" href="/landing" aria-label="SwimMate 홈">
       <img src="/static/icons/logo.svg" alt="SwimMate 수영 훈련 도우미">
     </a>
-    <a class="header-link" href="/dashboard">대시보드로 이동</a>
+    <a class="header-link" id="onboarding-exit-link" href="/landing">홈으로 이동</a>
   </header>
 
   <main>
-    <p class="eyebrow">PERSONAL TRAINING SETUP</p>
-    <h1>내 수영에 맞는 기준부터 설정해요</h1>
-    <p class="intro">네 가지 선택은 이번 주 추천 세션의 거리와 내용, 훈련 플랜의 기본값에 반영됩니다. 언제든 이 화면에서 다시 바꿀 수 있어요.</p>
+    <p class="eyebrow" id="onboarding-eyebrow">PERSONAL TRAINING SETUP</p>
+    <h1 id="onboarding-title">내 수영에 맞는 기준부터 설정해요</h1>
+    <p class="intro" id="onboarding-intro">네 가지 선택은 이번 주 추천 세션의 거리와 내용, 훈련 플랜의 기본값에 반영됩니다. 언제든 이 화면에서 다시 바꿀 수 있어요.</p>
 
     <div class="progress" aria-label="설정 진행률">
       <span class="active"></span><span></span><span></span><span></span>
@@ -185,7 +185,20 @@
     };
     const levelAliases = { beginner: '입문', intermediate: '중급', advanced: '고급' };
     const state = { level: '초급', goal: '건강', weekly_goal: 3, preferred_pool_length: 25 };
+    const isEditMode = new URLSearchParams(window.location.search).get('mode') === 'edit';
     let step = 0;
+
+    function configureMode() {
+      if (!isEditMode) return;
+      document.title = 'SwimMate — 맞춤 훈련 설정 수정';
+      document.getElementById('onboarding-eyebrow').textContent = 'PERSONAL TRAINING SETTINGS';
+      document.getElementById('onboarding-title').textContent = '맞춤 훈련 설정을 수정해요';
+      document.getElementById('onboarding-intro').textContent =
+        '변경한 수준·목표·주간 횟수·수영장 길이는 다음 추천과 훈련 플랜 기본값부터 반영됩니다.';
+      const exitLink = document.getElementById('onboarding-exit-link');
+      exitLink.href = '/profile';
+      exitLink.textContent = '프로필로 돌아가기';
+    }
 
     function selectChoice(field, value) {
       if (field === 'weekly_goal' || field === 'preferred_pool_length') value = Number(value);
@@ -210,7 +223,8 @@
       document.querySelectorAll('.step').forEach((item, index) => item.classList.toggle('active', index === step));
       document.querySelectorAll('.progress span').forEach((item, index) => item.classList.toggle('active', index <= step));
       document.getElementById('back-btn').hidden = step === 0;
-      document.getElementById('next-btn').textContent = step === 3 ? '맞춤 설정 완료' : '다음';
+      document.getElementById('next-btn').textContent =
+        step === 3 ? (isEditMode ? '설정 저장' : '맞춤 설정 완료') : '다음';
     }
 
     async function loadProfile() {
@@ -219,7 +233,7 @@
         if (response.status === 401) { window.location.href = '/login'; return; }
         if (!response.ok) throw new Error('설정을 불러오지 못했습니다.');
         const profile = await response.json();
-        if (profile.read_only) { window.location.href = '/dashboard'; return; }
+        if (profile.read_only) { window.location.href = isEditMode ? '/profile' : '/landing'; return; }
         const level = levelAliases[profile.level] || profile.level;
         selectChoice('level', allowed.level.includes(level) ? level : '초급');
         selectChoice('goal', allowed.goal.includes(profile.goal) ? profile.goal : '건강');
@@ -247,11 +261,11 @@
         if (!response.ok) throw new Error(data.detail || '맞춤 설정을 저장하지 못했습니다.');
         localStorage.setItem('swimtech_plan_pool_length', String(state.preferred_pool_length));
         localStorage.setItem('swimtech_plan_cycle_level', state.level);
-        window.location.href = data.redirect || '/dashboard';
+        window.location.href = isEditMode ? '/profile' : (data.redirect || '/landing');
       } catch (error) {
         message.textContent = error.message;
         button.disabled = false;
-        button.textContent = '맞춤 설정 완료';
+        button.textContent = isEditMode ? '설정 저장' : '맞춤 설정 완료';
       }
     }
 
@@ -266,6 +280,7 @@
       if (step < 3) { step += 1; renderStep(); return; }
       saveProfile();
     });
+    configureMode();
     updateSummary();
     loadProfile();
   </script>

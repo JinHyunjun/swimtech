@@ -717,11 +717,13 @@ def login(request: Request, body: LoginRequest, response: Response):
         except Exception:
             pass
 
+    needs_onboarding = bool(not is_admin and customer_id and onboarding_completed_at is None)
     return {
         "status": "ok",
         "message": f"{body.username}님 환영합니다!",
         "is_admin": is_admin,
-        "needs_onboarding": bool(not is_admin and customer_id and onboarding_completed_at is None),
+        "needs_onboarding": needs_onboarding,
+        "redirect": "/admin" if is_admin else "/landing",
     }
 
 
@@ -747,7 +749,7 @@ def demo_login(request: Request, response: Response):
         "message": "체험 모드로 시작합니다.",
         "is_admin": False,
         "is_demo": True,
-        "redirect": "/dashboard",
+        "redirect": "/landing",
     }
 
 
@@ -1077,7 +1079,7 @@ def save_onboarding(body: OnboardingRequest, swimtech_token: str = Cookie(defaul
         "weekly_goal": int(row[2]),
         "preferred_pool_length": int(row[3]),
         "completed": bool(row[4]),
-        "redirect": "/dashboard",
+        "redirect": "/landing",
     }
 
 
@@ -1204,7 +1206,7 @@ def google_callback(code: str):
     token   = create_token(username, customer_id, auth_version=auth_version)
     refresh = create_refresh_token(username, customer_id, auth_version=auth_version)
 
-    redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
+    redirect_url = "/nickname" if is_new else "/landing"
     resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)
@@ -1267,7 +1269,7 @@ def kakao_callback(code: str):
     token   = create_token(username, customer_id, auth_version=auth_version)
     refresh = create_refresh_token(username, customer_id, auth_version=auth_version)
 
-    redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
+    redirect_url = "/nickname" if is_new else "/landing"
     resp = RedirectResponse(url=redirect_url, status_code=302)
     _set_auth_cookie(resp, token)
     _set_refresh_cookie(resp, refresh)

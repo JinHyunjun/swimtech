@@ -151,6 +151,41 @@
 }
 .btn-secondary-outline:hover { background: rgba(0,180,216,.08); }
 .btn-secondary-outline:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary-outline.link-button {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+.btn-secondary-outline[aria-disabled="true"] {
+  opacity: .5;
+  pointer-events: none;
+}
+
+.training-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.training-profile-item {
+  padding: 13px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: .5px solid var(--border);
+}
+.training-profile-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.training-profile-item strong {
+  color: var(--cyan);
+  font-size: var(--fs-body);
+}
+@media (max-width: 420px) {
+  .training-profile-grid { grid-template-columns: 1fr; }
+}
 
 /* 탈퇴 확인 모달 */
 .modal-overlay {
@@ -230,6 +265,20 @@
       <span class="info-label">가입 방식</span>
       <span class="info-value" id="p-provider">—</span>
     </div>
+  </div>
+
+  <!-- 맞춤 훈련 설정 -->
+  <div class="panel" id="training-profile-panel">
+    <div class="panel-title">맞춤 훈련 설정</div>
+    <div class="panel-desc">추천 세션과 훈련 플랜의 기본값에 반영되는 개인 설정입니다.</div>
+    <div class="training-profile-grid">
+      <div class="training-profile-item"><span>현재 수준</span><strong id="p-training-level">—</strong></div>
+      <div class="training-profile-item"><span>주요 목표</span><strong id="p-training-goal">—</strong></div>
+      <div class="training-profile-item"><span>주간 목표</span><strong id="p-training-weekly">—</strong></div>
+      <div class="training-profile-item"><span>주 이용 수영장</span><strong id="p-training-pool">—</strong></div>
+    </div>
+    <a class="btn-secondary-outline link-button" id="onboarding-edit-link" href="/onboarding?mode=edit">맞춤 훈련 설정 수정</a>
+    <div class="feedback" id="training-profile-feedback"></div>
   </div>
 
   <!-- 닉네임 변경 -->
@@ -349,6 +398,13 @@ async function loadProfile() {
     document.getElementById('p-provider').innerHTML =
       `<span class="pill ${provider}">${PROVIDER_LABEL[provider] || provider}</span>`;
 
+    const trainingProfile = data.training_profile || {};
+    document.getElementById('p-training-level').textContent = trainingProfile.level || '초급';
+    document.getElementById('p-training-goal').textContent = trainingProfile.goal || '건강';
+    document.getElementById('p-training-weekly').textContent = `주 ${Number(trainingProfile.weekly_goal) || 3}회`;
+    document.getElementById('p-training-pool').textContent =
+      `${Number(trainingProfile.preferred_pool_length) === 50 ? 50 : 25}m 풀`;
+
     const isLocal = provider === 'local';
     document.getElementById('password-panel').hidden = !data.can_change_password;
     document.getElementById('export-password-row').hidden = !isLocal;
@@ -357,6 +413,9 @@ async function loadProfile() {
     if (data.is_demo) {
       document.getElementById('data-export-btn').disabled = true;
       document.getElementById('logout-all-btn').disabled = true;
+      document.getElementById('onboarding-edit-link').setAttribute('aria-disabled', 'true');
+      document.getElementById('onboarding-edit-link').removeAttribute('href');
+      showFeedback('training-profile-feedback', 'error', '체험 모드의 공용 맞춤 설정은 변경할 수 없습니다.');
       showFeedback('export-feedback', 'error', '체험 데이터는 공용 샘플이므로 내보낼 수 없습니다.');
       showFeedback('logout-feedback', 'error', '체험 모드에서는 전체 세션을 변경하지 않습니다.');
     }

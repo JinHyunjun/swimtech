@@ -76,6 +76,7 @@ ACTION_TIMEOUT_MS = 5000
 PAGES = [
     ("/landing", "랜딩"),
     ("/onboarding", "맞춤 훈련 설정"),
+    ("/onboarding?mode=edit", "맞춤 훈련 설정 수정"),
     ("/dashboard", "대시보드"),
     ("/plan", "훈련 플랜"),
     ("/training-log", "훈련 일지"),
@@ -143,6 +144,10 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 수영에 맞는 기준부터 설정해요", "현재 수영 수준은 어떤가요?"],
         "absent_texts": ["AI 분석", "영상을 촬영"],
     },
+    "/onboarding?mode=edit": {
+        "selectors": ["#onboarding-form", "#onboarding-exit-link", "#next-btn"],
+        "texts": ["맞춤 훈련 설정을 수정해요", "프로필로 돌아가기"],
+    },
     "/dashboard": {
         "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness"],
         "texts": ["오늘의 훈련 준비도", "이번 주 훈련 추천"],
@@ -161,8 +166,8 @@ PAGE_EXPECTATIONS = {
         "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
     "/profile": {
-        "selectors": ["#p-email", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
-        "texts": ["내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
+        "selectors": ["#p-email", "#training-profile-panel", "#p-training-level", "#p-training-goal", "#p-training-weekly", "#p-training-pool", "#onboarding-edit-link", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
+        "texts": ["맞춤 훈련 설정", "맞춤 훈련 설정 수정", "내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
     },
     "/plan": {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
@@ -243,13 +248,20 @@ def login(page, username=None, password=None):
         pass
     if "/login" in page.url:
         raise RuntimeError(f"로그인 실패 — 계정/비밀번호 확인 필요 (계정: {username})")
+    expected_path = "/admin" if username == ADMIN_ID else "/landing"
+    current_path = page.url.split("?", 1)[0].rstrip("/")
+    if not current_path.endswith(expected_path):
+        raise RuntimeError(
+            f"로그인 후 대표 화면 불일치 — expected={expected_path}, actual={page.url}"
+        )
 
 
 def is_auth_redirect(path, page):
-    if path == "/admin":
+    route = path.split("?", 1)[0]
+    if route == "/admin":
         return False
     current = page.url.split("?", 1)[0].rstrip("/")
-    return path in PROTECTED_PATHS and (current.endswith("/login") or current.endswith("/landing"))
+    return route in PROTECTED_PATHS and (current.endswith("/login") or current.endswith("/landing"))
 
 
 def goto_page(page, path, username=None, password=None, timeout=45000):
@@ -292,6 +304,28 @@ def check_page_expectations(page, path):
     return errors
 
 
+def check_home_link_targets(page):
+    """화면에 표시되는 홈 링크는 예외 없이 대표 URL인 /landing을 사용해야 한다."""
+    errors = []
+    try:
+        links = page.locator("a[href]").all()
+    except Exception:
+        return errors
+    for link in links:
+        try:
+            text = (link.inner_text(timeout=500) or "").strip()
+            aria = link.get_attribute("aria-label") or ""
+            title = link.get_attribute("title") or ""
+            if "홈" not in f"{text} {aria} {title}":
+                continue
+            href = link.get_attribute("href") or ""
+            if href != "/landing":
+                errors.append({"type": "invalid_home_href", "href": href, "text": text[:60]})
+        except Exception:
+            continue
+    return errors
+
+
 def check_public_demo_entry(context):
     page = context.new_page()
     entry = {"page": "/login", "label": "Portfolio demo entry", "actions": [], "page_errors": []}
@@ -304,6 +338,18 @@ def check_public_demo_entry(context):
         expectation_errors = check_page_expectations(page, "/login")
         if expectation_errors:
             entry["page_errors"].append({"phase": "expectations", "errors": expectation_errors})
+        page.click("#demo-btn")
+        try:
+            page.wait_for_load_state("networkidle", timeout=15000)
+        except PWTimeout:
+            pass
+        if not page.url.split("?", 1)[0].rstrip("/").endswith("/landing"):
+            entry["page_errors"].append({
+                "phase": "demo_redirect",
+                "error": f"비회원 체험 후 /landing이 아님: {page.url}",
+            })
+        else:
+            entry["actions"].append({"action": "비회원 체험 → /landing", "status": "ok"})
     except Exception as e:
         entry["page_errors"].append({"phase": "load", "error": str(e)[:200]})
     finally:
@@ -454,6 +500,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
     page.screenshot(path=str(SHOT_DIR / f"{slug(path)}_00_load.png"))
 
     expectation_errors = check_page_expectations(page, path)
+    expectation_errors.extend(check_home_link_targets(page))
     if expectation_errors:
         entry["page_errors"].append({
             "phase": "expectations",

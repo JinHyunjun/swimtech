@@ -464,7 +464,8 @@ def test_portfolio_demo_mode_contract():
     assert "demo-btn" in login_page
     assert "startDemo" in login_page
     assert "/auth/demo" in login_page
-    assert "loginData.needs_onboarding" in login_page
+    assert "loginData.redirect" in login_page
+    assert "(loginData.is_admin ? '/admin' : '/landing')" in login_page
     assert "onboarding_done" not in login_page
     assert '@router.get("/onboarding")' in auth_api
     assert '@router.put("/onboarding")' in auth_api
@@ -514,6 +515,48 @@ def test_personal_data_export_and_account_security_are_qa_mapped():
     assert "개인 데이터 JSON 내보내기 + 비밀번호 재확인" in api_qa
     assert "계정 보안 변경의 현재 비밀번호 경계" in api_qa
     assert '"/profile": {' in ui_qa and '"#data-export-btn"' in ui_qa
+
+
+def test_landing_url_and_editable_onboarding_are_qa_mapped():
+    auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
+    api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    login = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    onboarding = (ROOT / "frontend" / "onboarding.html").read_text(encoding="utf-8")
+    profile = (ROOT / "frontend" / "profile.html").read_text(encoding="utf-8")
+    frontend_vercel = json.loads((ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8"))
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert 'window.location.href = loginData.redirect' in login
+    assert '"redirect": "/admin" if is_admin else "/landing"' in auth_api
+    assert auth_api.count('"redirect": "/landing"') >= 2
+    assert auth_api.count('else "/landing"') >= 2
+    assert 'RedirectResponse(url="/landing", status_code=307)' in api_main
+    assert {
+        "source": "/",
+        "destination": "/landing",
+        "permanent": False,
+    } in frontend_vercel["redirects"]
+    assert not any(rule.get("source") == "/" for rule in frontend_vercel["rewrites"])
+
+    for html_path in (ROOT / "frontend").glob("*.html"):
+        html = html_path.read_text(encoding="utf-8")
+        assert 'href="/"' not in html, f"{html_path.name} 홈 링크가 /landing이 아님"
+
+    for selector in [
+        "training-profile-panel", "p-training-level", "p-training-goal",
+        "p-training-weekly", "p-training-pool", "onboarding-edit-link",
+    ]:
+        assert f'id="{selector}"' in profile
+    assert 'href="/onboarding?mode=edit"' in profile
+    assert "isEditMode" in onboarding
+    assert "맞춤 훈련 설정을 수정해요" in onboarding
+    assert "isEditMode ? '/profile'" in onboarding
+    assert "onboarding-reminder" in landing and "me.needs_onboarding" in landing
+    assert "대표 홈 리다이렉트" in api_qa
+    assert "check_home_link_targets" in ui_qa
+    assert '("/onboarding?mode=edit", "맞춤 훈련 설정 수정")' in ui_qa
 
 
 def test_plan_p3_improvements_are_kept():

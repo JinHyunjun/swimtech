@@ -462,12 +462,10 @@ def _serve(filename: str):
         return FileResponse(path)
     raise HTTPException(status_code=404, detail=f"{filename} not found")
 
-# 루트 → 홈 선택 화면
+# 루트 → 대표 홈 URL
 @app.get("/")
 def serve_home(request: Request):
-    redir = _auth_redirect(request)
-    if redir: return redir
-    return _serve("landing.html")
+    return RedirectResponse(url="/landing", status_code=307)
 
 # 관리자 슈퍼 대시보드
 @app.get("/admin")
@@ -611,12 +609,10 @@ def retired_analysis_share(token: str):
 def retired_analysis_share_data(token: str):
     raise HTTPException(status_code=410, detail="영상 분석 공유 기능은 현재 제공하지 않습니다.")
 
-# 레거시 루트 (기존 index.html 직접 접근용)
+# 레거시 앱 주소도 대표 홈 URL로 통일
 @app.get("/app")
 def serve_index_legacy(request: Request):
-    redir = _auth_redirect(request)
-    if redir: return redir
-    return _serve("index.html")
+    return RedirectResponse(url="/landing", status_code=307)
 
 # 이전 로컬 영상 스트리밍 API
 @app.get("/api/video-stream/{filename}")

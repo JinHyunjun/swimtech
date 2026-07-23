@@ -116,10 +116,16 @@ def main():
         json={"username": admin_id, "password": admin_pw},
         timeout=60,
     )
-    admin_ok = admin_login.status_code == 200
+    admin_login_json = jget(admin_login)
+    admin_ok = admin_login.status_code == 200 and admin_login_json.get("redirect") == "/admin"
     if admin_ok:
         admin_sess = s
-    rec("A", "관리자 전용 계정 로그인", admin_ok, f"status {admin_login.status_code}")
+    rec(
+        "A",
+        "관리자 전용 계정 로그인",
+        admin_ok,
+        f"status {admin_login.status_code}, redirect={admin_login_json.get('redirect')}",
+    )
 
     # ── QA 계정 + 세션 준비 ─────────────────────────────
     sess = requests.Session()
@@ -159,10 +165,12 @@ def main():
 
     # 2. 일반 로그인
     r = sess.post(f"{BASE}/auth/login", json={"username": uname, "password": pw}, timeout=60)
-    logged_in = r.status_code == 200
+    login_json = jget(r)
+    logged_in = r.status_code == 200 and login_json.get("redirect") == "/landing"
     has_cookie = "swimtech_token" in sess.cookies.get_dict()
     rec(2, "일반 로그인 (+쿠키 발급)", logged_in and has_cookie,
-        f"status {r.status_code}, 쿠키 {'있음' if has_cookie else '없음'}")
+        f"status {r.status_code}, redirect={login_json.get('redirect')}, "
+        f"쿠키 {'있음' if has_cookie else '없음'}")
 
     cookie_header = r.headers.get("set-cookie", "").lower()
     cookie_secure = all(flag in cookie_header for flag in ("httponly", "secure", "samesite=lax"))
@@ -283,6 +291,7 @@ def main():
         and onboarding_after.status_code == 200
         and onboarding_me.status_code == 200
         and onboarding_advisor.status_code == 200
+        and jget(onboarding_save).get("redirect") == "/landing"
         and all(after_json.get(key) == value for key, value in probe.items())
         and me_profile.get("preferred_pool_length") == probe["preferred_pool_length"]
         and advisor_profile.get("preferred_pool_length") == probe["preferred_pool_length"]
@@ -290,7 +299,8 @@ def main():
         and advisor_profile.get("training_goal") == probe["goal"]
     )
     rec("6a", "개인화 온보딩→내 정보·훈련 추천 연동", onboarding_ok,
-        f"get {onboarding_before_res.status_code}, save {onboarding_save.status_code}, "
+        f"get {onboarding_before_res.status_code}, save {onboarding_save.status_code}/"
+        f"redirect={jget(onboarding_save).get('redirect')}, "
         f"me {onboarding_me.status_code}, advisor {onboarding_advisor.status_code}/"
         f"pool={advisor_profile.get('preferred_pool_length')}/level={advisor_profile.get('training_level')}/"
         f"goal={advisor_profile.get('training_goal')}")
@@ -316,6 +326,7 @@ def main():
     demo_report_json = jget(demo_report)
     demo_ok = (
         demo_login.status_code == 200
+        and jget(demo_login).get("redirect") == "/landing"
         and demo_me.status_code == 200
         and demo_me_json.get("is_demo") is True
         and demo_summary.status_code == 200
@@ -325,7 +336,8 @@ def main():
         and to_int(demo_report_json.get("total_distance")) > 0
     )
     rec("6b", "Portfolio demo mode (/auth/demo)", demo_ok,
-        f"login {demo_login.status_code}, me {demo_me.status_code}/demo={demo_me_json.get('is_demo')}, "
+        f"login {demo_login.status_code}/redirect={jget(demo_login).get('redirect')}, "
+        f"me {demo_me.status_code}/demo={demo_me_json.get('is_demo')}, "
         f"summary {demo_summary.status_code}/logs={demo_summary_json.get('total_logs')}/distance={demo_summary_json.get('total_distance')}, "
         f"report {demo_report.status_code}/distance={demo_report_json.get('total_distance')}")
 
@@ -359,7 +371,25 @@ def main():
     for path, label in pages.items():
         rr = requests.get(f"{BASE}{path}", timeout=60)
         if rr.status_code != 200: bad.append(f"{label}({rr.status_code})")
-    rec(7, "메인/주요 페이지 라우팅", not bad, "전부 200" if not bad else "실패: "+", ".join(bad))
+    root_redirect = requests.get(f"{BASE}/", allow_redirects=False, timeout=60)
+    app_redirect = requests.get(f"{BASE}/app", allow_redirects=False, timeout=60)
+    landing_redirects_ok = (
+        root_redirect.status_code in (301, 302, 307, 308)
+        and root_redirect.headers.get("location") == "/landing"
+        and app_redirect.status_code in (301, 302, 307, 308)
+        and app_redirect.headers.get("location") == "/landing"
+    )
+    rec(
+        7,
+        "메인/주요 페이지 라우팅",
+        not bad and landing_redirects_ok,
+        (
+            f"전부 200, /=/landing({root_redirect.status_code}), "
+            f"/app=/landing({app_redirect.status_code})"
+            if not bad and landing_redirects_ok
+            else "실패: " + ", ".join(bad or ["대표 홈 리다이렉트 불일치"])
+        ),
+    )
 
     # 8. 수영장 지도 (페이지 200 + 카카오 SDK appkey 박혀있는지)
     rr = requests.get(f"{BASE}/pool", timeout=60)

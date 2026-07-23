@@ -3,6 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
+    { "source": "/", "destination": "/landing", "permanent": false },
     { "source": "/meta", "destination": "/landing", "permanent": false },
     { "source": "/upload", "destination": "/landing", "permanent": false },
     { "source": "/viewer", "destination": "/landing", "permanent": false },
@@ -17,7 +18,6 @@
     { "source": "/share/:path*",     "destination": "/share" },
     { "source": "/badges",           "destination": "/badge" },
     { "source": "/training-log",     "destination": "/training_log" },
-    { "source": "/app",              "destination": "/landing" },
-    { "source": "/",                 "destination": "/landing" }
+    { "source": "/app",              "destination": "/landing" }
   ]
 }

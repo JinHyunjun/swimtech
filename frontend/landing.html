@@ -318,6 +318,34 @@
   .section-label { font-size: var(--fs-caption); }
   .menu-section { margin-bottom: 18px; }
 }
+.setup-notice {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding: 15px 17px;
+  border: 1px solid rgba(72,202,228,.35);
+  border-radius: var(--radius-md);
+  background: rgba(0,180,216,.10);
+}
+.setup-notice.show { display: flex; }
+.setup-notice strong { display: block; color: var(--text); margin-bottom: 4px; }
+.setup-notice span { color: var(--muted); font-size: var(--fs-caption); line-height: 1.5; }
+.setup-notice a {
+  flex-shrink: 0;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-primary);
+  color: #06121c;
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  font-weight: 800;
+}
+@media (max-width: 540px) {
+  .setup-notice { align-items: flex-start; flex-direction: column; }
+  .setup-notice a { width: 100%; text-align: center; }
+}
 </style>
 </head>
 <body>
@@ -349,6 +377,14 @@
       <div class="home-title">
         <h1>SwimMate에 오신 것을 환영합니다</h1>
         <p>무엇을 도와드릴까요? 원하는 서비스를 선택해주세요</p>
+      </div>
+
+      <div class="setup-notice" id="onboarding-reminder" role="status">
+        <div>
+          <strong>맞춤 훈련 설정을 완료해 주세요</strong>
+          <span>수준·목표·주간 횟수·수영장 길이를 설정하면 추천과 플랜이 더 정확해집니다.</span>
+        </div>
+        <a href="/onboarding">지금 설정하기</a>
       </div>
 
       <!-- 🤖 AI 서비스 -->
@@ -569,7 +605,11 @@
 (async () => {
   try {
     const res = await fetch('/auth/me', { credentials: 'include' });
-    if (!res.ok) window.location.href = '/login';
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const me = await res.json();
+    if (me.needs_onboarding) {
+      document.getElementById('onboarding-reminder').classList.add('show');
+    }
   } catch { window.location.href = '/login'; }
 })();
 
