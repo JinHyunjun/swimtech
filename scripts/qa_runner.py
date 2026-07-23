@@ -209,7 +209,7 @@ def main():
     export_doc = jget(export_ok)
     export_account = export_doc.get("account") or {}
     rec(
-        "6b",
+        "6d",
         "개인 데이터 JSON 내보내기 + 비밀번호 재확인",
         export_wrong.status_code == 401
         and export_ok.status_code == 200
@@ -241,7 +241,7 @@ def main():
     )
     session_still_valid = sess.get(f"{BASE}/auth/me", timeout=60)
     rec(
-        "6c",
+        "6e",
         "계정 보안 변경의 현재 비밀번호 경계",
         password_wrong.status_code == 401
         and logout_all_wrong.status_code == 401
