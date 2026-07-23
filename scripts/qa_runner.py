@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_05",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_06",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -292,6 +292,7 @@ def main():
     baseline_planned_sets = to_int(baseline_plan_perf.get("planned_sets"))
     baseline_completed_sets = to_int(baseline_plan_perf.get("completed_sets"))
     cleanup_ids = []
+    benchmark_ids = []
     readiness_before = None
 
     # ── 7. 메인 화면/라우팅 ─────────────────────────────
@@ -444,6 +445,35 @@ def main():
     rec("11c", "월간 목표 저장/조회", r.status_code == 200 and rg.status_code == 200 and to_int(goal_data.get("goal_distance")) == goal_distance,
         f"save {r.status_code}, get {rg.status_code}, goal={goal_data.get('goal_distance')}")
 
+    benchmark_distance = 25 * random.randint(101, 180)
+    benchmark_base = {
+        "test_date": today, "stroke_type": "자유형", "distance_m": benchmark_distance,
+        "pool_length": 25, "training_log_id": report_log_id, "notes": "QA 테스트 세트",
+    }
+    benchmark_first = sess.post(f"{BASE}/api/benchmarks", json={**benchmark_base, "duration_ms": 300000}, timeout=60)
+    benchmark_first_json = jget(benchmark_first)
+    benchmark_second = sess.post(f"{BASE}/api/benchmarks", json={**benchmark_base, "duration_ms": 298000}, timeout=60)
+    benchmark_second_json = jget(benchmark_second)
+    benchmark_ids = [value for value in [benchmark_first_json.get("id"), benchmark_second_json.get("id")] if value]
+    benchmark_list = sess.get(month_url("/api/benchmarks", year, month) + "&limit=100", timeout=60)
+    benchmark_list_json = jget(benchmark_list)
+    benchmark_invalid = sess.post(f"{BASE}/api/benchmarks", json={
+        **benchmark_base, "distance_m": 25, "pool_length": 50, "duration_ms": 30000,
+    }, timeout=60)
+    benchmark_ok = (
+        benchmark_first.status_code == 200 and benchmark_first_json.get("is_personal_best") is True
+        and benchmark_second.status_code == 200 and benchmark_second_json.get("is_personal_best") is True
+        and to_int(benchmark_second_json.get("improvement_ms")) == 2000
+        and benchmark_list.status_code == 200
+        and to_int((benchmark_list_json.get("summary") or {}).get("attempts")) >= 2
+        and any(to_int(item.get("id")) == to_int(benchmark_second_json.get("id")) for item in benchmark_list_json.get("bests", []))
+        and benchmark_invalid.status_code == 400
+    )
+    rec("11d", "테스트 세트 저장→코스별 PB 판정", benchmark_ok,
+        f"first {benchmark_first.status_code}/pb={benchmark_first_json.get('is_personal_best')}, "
+        f"second {benchmark_second.status_code}/pb={benchmark_second_json.get('is_personal_best')}/improve={benchmark_second_json.get('improvement_ms')}ms, "
+        f"list {benchmark_list.status_code}, invalid {benchmark_invalid.status_code}")
+
     # ── 12-15. 플랜 ─────────────────────────────────────
     print("\n[12-15] 플랜")
     rr = requests.get(f"{BASE}/plan", timeout=60)
@@ -515,6 +545,7 @@ def main():
     r = sess.get(month_url("/api/report/monthly", year, month), timeout=60)
     report = jget(r)
     perf = report.get("plan_performance") or {}
+    benchmark_perf = report.get("benchmark_performance") or {}
     report_ok = (
         r.status_code == 200
         and to_int(report.get("total_distance")) >= baseline_distance + expected_added_distance
@@ -528,11 +559,23 @@ def main():
         and to_int(perf.get("set_completion_rate")) > 0
         and bool(report_set_save) and report_set_save.status_code == 200
         and bool(from_plan_set_save) and from_plan_set_save.status_code == 200
+        and to_int(benchmark_perf.get("attempts")) >= 2
+        and to_int(benchmark_perf.get("personal_bests")) >= 2
         and bool(report.get("share_token"))
     )
     rec(17, "월간 리포트↔훈련 일지 데이터 연동", report_ok,
         f"{r.status_code}, total={report.get('total_distance')}, count={report.get('total_count')}, "
-        f"avg={report.get('avg_distance')}, goal={perf.get('goal_distance')}, plan_sessions={perf.get('completed_sessions')}")
+        f"avg={report.get('avg_distance')}, goal={perf.get('goal_distance')}, plan_sessions={perf.get('completed_sessions')}, "
+        f"tests={benchmark_perf.get('attempts')}/pb={benchmark_perf.get('personal_bests')}")
+
+    benchmark_cleanup = []
+    for benchmark_id in benchmark_ids:
+        benchmark_cleanup.append(sess.delete(f"{BASE}/api/benchmarks/{benchmark_id}", timeout=60).status_code)
+    benchmark_after = sess.get(month_url("/api/benchmarks", year, month) + "&limit=100", timeout=60)
+    remaining_ids = {to_int(item.get("id")) for item in jget(benchmark_after).get("results", [])}
+    benchmark_cleanup_ok = bool(benchmark_ids) and all(code == 200 for code in benchmark_cleanup) and not any(to_int(value) in remaining_ids for value in benchmark_ids)
+    rec("17a", "테스트 세트 QA 데이터 정리", benchmark_cleanup_ok,
+        f"delete={benchmark_cleanup}, remaining-own={sum(1 for value in benchmark_ids if to_int(value) in remaining_ids)}")
 
     summary = sess.get(f"{BASE}/api/dashboard/summary", timeout=60)
     weekly = sess.get(f"{BASE}/api/dashboard/weekly", timeout=60)
@@ -899,6 +942,9 @@ def main():
             and "class_sessions_30d" in health_summary
             and "attendance_rate_30d" in health_summary
             and "active_notices" in health_summary
+            and "test_results_30d" in health_summary
+            and "test_users_30d" in health_summary
+            and "personal_bests_30d" in health_summary
             and isinstance(health_json.get("watchlist"), list)
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
@@ -911,7 +957,8 @@ def main():
             f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}, "
             f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점, "
             f"clubs={health_summary.get('active_clubs')}/classes={health_summary.get('active_classes')}/"
-            f"attendance={health_summary.get('attendance_rate_30d')}%")
+            f"attendance={health_summary.get('attendance_rate_30d')}%, "
+            f"tests={health_summary.get('test_results_30d')}/pb={health_summary.get('personal_bests_30d')}")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")

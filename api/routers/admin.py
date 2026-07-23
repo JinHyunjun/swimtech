@@ -474,7 +474,8 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                to_regclass('public.swim_classes'),
                to_regclass('public.swim_class_sessions'),
                to_regclass('public.swim_class_attendance'),
-               to_regclass('public.swim_class_notices')
+               to_regclass('public.swim_class_notices'),
+               to_regclass('public.swim_test_results')
     """)
     (
         has_training_logs,
@@ -487,6 +488,7 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         has_class_sessions,
         has_class_attendance,
         has_class_notices,
+        has_test_results,
     ) = [
         bool(x) for x in cur.fetchone()
     ]
@@ -514,6 +516,9 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         "class_sessions_30d": 0,
         "attendance_rate_30d": 0,
         "active_notices": 0,
+        "test_results_30d": 0,
+        "test_users_30d": 0,
+        "personal_bests_30d": 0,
     }
     pool_distribution = []
     stroke_distribution = []
@@ -698,6 +703,28 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         cur.execute("SELECT COUNT(*) FROM swim_class_notices WHERE status = 'active'")
         summary["active_notices"] = _safe_int(cur.fetchone()[0])
 
+    if has_test_results:
+        cur.execute(
+            """
+            WITH history AS (
+                SELECT customer_id, test_date, duration_ms,
+                       MIN(duration_ms) OVER (
+                           PARTITION BY customer_id, stroke_type, distance_m, pool_length
+                           ORDER BY test_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                       ) AS previous_best_ms
+                FROM swim_test_results
+            )
+            SELECT COUNT(*), COUNT(DISTINCT customer_id),
+                   COUNT(*) FILTER (WHERE previous_best_ms IS NULL OR duration_ms < previous_best_ms)
+            FROM history
+            WHERE test_date >= CURRENT_DATE - INTERVAL '30 days'
+            """
+        )
+        row = cur.fetchone()
+        summary["test_results_30d"] = _safe_int(row[0])
+        summary["test_users_30d"] = _safe_int(row[1])
+        summary["personal_bests_30d"] = _safe_int(row[2])
+
     cur.close()
     conn.close()
     return {
@@ -712,6 +739,7 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             "swim_class_sessions": has_class_sessions,
             "swim_class_attendance": has_class_attendance,
             "swim_class_notices": has_class_notices,
+            "swim_test_results": has_test_results,
         },
         "summary": summary,
         "pool_distribution": pool_distribution,
@@ -749,6 +777,14 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                     f"활성 클럽 {summary['active_clubs']}개 · 반 {summary['active_classes']}개 · "
                     f"30일 일정 {summary['class_sessions_30d']}회 · 출석률 {summary['attendance_rate_30d']}% · "
                     f"활성 공지 {summary['active_notices']}건"
+                ),
+            },
+            {
+                "label": "테스트 세트·개인 최고기록",
+                "status": "운영 확인",
+                "detail": (
+                    f"최근 30일 시도 {summary['test_results_30d']}건 · "
+                    f"사용자 {summary['test_users_30d']}명 · 새 PB {summary['personal_bests_30d']}건"
                 ),
             },
         ],

@@ -471,3 +471,30 @@ class TestClubOperations:
         assert consecutive["level"] == "alert" and consecutive["label"] == "연속 결석"
         assert steady["level"] == "steady" and "80%" in steady["detail"]
         assert empty["level"] == "neutral" and "기록" in empty["label"]
+
+
+class TestBenchmarks:
+    def test_result_validation_separates_course_and_rejects_unknown_stroke(self):
+        from routers.benchmarks import TestResultCreateRequest, _validate_result
+
+        valid = TestResultCreateRequest(
+            test_date=date.today(), stroke_type=" 자유형 ", distance_m=100,
+            pool_length=25, duration_ms=65430,
+        )
+        assert _validate_result(valid) == ("자유형", None)
+
+        invalid_course = TestResultCreateRequest(
+            test_date=date.today(), stroke_type="자유형", distance_m=25,
+            pool_length=50, duration_ms=30000,
+        )
+        with pytest.raises(HTTPException) as course_error:
+            _validate_result(invalid_course)
+        assert course_error.value.status_code == 400
+
+        invalid_stroke = TestResultCreateRequest(
+            test_date=date.today(), stroke_type="자유수영", distance_m=100,
+            pool_length=25, duration_ms=70000,
+        )
+        with pytest.raises(HTTPException) as stroke_error:
+            _validate_result(invalid_stroke)
+        assert stroke_error.value.status_code == 400

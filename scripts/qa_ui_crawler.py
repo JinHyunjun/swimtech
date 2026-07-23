@@ -149,16 +149,16 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["P3 Training Advisor"],
     },
     "/training-log": {
-        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary"],
-        "texts": ["이번 달 목표 거리"],
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop"],
+        "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록"],
     },
     "/workout": {
         "selectors": ["#workout-progress", "#set-strip", "#current-set-card", "#timer-value", "#timer-toggle", "#rep-complete", "#execution-sheet", "#wake-lock-btn"],
         "texts": ["풀사이드 훈련", "훈련 일지에서 세트 선택"],
     },
     "/report": {
-        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill"],
-        "texts": ["평균 거리 (m)", "플랜 수행률"],
+        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs"],
+        "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
     "/plan": {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
@@ -177,7 +177,7 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
+        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.

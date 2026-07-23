@@ -523,6 +523,12 @@
     </div>
 
     <div class="summary-cards">
+      <div class="summary-card"><div class="label">30일 테스트 기록</div><div class="value" id="h-test-results">—</div></div>
+      <div class="summary-card"><div class="label">테스트 참여 사용자</div><div class="value" id="h-test-users">—</div></div>
+      <div class="summary-card"><div class="label">30일 새 PB</div><div class="value energy" id="h-personal-bests">—</div></div>
+    </div>
+
+    <div class="summary-cards">
       <div class="summary-card">
         <div class="label">활성 클럽</div>
         <div class="value" id="h-active-clubs">—</div>
@@ -917,6 +923,9 @@ async function loadTrainingHealth() {
     document.getElementById('h-readiness-users').textContent = fmtNumber(s.readiness_users_7d);
     document.getElementById('h-readiness-score').textContent = `${fmtNumber(s.readiness_avg_score_7d)}점`;
     document.getElementById('h-readiness-recovery').textContent = `${fmtNumber(s.readiness_recovery_rate_7d)}%`;
+    document.getElementById('h-test-results').textContent = fmtNumber(s.test_results_30d);
+    document.getElementById('h-test-users').textContent = fmtNumber(s.test_users_30d);
+    document.getElementById('h-personal-bests').textContent = fmtNumber(s.personal_bests_30d);
     document.getElementById('h-active-clubs').textContent = fmtNumber(s.active_clubs);
     document.getElementById('h-active-classes').textContent = fmtNumber(s.active_classes);
     document.getElementById('h-class-sessions').textContent = fmtNumber(s.class_sessions_30d);

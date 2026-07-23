@@ -250,6 +250,15 @@
       </div>
     </div>
 
+    <div class="plan-performance" id="benchmark-performance">
+      <div class="plan-performance-title">⏱ 테스트 세트·개인 최고기록</div>
+      <div class="plan-performance-grid">
+        <div class="plan-performance-card"><div class="plan-performance-value" id="benchmark-attempts">0회</div><div class="plan-performance-label">이번 달 테스트 시도</div></div>
+        <div class="plan-performance-card"><div class="plan-performance-value energy" id="benchmark-pbs">0회</div><div class="plan-performance-label">이번 달 새 PB</div></div>
+        <div class="plan-performance-card" style="grid-column:span 3;"><div class="plan-performance-label" id="benchmark-pb-list">새 개인 최고기록이 없습니다.</div></div>
+      </div>
+    </div>
+
     <!-- 차트: 영법별 도넛 -->
     <div class="chart-section">
       <div class="chart-title">영법별 거리 분포</div>
@@ -359,6 +368,7 @@ function showEmpty() {
   renderStrokeChart({freestyle:0,backstroke:0,breaststroke:0,butterfly:0,other:0});
   renderWeeklyChart([0,0,0,0,0]);
   renderPlanPerformance({});
+  renderBenchmarkPerformance({});
 }
 
 function render(d) {
@@ -390,6 +400,22 @@ function render(d) {
   renderStrokeChart(d.by_stroke);
   renderWeeklyChart(d.by_week);
   renderPlanPerformance(d.plan_performance || {});
+  renderBenchmarkPerformance(d.benchmark_performance || {});
+}
+
+function formatBenchmarkTime(ms) {
+  const total=Math.max(0,Number(ms||0));
+  const minutes=Math.floor(total/60000), seconds=Math.floor((total%60000)/1000), hundredths=Math.floor((total%1000)/10);
+  return `${minutes}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+}
+
+function renderBenchmarkPerformance(perf) {
+  const attempts=Number(perf.attempts||0), pbs=Number(perf.personal_bests||0), items=perf.pb_results||[];
+  document.getElementById('benchmark-attempts').textContent=`${attempts}회`;
+  document.getElementById('benchmark-pbs').textContent=`${pbs}회`;
+  document.getElementById('benchmark-pb-list').textContent=items.length
+    ? items.map(item=>`${item.stroke_type} ${Number(item.distance_m)}m · ${Number(item.pool_length)}m 풀 · ${formatBenchmarkTime(item.duration_ms)}${Number(item.improvement_ms||0)>0?` (${formatBenchmarkTime(item.improvement_ms)} 단축)`:''}`).join('  ·  ')
+    : '새 개인 최고기록이 없습니다.';
 }
 
 function clampRate(value) {

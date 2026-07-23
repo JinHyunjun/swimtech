@@ -27,6 +27,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     operations_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_05_class_operations.py"
     ).read_text(encoding="utf-8")
+    benchmark_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_06_swim_test_results.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -53,11 +56,15 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'down_revision: Union[str, None] = "20260723_04"' in operations_revision
     for table in ["swim_class_sessions", "swim_class_attendance", "swim_class_notices", "swim_class_notice_reads"]:
         assert f'"{table}"' in operations_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_05"' in main
+    assert 'revision: str = "20260723_06"' in benchmark_revision
+    assert 'down_revision: Union[str, None] = "20260723_05"' in benchmark_revision
+    assert '"swim_test_results"' in benchmark_revision
+    assert "duration_ms" in benchmark_revision and "pool_length" in benchmark_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_06"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_05"' in (
+    assert 'health.get("schema_revision") == "20260723_06"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -349,6 +356,33 @@ def test_class_schedule_attendance_and_notices_are_connected_end_to_end():
     assert "반 일정→출석→공지·읽음 권한 경계" in api_qa
     assert "코치 반 수행·출석 분석과 개인훈련 동의 경계" in api_qa
     assert '"#operations-overview"' in ui_qa and '"#attendance-modal"' in ui_qa
+
+
+def test_timed_test_sets_and_course_specific_personal_bests_are_connected_end_to_end():
+    api = (ROOT / "api" / "routers" / "benchmarks.py").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    log_page = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    report_api = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
+    report_page = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "include_router(benchmarks.router" in main
+    assert '@router.post("")' in api and '@router.get("")' in api and '@router.delete("/{result_id}")' in api
+    assert "stroke_type, distance_m, pool_length" in api
+    assert "previous_best_ms" in api and "improvement_ms" in api
+    assert "DELETE FROM swim_test_results WHERE id = %s AND customer_id = %s" in api
+    for selector in ["benchmark-section", "btn-open-benchmark", "benchmark-modal-backdrop"]:
+        assert f'id="{selector}"' in log_page
+    assert "benchmark_performance" in report_api and 'id="benchmark-performance"' in report_page
+    for metric in ["test_results_30d", "test_users_30d", "personal_bests_30d"]:
+        assert f'"{metric}"' in admin_api
+    for selector in ["h-test-results", "h-test-users", "h-personal-bests"]:
+        assert f'id="{selector}"' in admin_page
+    assert "테스트 세트 저장→코스별 PB 판정" in api_qa
+    assert '"#benchmark-section"' in ui_qa and '"#benchmark-performance"' in ui_qa
 
 
 def test_qa_scripts_cover_training_report_and_advisor_flows():

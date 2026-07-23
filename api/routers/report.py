@@ -70,6 +70,7 @@ def _empty_monthly_stats(year: int, month: int) -> dict:
         "growth_rate": 0.0,
         "streak": 0,
         "plan_performance": _empty_plan_performance(),
+        "benchmark_performance": _empty_benchmark_performance(),
     }
 
 
@@ -86,6 +87,10 @@ def _empty_plan_performance() -> dict:
         "goal_distance": 0,
         "goal_achievement_rate": 0,
     }
+
+
+def _empty_benchmark_performance() -> dict:
+    return {"attempts": 0, "personal_bests": 0, "pb_results": []}
 
 
 def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
@@ -117,11 +122,13 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
     all_dates = [r[0] for r in cur.fetchall()]
 
     plan_performance = _empty_plan_performance()
+    benchmark_performance = _empty_benchmark_performance()
     cur.execute(
         "SELECT to_regclass('public.plan_completions'), "
-        "to_regclass('public.training_goals'), to_regclass('public.training_log_sets')"
+        "to_regclass('public.training_goals'), to_regclass('public.training_log_sets'), "
+        "to_regclass('public.swim_test_results')"
     )
-    has_plan_completions, has_training_goals, has_training_log_sets = cur.fetchone()
+    has_plan_completions, has_training_goals, has_training_log_sets, has_test_results = cur.fetchone()
     if has_plan_completions:
         cycle_condition = """
             EXISTS (
@@ -183,6 +190,59 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
         grow = cur.fetchone()
         goal_distance = int(grow[0] or 0) if grow else 0
         plan_performance["goal_distance"] = goal_distance
+    if has_test_results:
+        cur.execute(
+            """
+            WITH history AS (
+                SELECT id, test_date, stroke_type, distance_m, pool_length, duration_ms,
+                       MIN(duration_ms) OVER (
+                           PARTITION BY stroke_type, distance_m, pool_length
+                           ORDER BY test_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                       ) AS previous_best_ms
+                FROM swim_test_results
+                WHERE customer_id = %s
+            )
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE previous_best_ms IS NULL OR duration_ms < previous_best_ms)
+            FROM history
+            WHERE EXTRACT(YEAR FROM test_date) = %s AND EXTRACT(MONTH FROM test_date) = %s
+            """,
+            (customer_id, year, month),
+        )
+        brow = cur.fetchone() or (0, 0)
+        cur.execute(
+            """
+            WITH history AS (
+                SELECT id, test_date, stroke_type, distance_m, pool_length, duration_ms,
+                       MIN(duration_ms) OVER (
+                           PARTITION BY stroke_type, distance_m, pool_length
+                           ORDER BY test_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                       ) AS previous_best_ms
+                FROM swim_test_results
+                WHERE customer_id = %s
+            )
+            SELECT test_date, stroke_type, distance_m, pool_length, duration_ms,
+                   previous_best_ms - duration_ms
+            FROM history
+            WHERE EXTRACT(YEAR FROM test_date) = %s AND EXTRACT(MONTH FROM test_date) = %s
+              AND (previous_best_ms IS NULL OR duration_ms < previous_best_ms)
+            ORDER BY test_date DESC, id DESC
+            LIMIT 5
+            """,
+            (customer_id, year, month),
+        )
+        benchmark_performance = {
+            "attempts": int(brow[0] or 0),
+            "personal_bests": int(brow[1] or 0),
+            "pb_results": [{
+                "test_date": row[0].isoformat(),
+                "stroke_type": row[1],
+                "distance_m": int(row[2]),
+                "pool_length": int(row[3]),
+                "duration_ms": int(row[4]),
+                "improvement_ms": int(row[5] or 0),
+            } for row in cur.fetchall()],
+        }
     cur.close()
     conn.close()
 
@@ -247,6 +307,7 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
         "growth_rate": growth_rate,
         "streak": max_streak,
         "plan_performance": plan_performance,
+        "benchmark_performance": benchmark_performance,
     }
 
 def _make_share_token(username: str, year: int, month: int, customer_id: int | None = None) -> str:

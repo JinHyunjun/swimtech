@@ -50,6 +50,27 @@
 .stat-value.energy { color: var(--energy); }
 .stat-label { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; }
 
+/* ── 테스트 세트·PB ── */
+.benchmark-section { background:var(--surface); border:.5px solid var(--border); border-radius:var(--radius-md); padding:16px; margin-bottom:24px; }
+.benchmark-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.benchmark-head h2 { margin:0; color:var(--text); font-size:var(--fs-body-lg); }
+.benchmark-head p { margin:4px 0 0; color:var(--muted); font-size:var(--fs-caption); }
+.benchmark-add { border:0; border-radius:var(--radius-sm); background:var(--energy); color:#fff; padding:8px 13px; font-weight:800; cursor:pointer; white-space:nowrap; }
+.benchmark-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.benchmark-metric { padding:10px; border-radius:var(--radius-sm); background:rgba(255,106,61,.08); border:.5px solid rgba(255,106,61,.2); }
+.benchmark-metric strong { display:block; color:var(--energy); font-size:var(--fs-body-lg); }
+.benchmark-metric span { color:var(--muted); font-size:var(--fs-caption); }
+.pb-grid { display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; margin-bottom:10px; }
+.pb-card { min-width:145px; padding:9px 10px; border-radius:var(--radius-sm); background:var(--bg); border:.5px solid var(--border); }
+.pb-card strong { display:block; color:var(--text); }
+.pb-card span { color:var(--muted); font-size:var(--fs-caption); }
+.benchmark-list { display:grid; gap:6px; }
+.benchmark-row { display:grid; grid-template-columns:90px 1fr auto auto; gap:10px; align-items:center; padding:9px 10px; border-top:.5px solid var(--border); color:var(--muted); font-size:var(--fs-caption); }
+.benchmark-row strong { color:var(--text); }
+.pb-pill { padding:3px 7px; border-radius:999px; background:rgba(255,106,61,.14); color:var(--energy); font-weight:900; }
+.benchmark-delete { border:0; background:none; color:var(--muted); cursor:pointer; }
+.benchmark-close { position:absolute; top:14px; right:14px; width:34px; height:34px; border:.5px solid var(--border); border-radius:50%; background:transparent; color:var(--muted); cursor:pointer; }
+
 /* ── 캘린더 ── */
 .cal-wrap {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
@@ -227,6 +248,9 @@ select.form-control option { background: var(--surface); }
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .tl-month-nav { display: flex !important; }
+  .benchmark-summary { grid-template-columns:1fr 1fr 1fr; }
+  .benchmark-row { grid-template-columns:1fr auto; }
+  .benchmark-row .benchmark-date { display:none; }
 }
 
 /* ── 월간 목표 ── */
@@ -330,6 +354,20 @@ select.form-control option { background: var(--surface); }
         </div>
       </div>
 
+      <section class="benchmark-section" id="benchmark-section">
+        <div class="benchmark-head">
+          <div><h2>⏱ 테스트 세트·개인 최고기록</h2><p>25m·50m 풀 기록을 따로 비교해 실제 향상 폭을 확인합니다.</p></div>
+          <button class="benchmark-add" id="btn-open-benchmark" type="button">+ 테스트 기록</button>
+        </div>
+        <div class="benchmark-summary">
+          <div class="benchmark-metric"><strong id="benchmark-attempts">0</strong><span>이번 달 시도</span></div>
+          <div class="benchmark-metric"><strong id="benchmark-pbs">0</strong><span>이번 달 PB</span></div>
+          <div class="benchmark-metric"><strong id="benchmark-events">0</strong><span>측정 종목</span></div>
+        </div>
+        <div class="pb-grid" id="benchmark-bests"><div class="log-empty" style="padding:12px;">아직 최고기록이 없습니다.</div></div>
+        <div class="benchmark-list" id="benchmark-history"></div>
+      </section>
+
       <!-- 주간 거리 차트 -->
       <div class="chart-wrap">
         <div class="chart-title">이번 달 누적 거리 추이 (m)</div>
@@ -366,6 +404,27 @@ select.form-control option { background: var(--surface); }
       <button class="btn-cancel" onclick="closeGoalModal()">취소</button>
       <button class="btn-submit" onclick="saveGoal()">저장</button>
     </div>
+  </div>
+</div>
+
+<!-- 테스트 세트 기록 모달 -->
+<div class="modal-backdrop hidden" id="benchmark-modal-backdrop">
+  <div class="modal-box" style="max-width:430px;position:relative;">
+    <button class="benchmark-close modal-close" type="button" aria-label="닫기" onclick="closeBenchmarkModal()">✕</button>
+    <div class="modal-title">테스트 세트 기록</div>
+    <div class="form-row"><label class="form-label" for="b-date">측정 날짜</label><input class="form-control" type="date" id="b-date"></div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label" for="b-stroke">영법</label><select class="form-control" id="b-stroke"><option>자유형</option><option>배영</option><option>평영</option><option>접영</option><option>혼영</option></select></div>
+      <div class="form-row"><label class="form-label" for="b-pool">풀 길이</label><select class="form-control" id="b-pool"><option value="25">25m</option><option value="50">50m</option></select></div>
+    </div>
+    <div class="form-row"><label class="form-label" for="b-distance">테스트 거리</label><select class="form-control" id="b-distance"><option value="25">25m</option><option value="50">50m</option><option value="100" selected>100m</option><option value="200">200m</option><option value="400">400m</option><option value="800">800m</option><option value="1500">1,500m</option></select></div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label" for="b-minutes">분</label><input class="form-control" type="number" id="b-minutes" min="0" max="1439" value="1"></div>
+      <div class="form-row"><label class="form-label" for="b-seconds">초 (소수 둘째 자리)</label><input class="form-control" type="number" id="b-seconds" min="0" max="59.99" step="0.01" value="30.00"></div>
+    </div>
+    <div class="form-row"><label class="form-label" for="b-notes">메모 (선택)</label><input class="form-control" id="b-notes" maxlength="300" placeholder="예: 푸시 스타트, 오리발 없음"></div>
+    <div id="benchmark-error" style="display:none;color:var(--red);font-size:var(--fs-caption);"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="btn-benchmark-cancel" type="button">취소</button><button class="btn-submit" id="btn-benchmark-save" type="button">기록 저장</button></div>
   </div>
 </div>
 
@@ -545,7 +604,7 @@ document.getElementById('next-month').onclick = () => {
 // ── 전체 새로 고침 ────────────────────────────────────────
 async function refresh() {
   updateMonthLabel();
-  await Promise.all([loadStats(), loadLogs(), loadStreak(), loadGoal()]);
+  await Promise.all([loadStats(), loadLogs(), loadStreak(), loadGoal(), loadBenchmarks()]);
 }
 
 function updateMonthLabel() {
@@ -729,8 +788,54 @@ function renderLogList(logs) {
 }
 
 function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+function formatTestTime(ms) {
+  const total = Math.max(0,Number(ms || 0));
+  const minutes = Math.floor(total / 60000);
+  const seconds = Math.floor((total % 60000) / 1000);
+  const hundredths = Math.floor((total % 1000) / 10);
+  return `${minutes}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+}
+
+async function loadBenchmarks() {
+  try {
+    const r = await fetch(`/api/benchmarks?year=${currentYear}&month=${currentMonth}&limit=100`, {credentials:'include'});
+    if (!r.ok) return;
+    const data = await r.json();
+    const summary = data.summary || {};
+    document.getElementById('benchmark-attempts').textContent = Number(summary.attempts || 0);
+    document.getElementById('benchmark-pbs').textContent = Number(summary.personal_bests || 0);
+    document.getElementById('benchmark-events').textContent = Number(summary.events || 0);
+    const bests = data.bests || [];
+    document.getElementById('benchmark-bests').innerHTML = bests.length ? bests.map(item => `<div class="pb-card"><strong>${escHtml(item.stroke_type)} ${Number(item.distance_m)}m</strong><span>${Number(item.pool_length)}m 풀 · ${formatTestTime(item.duration_ms)}</span></div>`).join('') : '<div class="log-empty" style="padding:12px;">아직 최고기록이 없습니다.</div>';
+    const results = data.results || [];
+    document.getElementById('benchmark-history').innerHTML = results.length ? results.map(item => `<div class="benchmark-row"><span class="benchmark-date">${escHtml(item.test_date)}</span><strong>${escHtml(item.stroke_type)} ${Number(item.distance_m)}m · ${formatTestTime(item.duration_ms)}</strong>${item.is_personal_best?'<span class="pb-pill">PB</span>':'<span></span>'}<button class="benchmark-delete" type="button" data-benchmark-id="${Number(item.id)}" aria-label="테스트 기록 삭제">✕</button></div>`).join('') : '<div class="log-empty" style="padding:14px;">이번 달 테스트 기록이 없습니다.</div>';
+    document.querySelectorAll('[data-benchmark-id]').forEach(button => button.onclick=()=>deleteBenchmark(Number(button.dataset.benchmarkId)));
+  } catch {}
+}
+
+function openBenchmarkModal() {
+  document.getElementById('b-date').value = todayStr();
+  document.getElementById('benchmark-error').style.display = 'none';
+  document.getElementById('benchmark-modal-backdrop').classList.remove('hidden');
+}
+function closeBenchmarkModal() { document.getElementById('benchmark-modal-backdrop').classList.add('hidden'); }
+async function saveBenchmark() {
+  const minutes=Number(document.getElementById('b-minutes').value||0);
+  const seconds=Number(document.getElementById('b-seconds').value||0);
+  const durationMs=Math.round((minutes*60+seconds)*1000);
+  const error=document.getElementById('benchmark-error');
+  if(!document.getElementById('b-date').value||durationMs<1000||seconds<0||seconds>=60){error.textContent='날짜와 1초 이상의 올바른 측정 시간을 입력해주세요.';error.style.display='block';return;}
+  const button=document.getElementById('btn-benchmark-save'); button.disabled=true;
+  try {
+    const r=await fetch('/api/benchmarks',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({test_date:document.getElementById('b-date').value,stroke_type:document.getElementById('b-stroke').value,distance_m:Number(document.getElementById('b-distance').value),pool_length:Number(document.getElementById('b-pool').value),duration_ms:durationMs,notes:document.getElementById('b-notes').value.trim()||null})});
+    const data=await r.json(); if(!r.ok)throw new Error(data.detail||'저장하지 못했습니다.');
+    closeBenchmarkModal(); await loadBenchmarks(); alert(data.is_personal_best?(data.previous_best_ms?`🎉 ${formatTestTime(data.improvement_ms)} 단축한 새 개인 최고기록입니다!`:'🎉 첫 개인 최고기록이 등록됐습니다!'):'테스트 기록을 저장했습니다.');
+  } catch(e){error.textContent=e.message||'저장하지 못했습니다.';error.style.display='block';} finally {button.disabled=false;}
+}
+async function deleteBenchmark(id){if(!confirm('이 테스트 기록을 삭제할까요?'))return;const r=await fetch(`/api/benchmarks/${id}`,{method:'DELETE',credentials:'include'});if(!r.ok){alert('삭제하지 못했습니다.');return;}loadBenchmarks();}
 
 function formatSetCycle(seconds) {
   const total = Number(seconds || 0);
@@ -1236,6 +1341,11 @@ async function saveGoal() {
 }
 
 // ── 초기 로드 ─────────────────────────────────────────────
+document.getElementById('btn-open-benchmark').onclick = openBenchmarkModal;
+document.getElementById('btn-benchmark-cancel').onclick = closeBenchmarkModal;
+document.getElementById('btn-benchmark-save').onclick = saveBenchmark;
+document.getElementById('benchmark-modal-backdrop').addEventListener('click',e=>{if(e.target.id==='benchmark-modal-backdrop')closeBenchmarkModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeBenchmarkModal();});
 refresh();
 if (new URLSearchParams(window.location.search).get('quick') === '1') {
   window.history.replaceState({}, '', '/training-log');
