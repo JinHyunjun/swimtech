@@ -188,16 +188,14 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - Jira 웹훅은 `JIRA_WEBHOOK_SECRET`을 사용한 Atlassian 형식 HMAC을 검증한다.
 - 외부 API 오류에 토큰·응답 본문 같은 비밀값을 노출하지 않는다.
 
-## 시작 시 스키마 보완
+## DB 스키마 버전 관리
 
-`api/main.py`의 시작 이벤트와 일부 라우터는 필요한 테이블·컬럼을 `CREATE TABLE IF NOT EXISTS`, `ALTER TABLE ... IF NOT EXISTS`로 보완한다. 기본 스키마는 `db/init.sql`에 있다.
-
-현재는 정식 버전 마이그레이션 도구보다 런타임 보완 SQL 비중이 높다. 스키마 변경이 커질수록 다음을 권장한다.
-
-1. Alembic 버전 마이그레이션을 단일 기준으로 전환
-2. Render 배포 전 마이그레이션 단계 분리
-3. 선택 테이블의 0값 폴백과 실제 누락을 운영 지표에서 구분
-4. 탈퇴·보존 정책과 FK cascade를 스키마 수준에서 명확히 정의
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB는 `20260723_01`을 기준 리비전으로 사용한다.
+- Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
+- Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
+- `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.
+- GitHub Actions 핵심 게이트는 `alembic heads`를 실행해 분기된 migration head를 방지한다.
+- `db/init.sql`과 일부 라우터의 `IF NOT EXISTS`는 도입 이전 스키마 호환용이다. 신규 변경은 Alembic 리비전에만 추가한다.
 
 ## 실패 격리
 

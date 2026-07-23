@@ -167,7 +167,7 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 | --- | --- |
 | Frontend | HTML, CSS, Vanilla JavaScript, Chart.js, Kakao Maps SDK |
 | Backend | FastAPI, Pydantic, psycopg2, JWT 쿠키 인증, SlowAPI |
-| Database | PostgreSQL · Neon |
+| Database | PostgreSQL · Neon · Alembic |
 | AI | Google Gemini, 구조화 출력, 규칙 기반 폴백 |
 | Infra | Vercel, Render, GitHub Actions |
 | Collaboration/Ops | Jira Cloud REST API·Webhook, Notion 변경 이력 |
@@ -186,6 +186,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 | FastAPI | Python으로 API 서버를 만드는 프레임워크 | 로그인, 훈련 기록, 코치 연동, 커뮤니티, 관리자 API 처리 |
 | Pydantic | 서버로 들어오는 데이터의 형식을 검사하는 도구 | 잘못된 요청을 막고 AI가 만든 JSON 결과도 구조화해 검증 |
 | Neon PostgreSQL | 클라우드 PostgreSQL 데이터베이스 | 회원, 훈련 일지, 플랜, 리포트, 코치-학생 관계, 커뮤니티 데이터 저장 |
+| Alembic | 데이터베이스 변경 이력을 순서대로 적용하는 도구 | Render와 FastAPI 시작 전에 승인된 스키마 리비전을 적용하고 health에서 버전을 확인 |
 | psycopg2 | Python 서버가 PostgreSQL과 대화하는 연결 도구 | FastAPI 라우터에서 SQL을 실행 |
 | JWT HttpOnly Cookie | 로그인 상태를 안전하게 유지하는 방식 | 사용자가 새로고침해도 로그인 상태를 유지하고 JavaScript 직접 접근을 줄임 |
 | SlowAPI | 요청을 너무 많이 보내는 사용자를 제한하는 도구 | AI 채팅, 코치 AI 생성 등 비용이 생길 수 있는 API 호출 보호 |

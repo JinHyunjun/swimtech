@@ -1,6 +1,6 @@
 # SwimMate 배포 가이드
 
-> 기준일: 2026-07-20
+> 기준일: 2026-07-23
 
 사용자 표시 이름은 SwimMate지만 기존 인프라 식별자와 URL에는 `swimtech`가 남아 있다. URL·Render 서비스·쿠키 이름을 바꾸는 작업은 호환성과 외부 콘솔 설정을 함께 변경해야 하므로 이 문서 갱신 범위에서는 유지한다.
 
@@ -64,7 +64,7 @@ runtime: python
 plan: free
 rootDir: api
 buildCommand: pip install -r requirements.txt
-startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+startCommand: alembic -c alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
 healthCheckPath: /api/health
 autoDeploy: true
 ```
@@ -111,11 +111,13 @@ Render 공식 문서 기준 Free Web Service는 15분 동안 인바운드 HTTP/W
 
 1. Neon 프로젝트와 데이터베이스를 만든다.
 2. pooled connection string을 `DATABASE_URL`로 등록한다.
-3. 초기 환경은 `db/init.sql`을 적용한다.
-4. 앱 시작 시 `api/main.py`와 라우터가 추가 테이블·컬럼을 보완한다.
-5. 배포 후 관리자 훈련 운영 화면의 테이블 상태와 로그를 확인한다.
+3. 기존 운영 스키마는 Alembic 기준 리비전 `20260723_01`로 등록되어 있다.
+4. Render 시작 명령과 FastAPI lifespan이 모두 `alembic upgrade head`를 보장하며, 동시에 시작돼도 PostgreSQL advisory lock으로 직렬화한다.
+5. `/api/health`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
+6. 새 스키마 변경은 `api/alembic/versions/`에 순차 리비전으로 추가하고 `EXPECTED_SCHEMA_REVISION`과 운영 QA 기대값을 함께 갱신한다.
+7. 배포 전 `python -m alembic -c api/alembic.ini heads`가 단일 head인지 확인하고, 운영 API/UI 품질 게이트를 통과한 뒤 완료 처리한다.
 
-현재는 런타임 `IF NOT EXISTS` 마이그레이션이 많다. 운영 데이터가 중요해질수록 Alembic 버전 마이그레이션, 배포 전 백업, 스키마 롤백 절차를 별도로 둬야 한다.
+`db/init.sql`과 라우터의 일부 `IF NOT EXISTS` SQL은 Alembic 도입 이전 환경과의 호환용으로 남아 있다. 앞으로 추가되는 테이블·컬럼은 런타임 SQL이 아니라 Alembic 리비전을 기준으로 관리한다.
 
 Neon 무료 한도는 변경될 수 있으므로 <https://neon.com/pricing>과 프로젝트 Usage 화면을 기준으로 판단한다.
 
