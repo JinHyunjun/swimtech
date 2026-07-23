@@ -170,11 +170,13 @@
 .set-preview-item + .set-preview-item { border-top: 0.5px solid rgba(255,255,255,.06); }
 .set-preview-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .set-preview-cycle { color: var(--blue); white-space: nowrap; }
-.log-actions { display: flex; gap: 6px; margin-left: auto; }
-.btn-log-edit, .btn-log-del {
+.log-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+.btn-log-edit, .btn-log-del, .btn-log-workout {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
-  border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--fs-caption); cursor: pointer; transition: all .2s;
+  border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--fs-caption); cursor: pointer; transition: all .2s; text-decoration:none;
 }
+.btn-log-workout { border-color:rgba(72,202,228,.4); color:var(--cyan); font-weight:700; }
+.btn-log-workout:hover { border-color:var(--cyan); background:rgba(72,202,228,.08); }
 .btn-log-edit:hover { border-color: var(--blue); color: var(--blue); }
 .btn-log-del:hover  { border-color: var(--red);  color: var(--red); }
 
@@ -709,6 +711,7 @@ function renderLogList(logs) {
           ${memoHtml}
         </div>
         <div class="log-actions">
+          ${Number(setSummary.set_count || 0) ? `<a class="btn-log-workout" href="/workout?log=${l.id}">풀사이드 실행</a>` : ''}
           <button class="btn-log-edit" data-id="${l.id}">수정</button>
           <button class="btn-log-del" data-id="${l.id}">삭제</button>
         </div>
@@ -1134,13 +1137,14 @@ async function saveLog() {
     const d = await r.json();
     if (!r.ok) { showModalError(d.detail || '저장 실패'); return; }
     const planCompleted = Boolean(d.plan_completed);
+    const hasTrainingSets = pendingTrainingSets.length > 0;
     closeModal();
     refresh();
-    showReportToast(body.log_date, planCompleted);
+    showReportToast(body.log_date, planCompleted, hasTrainingSets ? Number(d.id || editId) : null);
   } catch { showModalError('네트워크 오류가 발생했습니다.'); }
 }
 
-function showReportToast(logDate, planCompleted = false) {
+function showReportToast(logDate, planCompleted = false, workoutLogId = null) {
   const existing = document.getElementById('report-toast');
   if (existing) existing.remove();
   const ym = logDate ? logDate.slice(0, 7) : '';
@@ -1153,6 +1157,7 @@ function showReportToast(logDate, planCompleted = false) {
     animation:slideUp .3s ease;`;
   toast.innerHTML = `
     <span>${planCompleted ? '✅ 훈련 기록과 플랜 완료 상태가 함께 저장되었습니다.' : '📊 월간 리포트가 자동으로 업데이트됩니다.'}</span>
+    ${workoutLogId ? `<a href="/workout?log=${workoutLogId}" style="color:var(--cyan);font-weight:700;text-decoration:none;white-space:nowrap;">풀사이드 시작 →</a>` : ''}
     <a href="/report" style="color:var(--blue);font-weight:600;text-decoration:none;white-space:nowrap;">리포트 보기 →</a>
     <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size: var(--fs-body-lg);padding:0;line-height:1;">✕</button>`;
   const style = document.createElement('style');

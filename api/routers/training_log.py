@@ -60,6 +60,18 @@ class TrainingSetCollectionRequest(BaseModel):
     sync_total_distance: bool = True
 
 
+class TrainingSetExecutionRequest(BaseModel):
+    """Poolside execution values for one existing training set."""
+
+    completed_reps: int = Field(default=0, ge=0, le=300)
+    completed_distance_m: Optional[int] = Field(default=None, ge=0, le=200000)
+    actual_cycle_seconds: Optional[int] = Field(default=None, ge=1, le=7200)
+    rpe: Optional[int] = Field(default=None, ge=1, le=10)
+    status: str = "modified"
+    notes: Optional[str] = None
+    sync_total_distance: bool = True
+
+
 _SET_PHASES = {"warmup", "drill", "main", "cooldown", "other"}
 _SET_STATUSES = {"pending", "completed", "skipped", "modified"}
 
@@ -417,6 +429,107 @@ def replace_log_sets(log_id: int, req: TrainingSetCollectionRequest, request: Re
     except Exception as exc:
         conn.rollback()
         raise HTTPException(500, f"세트 기록 수정 오류: {exc}")
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.patch("/{log_id}/sets/{set_id}")
+def update_log_set_execution(
+    log_id: int,
+    set_id: int,
+    req: TrainingSetExecutionRequest,
+    request: Request,
+):
+    """Save one poolside set result without replacing the rest of the workout."""
+    cid = _get_customer_id(request)
+    if not cid:
+        raise HTTPException(401, "로그인이 필요합니다.")
+
+    status = (req.status or "modified").strip().lower()
+    notes = (req.notes or "").strip() or None
+    if status not in _SET_STATUSES:
+        raise HTTPException(400, "세트 상태 값이 올바르지 않습니다.")
+    if notes and len(notes) > 500:
+        raise HTTPException(400, "세트 메모는 500자 이하여야 합니다.")
+
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT customer_id FROM training_logs WHERE id = %s FOR UPDATE", (log_id,))
+        log_row = cur.fetchone()
+        if not log_row:
+            raise HTTPException(404, "훈련 기록을 찾을 수 없습니다.")
+        if log_row[0] != cid:
+            raise HTTPException(403, "이 훈련 기록을 수정할 권한이 없습니다.")
+
+        cur.execute(
+            """
+            SELECT target_reps, target_distance_m
+            FROM training_log_sets
+            WHERE id = %s AND training_log_id = %s AND customer_id = %s
+            FOR UPDATE
+            """,
+            (set_id, log_id, cid),
+        )
+        set_row = cur.fetchone()
+        if not set_row:
+            raise HTTPException(404, "훈련 세트를 찾을 수 없습니다.")
+
+        completed_reps = int(req.completed_reps or 0)
+        completed_distance = (
+            completed_reps * int(set_row[1] or 0)
+            if req.completed_distance_m is None
+            else int(req.completed_distance_m)
+        )
+        if status == "completed" and completed_distance <= 0:
+            raise HTTPException(400, "완료한 세트의 실제 수행 거리를 입력해주세요.")
+
+        cur.execute(
+            """
+            UPDATE training_log_sets
+            SET completed_reps = %s,
+                completed_distance_m = %s,
+                actual_cycle_seconds = %s,
+                rpe = %s,
+                status = %s,
+                notes = %s,
+                updated_at = NOW()
+            WHERE id = %s AND training_log_id = %s AND customer_id = %s
+            """,
+            (
+                completed_reps,
+                completed_distance,
+                req.actual_cycle_seconds,
+                req.rpe,
+                status,
+                notes,
+                set_id,
+                log_id,
+                cid,
+            ),
+        )
+        items = _fetch_training_sets(cur, [log_id]).get(log_id, [])
+        summary = _set_summary(items)
+        if req.sync_total_distance and summary["completed_distance_m"] > 0:
+            cur.execute(
+                "UPDATE training_logs SET total_distance = %s, updated_at = NOW() WHERE id = %s",
+                (summary["completed_distance_m"], log_id),
+            )
+        conn.commit()
+        updated_set = next((item for item in items if item["id"] == set_id), None)
+        return {
+            "status": "updated",
+            "training_log_id": log_id,
+            "set": updated_set,
+            "summary": summary,
+        }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise HTTPException(500, f"세트 수행 저장 오류: {exc}")
     finally:
         cur.close()
         conn.close()

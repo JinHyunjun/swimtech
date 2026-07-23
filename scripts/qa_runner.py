@@ -294,7 +294,7 @@ def main():
     # ── 7. 메인 화면/라우팅 ─────────────────────────────
     print("\n[7-8] 화면/라우팅 (정적 페이지 200 확인)")
     pages = {"/landing": "랜딩", "/dashboard": "대시보드", "/plan": "플랜",
-             "/training-log": "훈련일지", "/report": "리포트", "/pool": "수영장",
+             "/training-log": "훈련일지", "/workout": "풀사이드 훈련", "/report": "리포트", "/pool": "수영장",
              "/community": "커뮤니티", "/challenge": "챌린지", "/badges": "뱃지"}
     bad = []
     for path, label in pages.items():
@@ -338,6 +338,32 @@ def main():
     rk = sess.get(f"{BASE}/api/training-log/streak", timeout=60)
     set_get = sess.get(f"{BASE}/api/training-log/{log_id}/sets", timeout=60) if log_id else None
     set_json = jget(set_get) if set_get else {}
+    set_items = set_json.get("sets") or []
+    execution_set_id = set_items[1].get("id") if len(set_items) > 1 else None
+    set_execution = sess.patch(f"{BASE}/api/training-log/{log_id}/sets/{execution_set_id}", json={
+        "completed_reps": 3,
+        "completed_distance_m": 600,
+        "actual_cycle_seconds": 205,
+        "rpe": 7,
+        "status": "modified",
+        "notes": "QA 풀사이드 수행",
+        "sync_total_distance": True,
+    }, timeout=60) if log_id and execution_set_id else None
+    execution_json = jget(set_execution) if set_execution else {}
+    execution_item = execution_json.get("set") or {}
+    execution_ok = (
+        bool(set_execution) and set_execution.status_code == 200
+        and to_int(execution_item.get("completed_reps")) == 3
+        and to_int(execution_item.get("completed_distance_m")) == 600
+        and to_int(execution_item.get("actual_cycle_seconds")) == 205
+        and to_int(execution_item.get("rpe")) == 7
+        and execution_item.get("status") == "modified"
+        and to_int((execution_json.get("summary") or {}).get("completed_distance_m")) == 1100
+    )
+    rec("10d", "풀사이드 단일 세트 수행 저장", execution_ok,
+        f"patch {getattr(set_execution, 'status_code', '-')}, set={execution_set_id}, "
+        f"reps={execution_item.get('completed_reps')}, distance={execution_item.get('completed_distance_m')}, "
+        f"cycle={execution_item.get('actual_cycle_seconds')}, rpe={execution_item.get('rpe')}")
     set_replace = sess.put(f"{BASE}/api/training-log/{log_id}/sets", json={
         "sync_total_distance": True,
         "sets": [

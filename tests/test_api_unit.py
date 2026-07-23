@@ -190,7 +190,104 @@ class TestNotificationRouterMethods:
 
 
 # ---------------------------------------------------------------------------
-# 6. Registered coach code and AI class-operation templates
+# 6. Poolside set execution
+# ---------------------------------------------------------------------------
+class TestPoolsideSetExecution:
+    class Cursor:
+        def __init__(self, rows):
+            self.rows = iter(rows)
+            self.executed = []
+
+        def execute(self, query, params=None):
+            self.executed.append((query, params))
+
+        def fetchone(self):
+            return next(self.rows, None)
+
+        def close(self):
+            pass
+
+    class Connection:
+        def __init__(self, rows):
+            self.cursor_instance = TestPoolsideSetExecution.Cursor(rows)
+            self.committed = False
+            self.rolled_back = False
+
+        def cursor(self):
+            return self.cursor_instance
+
+        def commit(self):
+            self.committed = True
+
+        def rollback(self):
+            self.rolled_back = True
+
+        def close(self):
+            pass
+
+    def test_single_set_result_is_saved_and_total_distance_is_synced(self, monkeypatch):
+        from routers import training_log
+
+        connection = self.Connection([(9,), (4, 50)])
+        updated_sets = [{
+            "id": 20,
+            "target_reps": 4,
+            "target_distance_m": 50,
+            "planned_distance_m": 200,
+            "completed_reps": 3,
+            "completed_distance_m": 150,
+            "actual_cycle_seconds": 75,
+            "rpe": 6,
+            "status": "modified",
+            "notes": "호흡 유지",
+        }]
+        monkeypatch.setattr(training_log, "_get_customer_id", lambda request: 9)
+        monkeypatch.setattr(training_log, "_get_db", lambda: connection)
+        monkeypatch.setattr(training_log, "_fetch_training_sets", lambda cur, ids: {10: updated_sets})
+
+        result = training_log.update_log_set_execution(
+            10,
+            20,
+            training_log.TrainingSetExecutionRequest(
+                completed_reps=3,
+                completed_distance_m=150,
+                actual_cycle_seconds=75,
+                rpe=6,
+                status="modified",
+                notes="호흡 유지",
+            ),
+            object(),
+        )
+
+        queries = "\n".join(query for query, _ in connection.cursor_instance.executed)
+        assert result["set"]["id"] == 20
+        assert result["summary"]["completed_distance_m"] == 150
+        assert "UPDATE training_log_sets" in queries
+        assert "UPDATE training_logs SET total_distance" in queries
+        assert connection.committed is True
+        assert connection.rolled_back is False
+
+    def test_single_set_result_rejects_another_users_log(self, monkeypatch):
+        from routers import training_log
+
+        connection = self.Connection([(77,)])
+        monkeypatch.setattr(training_log, "_get_customer_id", lambda request: 9)
+        monkeypatch.setattr(training_log, "_get_db", lambda: connection)
+
+        with pytest.raises(HTTPException) as exc_info:
+            training_log.update_log_set_execution(
+                10,
+                20,
+                training_log.TrainingSetExecutionRequest(completed_reps=1, status="modified"),
+                object(),
+            )
+
+        assert exc_info.value.status_code == 403
+        assert connection.rolled_back is True
+
+
+# ---------------------------------------------------------------------------
+# 7. Registered coach code and AI class-operation templates
 # ---------------------------------------------------------------------------
 class TestCoachAiClassOperations:
     def test_coach_registration_does_not_require_credentials(self):

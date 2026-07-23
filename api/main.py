@@ -569,6 +569,13 @@ def training_log_page(request: Request):
     if redir: return redir
     return _serve("training_log.html")
 
+# 풀사이드 세트 실행 화면 (로그인 필요)
+@app.get("/workout")
+def workout_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("workout.html")
+
 # 코치 연동 페이지 (로그인 필요)
 @app.get("/coach")
 def coach_page(request: Request):

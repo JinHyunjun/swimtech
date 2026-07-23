@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SwimMate — 풀사이드 훈련</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#06121c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+* { box-sizing: border-box; }
+body { min-height:100vh; overscroll-behavior:none; }
+button, input, select, textarea { font:inherit; }
+.workout-shell { min-height:100vh; display:flex; flex-direction:column; background:radial-gradient(circle at 50% -10%,rgba(0,180,216,.2),transparent 38%),var(--bg); }
+.workout-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px max(14px,env(safe-area-inset-left)); border-bottom:.5px solid var(--border); background:rgba(6,18,28,.9); backdrop-filter:blur(14px); position:sticky; top:0; z-index:20; }
+.workout-brand { min-width:0; }
+.workout-brand strong { display:block; color:var(--text); font-size:var(--fs-body); }
+.workout-brand span { display:block; color:var(--muted); font-size:var(--fs-caption); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workout-header-btn { min-height:42px; padding:8px 12px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text); background:var(--surface); text-decoration:none; cursor:pointer; }
+.workout-header-btn.active { color:var(--green); border-color:rgba(74,222,128,.45); }
+.workout-main { width:min(920px,100%); margin:0 auto; padding:18px 14px calc(32px + env(safe-area-inset-bottom)); flex:1; }
+.workout-state { display:none; min-height:55vh; align-items:center; justify-content:center; text-align:center; }
+.workout-state.visible { display:flex; }
+.state-card { width:min(520px,100%); padding:28px 22px; border:.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); }
+.state-card h1 { margin:0 0 8px; color:var(--text); font-size:var(--fs-heading); }
+.state-card p { margin:0 0 20px; color:var(--muted); line-height:1.6; }
+.state-card a { display:inline-flex; min-height:48px; align-items:center; justify-content:center; padding:10px 18px; border-radius:var(--radius-sm); background:var(--blue); color:var(--bg); font-weight:800; text-decoration:none; }
+.workout-content { display:none; }
+.workout-content.visible { display:block; }
+.progress-card { padding:14px 16px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); margin-bottom:14px; }
+.progress-head { display:flex; justify-content:space-between; gap:12px; align-items:center; color:var(--muted); font-size:var(--fs-caption); }
+.progress-head strong { color:var(--text); font-size:var(--fs-body); }
+.progress-track { height:10px; margin:11px 0 8px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; }
+.progress-fill { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--blue),var(--green)); transition:width .35s ease; }
+.progress-metrics { display:flex; justify-content:space-between; color:var(--muted); font-size:var(--fs-caption); }
+.set-strip { display:flex; gap:8px; overflow-x:auto; padding:1px 1px 10px; margin-bottom:4px; scrollbar-width:thin; }
+.set-chip { flex:0 0 auto; min-width:48px; min-height:42px; padding:7px 10px; border:.5px solid var(--border); border-radius:999px; background:var(--surface); color:var(--muted); cursor:pointer; }
+.set-chip.current { border-color:var(--blue); color:var(--blue); box-shadow:0 0 0 2px rgba(0,180,216,.12); }
+.set-chip.completed { border-color:rgba(74,222,128,.4); color:var(--green); }
+.set-chip.skipped { opacity:.55; text-decoration:line-through; }
+.set-card { position:relative; overflow:hidden; padding:clamp(20px,4vw,34px); border:.5px solid rgba(72,202,228,.34); border-radius:var(--radius-lg); background:linear-gradient(150deg,rgba(0,180,216,.13),var(--surface) 52%); box-shadow:0 18px 50px rgba(0,0,0,.2); }
+.set-phase { color:var(--cyan); font-size:var(--fs-caption); font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+.set-position { position:absolute; top:20px; right:22px; color:var(--muted); font-size:var(--fs-caption); }
+.set-title { margin:10px 0 5px; color:var(--text); font-size:clamp(27px,6vw,48px); font-weight:900; font-style:italic; line-height:1.12; letter-spacing:-.035em; word-break:keep-all; }
+.set-target { color:var(--muted); font-size:clamp(16px,3vw,21px); }
+.set-target strong { color:var(--blue); }
+.timer-wrap { text-align:center; padding:clamp(22px,5vw,38px) 0 18px; }
+.timer-label { color:var(--muted); font-size:var(--fs-caption); margin-bottom:5px; }
+.timer-value { color:var(--text); font-variant-numeric:tabular-nums; font-size:clamp(70px,19vw,150px); font-weight:900; font-style:italic; letter-spacing:-.06em; line-height:.95; text-shadow:0 0 38px rgba(72,202,228,.14); }
+.timer-value.ending { color:var(--energy); }
+.timer-value.done { color:var(--green); }
+.rep-status { display:flex; align-items:center; justify-content:center; gap:12px; color:var(--muted); }
+.rep-status strong { color:var(--cyan); font-size:clamp(23px,4vw,34px); }
+.primary-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:10px; margin-top:20px; }
+.action-btn { min-height:68px; border-radius:var(--radius-md); border:.5px solid var(--border); background:var(--surface2); color:var(--text); font-weight:900; cursor:pointer; touch-action:manipulation; }
+.action-btn:disabled { opacity:.45; cursor:wait; }
+.action-btn.timer { border-color:var(--blue); color:var(--blue); }
+.action-btn.timer.running { background:rgba(251,146,60,.13); border-color:var(--energy); color:var(--energy); }
+.action-btn.lap { background:var(--blue); border-color:var(--blue); color:var(--bg); font-size:var(--fs-body-lg); }
+.secondary-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+.secondary-actions button { min-height:50px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:transparent; color:var(--muted); cursor:pointer; }
+.secondary-actions button:hover { color:var(--blue); border-color:var(--blue); }
+.next-preview { margin-top:14px; padding:13px 15px; border:.5px solid var(--border); border-radius:var(--radius-md); background:rgba(255,255,255,.025); color:var(--muted); font-size:var(--fs-caption); line-height:1.5; }
+.next-preview strong { color:var(--text); }
+.save-status { min-height:22px; margin-top:9px; text-align:center; color:var(--muted); font-size:var(--fs-caption); }
+.save-status.success { color:var(--green); }.save-status.error { color:var(--red); }
+.complete-card { display:none; margin-top:14px; padding:22px; text-align:center; border:.5px solid rgba(74,222,128,.4); border-radius:var(--radius-lg); background:rgba(74,222,128,.08); }
+.complete-card.visible { display:block; }
+.complete-card h2 { margin:0 0 6px; color:var(--green); font-size:var(--fs-heading); }
+.complete-card p { margin:0 0 15px; color:var(--muted); }
+.complete-links { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
+.complete-links a { padding:9px 14px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text); text-decoration:none; }
+.complete-links a:first-child { background:var(--green); border-color:var(--green); color:var(--bg); font-weight:800; }
+.sheet-backdrop { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.72); align-items:flex-end; justify-content:center; }
+.sheet-backdrop.visible { display:flex; }
+.sheet { width:min(620px,100%); max-height:92vh; overflow-y:auto; padding:20px 18px calc(20px + env(safe-area-inset-bottom)); border:.5px solid var(--border); border-bottom:0; border-radius:22px 22px 0 0; background:var(--surface); }
+.sheet-grip { width:42px; height:4px; border-radius:99px; background:var(--border); margin:0 auto 15px; }
+.sheet h2 { margin:0 0 4px; color:var(--text); font-size:var(--fs-heading); }
+.sheet-desc { color:var(--muted); font-size:var(--fs-caption); margin-bottom:16px; }
+.sheet-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.sheet-field { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:var(--fs-caption); }
+.sheet-field.full { grid-column:1/-1; }
+.sheet-field input,.sheet-field select,.sheet-field textarea { width:100%; padding:11px 12px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); outline:none; }
+.sheet-field input:focus,.sheet-field select:focus,.sheet-field textarea:focus { border-color:var(--blue); }
+.rpe-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
+.rpe-btn { min-height:42px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--muted); cursor:pointer; }
+.rpe-btn.selected { background:rgba(0,180,216,.15); border-color:var(--blue); color:var(--blue); font-weight:900; }
+.sheet-actions { display:grid; grid-template-columns:1fr 1.4fr; gap:9px; margin-top:16px; }
+.sheet-actions button { min-height:54px; border-radius:var(--radius-sm); cursor:pointer; font-weight:800; }
+.sheet-cancel { border:.5px solid var(--border); background:transparent; color:var(--muted); }
+.sheet-save { border:0; background:var(--blue); color:var(--bg); }
+@media (max-width:600px) {
+  .workout-main { padding-top:12px; }
+  .workout-header-btn span { display:none; }
+  .set-card { border-radius:18px; }
+  .secondary-actions { grid-template-columns:1fr 1fr; }
+  .primary-actions { position:sticky; bottom:8px; z-index:15; padding:8px; margin-left:-8px; margin-right:-8px; border-radius:var(--radius-md); background:rgba(6,18,28,.91); backdrop-filter:blur(12px); }
+}
+@media (orientation:landscape) and (max-height:620px) {
+  .workout-main { padding-top:9px; }
+  .progress-card { margin-bottom:8px; padding:9px 12px; }
+  .set-strip { margin-bottom:0; padding-bottom:5px; }
+  .set-card { padding:14px 20px; }
+  .set-title { margin:5px 0 2px; font-size:30px; }
+  .timer-wrap { padding:8px 0; }
+  .timer-value { font-size:72px; }
+  .primary-actions { margin-top:8px; }
+  .action-btn { min-height:54px; }
+  .secondary-actions { margin-top:7px; }
+  .secondary-actions button { min-height:42px; }
+  .next-preview { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="workout-shell">
+  <header class="workout-header">
+    <a class="workout-header-btn" href="/training-log" aria-label="훈련 일지로 돌아가기">← <span>훈련 일지</span></a>
+    <div class="workout-brand">
+      <strong>풀사이드 훈련</strong>
+      <span id="workout-subtitle">세트 수행을 불러오는 중</span>
+    </div>
+    <button class="workout-header-btn" id="wake-lock-btn" type="button" aria-pressed="false">화면 유지</button>
+  </header>
+
+  <main class="workout-main">
+    <section class="workout-state visible" id="workout-state">
+      <div class="state-card">
+        <h1 id="state-title">훈련을 준비하고 있어요</h1>
+        <p id="state-message">잠시만 기다려주세요.</p>
+        <a id="state-action" href="/training-log" style="display:none;">훈련 일지에서 세트 선택</a>
+      </div>
+    </section>
+
+    <section class="workout-content" id="workout-content" aria-live="polite">
+      <div class="progress-card" id="workout-progress">
+        <div class="progress-head"><strong id="progress-title">오늘의 세트</strong><span id="progress-percent">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-metrics"><span id="progress-sets">0/0세트</span><span id="progress-distance">0/0m</span></div>
+      </div>
+
+      <nav class="set-strip" id="set-strip" aria-label="훈련 세트 목록"></nav>
+
+      <article class="set-card" id="current-set-card">
+        <span class="set-phase" id="set-phase">메인</span>
+        <span class="set-position" id="set-position">1 / 1</span>
+        <h1 class="set-title" id="set-title">훈련 세트</h1>
+        <div class="set-target" id="set-target"><strong>1 × 100m</strong></div>
+        <div class="timer-wrap">
+          <div class="timer-label" id="timer-label">스톱워치</div>
+          <div class="timer-value" id="timer-value">00:00</div>
+        </div>
+        <div class="rep-status"><span>완료 반복</span><strong id="rep-status">0 / 1</strong></div>
+      </article>
+
+      <div class="primary-actions">
+        <button class="action-btn timer" id="timer-toggle" type="button">타이머 시작</button>
+        <button class="action-btn lap" id="rep-complete" type="button">반복 완료</button>
+      </div>
+      <div class="secondary-actions">
+        <button id="previous-set" type="button">← 이전</button>
+        <button id="edit-set" type="button">수행 수정</button>
+        <button id="skip-set" type="button">건너뛰기</button>
+        <button id="next-set" type="button">다음 →</button>
+      </div>
+      <div class="save-status" id="save-status"></div>
+      <div class="next-preview" id="next-preview"><strong>다음 세트</strong><br><span>마지막 세트입니다.</span></div>
+
+      <section class="complete-card" id="workout-complete">
+        <h2>오늘 세트를 마쳤어요</h2>
+        <p id="complete-summary">수행 결과가 훈련 일지와 월간 리포트에 저장되었습니다.</p>
+        <div class="complete-links"><a href="/report">월간 리포트 보기</a><a href="/training-log">훈련 일지로 돌아가기</a></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<div class="sheet-backdrop" id="execution-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h2 id="sheet-title">세트 수행 수정</h2>
+    <div class="sheet-desc" id="sheet-description">실제로 수행한 내용을 저장하세요.</div>
+    <div class="sheet-grid">
+      <label class="sheet-field">완료 반복
+        <input id="edit-reps" type="number" min="0" max="300" inputmode="numeric">
+      </label>
+      <label class="sheet-field">완료 거리 (m)
+        <input id="edit-distance" type="number" min="0" max="200000" inputmode="numeric">
+      </label>
+      <label class="sheet-field">실제 평균 사이클
+        <input id="edit-cycle" type="text" inputmode="numeric" placeholder="예: 1:45">
+      </label>
+      <label class="sheet-field">수행 상태
+        <select id="edit-status">
+          <option value="completed">완료</option>
+          <option value="modified">조정 수행</option>
+          <option value="pending">진행 전</option>
+          <option value="skipped">건너뜀</option>
+        </select>
+      </label>
+      <div class="sheet-field full">체감 강도 RPE <span id="rpe-label">선택 안 함</span>
+        <div class="rpe-grid" id="rpe-grid"></div>
+      </div>
+      <label class="sheet-field full">세트 메모
+        <textarea id="edit-notes" rows="3" maxlength="500" placeholder="페이스, 통증, 폼 변화 등을 남겨보세요."></textarea>
+      </label>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-cancel" id="sheet-cancel" type="button">취소</button>
+      <button class="sheet-save" id="sheet-save" type="button">수행 저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const phaseLabels = {warmup:'웜업',drill:'드릴',main:'메인 세트',cooldown:'쿨다운',other:'기타'};
+const state = {
+  logId: Number(new URLSearchParams(location.search).get('log')) || 0,
+  sets: [], summary: {}, currentIndex: 0, saving: false,
+  running: false, startedAt: 0, accumulatedMs: 0, timerHandle: null,
+  cycleSamples: {}, selectedRpe: null, wakeLock: null,
+};
+
+const $ = id => document.getElementById(id);
+const clamp = (value,min,max) => Math.min(max,Math.max(min,value));
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+function formatTime(totalSeconds) {
+  const seconds = Math.max(0,Math.round(Number(totalSeconds)||0));
+  const min = Math.floor(seconds/60);
+  const sec = seconds%60;
+  return `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function parseCycle(value) {
+  const text = String(value||'').trim();
+  if (!text) return null;
+  if (/^\d+$/.test(text)) return Number(text);
+  const parts = text.split(':').map(Number);
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return NaN;
+  return parts[0]*60+parts[1];
+}
+function currentSet() { return state.sets[state.currentIndex] || null; }
+function elapsedMs() { return state.accumulatedMs + (state.running ? Date.now()-state.startedAt : 0); }
+function timerSeconds() {
+  const set = currentSet();
+  const elapsed = Math.floor(elapsedMs()/1000);
+  return set?.target_cycle_seconds ? Math.max(0,set.target_cycle_seconds-elapsed) : elapsed;
+}
+function setStatus(message,type='') {
+  $('save-status').textContent = message;
+  $('save-status').className = `save-status ${type}`.trim();
+}
+function showState(title,message,action=true) {
+  stopTimer(false);
+  $('state-title').textContent = title;
+  $('state-message').textContent = message;
+  $('state-action').style.display = action ? 'inline-flex' : 'none';
+  $('workout-state').classList.add('visible');
+  $('workout-content').classList.remove('visible');
+}
+function showContent() {
+  $('workout-state').classList.remove('visible');
+  $('workout-content').classList.add('visible');
+}
+
+function renderProgress() {
+  const summary = state.summary || {};
+  const planned = Number(summary.planned_distance_m)||0;
+  const completed = Number(summary.completed_distance_m)||0;
+  const rate = planned ? clamp(Math.round(completed/planned*100),0,100) : 0;
+  $('progress-percent').textContent = `${rate}%`;
+  $('progress-fill').style.width = `${rate}%`;
+  $('progress-sets').textContent = `${summary.completed_sets||0}/${summary.set_count||state.sets.length}세트 완료`;
+  $('progress-distance').textContent = `${completed.toLocaleString()}/${planned.toLocaleString()}m`;
+  const done = state.sets.length && state.sets.every(item => ['completed','skipped'].includes(item.status));
+  $('workout-complete').classList.toggle('visible',Boolean(done));
+  $('complete-summary').textContent = `${summary.completed_sets||0}세트 · ${completed.toLocaleString()}m 수행 결과가 저장되었습니다.`;
+}
+
+function renderStrip() {
+  $('set-strip').innerHTML = state.sets.map((set,index) => {
+    const statusClass = set.status === 'completed' ? 'completed' : (set.status === 'skipped' ? 'skipped' : '');
+    const current = index === state.currentIndex ? 'current' : '';
+    const marker = set.status === 'completed' ? '✓' : (set.status === 'skipped' ? '–' : index+1);
+    return `<button class="set-chip ${statusClass} ${current}" data-index="${index}" aria-label="${index+1}번째 ${escapeHtml(phaseLabels[set.phase]||'세트')}">${marker}</button>`;
+  }).join('');
+  $('set-strip').querySelectorAll('[data-index]').forEach(button => {
+    button.onclick = () => selectSet(Number(button.dataset.index));
+  });
+}
+
+function renderCurrent() {
+  const set = currentSet();
+  if (!set) return;
+  const targetReps = Number(set.target_reps)||1;
+  const completedReps = Number(set.completed_reps)||0;
+  $('set-phase').textContent = phaseLabels[set.phase] || '훈련 세트';
+  $('set-position').textContent = `${state.currentIndex+1} / ${state.sets.length}`;
+  $('set-title').textContent = set.description || '훈련 세트';
+  $('set-target').innerHTML = `<strong>${targetReps} × ${Number(set.target_distance_m||0).toLocaleString()}m</strong>${set.stroke_type ? ` · ${escapeHtml(set.stroke_type)}` : ''}${set.target_cycle_seconds ? ` · 출발 ${formatTime(set.target_cycle_seconds)}` : ''}`;
+  $('rep-status').textContent = `${completedReps} / ${targetReps}`;
+  $('timer-label').textContent = set.target_cycle_seconds ? `출발 사이클 ${formatTime(set.target_cycle_seconds)}` : '자유 스톱워치';
+  $('rep-complete').textContent = completedReps >= targetReps ? '추가 반복 완료' : `반복 완료 · ${Math.min(completedReps+1,targetReps)}/${targetReps}`;
+  $('previous-set').disabled = state.currentIndex === 0;
+  $('next-set').disabled = state.currentIndex >= state.sets.length-1;
+  const next = state.sets[state.currentIndex+1];
+  $('next-preview').innerHTML = next
+    ? `<strong>다음 · ${escapeHtml(phaseLabels[next.phase]||'세트')}</strong><br><span>${escapeHtml(next.description)} · ${next.target_reps}×${Number(next.target_distance_m).toLocaleString()}m${next.target_cycle_seconds ? ` · ${formatTime(next.target_cycle_seconds)}` : ''}</span>`
+    : '<strong>다음 세트</strong><br><span>마지막 세트입니다.</span>';
+  renderTimer();
+}
+
+function renderAll() {
+  renderProgress();
+  renderStrip();
+  renderCurrent();
+}
+
+function resetTimer() {
+  state.running = false;
+  state.startedAt = 0;
+  state.accumulatedMs = 0;
+  if (state.timerHandle) clearInterval(state.timerHandle);
+  state.timerHandle = null;
+  renderTimer();
+}
+function stopTimer(keepElapsed=true) {
+  if (state.running && keepElapsed) state.accumulatedMs += Date.now()-state.startedAt;
+  state.running = false;
+  state.startedAt = 0;
+  if (state.timerHandle) clearInterval(state.timerHandle);
+  state.timerHandle = null;
+  if ($('timer-toggle')) renderTimer();
+}
+function startTimer() {
+  state.running = true;
+  state.startedAt = Date.now();
+  state.timerHandle = setInterval(tickTimer,200);
+  requestWakeLock();
+  renderTimer();
+}
+function toggleTimer() { state.running ? stopTimer(true) : startTimer(); }
+function tickTimer() {
+  const set = currentSet();
+  if (set?.target_cycle_seconds && timerSeconds() <= 0) {
+    stopTimer(true);
+    notifyCycle();
+  }
+  renderTimer();
+}
+function renderTimer() {
+  const set = currentSet();
+  if (!set) return;
+  const value = timerSeconds();
+  const timer = $('timer-value');
+  timer.textContent = formatTime(value);
+  timer.classList.toggle('ending',Boolean(set.target_cycle_seconds && value > 0 && value <= 10));
+  timer.classList.toggle('done',Boolean(set.target_cycle_seconds && value === 0 && elapsedMs() > 0));
+  $('timer-toggle').textContent = state.running ? '일시정지' : (elapsedMs() ? '계속' : '타이머 시작');
+  $('timer-toggle').classList.toggle('running',state.running);
+}
+function notifyCycle() {
+  if (navigator.vibrate) navigator.vibrate([160,80,240]);
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const context = new AudioCtx();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = 880;
+    gain.gain.setValueAtTime(.15,context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,context.currentTime+.3);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(); oscillator.stop(context.currentTime+.3);
+  } catch (_) {}
+}
+
+function selectSet(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= state.sets.length) return;
+  stopTimer(false);
+  state.currentIndex = index;
+  setStatus('');
+  renderAll();
+  document.querySelector(`.set-chip[data-index="${index}"]`)?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+}
+function moveSet(delta) { selectSet(clamp(state.currentIndex+delta,0,state.sets.length-1)); }
+function moveToNextOpen() {
+  const next = state.sets.findIndex((item,index) => index > state.currentIndex && !['completed','skipped'].includes(item.status));
+  if (next >= 0) selectSet(next);
+  else if (state.currentIndex < state.sets.length-1) selectSet(state.currentIndex+1);
+}
+
+async function saveExecution(payload,successMessage='수행 결과를 저장했습니다.') {
+  const set = currentSet();
+  if (!set || state.saving) return null;
+  state.saving = true;
+  document.querySelectorAll('.action-btn,.secondary-actions button,.sheet-save').forEach(button => button.disabled=true);
+  setStatus('저장 중…');
+  try {
+    const response = await fetch(`/api/training-log/${state.logId}/sets/${set.id}`,{
+      method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    if (response.status === 401) { location.href='/login'; return null; }
+    const data = await response.json().catch(()=>({}));
+    if (!response.ok) throw new Error(data.detail||'세트 수행을 저장하지 못했습니다.');
+    if (data.set) state.sets[state.currentIndex] = data.set;
+    state.summary = data.summary || state.summary;
+    setStatus(successMessage,'success');
+    renderAll();
+    return data;
+  } catch (error) {
+    setStatus(error.message||'네트워크 오류로 저장하지 못했습니다.','error');
+    return null;
+  } finally {
+    state.saving = false;
+    document.querySelectorAll('.action-btn,.secondary-actions button,.sheet-save').forEach(button => button.disabled=false);
+    $('previous-set').disabled = state.currentIndex === 0;
+    $('next-set').disabled = state.currentIndex >= state.sets.length-1;
+  }
+}
+
+async function completeRep() {
+  const set = currentSet();
+  if (!set || state.saving) return;
+  const lapSeconds = Math.max(1,Math.round(elapsedMs()/1000));
+  if (elapsedMs() > 0) {
+    const samples = state.cycleSamples[set.id] || [];
+    samples.push(lapSeconds);
+    state.cycleSamples[set.id] = samples.slice(-Number(set.target_reps||1));
+  }
+  const completedReps = Math.min(300,Number(set.completed_reps||0)+1);
+  const completed = completedReps >= Number(set.target_reps||1);
+  const samples = state.cycleSamples[set.id] || [];
+  const actualCycle = samples.length ? Math.round(samples.reduce((sum,value)=>sum+value,0)/samples.length) : set.actual_cycle_seconds;
+  stopTimer(false);
+  const data = await saveExecution({
+    completed_reps:completedReps,
+    completed_distance_m:completedReps*Number(set.target_distance_m||0),
+    actual_cycle_seconds:actualCycle || null,
+    rpe:set.rpe || null,
+    status:completed ? 'completed' : 'modified',
+    notes:set.notes || null,
+    sync_total_distance:true,
+  },completed ? '세트를 완료했습니다.' : `${completedReps}회 수행을 저장했습니다.`);
+  if (!data) return;
+  notifyCycle();
+  if (completed) openExecutionSheet(true);
+  else resetTimer();
+}
+
+async function skipSet() {
+  const set = currentSet();
+  if (!set || !confirm('이 세트를 건너뛸까요? 기존 수행량은 유지됩니다.')) return;
+  stopTimer(false);
+  const data = await saveExecution({
+    completed_reps:Number(set.completed_reps)||0,
+    completed_distance_m:Number(set.completed_distance_m)||0,
+    actual_cycle_seconds:set.actual_cycle_seconds||null,
+    rpe:set.rpe||null,
+    status:'skipped', notes:set.notes||null, sync_total_distance:true,
+  },'건너뛴 세트로 저장했습니다.');
+  if (data) moveToNextOpen();
+}
+
+function renderRpeButtons() {
+  $('rpe-grid').innerHTML = Array.from({length:10},(_,i)=>`<button type="button" class="rpe-btn ${state.selectedRpe===i+1?'selected':''}" data-rpe="${i+1}">${i+1}</button>`).join('');
+  $('rpe-label').textContent = state.selectedRpe ? `${state.selectedRpe}/10` : '선택 안 함';
+  $('rpe-grid').querySelectorAll('[data-rpe]').forEach(button => {
+    button.onclick=()=>{ state.selectedRpe=Number(button.dataset.rpe); renderRpeButtons(); };
+  });
+}
+function openExecutionSheet(completedNow=false) {
+  const set = currentSet();
+  if (!set) return;
+  state.selectedRpe = set.rpe || null;
+  $('sheet-title').textContent = completedNow ? '세트 완료 · 체감 강도' : '세트 수행 수정';
+  $('sheet-description').textContent = `${set.description} · 목표 ${set.target_reps}×${set.target_distance_m}m`;
+  $('edit-reps').value = Number(set.completed_reps)||0;
+  $('edit-distance').value = Number(set.completed_distance_m)||0;
+  $('edit-cycle').value = set.actual_cycle_seconds ? formatTime(set.actual_cycle_seconds).replace(/^0/,'') : '';
+  $('edit-status').value = set.status || 'modified';
+  $('edit-notes').value = set.notes || '';
+  renderRpeButtons();
+  $('execution-sheet').classList.add('visible');
+}
+function closeExecutionSheet() { $('execution-sheet').classList.remove('visible'); }
+async function submitExecutionSheet() {
+  const reps = Number($('edit-reps').value);
+  const distance = Number($('edit-distance').value);
+  const actualCycle = parseCycle($('edit-cycle').value);
+  const status = $('edit-status').value;
+  if (!Number.isInteger(reps)||reps<0||reps>300) { alert('완료 반복은 0~300으로 입력해주세요.'); return; }
+  if (!Number.isInteger(distance)||distance<0||distance>200000) { alert('완료 거리는 0~200,000m로 입력해주세요.'); return; }
+  if (Number.isNaN(actualCycle)||(actualCycle!==null&&(actualCycle<1||actualCycle>7200))) { alert('사이클은 분:초 형식으로 입력해주세요.'); return; }
+  if (status==='completed' && distance<=0) { alert('완료 세트의 실제 거리를 입력해주세요.'); return; }
+  const data = await saveExecution({
+    completed_reps:reps, completed_distance_m:distance, actual_cycle_seconds:actualCycle,
+    rpe:state.selectedRpe, status, notes:$('edit-notes').value.trim()||null, sync_total_distance:true,
+  });
+  if (data) { closeExecutionSheet(); if (status==='completed') moveToNextOpen(); }
+}
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || document.visibilityState!=='visible') return;
+  try {
+    if (!state.wakeLock) {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      state.wakeLock.addEventListener('release',()=>{ state.wakeLock=null; updateWakeLockButton(); });
+    }
+  } catch (_) {}
+  updateWakeLockButton();
+}
+async function toggleWakeLock() {
+  if (state.wakeLock) { await state.wakeLock.release(); state.wakeLock=null; }
+  else await requestWakeLock();
+  updateWakeLockButton();
+}
+function updateWakeLockButton() {
+  const active=Boolean(state.wakeLock);
+  $('wake-lock-btn').classList.toggle('active',active);
+  $('wake-lock-btn').setAttribute('aria-pressed',String(active));
+  $('wake-lock-btn').textContent=active?'화면 유지 중':'화면 유지';
+}
+
+async function loadWorkout() {
+  try {
+    const me = await fetch('/auth/me',{credentials:'include'});
+    if (!me.ok) { location.href='/login'; return; }
+    if (!state.logId) { showState('실행할 훈련을 선택해주세요','훈련 일지에서 세트가 포함된 기록의 ‘풀사이드 실행’을 눌러주세요.'); return; }
+    const response = await fetch(`/api/training-log/${state.logId}/sets`,{credentials:'include'});
+    if (response.status===401) { location.href='/login'; return; }
+    const data = await response.json().catch(()=>({}));
+    if (!response.ok) throw new Error(data.detail||'훈련 세트를 불러오지 못했습니다.');
+    state.sets = Array.isArray(data.sets)?data.sets:[];
+    state.summary = data.summary||{};
+    if (!state.sets.length) { showState('저장된 세트가 없습니다','훈련 플랜에서 세트를 일지에 추가하거나 세트가 있는 기록을 선택해주세요.'); return; }
+    const firstOpen = state.sets.findIndex(item=>!['completed','skipped'].includes(item.status));
+    state.currentIndex = firstOpen>=0?firstOpen:state.sets.length-1;
+    $('workout-subtitle').textContent = `${state.sets.length}개 세트 · ${Number(state.summary.planned_distance_m||0).toLocaleString()}m 계획`;
+    showContent(); renderAll(); requestWakeLock();
+  } catch (error) {
+    showState('훈련을 불러오지 못했습니다',error.message||'잠시 후 다시 시도해주세요.');
+  }
+}
+
+$('timer-toggle').onclick=toggleTimer;
+$('rep-complete').onclick=completeRep;
+$('previous-set').onclick=()=>moveSet(-1);
+$('next-set').onclick=()=>moveSet(1);
+$('edit-set').onclick=()=>openExecutionSheet(false);
+$('skip-set').onclick=skipSet;
+$('wake-lock-btn').onclick=toggleWakeLock;
+$('sheet-cancel').onclick=closeExecutionSheet;
+$('sheet-save').onclick=submitExecutionSheet;
+$('execution-sheet').addEventListener('click',event=>{ if(event.target===$('execution-sheet')) closeExecutionSheet(); });
+$('edit-reps').addEventListener('input',()=>{
+  const set=currentSet(); if(set) $('edit-distance').value=(Number($('edit-reps').value)||0)*Number(set.target_distance_m||0);
+});
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && state.running) requestWakeLock(); });
+document.addEventListener('keydown',event=>{
+  if (event.target.matches('input,textarea,select,button')) return;
+  if (event.code==='Space') { event.preventDefault(); toggleTimer(); }
+  if (event.code==='Enter') { event.preventDefault(); completeRep(); }
+});
+window.addEventListener('beforeunload',event=>{ if(state.running){ event.preventDefault(); event.returnValue=''; } });
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+loadWorkout();
+</script>
+<script src="/static/theme.js"></script>
+<script src="/static/utils.js"></script>
+<script src="/static/api.js"></script>
+</body>
+</html>

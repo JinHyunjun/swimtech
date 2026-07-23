@@ -79,6 +79,7 @@ PAGES = [
     ("/dashboard", "대시보드"),
     ("/plan", "훈련 플랜"),
     ("/training-log", "훈련 일지"),
+    ("/workout", "풀사이드 훈련"),
     ("/report", "월간 리포트"),
     ("/pool", "수영장 지도"),
     ("/drill", "드릴 가이드"),
@@ -98,7 +99,7 @@ PAGES = [
 ]
 
 PROTECTED_PATHS = {
-    "/onboarding", "/dashboard", "/plan", "/training-log", "/report", "/pool", "/badges",
+    "/onboarding", "/dashboard", "/plan", "/training-log", "/workout", "/report", "/pool", "/badges",
     "/community", "/challenge", "/equipment", "/chat", "/videos",
     "/profile", "/injury", "/coach",
 }
@@ -149,6 +150,10 @@ PAGE_EXPECTATIONS = {
     "/training-log": {
         "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary"],
         "texts": ["이번 달 목표 거리"],
+    },
+    "/workout": {
+        "selectors": ["#workout-progress", "#set-strip", "#current-set-card", "#timer-value", "#timer-toggle", "#rep-complete", "#execution-sheet", "#wake-lock-btn"],
+        "texts": ["풀사이드 훈련", "훈련 일지에서 세트 선택"],
     },
     "/report": {
         "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill"],

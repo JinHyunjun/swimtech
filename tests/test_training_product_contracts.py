@@ -243,6 +243,28 @@ def test_training_logs_persist_structured_set_execution_data():
     assert "/sets" in api_qa and "세트 단위 기록 조회·수행 갱신" in api_qa
 
 
+def test_poolside_workout_executes_and_saves_one_set_at_a_time():
+    api = (ROOT / "api" / "routers" / "training_log.py").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    workout = (ROOT / "frontend" / "workout.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert 'class TrainingSetExecutionRequest(BaseModel)' in api
+    assert '@router.patch("/{log_id}/sets/{set_id}")' in api
+    assert "SELECT customer_id FROM training_logs WHERE id = %s FOR UPDATE" in api
+    assert "completed_distance_m" in api and "actual_cycle_seconds" in api and "rpe" in api
+    assert '@app.get("/workout")' in main and '_serve("workout.html")' in main
+    assert 'href="/workout?log=${l.id}"' in log
+    assert 'id="timer-value"' in workout
+    assert "navigator.wakeLock.request('screen')" in workout
+    assert "completeRep" in workout and "saveExecution" in workout and "openExecutionSheet" in workout
+    assert "풀사이드 단일 세트 수행 저장" in api_qa and ".patch(" in api_qa
+    assert '("/workout", "풀사이드 훈련")' in ui_qa
+    assert '"#timer-value"' in ui_qa and '"#wake-lock-btn"' in ui_qa
+
+
 def test_qa_scripts_cover_training_report_and_advisor_flows():
     api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
