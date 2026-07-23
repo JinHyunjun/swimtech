@@ -305,6 +305,7 @@ def test_club_class_and_scoped_roles_are_connected_end_to_end():
     assert "GROUP OPERATIONS" in page and "개인 운동 · 훈련 플랜" in page
     assert 'href="/clubs"' in landing and 'href="/clubs"' in coach_page
     assert '"/clubs":          "클럽·반"' in activity_log
+    assert (ROOT / "docs" / "screenshots" / "clubs-classes.png").exists()
     assert "클럽 생성→반 코드 참여→역할 권한 경계" in api_qa
     assert 'student_sess.post(f"{BASE}/api/clubs/classes/join"' in api_qa
     assert '("/clubs", "클럽·반")' in ui_qa
@@ -673,9 +674,9 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 79개" in quality_doc
-    assert "41개 API 시나리오" in quality_doc
-    assert "24개 화면 검증" in quality_doc
+    assert "단위·계약·Jira 통합 82개" in quality_doc
+    assert "42개 API 시나리오" in quality_doc
+    assert "25개 화면 검증" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
     assert "Playwright E2E 정의 104개" in quality_doc
@@ -686,6 +687,7 @@ def test_quality_gate_documentation_is_kept_current():
         "준비도·주간 어드바이저",
         "헬스 데이터 가져오기",
         "코치 AI 강습 운영",
+        "클럽·반·범위별 역할",
         "Jira 운영판",
         "슈퍼 관리자",
         "공개 메타데이터·정책",

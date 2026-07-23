@@ -16,7 +16,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 핵심 자동 테스트는 단위·계약·Jira 통합 79개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 41개 API 시나리오와 `qa_ui_crawler.py`의 역할별 24개 화면 검증으로 일괄 확인하고 실행별 리포트를 증적으로 보관한다.
+현재 핵심 자동 테스트는 단위·계약·Jira 통합 82개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 42개 API 시나리오와 `qa_ui_crawler.py`의 역할별 25개 화면 검증으로 일괄 확인하고 실행별 리포트를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -34,6 +34,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 뱃지·챌린지 | 실제 일지 기반 진행률, 랭킹, 참가·탈퇴, 다음 뱃지, 목표 단계 | Playwright challenge/badge, `badge.py` 계약 테스트 |
 | 커뮤니티·알림 | 게시글·댓글·좋아요·북마크·신고, 태그·멘션, 이미지 제한, 읽음 처리 | `test_api_unit.py`, Playwright community, `qa_runner.py` 관리자 피드백 |
 | 코치 코드·수강생 관계 | 코치 코드 즉시 발급, 학생 직접 연동·교체·해제, 코치의 접근 권한 제한 | `qa_runner.py` 18d~18f, `qa_ui_crawler.py` 사전 연동 |
+| 클럽·반·범위별 역할 | 등록 코치의 생성 권한, 반 코드 참여, 클럽·반 멤버십 동시 저장, 정원, 범위별 역할, 비등록 코치 승격 거부, 담당 코치 무결성, 테스트 클럽 정리 | `qa_runner.py` 18g, `PAGE_EXPECTATIONS["/clubs"]`, Alembic `20260723_04` 계약 |
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
 | 슈퍼 관리자 | 관리자 로그인·권한, 페이지네이션, 20/50/100 page size, 운영 지표, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `PAGE_EXPECTATIONS["/admin"]` |

@@ -47,6 +47,9 @@ def jget(r):
     try: return r.json()
     except Exception: return {}
 
+def status_code(r):
+    return r.status_code if r is not None else "-"
+
 def to_int(value, default=0):
     try:
         return int(float(value or 0))
@@ -707,10 +710,10 @@ def main():
         and cleanup_club is not None and cleanup_club.status_code == 200
     )
     rec("18g", "클럽 생성→반 코드 참여→역할 권한 경계", club_flow_ok,
-        f"club {club_res.status_code}, class {class_res.status_code if class_res else '-'}, "
-        f"join {join_class_res.status_code if join_class_res else '-'}, mine {student_clubs.status_code if student_clubs else '-'}, "
-        f"member-create {forbidden_create.status_code if forbidden_create else '-'}, "
-        f"staff-role {forbidden_staff.status_code if forbidden_staff else '-'}, cleanup {cleanup_club.status_code if cleanup_club else '-'}")
+        f"club {club_res.status_code}, class {status_code(class_res)}, "
+        f"join {status_code(join_class_res)}, mine {status_code(student_clubs)}, "
+        f"member-create {status_code(forbidden_create)}, "
+        f"staff-role {status_code(forbidden_staff)}, cleanup {status_code(cleanup_club)}")
 
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)

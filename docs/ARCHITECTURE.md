@@ -67,6 +67,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/api/community` | `community.py` | 게시글·댓글·반응·신고·이미지 |
 | `/api/notifications` | `notifications.py` | 알림 조회·읽음 |
 | `/api/coach` | `coach.py`, `coach_ai.py` | 관계, 피드백, 개인·단체 강습, AI 문서, 크루 운영 |
+| `/api/clubs` | `clubs.py` | 클럽·반 생성, 코드 참여, 클럽·반 범위별 역할·멤버십 |
 | `/api/jira` | `jira.py` | Jira 상태·이슈·웹훅 |
 | `/api/chat` | `chat.py` | AI 코치와 대화 이력 |
 | `/api/pool` | `pool.py` | 수영장 즐겨찾기 |
@@ -128,6 +129,15 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `coach_action_items`: Jira와 동기화되는 로컬 우선 코칭 과제
 
 코치 API는 활성 관계를 다시 확인한 뒤 학생 기록을 조회하거나 문서를 배포한다. 선택 자격 인증은 신뢰 표시이며 기능 권한을 여는 승인 게이트가 아니다.
+
+### 클럽·반
+
+- `swim_clubs`: 등록 코치 소유자, 이름, 기본 풀 길이, 상태
+- `swim_club_members`: 클럽별 `owner`, `coach`, `assistant`, `member` 역할
+- `swim_classes`: 클럽 안의 반, 담당 코치, 수준·목표·풀 길이·정원·참여 코드
+- `swim_class_members`: 반별 `coach`, `assistant`, `student` 역할
+
+학생의 반 코드 참여는 클럽과 반 멤버십을 한 트랜잭션에서 활성화한다. 클럽 권한과 반 권한을 분리해 등록 코치가 특정 반만 관리할 수 있고, 모든 쓰기 API가 현재 사용자 멤버십·등록 코치 여부·담당 코치 무결성을 다시 확인한다.
 
 ## 주요 데이터 흐름
 
@@ -220,7 +230,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩과 세트 수행 테이블을 포함한 `20260723_03`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반·역할 테이블을 포함한 `20260723_04`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.
