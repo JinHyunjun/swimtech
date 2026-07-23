@@ -162,7 +162,10 @@ PAGE_EXPECTATIONS = {
     },
     "/admin": {
         "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
-        "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "7일 준비도 체크인", "피드백", "페이지 조회", "처음", "끝"],
+        # inner_text() excludes inactive tab panels and pagers hidden for a
+        # single-page result. Their controls are therefore verified by stable
+        # selectors above; only always-visible navigation copy belongs here.
+        "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "피드백"],
     },
 }
 

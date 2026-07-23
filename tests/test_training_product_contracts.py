@@ -454,6 +454,10 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "#u-page-numbers" in qa_ui
     assert "#l-page-numbers" in qa_ui
     assert "#f-page-numbers" in qa_ui
+    admin_expectation = qa_ui.split('"/admin": {', 1)[1].split("    },", 1)[0]
+    assert '"texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "피드백"]' in admin_expectation
+    assert "7일 준비도 체크인" not in admin_expectation
+    assert "페이지 조회" not in admin_expectation
 
 
 def test_badge_progression_content_is_kept():
