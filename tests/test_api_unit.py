@@ -498,3 +498,52 @@ class TestBenchmarks:
         with pytest.raises(HTTPException) as stroke_error:
             _validate_result(invalid_stroke)
         assert stroke_error.value.status_code == 400
+
+
+class TestAccountSecurity:
+    def test_password_policy_and_export_serialization_are_stable(self):
+        from datetime import datetime
+        from decimal import Decimal
+
+        from routers.account import PasswordChangeRequest, _json_default
+        from routers.auth import _PASSWORD_RE
+
+        request = PasswordChangeRequest(
+            current_password="Current123", new_password="Stronger456"
+        )
+        assert _PASSWORD_RE.match(request.new_password)
+        assert not _PASSWORD_RE.match("letters-only")
+        assert _json_default(Decimal("25.50")) == 25.5
+        assert _json_default(datetime(2026, 7, 23, 12, 30)) == "2026-07-23T12:30:00"
+
+    def test_auth_version_rejects_tokens_after_all_session_revocation(self, monkeypatch):
+        from routers import auth
+
+        class Cursor:
+            def execute(self, query, params=None):
+                self.query = query
+
+            def fetchone(self):
+                return state["row"]
+
+            def close(self):
+                pass
+
+        class Connection:
+            def cursor(self):
+                return Cursor()
+
+            def close(self):
+                pass
+
+        state = {"row": (0, "active")}
+        monkeypatch.setattr(auth, "get_db", lambda: Connection())
+        token = auth.create_token("qauser", 44, auth_version=0)
+        assert auth.decode_token(token).get("sub") == "qauser"
+
+        state["row"] = (1, "active")
+        assert auth.decode_token(token) == {}
+
+        state["row"] = (1, "deleted")
+        newer_token = auth.create_token("qauser", 44, auth_version=1)
+        assert auth.decode_token(newer_token) == {}

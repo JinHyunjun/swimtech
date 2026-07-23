@@ -5,7 +5,7 @@ JWT 기반 로컬 로그인 + Google / Kakao 소셜 로그인
 import logging
 import os
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import httpx
@@ -24,7 +24,11 @@ from rate_limit import limiter
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-SECRET_KEY                = os.getenv("SECRET_KEY", "swimtech-secret-key")
+SECRET_KEY                = os.getenv("SECRET_KEY", "").strip()
+if not SECRET_KEY:
+    if os.getenv("RENDER"):
+        raise RuntimeError("SECRET_KEY is required in the Render environment")
+    SECRET_KEY = "swimmate-local-development-only"
 ALGORITHM                 = "HS256"
 TOKEN_EXPIRE_HOURS        = 8
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -32,8 +36,8 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 LOGIN_FAIL_MAX    = 5
 LOGIN_FAIL_EXPIRE = 900  # 15분 (초)
 
-ADMIN_ID = os.getenv("ADMIN_ID", "admin")
-ADMIN_PW = os.getenv("ADMIN_PW", "swimtech1234")
+ADMIN_ID = os.getenv("ADMIN_ID", "").strip()
+ADMIN_PW = os.getenv("ADMIN_PW", "")
 DEMO_USERNAME = os.getenv("DEMO_USERNAME", "portfolio_demo")
 DEMO_EMAIL = os.getenv("DEMO_EMAIL", "portfolio-demo@swimmate.local")
 DEMO_NAME = os.getenv("DEMO_NAME", "비회원 체험 사용자")
@@ -163,6 +167,11 @@ class NicknameRequest(BaseModel):
     nickname: str
 
 
+class DeleteAccountRequest(BaseModel):
+    confirmation: str
+    current_password: str | None = Field(default=None, max_length=200)
+
+
 class OnboardingRequest(BaseModel):
     level: str
     goal: str
@@ -172,9 +181,20 @@ class OnboardingRequest(BaseModel):
 
 # ── 토큰 유틸 ─────────────────────────────────────────────────────────────────
 
-def create_token(username: str, customer_id: int | None = None, is_demo: bool = False) -> str:
-    expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
-    payload = {"sub": username, "exp": expire}
+def create_token(
+    username: str,
+    customer_id: int | None = None,
+    is_demo: bool = False,
+    auth_version: int = 0,
+) -> str:
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(hours=TOKEN_EXPIRE_HOURS)
+    payload = {
+        "sub": username,
+        "exp": expire,
+        "iat": now,
+        "auth_version": int(auth_version or 0),
+    }
     if customer_id is not None:
         payload["customer_id"] = customer_id
     if is_demo:
@@ -182,9 +202,21 @@ def create_token(username: str, customer_id: int | None = None, is_demo: bool = 
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(username: str, customer_id: int | None = None, is_demo: bool = False) -> str:
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": username, "exp": expire, "type": "refresh"}
+def create_refresh_token(
+    username: str,
+    customer_id: int | None = None,
+    is_demo: bool = False,
+    auth_version: int = 0,
+) -> str:
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    payload = {
+        "sub": username,
+        "exp": expire,
+        "iat": now,
+        "type": "refresh",
+        "auth_version": int(auth_version or 0),
+    }
     if customer_id is not None:
         payload["customer_id"] = customer_id
     if is_demo:
@@ -194,17 +226,62 @@ def create_refresh_token(username: str, customer_id: int | None = None, is_demo:
 
 def verify_token(token: str) -> str:
     """토큰 검증 → 유저명 반환, 실패 시 None"""
+    return decode_token(token).get("sub")
+
+
+def _session_payload_is_current(payload: dict) -> bool:
+    """DB 계정 상태와 세션 버전을 비교해 탈퇴·전체 로그아웃을 즉시 반영한다."""
+    customer_id = payload.get("customer_id")
+    if customer_id is None:
+        # DATABASE_URL에 존재하지 않는 ADMIN_ID 호환 계정은 기존 방식으로 유지한다.
+        return True
+
+    conn = None
+    cur = None
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("sub")
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT COALESCE(auth_version, 0), COALESCE(status, 'active')
+            FROM customers
+            WHERE id = %s
+            """,
+            (int(customer_id),),
+        )
+        row = cur.fetchone()
+        if not row or row[1] == "deleted":
+            return False
+        return int(payload.get("auth_version") or 0) == int(row[0] or 0)
     except Exception:
-        return None
+        logger.warning("session revision lookup failed", exc_info=True)
+        return False
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
+
+
+def _auth_version_for_customer(customer_id: int | None) -> int:
+    if customer_id is None:
+        return 0
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT COALESCE(auth_version, 0) FROM customers WHERE id = %s", (customer_id,))
+        row = cur.fetchone()
+        return int(row[0] or 0) if row else 0
+    finally:
+        cur.close()
+        conn.close()
 
 
 def decode_token(token: str) -> dict:
     """토큰 디코딩 → payload dict 반환, 실패 시 {}"""
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload if _session_payload_is_current(payload) else {}
     except Exception:
         return {}
 
@@ -589,7 +666,11 @@ def login(request: Request, body: LoginRequest, response: Response):
         conn = get_db()
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, password_hash, onboarding_completed_at FROM customers WHERE username = %s",
+            """
+            SELECT id, password_hash, onboarding_completed_at, COALESCE(auth_version, 0)
+            FROM customers
+            WHERE username = %s AND COALESCE(status, 'active') <> 'deleted'
+            """,
             (body.username,),
         )
         row = cur.fetchone()
@@ -600,25 +681,26 @@ def login(request: Request, body: LoginRequest, response: Response):
         raise HTTPException(500, "내부 오류가 발생했습니다.")
 
     if row:
-        db_id, password_hash, onboarding_completed_at = row
+        db_id, password_hash, onboarding_completed_at, auth_version = row
         pw_bytes = body.password.encode("utf-8")[:72]
-        if not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
+        if not password_hash or not bcrypt.checkpw(pw_bytes, password_hash.encode("utf-8")):
             _increment_login_fail(ip)
             log_activity(username=body.username, event_type="login_fail",
                          action="login", ip_address=ip)
             raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
         customer_id = db_id
     else:
-        if body.username != ADMIN_ID or body.password != ADMIN_PW:
+        if not ADMIN_ID or not ADMIN_PW or body.username != ADMIN_ID or body.password != ADMIN_PW:
             _increment_login_fail(ip)
             raise HTTPException(401, "아이디 또는 비밀번호가 올바르지 않습니다.")
+        auth_version = 0
 
     _clear_login_fail(ip)
     log_activity(customer_id=customer_id, username=body.username,
                  event_type="login_success", action="login",
                  ip_address=ip)
-    token   = create_token(body.username, customer_id)
-    refresh = create_refresh_token(body.username, customer_id)
+    token   = create_token(body.username, customer_id, auth_version=auth_version)
+    refresh = create_refresh_token(body.username, customer_id, auth_version=auth_version)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, refresh)
 
@@ -647,8 +729,9 @@ def login(request: Request, body: LoginRequest, response: Response):
 @limiter.limit("20/minute")
 def demo_login(request: Request, response: Response):
     customer_id = _ensure_demo_user_and_seed()
-    token = create_token(DEMO_USERNAME, customer_id, is_demo=True)
-    refresh = create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True)
+    auth_version = _auth_version_for_customer(customer_id)
+    token = create_token(DEMO_USERNAME, customer_id, is_demo=True, auth_version=auth_version)
+    refresh = create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True, auth_version=auth_version)
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, refresh)
     log_activity(
@@ -675,17 +758,19 @@ def refresh_token_endpoint(
 ):
     if not swimtech_refresh_token:
         raise HTTPException(401, "리프레시 토큰이 없습니다.")
-    try:
-        payload = jwt.decode(swimtech_refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception:
+    payload = decode_token(swimtech_refresh_token)
+    if not payload:
         raise HTTPException(401, "리프레시 토큰이 만료되었습니다.")
     if payload.get("type") != "refresh":
         raise HTTPException(401, "?좏슚?섏? ?딆? ?좏겙 ??낆엯?덈떎.")
     username    = payload.get("sub")
     customer_id = payload.get("customer_id")
     is_demo = bool(payload.get("is_demo"))
-    token = create_token(username, customer_id, is_demo=is_demo)
-    new_refresh = create_refresh_token(username, customer_id, is_demo=is_demo)
+    auth_version = int(payload.get("auth_version") or 0)
+    token = create_token(username, customer_id, is_demo=is_demo, auth_version=auth_version)
+    new_refresh = create_refresh_token(
+        username, customer_id, is_demo=is_demo, auth_version=auth_version
+    )
     _set_auth_cookie(response, token)
     _set_refresh_cookie(response, new_refresh)
     return {"status": "ok", "message": "토큰이 갱신되었습니다."}
@@ -707,7 +792,11 @@ def logout(response: Response, swimtech_token: str = Cookie(default=None)):
 
 
 @router.delete("/me")
-def delete_me(response: Response, swimtech_token: str = Cookie(default=None)):
+def delete_me(
+    body: DeleteAccountRequest,
+    response: Response,
+    swimtech_token: str = Cookie(default=None),
+):
     if not swimtech_token:
         raise HTTPException(401, "로그인이 필요합니다.")
 
@@ -722,6 +811,8 @@ def delete_me(response: Response, swimtech_token: str = Cookie(default=None)):
 
     if username == ADMIN_ID:
         raise HTTPException(400, "관리자 계정은 회원 탈퇴할 수 없습니다.")
+    if body.confirmation.strip() != "탈퇴":
+        raise HTTPException(400, "회원 탈퇴 확인 문구가 올바르지 않습니다.")
 
     conn = None
     cur = None
@@ -753,8 +844,29 @@ def delete_me(response: Response, swimtech_token: str = Cookie(default=None)):
 
         cur.execute(
             """
+            SELECT password_hash, COALESCE(social_provider, 'local')
+            FROM customers
+            WHERE id = %s
+            """,
+            (customer_id,),
+        )
+        security_row = cur.fetchone()
+        if not security_row:
+            raise HTTPException(404, "계정 정보를 찾을 수 없습니다.")
+        if security_row[1] == "local":
+            if not body.current_password:
+                raise HTTPException(400, "현재 비밀번호를 입력해주세요.")
+            password_bytes = body.current_password.encode("utf-8")[:72]
+            if not security_row[0] or not bcrypt.checkpw(
+                password_bytes, security_row[0].encode("utf-8")
+            ):
+                raise HTTPException(401, "현재 비밀번호가 올바르지 않습니다.")
+
+        cur.execute(
+            """
             UPDATE customers
                SET status = 'deleted',
+                   auth_version = COALESCE(auth_version, 0) + 1,
                    deleted_at = NOW(),
                    last_login_at = NULL,
                    name = 'withdrawn_user',
@@ -814,6 +926,8 @@ def me(swimtech_token: str = Cookie(default=None)):
     customer_id     = payload.get("customer_id")
     nickname        = None
     social_provider = None
+    email = None
+    name = None
     level = "초급"
     goal = "건강"
     weekly_goal = 3
@@ -827,6 +941,7 @@ def me(swimtech_token: str = Cookie(default=None)):
             cur.execute(
                 """
                 SELECT nickname, social_provider, level, goal, weekly_goal,
+                       email, name,
                        preferred_pool_length, onboarding_completed_at IS NOT NULL
                 FROM customers WHERE id = %s
                 """,
@@ -837,6 +952,7 @@ def me(swimtech_token: str = Cookie(default=None)):
             cur.execute(
                 """
                 SELECT nickname, social_provider, level, goal, weekly_goal,
+                       email, name,
                        preferred_pool_length, onboarding_completed_at IS NOT NULL
                 FROM customers WHERE username = %s
                 """,
@@ -845,7 +961,7 @@ def me(swimtech_token: str = Cookie(default=None)):
         row = cur.fetchone()
         cur.close(); conn.close()
         if row:
-            (nickname, social_provider, level, goal, weekly_goal,
+            (nickname, social_provider, level, goal, weekly_goal, email, name,
              preferred_pool_length, onboarding_completed) = row
     except Exception:
         logger.warning("me: DB lookup failed", exc_info=True)
@@ -855,7 +971,10 @@ def me(swimtech_token: str = Cookie(default=None)):
         "customer_id":     customer_id,
         "status":          "authenticated",
         "nickname":        nickname,
+        "name":            name,
+        "email":           email,
         "social_provider": social_provider,
+        "can_change_password": (social_provider or "local") == "local" and not is_demo,
         "needs_nickname":  False if is_demo else nickname is None,
         "needs_onboarding": False if is_demo else not onboarding_completed,
         "onboarding_completed": True if is_demo else onboarding_completed,
@@ -1081,8 +1200,9 @@ def google_callback(code: str):
         raise HTTPException(400, "Google 사용자 정보를 가져올 수 없습니다.")
 
     customer_id, username, is_new = _find_or_create_social_user("google", social_id, email, name)
-    token   = create_token(username, customer_id)
-    refresh = create_refresh_token(username, customer_id)
+    auth_version = _auth_version_for_customer(customer_id)
+    token   = create_token(username, customer_id, auth_version=auth_version)
+    refresh = create_refresh_token(username, customer_id, auth_version=auth_version)
 
     redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
     resp = RedirectResponse(url=redirect_url, status_code=302)
@@ -1143,8 +1263,9 @@ def kakao_callback(code: str):
         raise HTTPException(400, "카카오 사용자 정보를 가져올 수 없습니다.")
 
     customer_id, username, is_new = _find_or_create_social_user("kakao", social_id, email, name)
-    token   = create_token(username, customer_id)
-    refresh = create_refresh_token(username, customer_id)
+    auth_version = _auth_version_for_customer(customer_id)
+    token   = create_token(username, customer_id, auth_version=auth_version)
+    refresh = create_refresh_token(username, customer_id, auth_version=auth_version)
 
     redirect_url = "/nickname" if is_new else ("/onboarding" if _needs_onboarding(customer_id) else "/")
     resp = RedirectResponse(url=redirect_url, status_code=302)

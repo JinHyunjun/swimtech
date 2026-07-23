@@ -30,6 +30,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     benchmark_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_06_swim_test_results.py"
     ).read_text(encoding="utf-8")
+    account_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_07_account_security.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -60,11 +63,14 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'down_revision: Union[str, None] = "20260723_05"' in benchmark_revision
     assert '"swim_test_results"' in benchmark_revision
     assert "duration_ms" in benchmark_revision and "pool_length" in benchmark_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_06"' in main
+    assert 'revision: str = "20260723_07"' in account_revision
+    assert 'down_revision: Union[str, None] = "20260723_06"' in account_revision
+    assert "auth_version" in account_revision and "password_changed_at" in account_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_07"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_06"' in (
+    assert 'health.get("schema_revision") == "20260723_07"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -446,8 +452,8 @@ def test_portfolio_demo_mode_contract():
     assert "DEMO_USERNAME" in auth_api
     assert "portfolio_demo" in auth_api
     assert "_ensure_demo_user_and_seed" in auth_api
-    assert "create_token(DEMO_USERNAME, customer_id, is_demo=True)" in auth_api
-    assert "create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True)" in auth_api
+    assert "create_token(DEMO_USERNAME, customer_id, is_demo=True, auth_version=auth_version)" in auth_api
+    assert "create_refresh_token(DEMO_USERNAME, customer_id, is_demo=True, auth_version=auth_version)" in auth_api
     assert "training_logs" in auth_api
     assert "training_goals" in auth_api
     assert "plan_completions" in auth_api
@@ -473,6 +479,41 @@ def test_portfolio_demo_mode_contract():
     assert "#demo-btn" in ui_qa
     assert "check_public_demo_entry" in ui_qa
     assert "포트폴리오 비회원 체험 모드" in checklist
+
+
+def test_personal_data_export_and_account_security_are_qa_mapped():
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
+    account_api = (ROOT / "api" / "routers" / "account.py").read_text(encoding="utf-8")
+    profile = (ROOT / "frontend" / "profile.html").read_text(encoding="utf-8")
+    privacy = (ROOT / "frontend" / "privacy.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "include_router(account.router" in main
+    for route in ['@router.post("/export")', '@router.post("/password")', '@router.post("/logout-all")']:
+        assert route in account_api
+    assert '"export_format": "swimmate-personal-data"' in account_api
+    assert "비밀번호 해시, JWT" in account_api
+    assert "_verify_sensitive_action" in account_api
+    assert "auth_version = COALESCE(auth_version, 0) + 1" in account_api
+    assert "_session_payload_is_current" in auth_api
+    assert 'payload.get("auth_version")' in auth_api
+    assert 'RuntimeError("SECRET_KEY is required in the Render environment")' in auth_api
+    assert 'ADMIN_ID = os.getenv("ADMIN_ID", "").strip()' in auth_api
+    assert 'ADMIN_PW = os.getenv("ADMIN_PW", "")' in auth_api
+    assert '"swimtech1234"' not in auth_api
+    assert "DeleteAccountRequest" in auth_api
+    assert 'body.confirmation.strip() != "탈퇴"' in auth_api
+    for selector in [
+        "data-export-panel", "data-export-btn", "password-panel", "password-save-btn",
+        "session-security-panel", "logout-all-btn",
+    ]:
+        assert f'id="{selector}"' in profile
+    assert "내 데이터 내보내기" in privacy and "전체 로그아웃" in privacy
+    assert "개인 데이터 JSON 내보내기 + 비밀번호 재확인" in api_qa
+    assert "계정 보안 변경의 현재 비밀번호 경계" in api_qa
+    assert '"/profile": {' in ui_qa and '"#data-export-btn"' in ui_qa
 
 
 def test_plan_p3_improvements_are_kept():

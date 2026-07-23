@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_06",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_07",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -195,6 +195,61 @@ def main():
     expected = r.status_code in (200, 400)
     note = "일반계정은 소셜전용(400) — 의도된 동작" if r.status_code == 400 else "설정됨"
     rec(6, "닉네임 설정", expected, f"{r.status_code} ({note})")
+
+    export_wrong = sess.post(
+        f"{BASE}/api/account/export",
+        json={"current_password": f"{pw}-invalid"},
+        timeout=60,
+    )
+    export_ok = sess.post(
+        f"{BASE}/api/account/export",
+        json={"current_password": pw},
+        timeout=90,
+    )
+    export_doc = jget(export_ok)
+    export_account = export_doc.get("account") or {}
+    rec(
+        "6b",
+        "개인 데이터 JSON 내보내기 + 비밀번호 재확인",
+        export_wrong.status_code == 401
+        and export_ok.status_code == 200
+        and export_doc.get("export_format") == "swimmate-personal-data"
+        and export_doc.get("export_schema_version") == 1
+        and export_account.get("username") == uname
+        and "password_hash" not in export_account
+        and "social_id" not in export_account
+        and "attachment" in export_ok.headers.get("content-disposition", "").lower()
+        and export_ok.headers.get("cache-control") == "no-store",
+        f"wrong {export_wrong.status_code}, export {export_ok.status_code}, "
+        f"sections={len(export_doc.get('records') or {})}",
+    )
+
+    password_wrong = sess.post(
+        f"{BASE}/api/account/password",
+        json={"current_password": f"{pw}-invalid", "new_password": f"QaNew{rnd(8)}1"},
+        timeout=60,
+    )
+    logout_all_wrong = sess.post(
+        f"{BASE}/api/account/logout-all",
+        json={"current_password": f"{pw}-invalid"},
+        timeout=60,
+    )
+    delete_account_wrong = sess.delete(
+        f"{BASE}/auth/me",
+        json={"confirmation": "탈퇴", "current_password": f"{pw}-invalid"},
+        timeout=60,
+    )
+    session_still_valid = sess.get(f"{BASE}/auth/me", timeout=60)
+    rec(
+        "6c",
+        "계정 보안 변경의 현재 비밀번호 경계",
+        password_wrong.status_code == 401
+        and logout_all_wrong.status_code == 401
+        and delete_account_wrong.status_code == 401
+        and session_still_valid.status_code == 200,
+        f"password {password_wrong.status_code}, logout-all {logout_all_wrong.status_code}, "
+        f"withdraw {delete_account_wrong.status_code}, session {session_still_valid.status_code}",
+    )
 
     onboarding_before_res = sess.get(f"{BASE}/auth/onboarding", timeout=60)
     onboarding_before = jget(onboarding_before_res)

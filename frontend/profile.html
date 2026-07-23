@@ -131,6 +131,27 @@
   line-height: 1.6;
 }
 
+.panel-desc {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.65;
+  margin: -6px 0 16px;
+}
+
+.btn-secondary-outline {
+  width: 100%;
+  background: transparent;
+  border: 0.5px solid var(--accent-primary);
+  color: var(--accent-primary);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-secondary-outline:hover { background: rgba(0,180,216,.08); }
+.btn-secondary-outline:disabled { opacity: .5; cursor: not-allowed; }
+
 /* 탈퇴 확인 모달 */
 .modal-overlay {
   position: fixed;
@@ -202,6 +223,10 @@
       <span class="info-value" id="p-nickname">—</span>
     </div>
     <div class="info-row">
+      <span class="info-label">이메일</span>
+      <span class="info-value" id="p-email">—</span>
+    </div>
+    <div class="info-row">
       <span class="info-label">가입 방식</span>
       <span class="info-value" id="p-provider">—</span>
     </div>
@@ -217,6 +242,52 @@
     </div>
     <button class="btn-primary" id="nickname-save-btn">닉네임 저장</button>
     <div class="feedback" id="nickname-feedback"></div>
+  </div>
+
+  <!-- 비밀번호 변경 -->
+  <div class="panel" id="password-panel">
+    <div class="panel-title">비밀번호 변경</div>
+    <div class="panel-desc">새 비밀번호를 저장하면 다른 기기에서 사용 중이던 기존 세션도 종료됩니다.</div>
+    <div class="input-row">
+      <label class="input-label" for="current-password">현재 비밀번호</label>
+      <input type="password" class="text-input" id="current-password" autocomplete="current-password">
+    </div>
+    <div class="input-row">
+      <label class="input-label" for="new-password">새 비밀번호</label>
+      <input type="password" class="text-input" id="new-password" autocomplete="new-password" placeholder="8자 이상, 영문·숫자 포함">
+    </div>
+    <div class="input-row">
+      <label class="input-label" for="new-password-confirm">새 비밀번호 확인</label>
+      <input type="password" class="text-input" id="new-password-confirm" autocomplete="new-password">
+    </div>
+    <button class="btn-primary" id="password-save-btn">비밀번호 변경</button>
+    <div class="feedback" id="password-feedback"></div>
+  </div>
+
+  <!-- 개인 데이터 내보내기 -->
+  <div class="panel" id="data-export-panel">
+    <div class="panel-title">내 데이터 내보내기</div>
+    <div class="panel-desc">
+      프로필·개인화 설정, 훈련 일지와 세트, 테스트 기록·PB, 목표·플랜·준비도, 뱃지·챌린지와 본인의 서비스 활동을 JSON 파일로 내려받습니다. 비밀번호·로그인 토큰·다른 회원의 프로필은 포함하지 않습니다.
+    </div>
+    <div class="input-row" id="export-password-row">
+      <label class="input-label" for="export-current-password">현재 비밀번호 확인</label>
+      <input type="password" class="text-input" id="export-current-password" autocomplete="current-password">
+    </div>
+    <button class="btn-secondary-outline" id="data-export-btn">JSON 파일 내려받기</button>
+    <div class="feedback" id="export-feedback"></div>
+  </div>
+
+  <!-- 세션 보안 -->
+  <div class="panel" id="session-security-panel">
+    <div class="panel-title">로그인 세션 보안</div>
+    <div class="panel-desc">공용 기기에서 로그아웃하지 못했거나 계정 접근이 의심될 때 모든 기기의 액세스·갱신 세션을 한 번에 무효화합니다.</div>
+    <div class="input-row" id="logout-password-row">
+      <label class="input-label" for="logout-current-password">현재 비밀번호 확인</label>
+      <input type="password" class="text-input" id="logout-current-password" autocomplete="current-password">
+    </div>
+    <button class="btn-danger-outline" id="logout-all-btn">모든 기기에서 로그아웃</button>
+    <div class="feedback" id="logout-feedback"></div>
   </div>
 
   <!-- 회원 탈퇴 -->
@@ -242,6 +313,9 @@
     <div class="modal-confirm-input">
       <input type="text" class="text-input" id="withdraw-confirm-input" placeholder="탈퇴">
     </div>
+    <div class="modal-confirm-input" id="withdraw-password-row">
+      <input type="password" class="text-input" id="withdraw-current-password" autocomplete="current-password" placeholder="현재 비밀번호">
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" id="withdraw-cancel-btn">취소</button>
       <button class="btn-danger" id="withdraw-confirm-btn" disabled>탈퇴하기</button>
@@ -251,7 +325,8 @@
 </div>
 
 <script>
-const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
+const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글', demo: '비회원 체험' };
+let profileState = { provider: 'local', isDemo: false };
 
 function showFeedback(elId, type, msg) {
   const el = document.getElementById(elId);
@@ -268,9 +343,23 @@ async function loadProfile() {
 
     document.getElementById('p-username').textContent = data.username || '-';
     document.getElementById('p-nickname').textContent = data.nickname || '설정 안 함';
+    document.getElementById('p-email').textContent = data.email || '-';
     const provider = data.social_provider || 'local';
+    profileState = { provider, isDemo: Boolean(data.is_demo) };
     document.getElementById('p-provider').innerHTML =
       `<span class="pill ${provider}">${PROVIDER_LABEL[provider] || provider}</span>`;
+
+    const isLocal = provider === 'local';
+    document.getElementById('password-panel').hidden = !data.can_change_password;
+    document.getElementById('export-password-row').hidden = !isLocal;
+    document.getElementById('logout-password-row').hidden = !isLocal;
+    document.getElementById('withdraw-password-row').hidden = !isLocal;
+    if (data.is_demo) {
+      document.getElementById('data-export-btn').disabled = true;
+      document.getElementById('logout-all-btn').disabled = true;
+      showFeedback('export-feedback', 'error', '체험 데이터는 공용 샘플이므로 내보낼 수 없습니다.');
+      showFeedback('logout-feedback', 'error', '체험 모드에서는 전체 세션을 변경하지 않습니다.');
+    }
 
     if (data.nickname) {
       document.getElementById('nickname-input').value = data.nickname;
@@ -312,6 +401,108 @@ document.getElementById('nickname-save-btn').addEventListener('click', async () 
   }
 });
 
+// 비밀번호 변경
+document.getElementById('password-save-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('password-save-btn');
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('new-password-confirm').value;
+  if (!currentPassword || !newPassword) {
+    showFeedback('password-feedback', 'error', '현재 비밀번호와 새 비밀번호를 입력해주세요.');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    showFeedback('password-feedback', 'error', '새 비밀번호 확인이 일치하지 않습니다.');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '변경 중...';
+  try {
+    const res = await fetch('/api/account/password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '비밀번호를 변경하지 못했습니다.');
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('new-password-confirm').value = '';
+    showFeedback('password-feedback', 'success', data.message || '비밀번호가 변경되었습니다.');
+  } catch (e) {
+    showFeedback('password-feedback', 'error', e.message || '네트워크 오류가 발생했습니다.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '비밀번호 변경';
+  }
+});
+
+// 개인 데이터 JSON 내보내기
+document.getElementById('data-export-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('data-export-btn');
+  const currentPassword = document.getElementById('export-current-password').value;
+  if (profileState.provider === 'local' && !currentPassword) {
+    showFeedback('export-feedback', 'error', '현재 비밀번호를 입력해주세요.');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '파일 준비 중...';
+  try {
+    const res = await fetch('/api/account/export', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ current_password: currentPassword || null }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || '데이터 파일을 만들지 못했습니다.');
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = match ? match[1] : `swimmate-personal-data-${new Date().toISOString().slice(0, 10)}.json`;
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    document.getElementById('export-current-password').value = '';
+    showFeedback('export-feedback', 'success', '개인 데이터 파일을 내려받았습니다.');
+  } catch (e) {
+    showFeedback('export-feedback', 'error', e.message || '네트워크 오류가 발생했습니다.');
+  } finally {
+    btn.disabled = profileState.isDemo;
+    btn.textContent = 'JSON 파일 내려받기';
+  }
+});
+
+// 모든 기기의 세션 무효화
+document.getElementById('logout-all-btn').addEventListener('click', async () => {
+  const currentPassword = document.getElementById('logout-current-password').value;
+  if (profileState.provider === 'local' && !currentPassword) {
+    showFeedback('logout-feedback', 'error', '현재 비밀번호를 입력해주세요.');
+    return;
+  }
+  if (!confirm('현재 기기를 포함해 모든 기기에서 로그아웃할까요?')) return;
+  const btn = document.getElementById('logout-all-btn');
+  btn.disabled = true;
+  btn.textContent = '세션 종료 중...';
+  try {
+    const res = await fetch('/api/account/logout-all', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ current_password: currentPassword || null }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || '전체 세션을 종료하지 못했습니다.');
+    window.location.href = '/login';
+  } catch (e) {
+    showFeedback('logout-feedback', 'error', e.message || '네트워크 오류가 발생했습니다.');
+    btn.disabled = false;
+    btn.textContent = '모든 기기에서 로그아웃';
+  }
+});
+
 // 탈퇴 모달 열기/닫기
 const modal = document.getElementById('withdraw-modal');
 document.getElementById('withdraw-open-btn').addEventListener('click', () => {
@@ -320,6 +511,7 @@ document.getElementById('withdraw-open-btn').addEventListener('click', () => {
 document.getElementById('withdraw-cancel-btn').addEventListener('click', () => {
   modal.classList.remove('show');
   document.getElementById('withdraw-confirm-input').value = '';
+  document.getElementById('withdraw-current-password').value = '';
   document.getElementById('withdraw-confirm-btn').disabled = true;
 });
 
@@ -334,7 +526,19 @@ document.getElementById('withdraw-confirm-btn').addEventListener('click', async 
   btn.disabled = true;
   btn.textContent = '처리 중...';
   try {
-    const res = await fetch('/auth/me', { method: 'DELETE', credentials: 'include' });
+    const currentPassword = document.getElementById('withdraw-current-password').value;
+    if (profileState.provider === 'local' && !currentPassword) {
+      showFeedback('withdraw-feedback', 'error', '현재 비밀번호를 입력해주세요.');
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
+      return;
+    }
+    const res = await fetch('/auth/me', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ confirmation: '탈퇴', current_password: currentPassword || null }),
+    });
     const data = await res.json();
     if (res.ok) {
       window.location.href = '/landing';

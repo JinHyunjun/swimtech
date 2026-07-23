@@ -160,6 +160,10 @@ PAGE_EXPECTATIONS = {
         "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs"],
         "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
+    "/profile": {
+        "selectors": ["#p-email", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
+        "texts": ["내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
+    },
     "/plan": {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
         "texts": ["내 플랜", "직접 구성"],

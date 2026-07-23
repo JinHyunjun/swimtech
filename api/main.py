@@ -15,12 +15,12 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, benchmarks, report, challenge, feedback, coach, coach_ai, clubs, club_operations, pool, chat, admin, health_import, jira
+from routers import customers, auth, account, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, benchmarks, report, challenge, feedback, coach, coach_ai, clubs, club_operations, pool, chat, admin, health_import, jira
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
-EXPECTED_SCHEMA_REVISION = "20260723_06"
+EXPECTED_SCHEMA_REVISION = "20260723_07"
 
 
 def upgrade_database_schema() -> None:
@@ -295,6 +295,7 @@ async def _log_page_views(request: Request, call_next):
     return response
 
 app.include_router(auth.router,      prefix="/auth",      tags=["인증"])
+app.include_router(account.router,   prefix="/api/account", tags=["계정·데이터"])
 app.include_router(admin.router,     prefix="/api/admin", tags=["관리자"])
 app.include_router(customers.router, prefix="/customers", tags=["고객"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["대시보드"])
