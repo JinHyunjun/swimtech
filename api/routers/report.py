@@ -80,6 +80,9 @@ def _empty_plan_performance() -> dict:
         "plan_distance_rate": 0,
         "cycle_logs": 0,
         "cycle_adherence_rate": 0,
+        "planned_sets": 0,
+        "completed_sets": 0,
+        "set_completion_rate": 0,
         "goal_distance": 0,
         "goal_achievement_rate": 0,
     }
@@ -114,13 +117,23 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
     all_dates = [r[0] for r in cur.fetchall()]
 
     plan_performance = _empty_plan_performance()
-    cur.execute("SELECT to_regclass('public.plan_completions'), to_regclass('public.training_goals')")
-    has_plan_completions, has_training_goals = cur.fetchone()
+    cur.execute(
+        "SELECT to_regclass('public.plan_completions'), "
+        "to_regclass('public.training_goals'), to_regclass('public.training_log_sets')"
+    )
+    has_plan_completions, has_training_goals, has_training_log_sets = cur.fetchone()
     if has_plan_completions:
-        cur.execute("""
+        cycle_condition = """
+            EXISTS (
+                SELECT 1 FROM training_log_sets tls
+                WHERE tls.training_log_id = tl.id
+                  AND tls.target_cycle_seconds IS NOT NULL
+            ) OR POSITION('@' IN COALESCE(tl.memo, '')) > 0
+        """ if has_training_log_sets else "POSITION('@' IN COALESCE(tl.memo, '')) > 0"
+        cur.execute(f"""
             SELECT COUNT(DISTINCT pc.id),
                    COALESCE(SUM(tl.total_distance), 0),
-                   COUNT(DISTINCT CASE WHEN POSITION('@' IN COALESCE(tl.memo, '')) > 0 THEN pc.id END)
+                   COUNT(DISTINCT CASE WHEN {cycle_condition} THEN pc.id END)
             FROM plan_completions pc
             JOIN training_logs tl ON tl.id = pc.training_log_id
             WHERE pc.customer_id = %s
@@ -136,6 +149,31 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
             "plan_distance": plan_distance,
             "cycle_logs": cycle_logs,
             "cycle_adherence_rate": round(cycle_logs / completed_sessions * 100) if completed_sessions else 0,
+        })
+    if has_training_log_sets:
+        cur.execute("""
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE tls.status = 'completed'),
+                   COALESCE(SUM(tls.target_reps * tls.target_distance_m), 0),
+                   COALESCE(SUM(tls.completed_distance_m), 0)
+            FROM training_log_sets tls
+            JOIN training_logs tl ON tl.id = tls.training_log_id
+            WHERE tls.customer_id = %s
+              AND EXTRACT(YEAR FROM tl.log_date) = %s
+              AND EXTRACT(MONTH FROM tl.log_date) = %s
+        """, (customer_id, year, month))
+        srow = cur.fetchone() or (0, 0, 0, 0)
+        planned_sets = int(srow[0] or 0)
+        completed_sets = int(srow[1] or 0)
+        planned_set_distance = int(srow[2] or 0)
+        completed_set_distance = int(srow[3] or 0)
+        plan_performance.update({
+            "planned_sets": planned_sets,
+            "completed_sets": completed_sets,
+            "set_completion_rate": (
+                round(completed_set_distance / planned_set_distance * 100)
+                if planned_set_distance else 0
+            ),
         })
     if has_training_goals:
         cur.execute("""

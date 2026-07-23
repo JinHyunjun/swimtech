@@ -81,7 +81,7 @@
   padding: 18px 20px; margin-bottom: 24px;
 }
 .plan-performance-title { font-size: var(--fs-body); font-weight: 800; color: var(--text); margin-bottom: 12px; }
-.plan-performance-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.plan-performance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 @media (max-width: 760px) { .plan-performance-grid { grid-template-columns: repeat(2, 1fr); } }
 .plan-performance-card { background: rgba(0,0,0,.12); border: 0.5px solid rgba(255,255,255,.08); border-radius: var(--radius-sm); padding: 12px; }
 .plan-performance-value { font-size: var(--fs-heading); font-weight: 900; font-style: italic; color: var(--cyan); line-height: 1.1; }
@@ -236,6 +236,11 @@
           <div class="plan-performance-value" id="plan-cycle-rate">0%</div>
           <div class="plan-performance-label">사이클 기록 포함률</div>
           <div class="plan-progress-bar"><div class="plan-progress-fill" id="plan-cycle-fill"></div></div>
+        </div>
+        <div class="plan-performance-card">
+          <div class="plan-performance-value" id="plan-set-rate">0%</div>
+          <div class="plan-performance-label" id="plan-set-label">세트 단위 수행률</div>
+          <div class="plan-progress-bar"><div class="plan-progress-fill" id="plan-set-fill"></div></div>
         </div>
         <div class="plan-performance-card">
           <div class="plan-performance-value" id="plan-goal-rate">0%</div>
@@ -403,12 +408,19 @@ function renderPlanPerformance(perf) {
   const planDistance = Number(perf.plan_distance || 0);
   const planDistanceRate = clampRate(perf.plan_distance_rate);
   const cycleRate = clampRate(perf.cycle_adherence_rate);
+  const setRate = clampRate(perf.set_completion_rate);
+  const plannedSets = Number(perf.planned_sets || 0);
+  const completedSets = Number(perf.completed_sets || 0);
   const goalRate = clampRate(perf.goal_achievement_rate);
   const goalDistance = Number(perf.goal_distance || 0);
 
   document.getElementById('plan-completed-sessions').textContent = `${completed}회`;
   document.getElementById('plan-distance-rate').textContent = `${planDistanceRate}%`;
   document.getElementById('plan-cycle-rate').textContent = completed ? `${cycleRate}%` : '0%';
+  document.getElementById('plan-set-rate').textContent = plannedSets ? `${setRate}%` : '기록 없음';
+  document.getElementById('plan-set-label').textContent = plannedSets
+    ? `세트 수행률 · ${completedSets}/${plannedSets}세트 완료`
+    : '세트 단위 수행률';
   document.getElementById('plan-goal-rate').textContent = goalDistance ? `${goalRate}%` : '목표 없음';
   document.getElementById('plan-goal-label').textContent = goalDistance
     ? `월간 목표 ${goalDistance.toLocaleString()}m 기준`
@@ -416,6 +428,7 @@ function renderPlanPerformance(perf) {
   document.getElementById('plan-distance-rate').title = `플랜 완료로 기록된 거리 ${planDistance.toLocaleString()}m`;
   setProgress('plan-distance-fill', planDistanceRate);
   setProgress('plan-cycle-fill', completed ? cycleRate : 0);
+  setProgress('plan-set-fill', plannedSets ? setRate : 0);
   setProgress('plan-goal-fill', goalDistance ? goalRate : 0);
 }
 

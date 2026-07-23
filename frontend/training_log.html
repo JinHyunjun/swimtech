@@ -159,6 +159,17 @@
 .log-badge.mood-나쁨 { background: rgba(248,113,113,.15); color: var(--red); }
 .log-row2 { font-size: var(--fs-caption); color: var(--muted); }
 .log-memo { font-size: var(--fs-caption); color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.log-set-summary { font-size: var(--fs-caption); color: var(--cyan); margin-top: 6px; }
+.set-preview {
+  display: none; margin-bottom: 14px; border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); background: rgba(0,180,216,.05); padding: 10px 12px;
+}
+.set-preview.visible { display: block; }
+.set-preview-title { color: var(--cyan); font-size: var(--fs-caption); font-weight: 700; margin-bottom: 7px; }
+.set-preview-item { display: flex; gap: 8px; justify-content: space-between; font-size: var(--fs-caption); color: var(--muted); padding: 4px 0; }
+.set-preview-item + .set-preview-item { border-top: 0.5px solid rgba(255,255,255,.06); }
+.set-preview-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-preview-cycle { color: var(--blue); white-space: nowrap; }
 .log-actions { display: flex; gap: 6px; margin-left: auto; }
 .btn-log-edit, .btn-log-del {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
@@ -461,6 +472,8 @@ select.form-control option { background: var(--surface); }
       </label>
     </div>
 
+    <div class="set-preview" id="f-set-summary" aria-live="polite"></div>
+
     <div class="form-row">
       <label class="form-label" for="f-memo">메모 (선택)</label>
       <textarea class="form-control" id="f-memo" rows="3" placeholder="오늘 훈련 메모를 남겨보세요" style="resize:vertical;"></textarea>
@@ -484,6 +497,7 @@ let currentMonth = new Date().getMonth() + 1;
 let logsCache    = [];
 let chartInst    = null;
 let pendingPlanCompletion = null;
+let pendingTrainingSets = [];
 
 const WEEKDAYS = ['일','월','화','수','목','금','토'];
 
@@ -668,6 +682,10 @@ function renderLogList(logs) {
         ? `<span class="log-badge">🦶 오리발</span>` : '';
       const memoHtml = l.memo
         ? `<div class="log-memo">${escHtml(l.memo)}</div>` : '';
+      const setSummary = l.set_summary || {};
+      const setSummaryHtml = Number(setSummary.set_count || 0)
+        ? `<div class="log-set-summary">세트 ${setSummary.completed_sets || 0}/${setSummary.set_count} 완료 · 수행률 ${setSummary.completion_rate || 0}%</div>`
+        : '';
 
       item.innerHTML = `
         ${idx === 0 ? `
@@ -687,6 +705,7 @@ function renderLogList(logs) {
             ${l.pool_length}m 레인 &nbsp;·&nbsp;
             ${l.duration_minutes}분
           </div>
+          ${setSummaryHtml}
           ${memoHtml}
         </div>
         <div class="log-actions">
@@ -708,6 +727,34 @@ function renderLogList(logs) {
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatSetCycle(seconds) {
+  const total = Number(seconds || 0);
+  if (!total) return '';
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function renderPendingSetSummary() {
+  const panel = document.getElementById('f-set-summary');
+  if (!pendingTrainingSets.length) {
+    panel.classList.remove('visible');
+    panel.innerHTML = '';
+    return;
+  }
+  const phaseLabel = { warmup: '웜업', drill: '드릴', main: '메인', cooldown: '쿨다운', other: '기타' };
+  panel.innerHTML = `
+    <div class="set-preview-title">세트 단위 기록 ${pendingTrainingSets.length}개 · 저장 후 수행 데이터로 집계됩니다</div>
+    ${pendingTrainingSets.map((set, index) => {
+      const reps = Number(set.target_reps || 1);
+      const distance = Number(set.target_distance_m || 0);
+      const cycle = formatSetCycle(set.target_cycle_seconds);
+      return `<div class="set-preview-item">
+        <span class="set-preview-main">${index + 1}. ${phaseLabel[set.phase] || '세트'} · ${escHtml(set.description || '')} · ${reps}×${distance}m</span>
+        <span class="set-preview-cycle">${cycle ? `@${cycle}` : ''}</span>
+      </div>`;
+    }).join('')}`;
+  panel.classList.add('visible');
 }
 
 // ── 차트 ─────────────────────────────────────────────────
@@ -998,6 +1045,7 @@ function openAddModal(prefill) {
   document.getElementById('modal-title').textContent = '훈련 기록 추가';
   document.getElementById('edit-id').value = '';
   pendingPlanCompletion = prefill?.plan_completion || null;
+  pendingTrainingSets = Array.isArray(prefill?.sets) ? prefill.sets : [];
   document.getElementById('f-date').value = prefill?.log_date || todayStr();
   document.getElementById('f-stroke').value = prefill?.stroke_type || '자유형';
   document.getElementById('f-pool').value = prefill?.pool_length || '25';
@@ -1007,6 +1055,7 @@ function openAddModal(prefill) {
   document.getElementById('f-mood').value = '';
   document.getElementById('f-fins').checked = !!prefill?.used_fins;
   document.getElementById('f-memo').value = prefill?.memo || '';
+  renderPendingSetSummary();
   clearModalError();
   document.getElementById('modal-backdrop').classList.remove('hidden');
 }
@@ -1017,6 +1066,7 @@ function openEditModal(id) {
   document.getElementById('modal-title').textContent = '훈련 기록 수정';
   document.getElementById('edit-id').value = id;
   pendingPlanCompletion = null;
+  pendingTrainingSets = Array.isArray(log.sets) ? log.sets : [];
   document.getElementById('f-date').value = log.log_date;
   document.getElementById('f-stroke').value = log.stroke_type;
   document.getElementById('f-pool').value = log.pool_length;
@@ -1026,12 +1076,14 @@ function openEditModal(id) {
   document.getElementById('f-mood').value = log.mood || '';
   document.getElementById('f-fins').checked = !!log.used_fins;
   document.getElementById('f-memo').value = log.memo || '';
+  renderPendingSetSummary();
   clearModalError();
   document.getElementById('modal-backdrop').classList.remove('hidden');
 }
 
 function closeModal() {
   pendingPlanCompletion = null;
+  pendingTrainingSets = [];
   document.getElementById('modal-backdrop').classList.add('hidden');
 }
 
@@ -1063,6 +1115,7 @@ async function saveLog() {
     memo:             document.getElementById('f-memo').value.trim() || null,
   };
   if (!editId && pendingPlanCompletion) body.plan_completion = pendingPlanCompletion;
+  if (pendingTrainingSets.length) body.sets = pendingTrainingSets;
 
   if (!body.log_date) { showModalError('날짜를 입력해주세요.'); return; }
   if (!body.total_distance || body.total_distance < 1) { showModalError('거리를 입력해주세요.'); return; }

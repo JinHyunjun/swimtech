@@ -147,11 +147,11 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["P3 Training Advisor"],
     },
     "/training-log": {
-        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal"],
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary"],
         "texts": ["이번 달 목표 거리"],
     },
     "/report": {
-        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate"],
+        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill"],
         "texts": ["평균 거리 (m)", "플랜 수행률"],
     },
     "/plan": {

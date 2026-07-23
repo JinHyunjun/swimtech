@@ -96,7 +96,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_02",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_03",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -286,6 +286,8 @@ def main():
     baseline_plan_perf = baseline_report.get("plan_performance") or {}
     baseline_plan_completed = to_int(baseline_plan_perf.get("completed_sessions"))
     baseline_plan_distance = to_int(baseline_plan_perf.get("plan_distance"))
+    baseline_planned_sets = to_int(baseline_plan_perf.get("planned_sets"))
+    baseline_completed_sets = to_int(baseline_plan_perf.get("completed_sets"))
     cleanup_ids = []
     readiness_before = None
 
@@ -314,6 +316,16 @@ def main():
         "log_date": today, "stroke_type": "자유형", "total_distance": 1500,
         "duration_minutes": 60, "intensity": "보통", "memo": "QA 자동 기록"}, timeout=60)
     log_id = jget(r).get("id") or jget(r).get("log_id")
+    initial_set_save = sess.put(f"{BASE}/api/training-log/{log_id}/sets", json={
+        "sync_total_distance": False,
+        "sets": [
+            {"phase": "warmup", "description": "QA warmup", "target_reps": 1,
+             "target_distance_m": 500, "completed_reps": 1, "status": "completed"},
+            {"phase": "main", "description": "QA main", "target_reps": 5,
+             "target_distance_m": 200, "target_cycle_seconds": 210,
+             "completed_reps": 5, "status": "completed"},
+        ],
+    }, timeout=60) if log_id else None
     rec(9, "훈련 일지 작성", r.status_code in (200, 201), f"{r.status_code}, id={log_id}")
 
     r = sess.get(f"{BASE}/api/training-log", timeout=60)
@@ -324,6 +336,31 @@ def main():
     # stats/streak도 같이
     rs = sess.get(month_url("/api/training-log/stats", year, month), timeout=60)
     rk = sess.get(f"{BASE}/api/training-log/streak", timeout=60)
+    set_get = sess.get(f"{BASE}/api/training-log/{log_id}/sets", timeout=60) if log_id else None
+    set_json = jget(set_get) if set_get else {}
+    set_replace = sess.put(f"{BASE}/api/training-log/{log_id}/sets", json={
+        "sync_total_distance": True,
+        "sets": [
+            {"phase": "warmup", "description": "QA warmup", "target_reps": 1,
+             "target_distance_m": 500, "completed_reps": 1, "status": "completed"},
+            {"phase": "main", "description": "QA main", "target_reps": 5,
+             "target_distance_m": 200, "target_cycle_seconds": 210,
+             "completed_reps": 4, "status": "modified"},
+        ],
+    }, timeout=60) if log_id else None
+    replace_json = jget(set_replace) if set_replace else {}
+    set_flow_ok = (
+        bool(initial_set_save) and initial_set_save.status_code == 200
+        and bool(set_get) and set_get.status_code == 200
+        and len(set_json.get("sets") or []) == 2
+        and to_int((set_json.get("summary") or {}).get("completed_distance_m")) == 1500
+        and bool(set_replace) and set_replace.status_code == 200
+        and to_int((replace_json.get("summary") or {}).get("completed_distance_m")) == 1300
+    )
+    rec("10c", "세트 단위 기록 조회·수행 갱신", set_flow_ok,
+        f"save {getattr(initial_set_save, 'status_code', '-')}, "
+        f"get {getattr(set_get, 'status_code', '-')}/sets={len(set_json.get('sets') or [])}, "
+        f"replace {getattr(set_replace, 'status_code', '-')}/distance={(replace_json.get('summary') or {}).get('completed_distance_m')}")
     rec("10b", "일지 통계/연속출석", rs.status_code == 200 and rk.status_code == 200,
         f"stats {rs.status_code}, streak {rk.status_code}")
 
@@ -333,6 +370,9 @@ def main():
             "log_date": today, "stroke_type": "배영", "total_distance": 2000,
             "duration_minutes": 70, "intensity": "힘듦", "memo": "QA 수정"}, timeout=60)
         rd = sess.delete(f"{BASE}/api/training-log/{log_id}", timeout=60)
+        cascade = sess.get(f"{BASE}/api/training-log/{log_id}/sets", timeout=60)
+        rec("11a", "훈련 일지 삭제 시 세트 기록 연쇄 삭제", cascade.status_code == 404,
+            f"sets-after-delete {cascade.status_code}")
         rec(11, "훈련 일지 수정/삭제", ru.status_code == 200 and rd.status_code == 200,
             f"수정 {ru.status_code}, 삭제 {rd.status_code}")
     else:
@@ -348,9 +388,19 @@ def main():
         "duration_minutes": 45,
         "intensity": "보통",
         "memo": "QA 리포트 연동 @1:30",
-        "plan_completion": {"plan_key": plan_key, "week_index": int(time.strftime("%W")), "day_label": "QA"}
+        "plan_completion": {"plan_key": plan_key, "week_index": int(time.strftime("%W")), "day_label": "QA"},
+        "sets": [
+            {"phase": "warmup", "description": "QA report warmup", "target_reps": 1,
+             "target_distance_m": 200, "completed_reps": 1, "status": "completed"},
+            {"phase": "main", "description": "QA report main", "target_reps": 10,
+             "target_distance_m": 100, "target_cycle_seconds": 90,
+             "completed_reps": 10, "status": "completed"},
+        ]
     }, timeout=60)
     report_log_id = jget(r).get("id") or jget(r).get("log_id")
+    report_set_save = sess.get(
+        f"{BASE}/api/training-log/{report_log_id}/sets", timeout=60
+    ) if report_log_id else None
     if report_log_id:
         cleanup_ids.append(report_log_id)
     rec("11b", "리포트 연동용 플랜 완료 일지 작성", r.status_code in (200, 201) and bool(report_log_id),
@@ -401,8 +451,17 @@ def main():
     r = sess.post(f"{BASE}/api/training-log/from-plan", json={
         "plan_name": "QA from-plan", "log_date": today,
         "plan_data": {"total_distance": 1000, "stroke_type": "자유형",
-                      "duration_minutes": 40, "intensity": "보통"}}, timeout=60)
+                      "duration_minutes": 40, "intensity": "보통",
+                      "sets": [
+                          {"phase": "main", "description": "QA from-plan set",
+                           "target_reps": 10, "target_distance_m": 100,
+                           "target_cycle_seconds": 100, "completed_reps": 10,
+                           "status": "completed"}
+                      ]}}, timeout=60)
     from_plan_id = jget(r).get("id")
+    from_plan_set_save = sess.get(
+        f"{BASE}/api/training-log/{from_plan_id}/sets", timeout=60
+    ) if from_plan_id else None
     if from_plan_id:
         cleanup_ids.append(from_plan_id)
     rec(15, "플랜→훈련일지 추가", r.status_code in (200, 201) and bool(from_plan_id),
@@ -435,6 +494,11 @@ def main():
         and to_int(perf.get("goal_distance")) == goal_distance
         and to_int(perf.get("completed_sessions")) >= baseline_plan_completed + (1 if report_log_id else 0)
         and to_int(perf.get("plan_distance")) >= baseline_plan_distance + (1200 if report_log_id else 0)
+        and to_int(perf.get("planned_sets")) >= baseline_planned_sets + 3
+        and to_int(perf.get("completed_sets")) >= baseline_completed_sets + 3
+        and to_int(perf.get("set_completion_rate")) > 0
+        and bool(report_set_save) and report_set_save.status_code == 200
+        and bool(from_plan_set_save) and from_plan_set_save.status_code == 200
         and bool(report.get("share_token"))
     )
     rec(17, "월간 리포트↔훈련 일지 데이터 연동", report_ok,

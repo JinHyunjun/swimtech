@@ -18,6 +18,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     onboarding_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_02_personalized_onboarding.py"
     ).read_text(encoding="utf-8")
+    set_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_03_training_log_sets.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -29,11 +32,16 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'down_revision: Union[str, None] = "20260723_01"' in onboarding_revision
     assert "preferred_pool_length" in onboarding_revision
     assert "onboarding_completed_at" in onboarding_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_02"' in main
+    assert 'revision: str = "20260723_03"' in set_revision
+    assert 'down_revision: Union[str, None] = "20260723_02"' in set_revision
+    assert '"training_log_sets"' in set_revision
+    assert "target_cycle_seconds" in set_revision
+    assert "completed_distance_m" in set_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_03"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_02"' in (
+    assert 'health.get("schema_revision") == "20260723_03"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -213,6 +221,26 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "POSITION('@' IN COALESCE(tl.memo, ''))" in report_api
     assert "stat-avg" in report_page
     assert "평균 거리 (m)" in report_page
+
+
+def test_training_logs_persist_structured_set_execution_data():
+    api = (ROOT / "api" / "routers" / "training_log.py").read_text(encoding="utf-8")
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    report_api = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
+    report_page = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+
+    assert "class TrainingSetRequest(BaseModel)" in api
+    assert '@router.get("/{log_id}/sets")' in api
+    assert '@router.put("/{log_id}/sets")' in api
+    assert "_replace_training_sets" in api and "_fetch_training_sets" in api
+    assert "DELETE FROM training_log_sets WHERE training_log_id" in api
+    assert "buildTrainingSets" in plan and "target_cycle_seconds" in plan
+    assert "pendingTrainingSets" in log and "set_summary" in log
+    assert '"planned_sets"' in report_api and '"set_completion_rate"' in report_api
+    assert "plan-set-rate" in report_page and "plan-set-fill" in report_page
+    assert "/sets" in api_qa and "세트 단위 기록 조회·수행 갱신" in api_qa
 
 
 def test_qa_scripts_cover_training_report_and_advisor_flows():

@@ -1524,6 +1524,36 @@ function calculateSessionDistance(session) {
   return total;
 }
 
+function buildTrainingSets(session, strokeType = '') {
+  if (!session) return [];
+  const items = [];
+  const addSet = (set, phase, fallbackDescription) => {
+    const structure = getSetStructure(set);
+    if (!structure || !structure.reps || !structure.distance) return;
+    const cycleSeconds = parseCycleSeconds(set?.cycle);
+    items.push({
+      phase,
+      stroke_type: strokeType || null,
+      description: String(set?.drill || set?.note || fallbackDescription || '훈련 세트').slice(0, 200),
+      target_reps: structure.reps,
+      target_distance_m: structure.distance,
+      target_cycle_seconds: cycleSeconds || null,
+      completed_reps: structure.reps,
+      completed_distance_m: structure.reps * structure.distance,
+      status: 'completed',
+      notes: set?.purpose ? String(set.purpose).slice(0, 500) : null,
+    });
+  };
+
+  addSet(session.warmup, 'warmup', '웜업');
+  (session.mainset || []).forEach(set => {
+    const phase = getCycleGoal(set, set?.goal) === 'technique' ? 'drill' : 'main';
+    addSet(set, phase, '메인 세트');
+  });
+  addSet(session.cooldown, 'cooldown', '쿨다운');
+  return items;
+}
+
 function convertPoolTime(distance, seconds, sourcePool, targetPool) {
   if (!distance || !seconds || sourcePool === targetPool) return seconds;
   const sourceTurns = Math.max(0, Math.floor(distance / sourcePool) - 1);
@@ -3698,10 +3728,11 @@ function completeSessionDay(planKey, weekIndex, dayLabel, totalStr, intensity) {
   const session = (plan?.weeks?.[weekIndex]?.sessions || []).find(s => s.day === dayLabel);
   const logSession = session ? getSessionWithLogCycles(planKey, weekIndex, session) : null;
   const distance = logSession ? calculateSessionDistance(logSession) : (parseInt(String(totalStr).replace(/[^0-9]/g, ''), 10) || '');
+  const strokeType = guessStrokeFromPlan(plan, logSession);
   const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[intensity] || '보통';
   const prefill = {
     log_date: new Date().toISOString().slice(0, 10),
-    stroke_type: guessStrokeFromPlan(plan, logSession),
+    stroke_type: strokeType,
     total_distance: distance,
     pool_length: selectedPoolLength,
     intensity: intensityLabel,
@@ -3718,6 +3749,7 @@ function completeSessionDay(planKey, weekIndex, dayLabel, totalStr, intensity) {
       week_index: weekIndex,
       day_label: dayLabel,
     },
+    sets: buildTrainingSets(logSession, strokeType),
   };
   try {
     sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
@@ -3731,10 +3763,11 @@ function addToTrainingLog(planId) {
   const firstSession = plan.weeks?.[0]?.sessions?.[0];
   const logSession = firstSession ? getSessionWithLogCycles(planId, 0, firstSession) : null;
   const firstDistance = logSession ? calculateSessionDistance(logSession) : '';
+  const strokeType = guessStrokeFromPlan(plan, logSession);
   const intensityLabel = { easy: '쉬움', medium: '보통', hard: '힘듦' }[plan.weeks?.[0]?.intensity] || '보통';
   const prefill = {
     log_date: new Date().toISOString().slice(0, 10),
-    stroke_type: guessStrokeFromPlan(plan, logSession),
+    stroke_type: strokeType,
     total_distance: firstDistance,
     pool_length: selectedPoolLength,
     intensity: intensityLabel,
@@ -3746,6 +3779,7 @@ function addToTrainingLog(planId) {
       sessionStyle: 'preset',
       goal: getPlanGoalLabel(planId),
     }),
+    sets: buildTrainingSets(logSession, strokeType),
   };
   try {
     sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
@@ -3763,9 +3797,10 @@ function addSavedPlanToTrainingLog(plan) {
   }
   const poolLength = Number(content.pool_length) || selectedPoolLength;
   const distance = calculateSessionDistance(firstSession);
+  const strokeType = guessStrokeFromPlan(plan, firstSession);
   const prefill = {
     log_date: new Date().toISOString().slice(0, 10),
-    stroke_type: guessStrokeFromPlan(plan, firstSession),
+    stroke_type: strokeType,
     total_distance: distance || '',
     pool_length: poolLength,
     intensity: { easy: '쉬움', medium: '보통', hard: '힘듦' }[firstWeek.intensity] || '보통',
@@ -3777,6 +3812,7 @@ function addSavedPlanToTrainingLog(plan) {
       sessionStyle: content.session_style || 'custom',
       goal: plan.goal,
     }),
+    sets: buildTrainingSets(firstSession, strokeType),
   };
   try {
     sessionStorage.setItem('swimtech_plan_prefill', JSON.stringify(prefill));
