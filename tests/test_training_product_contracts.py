@@ -334,16 +334,20 @@ def test_class_schedule_attendance_and_notices_are_connected_end_to_end():
     assert '@router.put("/{club_id}/classes/{class_id}/sessions/{session_id}/attendance")' in api
     assert '@router.post("/{club_id}/notices")' in api
     assert '@router.post("/{club_id}/notices/{notice_id}/read")' in api
+    assert '@router.get("/{club_id}/classes/{class_id}/analytics")' in api
     assert 'or class_role == "coach"' in api
     assert "현재 반 학생만 출석 처리할 수 있습니다." in api
+    assert "개인 훈련량은 학생이 현재 코치 코드로 별도 연동한 경우에만 표시됩니다." in api
     for selector in ["operations-overview", "upcoming-sessions", "recent-notices", "attendance-modal"]:
         assert f'id="{selector}"' in page
     assert "createSession" in page and "saveAttendance" in page and "markNoticeRead" in page
+    assert 'id="class-analytics"' in page and "renderClassAnalytics" in page
     for metric in ["active_clubs", "active_classes", "class_sessions_30d", "attendance_rate_30d", "active_notices"]:
         assert f'"{metric}"' in admin_api
     for selector in ["h-active-clubs", "h-active-classes", "h-class-sessions", "h-attendance-rate", "h-active-notices"]:
         assert f'id="{selector}"' in admin_page
     assert "반 일정→출석→공지·읽음 권한 경계" in api_qa
+    assert "코치 반 수행·출석 분석과 개인훈련 동의 경계" in api_qa
     assert '"#operations-overview"' in ui_qa and '"#attendance-modal"' in ui_qa
 
 

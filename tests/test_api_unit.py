@@ -460,3 +460,14 @@ class TestClubOperations:
             )
 
         assert exc_info.value.status_code == 400
+
+    def test_attendance_signal_prioritizes_consecutive_absence_and_privacy_safe_counts(self):
+        from routers.club_operations import _attendance_signal
+
+        consecutive = _attendance_signal(4, 2, 0, ["absent", "absent", "present", "present"])
+        steady = _attendance_signal(5, 4, 0, ["present", "present", "present", "present"])
+        empty = _attendance_signal(0, 0, 0, [])
+
+        assert consecutive["level"] == "alert" and consecutive["label"] == "연속 결석"
+        assert steady["level"] == "steady" and "80%" in steady["detail"]
+        assert empty["level"] == "neutral" and "기록" in empty["label"]

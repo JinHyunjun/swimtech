@@ -117,6 +117,22 @@ def _notice_payload(row):
     }
 
 
+def _attendance_signal(record_count: int, present: int, late: int, recent_statuses: list[str]):
+    attended = present + late
+    rate = round(attended / record_count * 100) if record_count else 0
+    if len(recent_statuses) >= 2 and recent_statuses[:2] == ["absent", "absent"]:
+        return {"level": "alert", "label": "연속 결석", "detail": "최근 확인된 2회가 모두 결석입니다."}
+    if record_count >= 3 and rate < 60:
+        return {"level": "alert", "label": "출석 확인 필요", "detail": f"확인된 출석률이 {rate}%입니다."}
+    if late >= 2:
+        return {"level": "watch", "label": "지각 패턴", "detail": f"최근 {record_count}회 중 지각이 {late}회입니다."}
+    if not record_count:
+        return {"level": "neutral", "label": "기록 없음", "detail": "아직 입력된 출석 기록이 없습니다."}
+    if rate >= 80:
+        return {"level": "steady", "label": "꾸준한 출석", "detail": f"확인된 출석률이 {rate}%입니다."}
+    return {"level": "watch", "label": "출석 관찰", "detail": f"확인된 출석률이 {rate}%입니다."}
+
+
 @router.get("/operations/mine")
 def get_my_class_operations(request: Request):
     customer_id = _customer_id(request)
@@ -185,6 +201,217 @@ def get_my_class_operations(request: Request):
         raise
     except Exception as exc:
         raise HTTPException(500, f"반 운영 현황 조회 오류: {exc}")
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.get("/{club_id}/classes/{class_id}/analytics")
+def get_class_analytics(
+    club_id: int,
+    class_id: int,
+    request: Request,
+    days: int = Query(default=30, ge=7, le=180),
+):
+    """Class attendance analytics with separately consented private training signals."""
+    customer_id = _customer_id(request)
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        access = _class_access(cur, club_id, class_id, customer_id, manage=True)
+        cur.execute(
+            "SELECT COUNT(*) FROM swim_class_members WHERE class_id = %s AND status = 'active' AND role = 'student'",
+            (class_id,),
+        )
+        student_count = int(cur.fetchone()[0] or 0)
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT session.id),
+                   COUNT(DISTINCT session.id) FILTER (WHERE attendance.id IS NOT NULL),
+                   COUNT(attendance.id),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'present'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'late'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'absent'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'excused')
+            FROM swim_class_sessions session
+            LEFT JOIN swim_class_attendance attendance
+              ON attendance.session_id = session.id
+             AND EXISTS(
+                 SELECT 1 FROM swim_class_members active_member
+                 WHERE active_member.class_id = session.class_id
+                   AND active_member.customer_id = attendance.customer_id
+                   AND active_member.status = 'active'
+                   AND active_member.role = 'student'
+             )
+            WHERE session.class_id = %s
+              AND session.session_date BETWEEN CURRENT_DATE - (%s - 1) * INTERVAL '1 day' AND CURRENT_DATE
+              AND session.status <> 'cancelled'
+            """,
+            (class_id, days),
+        )
+        summary_row = cur.fetchone()
+        session_count = int(summary_row[0] or 0)
+        marked_sessions = int(summary_row[1] or 0)
+        attendance_records = int(summary_row[2] or 0)
+        present_count = int(summary_row[3] or 0)
+        late_count = int(summary_row[4] or 0)
+        absent_count = int(summary_row[5] or 0)
+        excused_count = int(summary_row[6] or 0)
+        expected_records = session_count * student_count
+        rated_records = present_count + late_count + absent_count
+        attendance_rate = round((present_count + late_count) / rated_records * 100) if rated_records else 0
+        recording_rate = min(100, round(attendance_records / expected_records * 100)) if expected_records else 0
+
+        cur.execute(
+            """
+            SELECT member.customer_id, customer.nickname, customer.name, customer.username,
+                   COUNT(attendance.id),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'present'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'late'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'absent'),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'excused'),
+                   MAX(session.session_date) FILTER (WHERE attendance.id IS NOT NULL),
+                   ARRAY_AGG(attendance.status ORDER BY session.session_date DESC, session.start_time DESC)
+                       FILTER (WHERE attendance.id IS NOT NULL)
+            FROM swim_class_members member
+            JOIN customers customer ON customer.id = member.customer_id
+            LEFT JOIN swim_class_sessions session
+              ON session.class_id = member.class_id
+             AND session.session_date BETWEEN CURRENT_DATE - (%s - 1) * INTERVAL '1 day' AND CURRENT_DATE
+             AND session.status <> 'cancelled'
+            LEFT JOIN swim_class_attendance attendance
+              ON attendance.session_id = session.id AND attendance.customer_id = member.customer_id
+            WHERE member.class_id = %s AND member.status = 'active' AND member.role = 'student'
+            GROUP BY member.customer_id, customer.nickname, customer.name, customer.username, member.joined_at
+            ORDER BY member.joined_at
+            """,
+            (days, class_id),
+        )
+        member_rows = cur.fetchall()
+        member_ids = [int(row[0]) for row in member_rows]
+
+        cur.execute("SELECT id FROM coaches WHERE customer_id = %s", (customer_id,))
+        coach_row = cur.fetchone()
+        linked_ids: set[int] = set()
+        if coach_row and member_ids:
+            cur.execute(
+                """
+                SELECT student_id FROM coach_students
+                WHERE coach_id = %s AND status = 'active' AND student_id = ANY(%s)
+                """,
+                (coach_row[0], member_ids),
+            )
+            linked_ids = {int(row[0]) for row in cur.fetchall()}
+
+        training_by_member = {}
+        if linked_ids:
+            cur.execute(
+                """
+                SELECT customer_id, COUNT(*), COALESCE(SUM(total_distance), 0), MAX(log_date)
+                FROM training_logs
+                WHERE customer_id = ANY(%s)
+                  AND log_date BETWEEN CURRENT_DATE - (%s - 1) * INTERVAL '1 day' AND CURRENT_DATE
+                GROUP BY customer_id
+                """,
+                (list(linked_ids), days),
+            )
+            training_by_member = {
+                int(row[0]): {
+                    "sessions": int(row[1] or 0),
+                    "distance_m": int(row[2] or 0),
+                    "last_training_date": row[3].isoformat() if row[3] else None,
+                }
+                for row in cur.fetchall()
+            }
+
+        members = []
+        attention_count = 0
+        for row in member_rows:
+            record_count = int(row[4] or 0)
+            present = int(row[5] or 0)
+            late = int(row[6] or 0)
+            recent_statuses = list(row[10] or [])
+            absent = int(row[7] or 0)
+            rated_records = present + late + absent
+            signal = _attendance_signal(rated_records, present, late, recent_statuses)
+            if signal["level"] == "alert":
+                attention_count += 1
+            member_id = int(row[0])
+            members.append({
+                "customer_id": member_id,
+                "display_name": row[1] or row[2] or row[3] or "회원",
+                "username": row[3],
+                "records": record_count,
+                "present": present,
+                "late": late,
+                "absent": absent,
+                "excused": int(row[8] or 0),
+                "attendance_rate": round((present + late) / rated_records * 100) if rated_records else 0,
+                "last_attendance_date": row[9].isoformat() if row[9] else None,
+                "signal": signal,
+                "training_access": member_id in linked_ids,
+                "private_training": training_by_member.get(member_id) if member_id in linked_ids else None,
+            })
+
+        cur.execute(
+            """
+            SELECT DATE_TRUNC('week', session.session_date)::date,
+                   COUNT(DISTINCT session.id),
+                   COUNT(attendance.id),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status IN ('present', 'late')),
+                   COUNT(attendance.id) FILTER (WHERE attendance.status = 'absent')
+            FROM swim_class_sessions session
+            LEFT JOIN swim_class_attendance attendance
+              ON attendance.session_id = session.id
+             AND EXISTS(
+                 SELECT 1 FROM swim_class_members active_member
+                 WHERE active_member.class_id = session.class_id
+                   AND active_member.customer_id = attendance.customer_id
+                   AND active_member.status = 'active'
+                   AND active_member.role = 'student'
+             )
+            WHERE session.class_id = %s
+              AND session.session_date BETWEEN CURRENT_DATE - (%s - 1) * INTERVAL '1 day' AND CURRENT_DATE
+              AND session.status <> 'cancelled'
+            GROUP BY DATE_TRUNC('week', session.session_date)::date
+            ORDER BY DATE_TRUNC('week', session.session_date)::date
+            """,
+            (class_id, days),
+        )
+        weekly = [{
+            "week_start": row[0].isoformat(),
+            "sessions": int(row[1] or 0),
+            "records": int(row[2] or 0),
+            "attended": int(row[3] or 0),
+            "attendance_rate": round(
+                int(row[3] or 0) / (int(row[3] or 0) + int(row[4] or 0)) * 100
+            ) if (row[3] or row[4]) else 0,
+        } for row in cur.fetchall()]
+        return {
+            "class_id": class_id,
+            "class_name": access["class_name"],
+            "days": days,
+            "summary": {
+                "student_count": student_count,
+                "sessions": session_count,
+                "marked_sessions": marked_sessions,
+                "attendance_records": attendance_records,
+                "attendance_rate": attendance_rate,
+                "recording_rate": recording_rate,
+                "present": present_count,
+                "late": late_count,
+                "absent": absent_count,
+                "excused": excused_count,
+                "attention_count": attention_count,
+            },
+            "weekly": weekly,
+            "members": members,
+            "privacy_note": "개인 훈련량은 학생이 현재 코치 코드로 별도 연동한 경우에만 표시됩니다.",
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"반 수행 분석 조회 오류: {exc}")
     finally:
         cur.close()
         conn.close()

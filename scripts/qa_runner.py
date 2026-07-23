@@ -776,13 +776,43 @@ def main():
         and forbidden_session is not None and forbidden_session.status_code == 403
         and forbidden_notice is not None and forbidden_notice.status_code == 403
     )
-    if club_id:
-        cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
-    operation_flow_ok = operation_flow_ok and cleanup_club is not None and cleanup_club.status_code == 200
     rec("18h", "반 일정→출석→공지·읽음 권한 경계", operation_flow_ok,
         f"session {status_code(session_res)}, attendance {status_code(attendance_save)}/student={len(student_attendance_items)}, "
         f"notice {status_code(notice_res)}/read={status_code(notice_read)}, "
-        f"forbidden {status_code(forbidden_session)}/{status_code(forbidden_notice)}, cleanup {status_code(cleanup_club)}")
+        f"forbidden {status_code(forbidden_session)}/{status_code(forbidden_notice)}")
+
+    class_analytics = student_analytics = None
+    if club_id and class_id:
+        class_analytics = sess.get(f"{BASE}/api/clubs/{club_id}/classes/{class_id}/analytics?days=30", timeout=60)
+        student_analytics = student_sess.get(
+            f"{BASE}/api/clubs/{club_id}/classes/{class_id}/analytics?days=30", timeout=60,
+        )
+    analytics_json = jget(class_analytics)
+    analytics_summary = analytics_json.get("summary") or {}
+    analytics_members = analytics_json.get("members") or []
+    analytics_student = next(
+        (item for item in analytics_members if item.get("customer_id") == (student_member or {}).get("customer_id")),
+        None,
+    )
+    analytics_ok = (
+        class_analytics is not None and class_analytics.status_code == 200
+        and analytics_summary.get("student_count", 0) >= 1
+        and analytics_summary.get("sessions", 0) >= 1
+        and analytics_summary.get("attendance_rate") == 100
+        and analytics_summary.get("recording_rate") == 100
+        and analytics_student is not None and analytics_student.get("attendance_rate") == 100
+        and analytics_student.get("training_access") is False
+        and analytics_student.get("private_training") is None
+        and student_analytics is not None and student_analytics.status_code == 403
+        and "코치 코드" in str(analytics_json.get("privacy_note") or "")
+    )
+    if club_id:
+        cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
+    analytics_ok = analytics_ok and cleanup_club is not None and cleanup_club.status_code == 200
+    rec("18i", "코치 반 수행·출석 분석과 개인훈련 동의 경계", analytics_ok,
+        f"coach {status_code(class_analytics)}, attendance={analytics_summary.get('attendance_rate')}%, "
+        f"recording={analytics_summary.get('recording_rate')}%, private={analytics_student.get('training_access') if analytics_student else '-'}, "
+        f"student {status_code(student_analytics)}, cleanup {status_code(cleanup_club)}")
 
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)
