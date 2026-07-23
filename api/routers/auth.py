@@ -17,7 +17,7 @@ from jose import jwt
 from pydantic import BaseModel
 import bcrypt
 from activity_log import log_activity
-from db import get_db
+from db import DATABASE_URL, get_db
 
 from rate_limit import limiter
 

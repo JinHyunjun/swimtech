@@ -4,6 +4,24 @@ Runs in CI via: pytest tests/test_api_unit.py
 from datetime import date
 
 import pytest
+from fastapi import HTTPException
+
+
+def test_demo_seed_uses_shared_database_configuration(monkeypatch):
+    """The demo endpoint must fail cleanly when DATABASE_URL is unavailable.
+
+    This also guards the shared-db refactor: ``_ensure_demo_user_and_seed``
+    references DATABASE_URL before opening a connection, so the symbol must be
+    imported alongside ``get_db``.
+    """
+    from routers import auth
+
+    monkeypatch.setattr(auth, "DATABASE_URL", "")
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth._ensure_demo_user_and_seed()
+
+    assert exc_info.value.status_code == 503
 
 # ---------------------------------------------------------------------------
 # 1. community router — constants & regex
