@@ -131,6 +131,14 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## 주요 데이터 흐름
 
+### 개인화 온보딩 → 추천·플랜 기본값
+
+1. 로그인 응답과 `/auth/me`가 서버의 `onboarding_completed_at`을 기준으로 온보딩 필요 여부를 판단한다.
+2. `PUT /auth/onboarding`이 수준, 목표, 주간 횟수와 선호 풀을 같은 `customers` 행에 저장한다.
+3. 대시보드 어드바이저는 저장된 풀 길이를 최근 기록 추론보다 우선하고, 수준별 거리 범위와 목표별 세션 구성을 계산한다.
+4. 플랜 화면은 서버 설정을 생성 폼의 목표·횟수·풀·난이도 기본값으로 사용하되, 사용자가 이후 직접 선택한 브라우저 값은 유지한다.
+5. 체험 계정은 공유 샘플 데이터 오염을 막기 위해 온보딩 변경을 허용하지 않는다.
+
 ### 훈련 일지 → 월간 리포트
 
 ```text
@@ -190,7 +198,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB는 `20260723_01`을 기준 리비전으로 사용한다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩 컬럼을 포함한 `20260723_02`다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

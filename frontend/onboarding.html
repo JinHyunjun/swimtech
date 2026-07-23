@@ -30,9 +30,7 @@
       backdrop-filter: blur(14px);
     }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
-    .brand img { width: 52px; height: 52px; }
-    .brand strong { display: block; color: #48cae4; font-size: 1.25rem; }
-    .brand span { display: block; margin-top: 2px; color: #90c4d4; font-size: .75rem; }
+    .brand img { width: auto; height: 52px; display: block; }
     .header-link { color: #90c4d4; text-decoration: none; font-size: .9rem; }
     main { width: min(880px, calc(100% - 32px)); margin: 0 auto; padding: 52px 0 80px; }
     .eyebrow { margin: 0 0 10px; color: #48cae4; font-size: .85rem; font-weight: 800; letter-spacing: .08em; }
@@ -90,8 +88,8 @@
     #form-message { min-height: 22px; margin: 14px 4px 0; color: #ff8f70; font-size: .86rem; }
     @media (max-width: 640px) {
       .onboarding-header { min-height: 66px; padding: 10px 16px; }
-      .brand img { width: 44px; height: 44px; }
-      .brand span, .header-link { display: none; }
+      .brand img { width: auto; height: 44px; }
+      .header-link { display: none; }
       main { padding-top: 32px; }
       .choices, .weekly-choices { grid-template-columns: 1fr; }
       .weekly-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -102,8 +100,7 @@
 <body>
   <header class="onboarding-header">
     <a class="brand" href="/landing" aria-label="SwimMate 홈">
-      <img src="/static/icons/logo.svg" alt="">
-      <span><strong>SwimMate</strong><span>나만의 수영 훈련 도우미</span></span>
+      <img src="/static/icons/logo.svg" alt="SwimMate 수영 훈련 도우미">
     </a>
     <a class="header-link" href="/dashboard">대시보드로 이동</a>
   </header>
