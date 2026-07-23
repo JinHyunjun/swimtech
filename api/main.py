@@ -16,8 +16,11 @@ from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
+EXPECTED_SCHEMA_REVISION = "20260723_01"
 
-_MIGRATION_SQL = """
+# Historical schema snapshot retained during the Alembic transition. It is no
+# longer executed at application startup; deployed revisions live in alembic/.
+_LEGACY_SCHEMA_SNAPSHOT = """
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE TABLE IF NOT EXISTS reports (
     id          SERIAL PRIMARY KEY,
@@ -207,22 +210,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 
-@app.on_event("startup")
-def apply_migrations():
-    DATABASE_URL = os.getenv("DATABASE_URL", "")
-    if not DATABASE_URL:
-        return
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute(_MIGRATION_SQL)
-        conn.commit()
-        cur.close(); conn.close()
-        logging.info("v2.4.1 DB 마이그레이션 완료")
-    except Exception as e:
-        logging.warning(f"마이그레이션 실패 (무시): {e}")
-
-
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
     path = request.url.path
@@ -310,7 +297,30 @@ app.include_router(jira.router,           prefix="/api/jira",            tags=["
 
 @app.get("/api/health")
 def health():
-    return {"status": "healthy"}
+    database_url = os.getenv("DATABASE_URL", "")
+    if not database_url:
+        raise HTTPException(status_code=503, detail="DATABASE_URL is not configured")
+
+    conn = None
+    cur = None
+    try:
+        conn = psycopg2.connect(database_url)
+        cur = conn.cursor()
+        cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
+        row = cur.fetchone()
+        revision = row[0] if row else None
+    except Exception:
+        logging.exception("health: database migration state unavailable")
+        raise HTTPException(status_code=503, detail="Database migration state unavailable")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+    if revision != EXPECTED_SCHEMA_REVISION:
+        raise HTTPException(status_code=503, detail="Database schema revision is outdated")
+    return {"status": "healthy", "schema_revision": revision}
 
 @app.post("/api/open-folder")
 def open_folder():

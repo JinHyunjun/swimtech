@@ -6,6 +6,31 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_database_schema_changes_are_versioned_and_deploy_gated():
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    render = (ROOT / "render.yaml").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "qa.yml").read_text(encoding="utf-8")
+    alembic_ini = (ROOT / "api" / "alembic.ini").read_text(encoding="utf-8")
+    alembic_env = (ROOT / "api" / "alembic" / "env.py").read_text(encoding="utf-8")
+    baseline = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_01_production_baseline.py"
+    ).read_text(encoding="utf-8")
+
+    assert "alembic -c alembic.ini upgrade head && uvicorn" in render
+    assert "python -m alembic -c api/alembic.ini heads" in workflow
+    assert "script_location = %(here)s/alembic" in alembic_ini
+    assert "DATABASE_URL is required" in alembic_env
+    assert "pg_advisory_xact_lock" in alembic_env
+    assert 'revision: str = "20260723_01"' in baseline
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_01"' in main
+    assert 'SELECT version_num FROM alembic_version' in main
+    assert 'health.get("schema_revision") == "20260723_01"' in (
+        ROOT / "scripts" / "qa_runner.py"
+    ).read_text(encoding="utf-8")
+    assert '@app.on_event("startup")' not in main
+    assert "def apply_migrations" not in main
+
+
 def test_analysis_routers_are_not_publicly_registered():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     assert "include_router(videos.router" not in main

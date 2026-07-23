@@ -92,7 +92,13 @@ def main():
     print("[0] 배포/기본 접속")
     try:
         r = requests.get(f"{BASE}/api/health", timeout=90)  # 콜드스타트 대비 90s
-        rec(0, "백엔드 health (콜드스타트 깨우기)", r.status_code == 200, f"{r.status_code}")
+        health = jget(r)
+        rec(
+            0,
+            "백엔드 health + DB migration revision (콜드스타트 깨우기)",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_01",
+            f"{r.status_code}, revision={health.get('schema_revision')}",
+        )
     except Exception as e:
         rec(0, "백엔드 health", False, str(e)[:60])
 

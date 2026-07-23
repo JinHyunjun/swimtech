@@ -53,6 +53,9 @@ jobs:
             --html=tests/ci_report.html --self-contained-html \
             --junitxml=tests/ci_results.xml
 
+      - name: Validate database migration graph
+        run: python -m alembic -c api/alembic.ini heads
+
       - name: Annotate test failures
         if: failure()
         run: |
