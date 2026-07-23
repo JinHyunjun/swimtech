@@ -60,6 +60,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/api/dashboard` | `dashboard.py` | 요약, 이력, 준비도, 주간 목표, 훈련 어드바이저 |
 | `/api/training-log` | `training_log.py` | 일지 CRUD, 통계, 연속 출석, 목표, 플랜 연동 |
 | `/api/training-log/import` | `health_import.py` | 건강 앱 내보내기 파일 미리보기·확정 |
+| `/api/benchmarks` | `benchmarks.py` | 테스트 세트 저장·조회·삭제, 영법·거리·코스별 PB 판정 |
 | `/api/report` | `report.py` | 월간 집계, 히트맵, 공유 리포트 |
 | `/api/plans` | `plans.py` | 커스텀 플랜, 즐겨찾기, 공유 |
 | `/api/badges` | `badge.py` | 단계형 뱃지 계산 |
@@ -103,12 +104,15 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `training_logs`: 날짜, 영법, 거리, 시간, 풀 길이, 강도, 기분, 메모
 - `training_readiness`: 수면, 피로, 근육 상태, 가용 시간, 계산 점수
 - `training_goals`: 월간 거리 목표
+- `swim_test_results`: 테스트 날짜, 영법, 거리, 풀 길이, 0.01초 단위 기록, 선택 일지 연결
 - `custom_plans`: 사용자 플랜 JSON과 메타데이터
 - `plan_completions`: 플랜 세션과 실제 일지의 연결
 - `wearable_workouts`: 건강 앱 내보내기 원본 운동과 변환 일지 ID
 - `user_badges`, `challenges`, `challenge_participants`: 성취·참여
 
 `training_logs.customer_id`가 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
+
+테스트 세트 PB는 `swim_test_results`의 같은 customer ID·영법·거리·풀 길이 조합 안에서만 비교한다. 기록 저장은 PostgreSQL advisory transaction lock으로 사용자별 순서를 직렬화해 동시에 들어온 결과도 이전 PB를 일관되게 판정한다. 선택한 `training_log_id`는 같은 소유자·날짜·풀 길이일 때만 연결한다.
 
 ### 커뮤니티
 
@@ -170,9 +174,18 @@ Vercel은 clean URL과 rewrite를 사용한다.
        └── 1:N training_log_sets ───────────→ 월간 리포트
            반복·거리·목표/실제 사이클·수행량
         training_goals + plan_completions ──→ 월간 리포트
+        swim_test_results ── 코스별 PB ─────→ 월간 리포트
 ```
 
 `training_logs`의 총거리는 기존 대시보드·뱃지·챌린지 호환 기준으로 유지한다. 세트 일괄 갱신에서 실제 완료 거리 동기화를 선택하면 같은 트랜잭션에서 총거리도 바뀌어 월간 리포트가 즉시 일치한다. 세트 조회·교체는 일지 소유자 customer ID를 확인하고, 일지 삭제 시 외래키 cascade로 함께 제거된다. 서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
+
+### 테스트 세트 → 코스별 PB
+
+1. 사용자가 날짜, 영법, 표준 거리, 25m/50m 풀과 0.01초 단위 기록을 입력한다.
+2. 서버는 거리가 풀 길이의 배수인지 검사하고, 선택 일지가 있으면 소유자·날짜·풀 길이까지 확인한다.
+3. 같은 사용자·영법·거리·풀 길이의 이전 최저 기록을 조회해 PB와 단축 시간을 계산한 뒤 저장한다.
+4. 훈련 일지는 월간 시도·신규 PB와 전체 현재 PB를, 월간 리포트는 같은 월 필터의 테스트 성과를 표시한다.
+5. 삭제는 소유권이 같은 기록만 허용하고 QA 데이터는 리포트 검증 후 모두 정리한다.
 
 ### 풀사이드 세트 실행
 
@@ -238,7 +251,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할과 일정·출석·공지 테이블을 포함한 `20260723_05`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지와 테스트 세트 기록 테이블을 포함한 `20260723_06`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.
