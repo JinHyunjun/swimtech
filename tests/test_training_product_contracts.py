@@ -260,6 +260,7 @@ def test_poolside_workout_executes_and_saves_one_set_at_a_time():
     assert 'id="timer-value"' in workout
     assert "navigator.wakeLock.request('screen')" in workout
     assert "completeRep" in workout and "saveExecution" in workout and "openExecutionSheet" in workout
+    assert (ROOT / "docs" / "screenshots" / "poolside-workout.png").exists()
     assert "풀사이드 단일 세트 수행 저장" in api_qa and ".patch(" in api_qa
     assert '("/workout", "풀사이드 훈련")' in ui_qa
     assert '"#timer-value"' in ui_qa and '"#wake-lock-btn"' in ui_qa
@@ -627,15 +628,16 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 76개" in quality_doc
-    assert "40개 API 시나리오" in quality_doc
-    assert "23개 화면 검증" in quality_doc
+    assert "단위·계약·Jira 통합 79개" in quality_doc
+    assert "41개 API 시나리오" in quality_doc
+    assert "24개 화면 검증" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
     assert "Playwright E2E 정의 104개" in quality_doc
     assert "유일한 필수 품질 게이트" in quality_doc
     assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [
+        "풀사이드 훈련 실행",
         "준비도·주간 어드바이저",
         "헬스 데이터 가져오기",
         "코치 AI 강습 운영",
