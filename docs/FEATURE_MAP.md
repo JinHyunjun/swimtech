@@ -33,8 +33,8 @@
 | `/changelog` | 공개 | Notion 공개 릴리즈 노트 표시 | `/api/changelog` | `NOTION_TOKEN` 필요, 없으면 503 |
 | `/` | 로그인 | 회원 홈 | 정적 페이지 + 활동 로그 | 활성 |
 | `/dashboard` | 로그인 | 요약, 주간 목표, 준비도, 개인 수준·목표·선호 풀 기반 규칙 훈련 어드바이저, 최근 기록 | `/api/dashboard/*`, `training_logs`, `training_readiness`, `customers` | 활성 |
-| `/training-log` | 로그인 | 일지 CRUD, 월간 목표·통계·캘린더·연속 출석, 최근 기록 복사, 건강 앱 파일 가져오기 | `/api/training-log/*`, `/api/training-log/import/*` | 활성 |
-| `/report` | 로그인 | 월간 거리·횟수·평균·시간·칼로리, 영법·주차·요일, 성장률·연속 출석, 플랜 수행률·공유 | `/api/report/monthly`, `/heatmap`, `/share/{token}` | 활성 |
+| `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 최근 기록 복사, 건강 앱 파일 가져오기 | `/api/training-log/*`, `/api/training-log/{id}/sets`, `/api/training-log/import/*` | 활성 |
+| `/report` | 로그인 | 월간 거리·횟수·평균·시간·칼로리, 영법·주차·요일, 성장률·연속 출석, 플랜·세트 수행률·공유 | `/api/report/monthly`, `/heatmap`, `/share/{token}` | 활성 |
 | `/badges` | 로그인 | 단계형 뱃지, 다음 목표, 뱃지 여정 | `/api/badges`, 훈련 일지 집계 | 활성 |
 | `/challenge` | 로그인 | 거리·연속 출석 챌린지, 참가·탈퇴·랭킹 | `/api/challenge/*` | 활성 |
 | `/community` | 로그인 | 글·댓글·좋아요·북마크·태그·멘션·신고·이미지 | `/api/community/*`, `/api/notifications/*` | 활성, 이미지 저장소 없으면 텍스트 중심 |
@@ -53,9 +53,10 @@
 2. 대시보드 어드바이저와 플랜 생성 폼이 같은 설정을 추천 거리·목표 세트·풀 길이·난이도 기본값으로 사용한다.
 3. 사용자가 대시보드 준비도를 저장하거나 플랜을 선택한다.
 4. 훈련 후 일지를 직접 작성하거나 플랜에서 일지를 만든다.
-5. `training_logs`가 대시보드, 월간 리포트, 뱃지와 챌린지의 공통 기준 데이터가 된다.
-6. 플랜에서 생성한 일지는 `plan_completions`와 연결되어 리포트의 플랜 완료 세션·거리·사이클 포함률에 반영된다.
-7. 월간 목표는 `training_goals`에 저장되고 일지와 리포트에서 같은 고객 ID로 집계된다.
+5. 일지의 총거리·시간은 `training_logs`, 반복·거리·사이클·완료량은 소유권이 같은 `training_log_sets`에 순서대로 저장된다.
+6. `training_logs`가 대시보드, 월간 리포트, 뱃지와 챌린지의 공통 기준 데이터가 되고, 세트 데이터는 일지와 리포트의 수행률을 보완한다.
+7. 플랜에서 생성한 일지는 `plan_completions`와 연결되어 리포트의 플랜 완료 세션·거리·사이클 포함률에 반영된다.
+8. 월간 목표는 `training_goals`에 저장되고 일지와 리포트에서 같은 고객 ID로 집계된다.
 
 건강 데이터 가져오기는 기기 직접 연동이 아니다.
 

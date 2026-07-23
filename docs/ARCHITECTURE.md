@@ -149,11 +149,12 @@ Vercel은 clean URL과 rewrite를 사용한다.
        ┌───────────┼────────────┬──────────────┐
        ▼           ▼            ▼              ▼
    대시보드     월간 리포트    뱃지          챌린지
-                   │
-        training_goals + plan_completions
+       └── 1:N training_log_sets ───────────→ 월간 리포트
+           반복·거리·목표/실제 사이클·수행량
+        training_goals + plan_completions ──→ 월간 리포트
 ```
 
-서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
+`training_logs`의 총거리는 기존 대시보드·뱃지·챌린지 호환 기준으로 유지한다. 세트 일괄 갱신에서 실제 완료 거리 동기화를 선택하면 같은 트랜잭션에서 총거리도 바뀌어 월간 리포트가 즉시 일치한다. 세트 조회·교체는 일지 소유자 customer ID를 확인하고, 일지 삭제 시 외래키 cascade로 함께 제거된다. 서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
 
 ### 준비도 → 훈련 추천
 
@@ -198,7 +199,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩 컬럼을 포함한 `20260723_02`다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩과 세트 수행 테이블을 포함한 `20260723_03`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

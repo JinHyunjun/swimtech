@@ -111,7 +111,7 @@ Render 공식 문서 기준 Free Web Service는 15분 동안 인바운드 HTTP/W
 
 1. Neon 프로젝트와 데이터베이스를 만든다.
 2. pooled connection string을 `DATABASE_URL`로 등록한다.
-3. 기존 운영 스키마는 Alembic baseline `20260723_01`로 등록되었고 현재 운영 head는 `20260723_02`다.
+3. 기존 운영 스키마는 Alembic baseline `20260723_01`로 등록되었고 현재 운영 head는 `20260723_03`이다. `20260723_02`는 개인화 온보딩, `20260723_03`은 세트 단위 수행 데이터를 추가한다.
 4. Render 시작 명령과 FastAPI lifespan이 모두 `alembic upgrade head`를 보장하며, 동시에 시작돼도 PostgreSQL advisory lock으로 직렬화한다.
 5. `/api/health`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
 6. 새 스키마 변경은 `api/alembic/versions/`에 순차 리비전으로 추가하고 `EXPECTED_SCHEMA_REVISION`과 운영 QA 기대값을 함께 갱신한다.
