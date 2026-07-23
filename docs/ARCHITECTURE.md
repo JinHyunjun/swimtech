@@ -67,7 +67,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/api/community` | `community.py` | 게시글·댓글·반응·신고·이미지 |
 | `/api/notifications` | `notifications.py` | 알림 조회·읽음 |
 | `/api/coach` | `coach.py`, `coach_ai.py` | 관계, 피드백, 개인·단체 강습, AI 문서, 크루 운영 |
-| `/api/clubs` | `clubs.py` | 클럽·반 생성, 코드 참여, 클럽·반 범위별 역할·멤버십 |
+| `/api/clubs` | `clubs.py`, `club_operations.py` | 클럽·반 생성, 코드 참여, 범위별 역할, 일정·출석·공지·읽음 |
 | `/api/jira` | `jira.py` | Jira 상태·이슈·웹훅 |
 | `/api/chat` | `chat.py` | AI 코치와 대화 이력 |
 | `/api/pool` | `pool.py` | 수영장 즐겨찾기 |
@@ -136,8 +136,14 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `swim_club_members`: 클럽별 `owner`, `coach`, `assistant`, `member` 역할
 - `swim_classes`: 클럽 안의 반, 담당 코치, 수준·목표·풀 길이·정원·참여 코드
 - `swim_class_members`: 반별 `coach`, `assistant`, `student` 역할
+- `swim_class_sessions`: 반 일정, 날짜·시간·장소·레인·훈련 초점과 상태
+- `swim_class_attendance`: 일정별 학생 출석 상태·메모·확인자
+- `swim_class_notices`: 클럽 전체 또는 특정 반 공지
+- `swim_class_notice_reads`: 사용자별 공지 읽음 시각
 
 학생의 반 코드 참여는 클럽과 반 멤버십을 한 트랜잭션에서 활성화한다. 클럽 권한과 반 권한을 분리해 등록 코치가 특정 반만 관리할 수 있고, 모든 쓰기 API가 현재 사용자 멤버십·등록 코치 여부·담당 코치 무결성을 다시 확인한다.
+
+일정·출석 쓰기는 클럽 소유자·코치 또는 해당 반 코치에게만 허용한다. 학생의 출석 조회는 본인 행으로 제한하고, 공지는 클럽·반 멤버십 범위에 맞는 대상만 조회·읽음 처리할 수 있다. 공지 게시 트랜잭션은 대상 회원의 기존 `notifications` 알림도 함께 만든다.
 
 ## 주요 데이터 흐름
 
@@ -230,7 +236,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반·역할 테이블을 포함한 `20260723_04`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할과 일정·출석·공지 테이블을 포함한 `20260723_05`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.
