@@ -316,7 +316,14 @@ def check_home_link_targets(page):
             text = (link.inner_text(timeout=500) or "").strip()
             aria = link.get_attribute("aria-label") or ""
             title = link.get_attribute("title") or ""
-            if "홈" not in f"{text} {aria} {title}":
+            compact_text = text.replace("\n", " ").strip()
+            is_home_control = (
+                compact_text == "홈"
+                or compact_text.startswith(("← 홈", "🏠 홈", "홈으로"))
+                or aria.strip() in {"홈", "SwimMate 홈"}
+                or title.strip() in {"홈", "SwimMate 홈"}
+            )
+            if not is_home_control:
                 continue
             href = link.get_attribute("href") or ""
             if href != "/landing":
@@ -340,6 +347,7 @@ def check_public_demo_entry(context):
             entry["page_errors"].append({"phase": "expectations", "errors": expectation_errors})
         page.click("#demo-btn")
         try:
+            page.wait_for_url("**/landing", timeout=15000)
             page.wait_for_load_state("networkidle", timeout=15000)
         except PWTimeout:
             pass
