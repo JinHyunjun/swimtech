@@ -1,6 +1,6 @@
 # SwimMate 기술 구조
 
-> 코드 기준일: 2026-07-20
+> 코드 기준일: 2026-07-24
 
 ## 한눈에 보는 구조
 
@@ -44,7 +44,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `/api/*`, `/auth/*` → Render
 - `/badges` → 정적 `badge.html`
 - `/training-log` → 정적 `training_log.html`
-- `/`, `/app` → `landing.html`
+- `/`, `/app` → `/landing` 307 리다이렉트
 - 과거 영상 분석 경로 → `/landing`
 
 ## FastAPI 애플리케이션
@@ -56,6 +56,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | Prefix | 라우터 | 책임 |
 | --- | --- | --- |
 | `/auth` | `auth.py` | 가입, 로그인, 데모, 토큰 갱신, 로그아웃, 탈퇴, 닉네임, OAuth |
+| `/api/account` | `account.py` | 개인 데이터 JSON 내보내기, 비밀번호 변경, 모든 세션 무효화 |
 | `/customers` | `customers.py` | 관리자용 고객 조회·생성 |
 | `/api/dashboard` | `dashboard.py` | 요약, 이력, 준비도, 주간 목표, 훈련 어드바이저 |
 | `/api/training-log` | `training_log.py` | 일지 CRUD, 통계, 연속 출석, 목표, 플랜 연동 |
@@ -93,11 +94,11 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ### 회원·인증
 
-- `customers`: 계정, 닉네임, 역할, 상태, 주간 목표, OAuth 식별자
+- `customers`: 계정, 닉네임, 역할, 상태, 수준·목표·주간 목표·선호 풀, 온보딩 완료 시각, OAuth 식별자, 인증 세션 버전·비밀번호 변경 시각
 - JWT access/refresh cookie: `swimtech_token`, `swimtech_refresh_token`
 - `user_activity_logs`: 페이지 조회, 메뉴, 액션, IP·브라우저
 
-쿠키 이름은 호환성을 위한 레거시 기술 식별자이며 사용자 표시 브랜드는 아니다.
+액세스·갱신 토큰에는 `auth_version`이 들어가며 비밀번호 변경, 모든 기기 로그아웃과 탈퇴 뒤 DB 버전이 증가하면 이전 토큰은 즉시 거부된다. 쿠키 이름은 호환성을 위한 레거시 기술 식별자이며 사용자 표시 브랜드는 아니다.
 
 ### 개인 훈련
 

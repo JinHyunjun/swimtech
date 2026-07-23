@@ -24,7 +24,7 @@
 
 ## Vercel
 
-Vercel 프로젝트의 Root Directory는 `frontend`다. 루트 `vercel.json`과 `frontend/vercel.json`은 현재 같은 라우팅을 유지한다.
+Vercel 프로젝트의 Root Directory는 `frontend`이며 배포 라우팅은 추적 중인 `frontend/vercel.json`에서 관리한다. 저장소 루트의 임시 `vercel.json`은 배포 산출물로 추적하지 않는다.
 
 핵심 rewrite:
 
@@ -34,13 +34,13 @@ Vercel 프로젝트의 Root Directory는 `frontend`다. 루트 `vercel.json`과 
 /pool         → https://swimtech-api.onrender.com/pool
 ```
 
-호환 경로:
+대표 홈·호환 리다이렉트:
 
 ```text
 /badges       → /badge
 /training-log → /training_log
-/app          → /landing
-/             → /landing
+/app          → /landing (307)
+/             → /landing (307)
 ```
 
 과거 영상 분석 주소 `/meta`, `/upload`, `/viewer`, `/share/*`는 `/landing`으로 보낸다.
@@ -52,7 +52,8 @@ Vercel 프로젝트의 Root Directory는 `frontend`다. 루트 `vercel.json`과 
 3. clean URL과 rewrite 적용 확인
 4. `/manifest.json`, `/sw.js`, `/static/style.css` 200 확인
 5. `/api/health`가 same-origin rewrite로 200인지 확인
-6. `/auth/demo` 후 회원 전용 페이지 진입 확인
+6. 일반 로그인과 `/auth/demo` 후 주소가 `/landing`인지 확인
+7. `/`와 `/app`이 본문을 rewrite하지 않고 `/landing`으로 리다이렉트되는지 확인
 
 ## Render
 

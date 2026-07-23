@@ -103,7 +103,7 @@ def test_readme_describes_current_training_helper_and_retires_analysis_claims():
     assert "[데모 영상 / 스크린샷 자리]" not in readme
     assert "[웹서비스 바로가기](https://swimtech.vercel.app)" in readme
     assert "별도의 프로그램이나 설치 마법사가 필요 없는 웹서비스" in readme
-    assert "비회원으로 체험하기" in readme
+    assert "비회원 체험 시작" in readme
     assert "## 로컬 실행" not in readme
     assert "docker compose up" not in readme
     assert not (ROOT / "실행파일_설치.zip").exists()
@@ -838,10 +838,10 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 87개" in quality_doc
-    assert "46개 API 시나리오" in quality_doc
-    assert "29989754517" in quality_doc
-    assert "25개 화면 검증" in quality_doc
+    assert "단위·계약·Jira 통합 91개" in quality_doc
+    assert "48개 API 시나리오" in quality_doc
+    assert "30026694346" in quality_doc
+    assert "26개 화면 검증" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
     assert "Playwright E2E 정의 104개" in quality_doc
