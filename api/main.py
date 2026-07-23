@@ -1,6 +1,10 @@
 import logging
 import os
 import psycopg2
+from contextlib import asynccontextmanager
+from pathlib import Path
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -17,6 +21,21 @@ from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
 EXPECTED_SCHEMA_REVISION = "20260723_01"
+
+
+def upgrade_database_schema() -> None:
+    """Apply reviewed Alembic revisions before accepting any HTTP request."""
+    if not os.getenv("DATABASE_URL", "").strip():
+        logging.warning("DATABASE_URL is unavailable; schema migration was skipped")
+        return
+    config = Config(str(Path(__file__).with_name("alembic.ini")))
+    command.upgrade(config, "head")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    upgrade_database_schema()
+    yield
 
 # Historical schema snapshot retained during the Alembic transition. It is no
 # longer executed at application startup; deployed revisions live in alembic/.
@@ -200,7 +219,8 @@ CREATE INDEX IF NOT EXISTS idx_plan_completions_cid ON plan_completions(customer
 app = FastAPI(
     title="SwimMate API",
     description="수영 훈련 도우미 플랫폼 백엔드",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan,
 )
 
 _API_PREFIXES = ("/api/", "/auth/", "/customers/")

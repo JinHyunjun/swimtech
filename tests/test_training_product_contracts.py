@@ -23,6 +23,8 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert "pg_advisory_xact_lock" in alembic_env
     assert 'revision: str = "20260723_01"' in baseline
     assert 'EXPECTED_SCHEMA_REVISION = "20260723_01"' in main
+    assert 'command.upgrade(config, "head")' in main
+    assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
     assert 'health.get("schema_revision") == "20260723_01"' in (
         ROOT / "scripts" / "qa_runner.py"
