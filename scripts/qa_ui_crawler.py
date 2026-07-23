@@ -143,10 +143,12 @@ PAGE_EXPECTATIONS = {
         "selectors": ["#onboarding-form", "[data-field='level']", "[data-field='goal']", "[data-field='weekly_goal']", "[data-field='preferred_pool_length']", "#next-btn"],
         "texts": ["내 수영에 맞는 기준부터 설정해요", "현재 수영 수준은 어떤가요?"],
         "absent_texts": ["AI 분석", "영상을 촬영"],
+        "styles": [{"selector": ".step.active h2", "property": "color", "value": "rgb(237, 250, 255)"}],
     },
     "/onboarding?mode=edit": {
         "selectors": ["#onboarding-form", "#onboarding-exit-link", "#next-btn"],
         "texts": ["맞춤 훈련 설정을 수정해요", "프로필로 돌아가기"],
+        "styles": [{"selector": ".step.active h2", "property": "color", "value": "rgb(237, 250, 255)"}],
     },
     "/dashboard": {
         "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness"],
@@ -301,6 +303,29 @@ def check_page_expectations(page, path):
     for text in expected.get("absent_texts", []):
         if text in body_text:
             errors.append({"type": "forbidden_text", "text": text})
+    for style in expected.get("styles", []):
+        selector = style["selector"]
+        property_name = style["property"]
+        expected_value = style["value"]
+        try:
+            actual_value = page.locator(selector).first.evaluate(
+                "(element, propertyName) => getComputedStyle(element).getPropertyValue(propertyName)",
+                property_name,
+            ).strip()
+            if actual_value != expected_value:
+                errors.append({
+                    "type": "unexpected_style",
+                    "selector": selector,
+                    "property": property_name,
+                    "expected": expected_value,
+                    "actual": actual_value,
+                })
+        except Exception:
+            errors.append({
+                "type": "style_check_failed",
+                "selector": selector,
+                "property": property_name,
+            })
     return errors
 
 

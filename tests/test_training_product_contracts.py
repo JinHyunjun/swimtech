@@ -558,9 +558,11 @@ def test_landing_url_and_editable_onboarding_are_qa_mapped():
     assert "isEditMode" in onboarding
     assert "맞춤 훈련 설정을 수정해요" in onboarding
     assert "isEditMode ? '/profile'" in onboarding
+    assert "color: #edfaff;" in onboarding
     assert "onboarding-reminder" in landing and "me.needs_onboarding" in landing
     assert "대표 홈 리다이렉트" in api_qa
     assert "check_home_link_targets" in ui_qa
+    assert '"property": "color", "value": "rgb(237, 250, 255)"' in ui_qa
     assert '("/onboarding?mode=edit", "맞춤 훈련 설정 수정")' in ui_qa
 
 
