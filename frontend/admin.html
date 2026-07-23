@@ -522,6 +522,29 @@
       </div>
     </div>
 
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="label">활성 클럽</div>
+        <div class="value" id="h-active-clubs">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">활성 반</div>
+        <div class="value" id="h-active-classes">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">30일 반 일정</div>
+        <div class="value" id="h-class-sessions">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">30일 출석률</div>
+        <div class="value" id="h-attendance-rate">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">활성 공지</div>
+        <div class="value energy" id="h-active-notices">—</div>
+      </div>
+    </div>
+
     <div class="health-grid">
       <div class="panel">
         <div class="panel-title">영법별 거리 분포</div>
@@ -894,6 +917,11 @@ async function loadTrainingHealth() {
     document.getElementById('h-readiness-users').textContent = fmtNumber(s.readiness_users_7d);
     document.getElementById('h-readiness-score').textContent = `${fmtNumber(s.readiness_avg_score_7d)}점`;
     document.getElementById('h-readiness-recovery').textContent = `${fmtNumber(s.readiness_recovery_rate_7d)}%`;
+    document.getElementById('h-active-clubs').textContent = fmtNumber(s.active_clubs);
+    document.getElementById('h-active-classes').textContent = fmtNumber(s.active_classes);
+    document.getElementById('h-class-sessions').textContent = fmtNumber(s.class_sessions_30d);
+    document.getElementById('h-attendance-rate').textContent = `${fmtNumber(s.attendance_rate_30d)}%`;
+    document.getElementById('h-active-notices').textContent = fmtNumber(s.active_notices);
 
     renderMenuBars('h-strokes', (data.stroke_distribution || []).map(i => ({
       menu: `${i.stroke_type || '기타'} · ${fmtNumber(i.distance)}m`,

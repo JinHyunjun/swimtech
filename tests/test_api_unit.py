@@ -438,3 +438,25 @@ class TestClubClassRoles:
             )
 
         assert exc_info.value.status_code == 400
+
+
+class TestClubOperations:
+    def test_session_rejects_end_time_before_start_before_db(self, monkeypatch):
+        from datetime import date, time
+        from routers import club_operations
+
+        monkeypatch.setattr(club_operations, "_customer_id", lambda request: 44)
+        with pytest.raises(HTTPException) as exc_info:
+            club_operations.create_session(
+                1,
+                2,
+                club_operations.SessionCreateRequest(
+                    title="QA 일정",
+                    session_date=date.today(),
+                    start_time=time(10, 0),
+                    end_time=time(9, 0),
+                ),
+                object(),
+            )
+
+        assert exc_info.value.status_code == 400

@@ -24,6 +24,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     club_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_04_clubs_classes_roles.py"
     ).read_text(encoding="utf-8")
+    operations_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_05_class_operations.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -46,11 +49,15 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
         assert f'"{table}"' in club_revision
     assert "owner', 'coach', 'assistant', 'member" in club_revision
     assert "coach', 'assistant', 'student" in club_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_04"' in main
+    assert 'revision: str = "20260723_05"' in operations_revision
+    assert 'down_revision: Union[str, None] = "20260723_04"' in operations_revision
+    for table in ["swim_class_sessions", "swim_class_attendance", "swim_class_notices", "swim_class_notice_reads"]:
+        assert f'"{table}"' in operations_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_05"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_04"' in (
+    assert 'health.get("schema_revision") == "20260723_05"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -310,6 +317,34 @@ def test_club_class_and_scoped_roles_are_connected_end_to_end():
     assert 'student_sess.post(f"{BASE}/api/clubs/classes/join"' in api_qa
     assert '("/clubs", "클럽·반")' in ui_qa
     assert '"#clubs-grid"' in ui_qa and '"#class-modal"' in ui_qa
+
+
+def test_class_schedule_attendance_and_notices_are_connected_end_to_end():
+    api = (ROOT / "api" / "routers" / "club_operations.py").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "clubs.html").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "include_router(club_operations.router" in main
+    assert '@router.get("/operations/mine")' in api
+    assert '@router.post("/{club_id}/classes/{class_id}/sessions")' in api
+    assert '@router.put("/{club_id}/classes/{class_id}/sessions/{session_id}/attendance")' in api
+    assert '@router.post("/{club_id}/notices")' in api
+    assert '@router.post("/{club_id}/notices/{notice_id}/read")' in api
+    assert 'or class_role == "coach"' in api
+    assert "현재 반 학생만 출석 처리할 수 있습니다." in api
+    for selector in ["operations-overview", "upcoming-sessions", "recent-notices", "attendance-modal"]:
+        assert f'id="{selector}"' in page
+    assert "createSession" in page and "saveAttendance" in page and "markNoticeRead" in page
+    for metric in ["active_clubs", "active_classes", "class_sessions_30d", "attendance_rate_30d", "active_notices"]:
+        assert f'"{metric}"' in admin_api
+    for selector in ["h-active-clubs", "h-active-classes", "h-class-sessions", "h-attendance-rate", "h-active-notices"]:
+        assert f'id="{selector}"' in admin_page
+    assert "반 일정→출석→공지·읽음 권한 경계" in api_qa
+    assert '"#operations-overview"' in ui_qa and '"#attendance-modal"' in ui_qa
 
 
 def test_qa_scripts_cover_training_report_and_advisor_flows():

@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_04",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_05",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -669,8 +669,8 @@ def main():
     club_detail = None
     forbidden_create = None
     forbidden_staff = None
-    cleanup_club = None
     class_id = None
+    student_member = None
     if club_id:
         class_res = sess.post(f"{BASE}/api/clubs/{club_id}/classes", json={
             "name": "QA 화목 중급반", "level": "중급", "goal": "자유형 자세 교정",
@@ -697,7 +697,6 @@ def main():
                     f"{BASE}/api/clubs/{club_id}/members/{student_member.get('customer_id')}/role",
                     json={"role": "assistant"}, timeout=60,
                 )
-        cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
     student_club_ids = {item.get("id") for item in (jget(student_clubs).get("clubs", []) if student_clubs else [])}
     club_flow_ok = (
         club_res.status_code == 200 and class_res is not None and class_res.status_code == 200
@@ -707,13 +706,83 @@ def main():
         and len(jget(club_detail).get("members", [])) >= 2
         and forbidden_create is not None and forbidden_create.status_code == 403
         and forbidden_staff is not None and forbidden_staff.status_code == 403
-        and cleanup_club is not None and cleanup_club.status_code == 200
     )
     rec("18g", "클럽 생성→반 코드 참여→역할 권한 경계", club_flow_ok,
         f"club {club_res.status_code}, class {status_code(class_res)}, "
         f"join {status_code(join_class_res)}, mine {status_code(student_clubs)}, "
         f"member-create {status_code(forbidden_create)}, "
-        f"staff-role {status_code(forbidden_staff)}, cleanup {status_code(cleanup_club)}")
+        f"staff-role {status_code(forbidden_staff)}")
+
+    session_res = sessions_res = attendance_save = attendance_coach = attendance_student = None
+    notice_res = notice_student = notice_read = notice_after = None
+    forbidden_session = forbidden_notice = cleanup_club = None
+    if club_id and class_id and student_member:
+        session_res = sess.post(f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions", json={
+            "title": "QA 정규 강습", "session_date": time.strftime("%Y-%m-%d"),
+            "start_time": "09:00", "end_time": "10:00", "location": "QA 수영장 1번 레인",
+            "lane_count": 1, "training_focus": "자유형 캐치와 페이스 유지",
+        }, timeout=60)
+        session_id = jget(session_res).get("id")
+        sessions_res = sess.get(f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions", timeout=60)
+        if session_id:
+            attendance_save = sess.put(
+                f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions/{session_id}/attendance",
+                json={"records": [{
+                    "customer_id": student_member.get("customer_id"),
+                    "status": "present", "note": "자동 QA 출석",
+                }]}, timeout=60,
+            )
+            attendance_coach = sess.get(
+                f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions/{session_id}/attendance", timeout=60,
+            )
+            attendance_student = student_sess.get(
+                f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions/{session_id}/attendance", timeout=60,
+            )
+        notice_res = sess.post(f"{BASE}/api/clubs/{club_id}/notices", json={
+            "class_id": class_id, "title": "QA 강습 공지", "content": "준비물과 집합 시간을 확인해주세요.",
+            "is_pinned": True,
+        }, timeout=60)
+        notice_id = jget(notice_res).get("id")
+        notice_student = student_sess.get(f"{BASE}/api/clubs/{club_id}/notices?class_id={class_id}", timeout=60)
+        if notice_id:
+            notice_read = student_sess.post(f"{BASE}/api/clubs/{club_id}/notices/{notice_id}/read", timeout=60)
+            notice_after = student_sess.get(f"{BASE}/api/clubs/{club_id}/notices?class_id={class_id}", timeout=60)
+        forbidden_session = student_sess.post(
+            f"{BASE}/api/clubs/{club_id}/classes/{class_id}/sessions",
+            json={"title": "권한 없는 일정", "session_date": time.strftime("%Y-%m-%d"), "start_time": "11:00"},
+            timeout=60,
+        )
+        forbidden_notice = student_sess.post(f"{BASE}/api/clubs/{club_id}/notices", json={
+            "class_id": class_id, "title": "권한 없는 공지", "content": "학생은 게시할 수 없습니다.",
+        }, timeout=60)
+
+    coach_attendance_items = jget(attendance_coach).get("members", []) if attendance_coach else []
+    student_attendance_items = jget(attendance_student).get("members", []) if attendance_student else []
+    notices_before = jget(notice_student).get("notices", []) if notice_student else []
+    notices_after = jget(notice_after).get("notices", []) if notice_after else []
+    operation_flow_ok = (
+        session_res is not None and session_res.status_code == 200
+        and sessions_res is not None and sessions_res.status_code == 200
+        and attendance_save is not None and attendance_save.status_code == 200
+        and attendance_coach is not None and attendance_coach.status_code == 200
+        and any(item.get("status") == "present" for item in coach_attendance_items)
+        and attendance_student is not None and attendance_student.status_code == 200
+        and len(student_attendance_items) == 1 and student_attendance_items[0].get("status") == "present"
+        and notice_res is not None and notice_res.status_code == 200
+        and notice_student is not None and notice_student.status_code == 200
+        and any(item.get("id") == jget(notice_res).get("id") and not item.get("is_read") for item in notices_before)
+        and notice_read is not None and notice_read.status_code == 200
+        and any(item.get("id") == jget(notice_res).get("id") and item.get("is_read") for item in notices_after)
+        and forbidden_session is not None and forbidden_session.status_code == 403
+        and forbidden_notice is not None and forbidden_notice.status_code == 403
+    )
+    if club_id:
+        cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
+    operation_flow_ok = operation_flow_ok and cleanup_club is not None and cleanup_club.status_code == 200
+    rec("18h", "반 일정→출석→공지·읽음 권한 경계", operation_flow_ok,
+        f"session {status_code(session_res)}, attendance {status_code(attendance_save)}/student={len(student_attendance_items)}, "
+        f"notice {status_code(notice_res)}/read={status_code(notice_read)}, "
+        f"forbidden {status_code(forbidden_session)}/{status_code(forbidden_notice)}, cleanup {status_code(cleanup_club)}")
 
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)
@@ -795,6 +864,11 @@ def main():
             and "plan_completions_30d" in health_summary
             and "readiness_checkins_7d" in health_summary
             and "readiness_avg_score_7d" in health_summary
+            and "active_clubs" in health_summary
+            and "active_classes" in health_summary
+            and "class_sessions_30d" in health_summary
+            and "attendance_rate_30d" in health_summary
+            and "active_notices" in health_summary
             and isinstance(health_json.get("watchlist"), list)
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
@@ -805,7 +879,9 @@ def main():
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "
             f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}/page2={feedback_page2_json.get('page')}, "
             f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}, "
-            f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점")
+            f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점, "
+            f"clubs={health_summary.get('active_clubs')}/classes={health_summary.get('active_classes')}/"
+            f"attendance={health_summary.get('attendance_rate_30d')}%")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")

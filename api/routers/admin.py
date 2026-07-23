@@ -469,7 +469,12 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                to_regclass('public.training_goals'),
                to_regclass('public.custom_plans'),
                to_regclass('public.plan_completions'),
-               to_regclass('public.training_readiness')
+               to_regclass('public.training_readiness'),
+               to_regclass('public.swim_clubs'),
+               to_regclass('public.swim_classes'),
+               to_regclass('public.swim_class_sessions'),
+               to_regclass('public.swim_class_attendance'),
+               to_regclass('public.swim_class_notices')
     """)
     (
         has_training_logs,
@@ -477,6 +482,11 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         has_custom_plans,
         has_plan_completions,
         has_training_readiness,
+        has_swim_clubs,
+        has_swim_classes,
+        has_class_sessions,
+        has_class_attendance,
+        has_class_notices,
     ) = [
         bool(x) for x in cur.fetchone()
     ]
@@ -499,6 +509,11 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         "readiness_users_7d": 0,
         "readiness_avg_score_7d": 0,
         "readiness_recovery_rate_7d": 0,
+        "active_clubs": 0,
+        "active_classes": 0,
+        "class_sessions_30d": 0,
+        "attendance_rate_30d": 0,
+        "active_notices": 0,
     }
     pool_distribution = []
     stroke_distribution = []
@@ -648,6 +663,41 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             "readiness_recovery_rate_7d": round(recovery_count / checkins * 100) if checkins else 0,
         })
 
+    if has_swim_clubs:
+        cur.execute("SELECT COUNT(*) FROM swim_clubs WHERE status = 'active'")
+        summary["active_clubs"] = _safe_int(cur.fetchone()[0])
+
+    if has_swim_classes:
+        cur.execute("SELECT COUNT(*) FROM swim_classes WHERE status = 'active'")
+        summary["active_classes"] = _safe_int(cur.fetchone()[0])
+
+    if has_class_sessions:
+        cur.execute("""
+            SELECT COUNT(*) FROM swim_class_sessions
+            WHERE session_date >= CURRENT_DATE - INTERVAL '30 days'
+              AND session_date <= CURRENT_DATE
+              AND status <> 'cancelled'
+        """)
+        summary["class_sessions_30d"] = _safe_int(cur.fetchone()[0])
+
+    if has_class_attendance:
+        cur.execute("""
+            SELECT COUNT(*) FILTER (WHERE attendance.status IN ('present', 'late')),
+                   COUNT(*)
+            FROM swim_class_attendance attendance
+            JOIN swim_class_sessions session ON session.id = attendance.session_id
+            WHERE session.session_date >= CURRENT_DATE - INTERVAL '30 days'
+              AND session.session_date <= CURRENT_DATE
+              AND session.status <> 'cancelled'
+        """)
+        row = cur.fetchone()
+        checked = _safe_int(row[1])
+        summary["attendance_rate_30d"] = round(_safe_int(row[0]) / checked * 100) if checked else 0
+
+    if has_class_notices:
+        cur.execute("SELECT COUNT(*) FROM swim_class_notices WHERE status = 'active'")
+        summary["active_notices"] = _safe_int(cur.fetchone()[0])
+
     cur.close()
     conn.close()
     return {
@@ -657,6 +707,11 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             "custom_plans": has_custom_plans,
             "plan_completions": has_plan_completions,
             "training_readiness": has_training_readiness,
+            "swim_clubs": has_swim_clubs,
+            "swim_classes": has_swim_classes,
+            "swim_class_sessions": has_class_sessions,
+            "swim_class_attendance": has_class_attendance,
+            "swim_class_notices": has_class_notices,
         },
         "summary": summary,
         "pool_distribution": pool_distribution,
@@ -685,6 +740,15 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                     f"최근 7일 체크인 {summary['readiness_checkins_7d']}건 · "
                     f"평균 {summary['readiness_avg_score_7d']}점 · "
                     f"회복 우선 {summary['readiness_recovery_rate_7d']}%"
+                ),
+            },
+            {
+                "label": "클럽·반 운영",
+                "status": "운영 확인",
+                "detail": (
+                    f"활성 클럽 {summary['active_clubs']}개 · 반 {summary['active_classes']}개 · "
+                    f"30일 일정 {summary['class_sessions_30d']}회 · 출석률 {summary['attendance_rate_30d']}% · "
+                    f"활성 공지 {summary['active_notices']}건"
                 ),
             },
         ],
