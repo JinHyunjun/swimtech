@@ -293,6 +293,9 @@ def test_portfolio_demo_mode_contract():
     assert '@router.get("/onboarding")' in auth_api
     assert '@router.put("/onboarding")' in auth_api
     assert "preferred_pool_length" in auth_api
+    onboarding_page = (ROOT / "frontend" / "onboarding.html").read_text(encoding="utf-8")
+    assert '/static/icons/logo.svg' in onboarding_page
+    assert '/static/logo.svg' not in onboarding_page
     assert "demo-banner" in dashboard_page
     assert "me.is_demo" in dashboard_page
     assert "/auth/demo" in api_qa
