@@ -21,6 +21,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     set_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_03_training_log_sets.py"
     ).read_text(encoding="utf-8")
+    club_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_04_clubs_classes_roles.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -37,11 +40,17 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert '"training_log_sets"' in set_revision
     assert "target_cycle_seconds" in set_revision
     assert "completed_distance_m" in set_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_03"' in main
+    assert 'revision: str = "20260723_04"' in club_revision
+    assert 'down_revision: Union[str, None] = "20260723_03"' in club_revision
+    for table in ["swim_clubs", "swim_club_members", "swim_classes", "swim_class_members"]:
+        assert f'"{table}"' in club_revision
+    assert "owner', 'coach', 'assistant', 'member" in club_revision
+    assert "coach', 'assistant', 'student" in club_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_04"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_03"' in (
+    assert 'health.get("schema_revision") == "20260723_04"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -264,6 +273,42 @@ def test_poolside_workout_executes_and_saves_one_set_at_a_time():
     assert "풀사이드 단일 세트 수행 저장" in api_qa and ".patch(" in api_qa
     assert '("/workout", "풀사이드 훈련")' in ui_qa
     assert '"#timer-value"' in ui_qa and '"#wake-lock-btn"' in ui_qa
+
+
+def test_club_class_and_scoped_roles_are_connected_end_to_end():
+    api = (ROOT / "api" / "routers" / "clubs.py").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "clubs.html").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    coach_page = (ROOT / "frontend" / "coach.html").read_text(encoding="utf-8")
+    activity_log = (ROOT / "api" / "activity_log.py").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert "_registered_coach_id" in api
+    assert '@router.post("")' in api
+    assert '@router.get("/mine")' in api
+    assert '@router.post("/{club_id}/classes")' in api
+    assert '@router.post("/classes/join")' in api
+    assert '@router.put("/{club_id}/members/{member_customer_id}/role")' in api
+    assert '@router.put("/{club_id}/classes/{class_id}/members/{member_customer_id}/role")' in api
+    assert "등록 코치만 클럽과 반을 만들 수 있습니다." in api
+    assert "담당 코치는 학생이나 보조 코치로 변경할 수 없습니다." in api
+    assert "담당 중인 반이 있어 클럽에서 나갈 수 없습니다." in api
+    assert 'or class_role == "coach"' in api
+    assert "is_active_member" in api
+    assert "UPDATE swim_class_members class_member\n                SET role = 'student'" not in api
+    assert "include_router(clubs.router" in main
+    assert '@app.get("/clubs")' in main and '_serve("clubs.html")' in main
+    for selector in ["clubs-grid", "join-class-form", "join-code", "club-create-card", "club-modal", "class-modal"]:
+        assert f'id="{selector}"' in page
+    assert "GROUP OPERATIONS" in page and "개인 운동 · 훈련 플랜" in page
+    assert 'href="/clubs"' in landing and 'href="/clubs"' in coach_page
+    assert '"/clubs":          "클럽·반"' in activity_log
+    assert "클럽 생성→반 코드 참여→역할 권한 경계" in api_qa
+    assert 'student_sess.post(f"{BASE}/api/clubs/classes/join"' in api_qa
+    assert '("/clubs", "클럽·반")' in ui_qa
+    assert '"#clubs-grid"' in ui_qa and '"#class-modal"' in ui_qa
 
 
 def test_qa_scripts_cover_training_report_and_advisor_flows():

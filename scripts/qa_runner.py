@@ -96,7 +96,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_03",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_04",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -294,7 +294,7 @@ def main():
     # ── 7. 메인 화면/라우팅 ─────────────────────────────
     print("\n[7-8] 화면/라우팅 (정적 페이지 200 확인)")
     pages = {"/landing": "랜딩", "/dashboard": "대시보드", "/plan": "플랜",
-             "/training-log": "훈련일지", "/workout": "풀사이드 훈련", "/report": "리포트", "/pool": "수영장",
+             "/training-log": "훈련일지", "/workout": "풀사이드 훈련", "/report": "리포트", "/pool": "수영장", "/clubs": "클럽·반",
              "/community": "커뮤니티", "/challenge": "챌린지", "/badges": "뱃지"}
     bad = []
     for path, label in pages.items():
@@ -654,6 +654,63 @@ def main():
     disconnected_profile = jget(student_sess.get(f"{BASE}/api/coach/my-coach", timeout=60))
     rec("18f", "학생의 코치 연동 직접 해제", disconnect.status_code == 200 and disconnected_profile.get("has_coach") is False,
         f"disconnect {disconnect.status_code}, has_coach={disconnected_profile.get('has_coach')}")
+
+    club_res = sess.post(f"{BASE}/api/clubs", json={
+        "name": f"QA 마스터즈 {rnd(4)}", "description": "자동 QA 클럽", "default_pool_length": 25,
+    }, timeout=60)
+    club_json = jget(club_res)
+    club_id = club_json.get("id")
+    class_res = None
+    join_class_res = None
+    student_clubs = None
+    club_detail = None
+    forbidden_create = None
+    forbidden_staff = None
+    cleanup_club = None
+    class_id = None
+    if club_id:
+        class_res = sess.post(f"{BASE}/api/clubs/{club_id}/classes", json={
+            "name": "QA 화목 중급반", "level": "중급", "goal": "자유형 자세 교정",
+            "pool_length": 25, "max_members": 20,
+        }, timeout=60)
+        class_json = jget(class_res)
+        class_id = class_json.get("id")
+        invite_code = class_json.get("invite_code")
+        if class_id and invite_code:
+            join_class_res = student_sess.post(f"{BASE}/api/clubs/classes/join", json={
+                "invite_code": invite_code,
+            }, timeout=60)
+            student_clubs = student_sess.get(f"{BASE}/api/clubs/mine", timeout=60)
+            club_detail = sess.get(f"{BASE}/api/clubs/{club_id}", timeout=60)
+            forbidden_create = student_sess.post(f"{BASE}/api/clubs/{club_id}/classes", json={
+                "name": "권한 없는 반", "level": "혼합", "pool_length": 25, "max_members": 10,
+            }, timeout=60)
+            student_member = next(
+                (item for item in jget(club_detail).get("members", []) if item.get("username") == student_username),
+                None,
+            )
+            if student_member and not student_member.get("is_registered_coach"):
+                forbidden_staff = sess.put(
+                    f"{BASE}/api/clubs/{club_id}/members/{student_member.get('customer_id')}/role",
+                    json={"role": "assistant"}, timeout=60,
+                )
+        cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
+    student_club_ids = {item.get("id") for item in (jget(student_clubs).get("clubs", []) if student_clubs else [])}
+    club_flow_ok = (
+        club_res.status_code == 200 and class_res is not None and class_res.status_code == 200
+        and join_class_res is not None and join_class_res.status_code == 200
+        and student_clubs is not None and student_clubs.status_code == 200 and club_id in student_club_ids
+        and club_detail is not None and club_detail.status_code == 200
+        and len(jget(club_detail).get("members", [])) >= 2
+        and forbidden_create is not None and forbidden_create.status_code == 403
+        and forbidden_staff is not None and forbidden_staff.status_code == 403
+        and cleanup_club is not None and cleanup_club.status_code == 200
+    )
+    rec("18g", "클럽 생성→반 코드 참여→역할 권한 경계", club_flow_ok,
+        f"club {club_res.status_code}, class {class_res.status_code if class_res else '-'}, "
+        f"join {join_class_res.status_code if join_class_res else '-'}, mine {student_clubs.status_code if student_clubs else '-'}, "
+        f"member-create {forbidden_create.status_code if forbidden_create else '-'}, "
+        f"staff-role {forbidden_staff.status_code if forbidden_staff else '-'}, cleanup {cleanup_club.status_code if cleanup_club else '-'}")
 
     badges_res = sess.get(f"{BASE}/api/badges", timeout=60)
     badges_json = jget(badges_res)

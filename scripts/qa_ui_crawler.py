@@ -96,12 +96,13 @@ PAGES = [
     ("/profile", "프로필"),
     ("/injury", "부상 예방"),
     ("/coach", "코치 연동"),
+    ("/clubs", "클럽·반"),
 ]
 
 PROTECTED_PATHS = {
     "/onboarding", "/dashboard", "/plan", "/training-log", "/workout", "/report", "/pool", "/badges",
     "/community", "/challenge", "/equipment", "/chat", "/videos",
-    "/profile", "/injury", "/coach",
+    "/profile", "/injury", "/coach", "/clubs",
 }
 
 # 되돌릴 수 없는 동작 — 클릭하지 않고 "존재 확인"만 한다
@@ -170,6 +171,10 @@ PAGE_EXPECTATIONS = {
     "/coach": {
         "selectors": ["#coach-verification-card", "#my-invite-code", "#disconnect-coach-btn", "#coach-ai-studio", "#ai-doc-type", "#ai-generate-btn", "#coach-ai-insight", "#insight-btn", "#my-class-documents"],
         "texts": ["내 코치 코드", "선택 사항 · 코치 자격 인증"],
+    },
+    "/clubs": {
+        "selectors": ["#clubs-grid", "#join-class-form", "#join-code", "#club-create-card", "#club-modal", "#class-modal"],
+        "texts": ["내 클럽·반", "반 코드로 참여", "GROUP OPERATIONS"],
     },
     "/admin": {
         "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],

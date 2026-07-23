@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimMate — 클럽·반</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#06121c">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+*{box-sizing:border-box}button,input,select,textarea{font:inherit}.club-shell{min-height:100vh;background:radial-gradient(circle at 90% 0,rgba(0,180,216,.12),transparent 34%),var(--bg)}
+.club-header{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px,calc((100vw - 1120px)/2));border-bottom:.5px solid var(--border);background:rgba(6,18,28,.9);backdrop-filter:blur(14px)}
+.header-link{display:inline-flex;align-items:center;min-height:42px;padding:8px 12px;border:.5px solid rgba(255,255,255,.22);border-radius:var(--radius-sm);color:#f4fbff;text-decoration:none;background:rgba(255,255,255,.06)}
+.header-brand{text-align:center}.header-brand strong{display:block;color:#f4fbff}.header-brand span{display:block;margin-top:2px;color:#9addec;font-size:var(--fs-caption)}
+.club-main{width:min(1120px,100%);margin:0 auto;padding:28px 16px 80px}.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:16px;align-items:stretch;margin-bottom:22px}
+.hero-copy,.join-card,.panel,.club-card{border:.5px solid var(--border);border-radius:var(--radius-lg);background:var(--surface)}.hero-copy{padding:28px;background:linear-gradient(135deg,rgba(0,180,216,.15),var(--surface) 64%)}
+.eyebrow{color:var(--cyan);font-size:var(--fs-caption);font-weight:900;letter-spacing:.08em}.hero h1{margin:8px 0;color:var(--text);font-size:clamp(28px,5vw,46px);font-style:italic;line-height:1.08}.hero p{margin:0;color:var(--muted);line-height:1.65}
+.boundary{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.boundary span{padding:7px 10px;border-radius:999px;background:rgba(72,202,228,.09);color:var(--cyan);font-size:var(--fs-caption);font-weight:800}
+.join-card{padding:22px}.panel-title{margin:0 0 5px;color:var(--text);font-size:var(--fs-body-lg);font-weight:900}.panel-desc{margin:0 0 16px;color:var(--muted);font-size:var(--fs-caption);line-height:1.5}
+.inline-form{display:flex;gap:8px}.field{width:100%;min-height:46px;padding:10px 12px;border:.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none}.field:focus{border-color:var(--blue)}textarea.field{min-height:88px;resize:vertical}.primary,.ghost,.mini{min-height:46px;padding:10px 15px;border-radius:var(--radius-sm);font-weight:900;cursor:pointer;white-space:nowrap}.primary{border:0;background:var(--blue);color:var(--bg)}.ghost{border:.5px solid var(--border);background:transparent;color:var(--text)}.mini{min-height:36px;padding:6px 10px;border:.5px solid var(--border);background:rgba(0,180,216,.07);color:var(--blue);font-size:var(--fs-caption)}button:disabled{opacity:.5;cursor:wait}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:24px 0 12px}.section-head h2{margin:0;color:var(--text);font-size:var(--fs-heading);font-style:italic}.section-head p{margin:4px 0 0;color:var(--muted);font-size:var(--fs-caption)}
+.coach-create{display:none;margin-bottom:18px;padding:20px}.coach-create.visible{display:block}.form-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:10px}.form-grid .full{grid-column:1/-1}.field-wrap{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:var(--fs-caption)}
+.clubs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(430px,100%),1fr));gap:14px}.club-card{padding:20px;transition:transform .2s,border-color .2s}.club-card:hover{transform:translateY(-3px);border-color:rgba(72,202,228,.45)}.card-top{display:flex;justify-content:space-between;gap:12px}.club-name{margin:0;color:var(--text);font-size:var(--fs-heading)}.club-desc{margin:6px 0 14px;color:var(--muted);font-size:var(--fs-caption);line-height:1.5}.role-badge{flex:0 0 auto;height:max-content;padding:5px 9px;border-radius:999px;background:rgba(72,202,228,.11);color:var(--cyan);font-size:var(--fs-caption);font-weight:900}.role-owner{background:rgba(250,204,21,.12);color:#facc15}.role-coach{background:rgba(74,222,128,.12);color:var(--green)}
+.metrics{display:flex;gap:16px;margin-bottom:15px;color:var(--muted);font-size:var(--fs-caption)}.metrics strong{color:var(--text)}.class-list{display:grid;gap:8px;margin-bottom:14px}.class-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer}.class-row:hover{border-color:var(--blue)}.class-row strong{display:block;color:var(--text);font-size:var(--fs-body)}.class-row span{color:var(--muted);font-size:var(--fs-caption)}.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{grid-column:1/-1;padding:42px 22px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-lg);color:var(--muted)}.empty strong{display:block;margin-bottom:6px;color:var(--text);font-size:var(--fs-body-lg)}
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72)}.modal-backdrop.visible{display:flex}.modal{width:min(860px,100%);max-height:90vh;overflow:auto;border:.5px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);box-shadow:0 24px 80px rgba(0,0,0,.42)}.modal-head{position:sticky;top:0;z-index:2;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:20px;border-bottom:.5px solid var(--border);background:var(--surface)}.modal-head h2{margin:0;color:var(--text);font-size:var(--fs-heading)}.modal-close{width:40px;height:40px;border:.5px solid var(--border);border-radius:50%;background:transparent;color:var(--text);cursor:pointer}.modal-body{padding:20px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.detail-section{padding:16px;border:.5px solid var(--border);border-radius:var(--radius-md);background:var(--bg)}.detail-section.full{grid-column:1/-1}.detail-section h3{margin:0 0 12px;color:var(--text);font-size:var(--fs-body-lg)}
+.member-list{display:grid;gap:8px}.member-row{display:flex;align-items:center;gap:10px;padding:10px;border:.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)}.avatar{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:rgba(0,180,216,.14);color:var(--blue);font-weight:900}.member-info{min-width:0;flex:1}.member-info strong{display:block;color:var(--text)}.member-info span{color:var(--muted);font-size:var(--fs-caption)}.role-control{display:flex;gap:6px}.role-control select{min-height:36px;padding:5px 7px;border:.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text)}
+.invite-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;padding:12px;border:1px dashed rgba(0,180,216,.4);border-radius:var(--radius-sm);color:var(--muted)}.invite-line code{color:var(--blue);font-size:var(--fs-body-lg);font-weight:900;letter-spacing:.08em}.toast{position:fixed;left:50%;bottom:28px;z-index:200;transform:translate(-50%,20px);padding:12px 18px;border-radius:999px;background:var(--text);color:var(--bg);font-weight:800;opacity:0;pointer-events:none;transition:.2s}.toast.visible{opacity:1;transform:translate(-50%,0)}.toast.error{background:#f87171;color:#08131c}
+@media(max-width:760px){.hero,.clubs-grid,.detail-grid{grid-template-columns:1fr}.detail-section.full{grid-column:auto}.club-header{padding:10px 12px}.header-brand span{display:none}.club-main{padding-top:18px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.member-row{align-items:flex-start;flex-wrap:wrap}.role-control{width:100%;padding-left:48px}.role-control select{flex:1}.inline-form{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="club-shell">
+  <header class="club-header">
+    <a class="header-link" href="/landing">← 홈</a>
+    <div class="header-brand"><strong>클럽·반</strong><span>함께 수영하는 팀 운영 공간</span></div>
+    <a class="header-link" href="/coach">코치 연동</a>
+  </header>
+  <main class="club-main">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">GROUP OPERATIONS</div>
+        <h1>개인 훈련을 넘어<br>함께하는 수영으로</h1>
+        <p>클럽과 강습반을 만들고 역할을 나눠 운영하세요. 개인의 훈련 일지·플랜은 그대로 유지되며, 이곳에서는 코치와 회원이 함께하는 그룹 구성을 관리합니다.</p>
+        <div class="boundary"><span>개인 운동 · 훈련 플랜</span><span>그룹 운영 · 클럽과 반</span><span>등록 코치 · 운영 권한</span></div>
+      </div>
+      <div class="join-card">
+        <h2 class="panel-title">반 코드로 참여</h2>
+        <p class="panel-desc">코치에게 받은 LANE 코드를 입력하면 해당 클럽과 반에 바로 연결됩니다.</p>
+        <form id="join-class-form" class="inline-form">
+          <input id="join-code" class="field" maxlength="20" autocomplete="off" placeholder="LANE-XXXXXX" aria-label="반 참여 코드" required>
+          <button class="primary" type="submit">참여하기</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel coach-create" id="club-create-card">
+      <h2 class="panel-title">새 클럽 만들기</h2>
+      <p class="panel-desc">등록 코치 전용입니다. 생성한 클럽 안에 목적과 수준별 반을 구성할 수 있습니다.</p>
+      <form id="create-club-form" class="form-grid">
+        <label class="field-wrap">클럽 이름<input id="club-name" class="field" maxlength="80" required placeholder="예: 블루웨이브 마스터즈"></label>
+        <label class="field-wrap">기본 수영장<select id="club-pool" class="field"><option value="25">25m</option><option value="50">50m</option></select></label>
+        <label class="field-wrap full">소개<textarea id="club-description" class="field" maxlength="500" placeholder="클럽의 활동 목적과 운영 방식을 알려주세요."></textarea></label>
+        <div class="full"><button class="primary" type="submit">클럽 생성</button></div>
+      </form>
+    </section>
+
+    <div class="section-head"><div><h2>내 클럽·반</h2><p>내 역할과 참여 중인 반을 한눈에 확인합니다.</p></div><button class="ghost" id="refresh-clubs" type="button">새로고침</button></div>
+    <section class="clubs-grid" id="clubs-grid" aria-live="polite"><div class="empty"><strong>불러오는 중</strong>클럽과 반 정보를 확인하고 있어요.</div></section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="club-modal" role="dialog" aria-modal="true" aria-labelledby="club-modal-title">
+  <div class="modal"><div class="modal-head"><div><h2 id="club-modal-title">클럽 상세</h2><div class="panel-desc" id="club-modal-sub"></div></div><button class="modal-close" type="button" data-close="club-modal" aria-label="닫기">×</button></div><div class="modal-body" id="club-modal-body"></div></div>
+</div>
+<div class="modal-backdrop" id="class-modal" role="dialog" aria-modal="true" aria-labelledby="class-modal-title">
+  <div class="modal"><div class="modal-head"><div><h2 id="class-modal-title">반 상세</h2><div class="panel-desc" id="class-modal-sub"></div></div><button class="modal-close" type="button" data-close="class-modal" aria-label="닫기">×</button></div><div class="modal-body" id="class-modal-body"></div></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const state={clubs:[],isCoach:false,currentClub:null,currentClass:null};
+const roleLabel={owner:'소유자',coach:'코치',assistant:'보조 코치',member:'회원',student:'학생'};
+const $=id=>document.getElementById(id);
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(message,error=false){const el=$('toast');el.textContent=message;el.className=`toast visible${error?' error':''}`;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className='toast',2600);}
+async function requestJson(url,options={}){const response=await fetch(url,{credentials:'include',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await response.json();}catch{}if(response.status===401){location.href='/login';throw new Error('로그인이 필요합니다.');}if(!response.ok)throw new Error(data.detail||'요청을 처리하지 못했습니다.');return data;}
+function setBusy(form,busy){form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=busy);}
+function roleBadge(role){return `<span class="role-badge role-${escapeHtml(role)}">${escapeHtml(roleLabel[role]||role)}</span>`;}
+function classRow(clubId,item){return `<button type="button" class="class-row" onclick="openClass(${Number(clubId)},${Number(item.id)})"><span><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.level)} · ${Number(item.pool_length)}m · ${Number(item.member_count)}명</span></span><span>${item.my_role?escapeHtml(roleLabel[item.my_role]||item.my_role):'상세 →'}</span></button>`;}
+function renderClubs(){const grid=$('clubs-grid');if(!state.clubs.length){grid.innerHTML='<div class="empty"><strong>아직 참여 중인 클럽이 없어요</strong>반 코드를 입력해 참여하거나, 등록 코치라면 새 클럽을 만들어보세요.</div>';return;}grid.innerHTML=state.clubs.map(club=>`<article class="club-card"><div class="card-top"><div><h3 class="club-name">${escapeHtml(club.name)}</h3><p class="club-desc">${escapeHtml(club.description||'클럽 소개가 아직 없습니다.')}</p></div>${roleBadge(club.my_role)}</div><div class="metrics"><span><strong>${Number(club.member_count)}</strong>명 회원</span><span><strong>${Number(club.class_count)}</strong>개 반</span><span><strong>${Number(club.default_pool_length)}m</strong> 기본 풀</span></div><div class="class-list">${club.classes.length?club.classes.map(item=>classRow(club.id,item)).join(''):'<div class="panel-desc">아직 개설된 반이 없습니다.</div>'}</div><div class="card-actions"><button class="ghost" type="button" onclick="openClub(${Number(club.id)})">클럽 상세</button>${club.can_manage?'<button class="mini" type="button" onclick="openClub('+Number(club.id)+',true)">반 만들기</button>':''}</div></article>`).join('');}
+async function loadClubs(){try{const data=await requestJson('/api/clubs/mine');state.clubs=data.clubs||[];renderClubs();}catch(error){$('clubs-grid').innerHTML=`<div class="empty"><strong>정보를 불러오지 못했어요</strong>${escapeHtml(error.message)}</div>`;}}
+async function init(){try{const coach=await requestJson('/api/coach/me');state.isCoach=Boolean(coach.is_coach);$('club-create-card').classList.toggle('visible',state.isCoach);}catch{}await loadClubs();}
+
+$('join-class-form').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const code=$('join-code').value.trim().toUpperCase();if(!code)return;setBusy(form,true);try{const result=await requestJson('/api/clubs/classes/join',{method:'POST',body:JSON.stringify({invite_code:code})});toast(`${result.club_name} · ${result.class_name}에 참여했습니다.`);form.reset();await loadClubs();}catch(error){toast(error.message,true);}finally{setBusy(form,false);}});
+$('create-club-form').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;setBusy(form,true);try{const result=await requestJson('/api/clubs',{method:'POST',body:JSON.stringify({name:$('club-name').value.trim(),description:$('club-description').value.trim()||null,default_pool_length:Number($('club-pool').value)})});toast(`${result.name} 클럽을 만들었습니다.`);form.reset();await loadClubs();openClub(result.id,true);}catch(error){toast(error.message,true);}finally{setBusy(form,false);}});
+$('refresh-clubs').onclick=loadClubs;
+
+function memberRow(member,canEdit,scope,clubId,classId=null){const label=escapeHtml(roleLabel[member.role]||member.role);let controls='';if(canEdit&&member.role!=='owner'){const roles=scope==='club'?(member.is_registered_coach?['coach','assistant','member']:['member']):(member.is_registered_coach?['coach','assistant','student']:['student']);controls=`<div class="role-control"><select id="${scope}-role-${Number(member.customer_id)}">${roles.map(role=>`<option value="${role}" ${role===member.role?'selected':''}>${escapeHtml(roleLabel[role])}</option>`).join('')}</select><button class="mini" type="button" onclick="saveRole('${scope}',${Number(clubId)},${classId===null?'null':Number(classId)},${Number(member.customer_id)})">변경</button></div>`;}return `<div class="member-row"><div class="avatar">${escapeHtml((member.display_name||'회').slice(0,1))}</div><div class="member-info"><strong>${escapeHtml(member.display_name)}</strong><span>@${escapeHtml(member.username)} · ${label}${member.is_registered_coach?' · 등록 코치':''}</span></div>${controls}</div>`;}
+async function openClub(clubId,focusCreate=false){try{const data=await requestJson(`/api/clubs/${clubId}`);state.currentClub=data;$('club-modal-title').textContent=data.club.name;$('club-modal-sub').textContent=`${roleLabel[data.club.my_role]||data.club.my_role} · ${data.club.default_pool_length}m 기본 풀`;$('club-modal-body').innerHTML=renderClubDetail(data);showModal('club-modal');if(focusCreate&&$('create-class-name'))$('create-class-name').focus();}catch(error){toast(error.message,true);}}
+function renderClubDetail(data){const club=data.club;const create=club.can_manage?`<section class="detail-section"><h3>새 반 만들기</h3><form id="create-class-form" class="form-grid" onsubmit="createClass(event,${Number(club.id)})"><label class="field-wrap">반 이름<input id="create-class-name" class="field" maxlength="80" required placeholder="예: 화목 중급반"></label><label class="field-wrap">수준<input id="create-class-level" class="field" maxlength="30" value="혼합" required></label><label class="field-wrap">목표<input id="create-class-goal" class="field" maxlength="80" placeholder="예: 자유형 자세 교정"></label><label class="field-wrap">수영장<select id="create-class-pool" class="field"><option value="25" ${club.default_pool_length===25?'selected':''}>25m</option><option value="50" ${club.default_pool_length===50?'selected':''}>50m</option></select></label><label class="field-wrap">정원<input id="create-class-max" class="field" type="number" min="1" max="500" value="30" required></label><div class="field-wrap" style="justify-content:end"><button class="primary" type="submit">반 생성</button></div></form></section>`:'';return `<div class="detail-grid"><section class="detail-section"><h3>클럽 회원 · ${data.members.length}명</h3><div class="member-list">${data.members.map(m=>memberRow(m,club.my_role==='owner','club',club.id)).join('')}</div></section><section class="detail-section"><h3>운영 중인 반 · ${data.classes.length}개</h3><div class="class-list">${data.classes.length?data.classes.map(item=>classRow(club.id,item)).join(''):'<div class="panel-desc">아직 개설된 반이 없습니다.</div>'}</div></section>${create}</div>`;}
+async function createClass(event,clubId){event.preventDefault();const form=event.currentTarget;setBusy(form,true);try{const result=await requestJson(`/api/clubs/${clubId}/classes`,{method:'POST',body:JSON.stringify({name:$('create-class-name').value.trim(),level:$('create-class-level').value.trim(),goal:$('create-class-goal').value.trim()||null,pool_length:Number($('create-class-pool').value),max_members:Number($('create-class-max').value)})});toast(`${result.name} 반을 만들었습니다.`);await loadClubs();await openClub(clubId);await openClass(clubId,result.id);}catch(error){toast(error.message,true);}finally{setBusy(form,false);}}
+async function openClass(clubId,classId){try{const data=await requestJson(`/api/clubs/${clubId}/classes/${classId}`);state.currentClass=data;$('class-modal-title').textContent=data.class.name;$('class-modal-sub').textContent=`${data.class.level} · ${data.class.pool_length}m · 정원 ${data.class.max_members}명`;$('class-modal-body').innerHTML=renderClassDetail(data);showModal('class-modal');}catch(error){toast(error.message,true);}}
+function renderClassDetail(data){const item=data.class;const invite=item.invite_code?`<div class="invite-line"><span>학생 참여 코드</span><code>${escapeHtml(item.invite_code)}</code><button class="mini" type="button" onclick="copyText('${escapeHtml(item.invite_code)}')">복사</button></div>`:'';return `${invite}<section class="detail-section full"><h3>반 구성원 · ${data.members.length}명</h3><p class="panel-desc">코치·보조 코치 권한은 SwimMate에 등록된 코치에게만 부여할 수 있습니다.</p><div class="member-list">${data.members.map(m=>memberRow(m,item.can_manage,'class',item.club_id,item.id)).join('')}</div></section>`;}
+async function saveRole(scope,clubId,classId,customerId){const select=$(`${scope}-role-${customerId}`);const url=scope==='club'?`/api/clubs/${clubId}/members/${customerId}/role`:`/api/clubs/${clubId}/classes/${classId}/members/${customerId}/role`;select.disabled=true;try{await requestJson(url,{method:'PUT',body:JSON.stringify({role:select.value})});toast('역할을 변경했습니다.');if(scope==='club')await openClub(clubId);else await openClass(clubId,classId);await loadClubs();}catch(error){toast(error.message,true);select.disabled=false;}}
+async function copyText(text){try{await navigator.clipboard.writeText(text);toast('코드를 복사했습니다.');}catch{toast('코드를 길게 눌러 복사해주세요.',true);}}
+function showModal(id){$(id).classList.add('visible');document.body.style.overflow='hidden';}
+function closeModal(id){$(id).classList.remove('visible');if(!document.querySelector('.modal-backdrop.visible'))document.body.style.overflow='';}
+document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>closeModal(button.dataset.close));document.querySelectorAll('.modal-backdrop').forEach(backdrop=>backdrop.addEventListener('click',event=>{if(event.target===backdrop)closeModal(backdrop.id);}));document.addEventListener('keydown',event=>{if(event.key==='Escape')document.querySelectorAll('.modal-backdrop.visible').forEach(item=>closeModal(item.id));});
+init();
+</script>
+<script src="/static/theme.js"></script>
+</body>
+</html>

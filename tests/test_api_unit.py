@@ -400,3 +400,41 @@ class TestCoachAiClassOperations:
 
         assert result.groups[0].member_refs == ["S1"]
         assert all("이름" not in group.rationale for group in result.groups)
+
+
+# ---------------------------------------------------------------------------
+# 8. Club/class scoped role boundaries
+# ---------------------------------------------------------------------------
+class TestClubClassRoles:
+    class Cursor:
+        def __init__(self, row=None):
+            self.row = row
+            self.executed = []
+
+        def execute(self, query, params=None):
+            self.executed.append((query, params))
+
+        def fetchone(self):
+            return self.row
+
+    def test_staff_role_requires_a_registered_coach(self):
+        from routers import clubs
+
+        cursor = self.Cursor(None)
+        with pytest.raises(HTTPException) as exc_info:
+            clubs._registered_coach_id(cursor, 44)
+
+        assert exc_info.value.status_code == 403
+        assert cursor.executed[-1][1] == (44,)
+
+    def test_club_creation_rejects_unsupported_pool_length_before_db(self, monkeypatch):
+        from routers import clubs
+
+        monkeypatch.setattr(clubs, "_customer_id", lambda request: 44)
+        with pytest.raises(HTTPException) as exc_info:
+            clubs.create_club(
+                clubs.ClubCreateRequest(name="QA 클럽", default_pool_length=30),
+                object(),
+            )
+
+        assert exc_info.value.status_code == 400

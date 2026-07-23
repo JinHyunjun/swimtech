@@ -15,12 +15,12 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, coach_ai, pool, chat, admin, health_import, jira
+from routers import customers, auth, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, report, challenge, feedback, coach, coach_ai, clubs, pool, chat, admin, health_import, jira
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
-EXPECTED_SCHEMA_REVISION = "20260723_03"
+EXPECTED_SCHEMA_REVISION = "20260723_04"
 
 
 def upgrade_database_schema() -> None:
@@ -311,6 +311,7 @@ app.include_router(challenge.router,      prefix="/api/challenge",       tags=["
 app.include_router(feedback.router,       prefix="/api/feedback",        tags=["피드백"])
 app.include_router(coach.router,          prefix="/api/coach",           tags=["코치"])
 app.include_router(coach_ai.router,       prefix="/api/coach",           tags=["코치 AI 강습 운영"])
+app.include_router(clubs.router,          prefix="/api/clubs",           tags=["클럽·반"])
 app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
 app.include_router(jira.router,           prefix="/api/jira",            tags=["Jira 연동"])
@@ -582,6 +583,13 @@ def coach_page(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("coach.html")
+
+# 클럽·반 운영 페이지 (로그인 필요)
+@app.get("/clubs")
+def clubs_page(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("clubs.html")
 
 # 수영 영상 큐레이션 (로그인 필요)
 @app.get("/videos")
