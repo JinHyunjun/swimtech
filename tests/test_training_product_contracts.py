@@ -879,10 +879,11 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 91개" in quality_doc
-    assert "48개 API 시나리오" in quality_doc
-    assert "30026694346" in quality_doc
-    assert "26개 화면 검증" in quality_doc
+    assert "단위·계약·Jira 통합 93개" in quality_doc
+    assert "49개 API 시나리오" in quality_doc
+    assert "30073137555" in quality_doc
+    assert "27개 화면 검증" in quality_doc
+    assert "내 수영 데이터 대시보드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
     assert "Playwright E2E 정의 104개" in quality_doc

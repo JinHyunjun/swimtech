@@ -111,7 +111,9 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `wearable_workouts`: 건강 앱 내보내기 원본 운동과 변환 일지 ID
 - `user_badges`, `challenges`, `challenge_participants`: 성취·참여
 
-`training_logs.customer_id`가 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
+`training_logs.customer_id`가 대시보드, 개인 데이터 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
+
+`GET /api/account/insights`는 인증된 customer ID만 사용해 기존 데이터를 읽기 전용으로 집계한다. 전체 기간과 최근·직전 90일, 고정 12개월 추이, 영법·풀 길이, 구조화 세트·플랜·사이클 기록률과 코스별 PB를 한 응답으로 제공하며 다른 사용자의 행을 섞지 않는다. JSON 내보내기는 원본 백업·이동용이고 이 API는 화면 해석용이다.
 
 테스트 세트 PB는 `swim_test_results`의 같은 customer ID·영법·거리·풀 길이 조합 안에서만 비교한다. 기록 저장은 PostgreSQL advisory transaction lock으로 사용자별 순서를 직렬화해 동시에 들어온 결과도 이전 PB를 일관되게 판정한다. 선택한 `training_log_id`는 같은 소유자·날짜·풀 길이일 때만 연결한다.
 
@@ -179,6 +181,23 @@ Vercel은 clean URL과 rewrite를 사용한다.
 ```
 
 `training_logs`의 총거리는 기존 대시보드·뱃지·챌린지 호환 기준으로 유지한다. 세트 일괄 갱신에서 실제 완료 거리 동기화를 선택하면 같은 트랜잭션에서 총거리도 바뀌어 월간 리포트가 즉시 일치한다. 세트 조회·교체는 일지 소유자 customer ID를 확인하고, 일지 삭제 시 외래키 cascade로 함께 제거된다. 서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
+
+### 훈련 기록 → 내 수영 데이터
+
+```text
+training_logs ────────────── 평생 누적·최근 90일·12개월·영법·풀 분포
+training_log_sets ────────── 구조화 세트·실제 사이클·세트 완료율
+plan_completions ─────────── 플랜 기반 세션 비율
+swim_test_results ────────── 테스트 시도·영법/거리/코스별 현재 PB
+          │
+          ▼
+ GET /api/account/insights ── 인증된 customer ID 전용 집계
+          │
+          ▼
+       /my-data ───────────── 장기 추이·기록 습관·규칙 인사이트
+```
+
+월 단위 성장 리포트는 선택한 달의 상세 성과를, 개인 데이터 대시보드는 전체 기간과 최근 변화의 맥락을 담당한다. 두 화면 모두 같은 훈련 기록을 읽으므로 새 일지나 세트 수행량이 저장되면 별도의 복제 테이블 없이 다음 조회에 반영된다.
 
 ### 테스트 세트 → 코스별 PB
 
@@ -252,7 +271,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지와 테스트 세트 기록 테이블을 포함한 `20260723_06`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트 기록과 계정 세션 버전을 포함한 `20260723_07`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

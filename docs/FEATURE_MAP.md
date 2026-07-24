@@ -33,6 +33,7 @@
 | `/feedback` | 공개 | 서비스 피드백 제출 | `/api/feedback` | 활성 |
 | `/changelog` | 공개 | Notion 공개 릴리즈 노트 표시 | `/api/changelog` | `NOTION_TOKEN` 필요, 없으면 503 |
 | `/dashboard` | 로그인 | 요약, 주간 목표, 준비도, 개인 수준·목표·선호 풀 기반 규칙 훈련 어드바이저, 최근 기록 | `/api/dashboard/*`, `training_logs`, `training_readiness`, `customers` | 활성 |
+| `/my-data` | 로그인 | 평생 누적, 최근 90일 비교, 12개월 추이, 영법·풀 분포, 기록 습관, 테스트 시도·코스별 PB, 규칙 기반 인사이트 | `/api/account/insights`, `training_logs`, `training_log_sets`, `plan_completions`, `swim_test_results` | 활성 |
 | `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 테스트 세트·코스별 PB, 최근 기록 복사, 건강 앱 파일 가져오기 | `/api/training-log/*`, `/api/training-log/{id}/sets`, `/api/training-log/import/*`, `/api/benchmarks` | 활성 |
 | `/workout?log={id}` | 로그인 | 풀사이드 현재·다음 세트, 출발 사이클/스톱워치, 반복 완료, RPE·상태·메모, 화면 켜짐 유지 | `GET /api/training-log/{id}/sets`, `PATCH /api/training-log/{id}/sets/{set_id}` | 활성 |
 | `/report` | 로그인 | 월간 거리·횟수·평균·시간·칼로리, 영법·주차·요일, 성장률·연속 출석, 플랜·세트 수행률, 테스트 시도·신규 PB·현재 최고기록, 공유 | `/api/report/monthly`, `/heatmap`, `/share/{token}`, `swim_test_results` | 활성 |
@@ -45,7 +46,7 @@
 | `/pool` | 로그인 | 카카오맵 수영장 검색·즐겨찾기 | `/api/pool/*`, Kakao Maps SDK | Kakao 키 필요 |
 | `/glossary` | 로그인 | 수영 용어 검색과 외부 참고 영상 | 정적 콘텐츠 | 활성 |
 | `/videos` | 로그인 | 영법·주제별 외부 영상 큐레이션 | 정적 콘텐츠 | 활성 |
-| `/profile` | 로그인 | 계정·이메일, 현재 맞춤 훈련 설정, 닉네임·비밀번호 변경, JSON 데이터 내보내기, 모든 기기 로그아웃, 재인증 회원 탈퇴 | `/auth/me`, `/api/account/*`, `DELETE /auth/me` | 활성 |
+| `/profile` | 로그인 | 계정·이메일, 현재 맞춤 훈련 설정, 닉네임·비밀번호 변경, 내 데이터 대시보드 진입, JSON 데이터 내보내기, 모든 기기 로그아웃, 재인증 회원 탈퇴 | `/auth/me`, `/api/account/*`, `DELETE /auth/me` | 활성 |
 | `/onboarding` | 로그인 | 수준·목표·주간 횟수·25m/50m 선호 풀 최초 설정 | `GET/PUT /auth/onboarding`, `customers` | 활성 |
 | `/onboarding?mode=edit` | 로그인 | 기존 맞춤 훈련 설정을 불러와 수정하고 프로필로 복귀 | `GET/PUT /auth/onboarding`, `/auth/me` | 활성 |
 | `/admin` | 슈퍼 관리자 | 사용자·페이지 조회·운영 로그·피드백·훈련 상태·코치 운영 | `/api/admin/*`, `/api/feedback` | 활성 |
@@ -64,6 +65,7 @@
 10. 월간 목표는 `training_goals`에 저장되고 일지와 리포트에서 같은 고객 ID로 집계된다.
 11. 테스트 세트는 `swim_test_results`에 0.01초 단위로 저장되며, 영법·거리·풀 길이가 같은 기록끼리만 PB를 비교한다.
 12. 테스트 기록을 일지에 연결할 때는 같은 소유자·날짜·풀 길이를 검사하고, 월간 리포트는 해당 월 시도·신규 PB와 전체 현재 최고기록을 함께 집계한다.
+13. `/my-data`는 같은 고객 ID의 전체 기록을 평생 누적·최근 90일·12개월·영법·풀·기록 습관·코스별 PB로 다시 읽어 장기 변화와 다음 행동을 설명한다. JSON 내보내기는 백업·이동용 원본 역할을 유지한다.
 
 건강 데이터 가져오기는 기기 직접 연동이 아니다.
 
@@ -137,6 +139,7 @@ Jira가 설정되지 않거나 호출에 실패해도 코칭 과제는 SwimMate 
 | 준비도 점수 | 수면·피로·근육 상태 가중 규칙 |
 | 주간 훈련 어드바이저 | 최근 일지·주간 목표·준비도 분기 규칙 |
 | 교정 포인트 플랜 | 사용자가 직접 고른 고민과 세트 태그 매칭 |
+| 내 수영 데이터 인사이트 | PostgreSQL 장기 집계와 기록 상태별 설명 가능한 분기 규칙 |
 | 월간 리포트·뱃지·챌린지 | PostgreSQL 집계 규칙 |
 
 ## 공개 비활성·레거시
