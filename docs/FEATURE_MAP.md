@@ -35,7 +35,7 @@
 | `/changelog` | 공개 | Notion 공개 릴리즈 노트 표시 | `/api/changelog` | `NOTION_TOKEN` 필요, 없으면 503 |
 | `/dashboard` | 로그인 | 요약, 주간 목표, 준비도, 개인 수준·목표·선호 풀 기반 규칙 훈련 어드바이저, 최근 기록 | `/api/dashboard/*`, `training_logs`, `training_readiness`, `customers` | 활성 |
 | `/my-data` | 로그인 | 평생 누적, 최근 90일 비교, 12개월 추이, 영법·풀 분포, 기록 습관, 테스트 시도·코스별 PB, 규칙 기반 인사이트 | `/api/account/insights`, `training_logs`, `training_log_sets`, `plan_completions`, `swim_test_results` | 활성 |
-| `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 테스트 세트·코스별 PB, 최근 기록 복사, 건강 앱 파일 가져오기 | `/api/training-log/*`, `/api/training-log/{id}/sets`, `/api/training-log/import/*`, `/api/benchmarks` | 활성 |
+| `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 테스트 세트·코스별 PB, 최근 기록 복사. 워치·건강 파일 가져오기 진입은 `준비 중` 비활성 상태 | `/api/training-log/*`, `/api/training-log/{id}/sets`, `/api/benchmarks` | 일지 활성, 가져오기 UI 비활성 |
 | `/workout?log={id}` | 로그인 | 풀사이드 현재·다음 세트, 출발 사이클/스톱워치, 반복 완료, RPE·상태·메모, 화면 켜짐 유지 | `GET /api/training-log/{id}/sets`, `PATCH /api/training-log/{id}/sets/{set_id}` | 활성 |
 | `/report` | 로그인 | 월간 거리·횟수·평균·시간·칼로리, 영법·주차·요일, 성장률·연속 출석, 플랜·세트 수행률, 테스트 시도·신규 PB·현재 최고기록, 공유 | `/api/report/monthly`, `/heatmap`, `/share/{token}`, `swim_test_results` | 활성 |
 | `/badges` | 로그인 | 단계형 뱃지, 다음 목표, 뱃지 여정 | `/api/badges`, 훈련 일지 집계 | 활성 |
@@ -68,13 +68,11 @@
 12. 테스트 기록을 일지에 연결할 때는 같은 소유자·날짜·풀 길이를 검사하고, 월간 리포트는 해당 월 시도·신규 PB와 전체 현재 최고기록을 함께 집계한다.
 13. `/my-data`는 같은 고객 ID의 전체 기록을 평생 누적·최근 90일·12개월·영법·풀·기록 습관·코스별 PB로 다시 읽어 장기 변화와 다음 행동을 설명한다. JSON 내보내기는 백업·이동용 원본 역할을 유지한다.
 
-건강 데이터 가져오기는 기기 직접 연동이 아니다.
+건강 데이터 가져오기는 현재 공개 화면에서 비활성 상태다.
 
-- Health Auto Export: JSON
-- Apple 건강 전체 내보내기: ZIP
-- Samsung Health: CSV 또는 ZIP
-- 서버가 파일 형식·크기·사용자별 미리보기 작업·중복을 검사한다.
-- 사용자가 선택한 항목만 `wearable_workouts`와 `training_logs`에 기록한다.
+- 훈련 일지의 `워치 데이터 가져오기 (준비 중)` 버튼은 `disabled`와 `aria-disabled`를 사용하며 모달 열기 이벤트를 연결하지 않는다.
+- `/api/training-log/import/*`와 파서 코드는 향후 재검증을 위해 남아 있지만 현재 사용자 기능으로 소개하지 않는다.
+- Apple Watch·Galaxy Watch 직접 동기화와 Health Auto Export·Apple 건강·Samsung Health 파일 가져오기를 현재 제공 기능으로 약속하지 않는다.
 
 ## 코치·수강생 기능
 
@@ -154,7 +152,8 @@ Jira가 설정되지 않거나 호출에 실패해도 코칭 과제는 SwimMate 
 | 과거 `/share/*` 영상 분석 공유 | 홈 이동 또는 API 410 |
 | `/api/video-stream/*` | 410 |
 | `analysis/`, worker, MediaPipe/OpenCV | 저장소의 실험·레거시 코드, 공개 제품 경로와 분리 |
-| Apple Watch·Galaxy Watch 직접 동기화 | 미지원, 파일 가져오기만 제공 |
+| Apple Watch·Galaxy Watch 직접 동기화 | 미지원 |
+| 건강 앱 내보내기 파일 가져오기 | 공개 UI 비활성, 파서·API 코드는 재검증 전까지 비노출 |
 
 ## 관련 문서
 

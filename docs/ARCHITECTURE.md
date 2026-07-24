@@ -61,7 +61,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/customers` | `customers.py` | 관리자용 고객 조회·생성 |
 | `/api/dashboard` | `dashboard.py` | 요약, 이력, 준비도, 주간 목표, 훈련 어드바이저 |
 | `/api/training-log` | `training_log.py` | 일지 CRUD, 통계, 연속 출석, 목표, 플랜 연동 |
-| `/api/training-log/import` | `health_import.py` | 건강 앱 내보내기 파일 미리보기·확정 |
+| `/api/training-log/import` | `health_import.py` | 건강 앱 내보내기 파일 미리보기·확정 코드. 현재 공개 UI는 비활성 |
 | `/api/benchmarks` | `benchmarks.py` | 테스트 세트 저장·조회·삭제, 영법·거리·코스별 PB 판정 |
 | `/api/report` | `report.py` | 월간 집계, 히트맵, 공유 리포트 |
 | `/api/plans` | `plans.py` | 커스텀 플랜, 즐겨찾기, 공유 |
@@ -109,7 +109,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `swim_test_results`: 테스트 날짜, 영법, 거리, 풀 길이, 0.01초 단위 기록, 선택 일지 연결
 - `custom_plans`: 사용자 플랜 JSON과 메타데이터
 - `plan_completions`: 플랜 세션과 실제 일지의 연결
-- `wearable_workouts`: 건강 앱 내보내기 원본 운동과 변환 일지 ID
+- `wearable_workouts`: 과거·재검증용 건강 앱 내보내기 원본 운동과 변환 일지 ID. 현재 신규 가져오기 UI는 비활성
 - `user_badges`, `challenges`, `challenge_participants`: 성취·참여
 
 `training_logs.customer_id`가 대시보드, 개인 데이터 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
@@ -168,10 +168,10 @@ Vercel은 clean URL과 rewrite를 사용한다.
 ### 훈련 일지 → 월간 리포트
 
 ```text
-직접 기록 / 플랜 완료 / 건강 파일 가져오기
-                   │
-                   ▼
-             training_logs
+직접 기록 / 플랜 완료
+           │
+           ▼
+     training_logs
        ┌───────────┼────────────┬──────────────┐
        ▼           ▼            ▼              ▼
    대시보드     월간 리포트    뱃지          챌린지

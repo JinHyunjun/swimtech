@@ -126,6 +126,11 @@
   display: flex; align-items: center; gap: 6px;
 }
 .btn-import-log:hover { background: rgba(0,180,216,.1); }
+.btn-import-log:disabled {
+  color: var(--muted); border-color: var(--border); opacity: .58;
+  cursor: not-allowed; background: transparent;
+}
+.btn-import-log:disabled:hover { background: transparent; }
 
 .import-item {
   display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.04);
@@ -251,6 +256,10 @@ select.form-control option { background: var(--surface); }
   .benchmark-summary { grid-template-columns:1fr 1fr 1fr; }
   .benchmark-row { grid-template-columns:1fr auto; }
   .benchmark-row .benchmark-date { display:none; }
+  .log-list-head { align-items:stretch; flex-direction:column; gap:10px; }
+  .log-list-head-actions { width:100%; flex-wrap:wrap; }
+  #btn-open-import { flex:1 1 100%; justify-content:center; }
+  #btn-quick-log, #btn-open-modal { flex:1 1 0; justify-content:center; }
 }
 
 /* ── 월간 목표 ── */
@@ -380,7 +389,10 @@ select.form-control option { background: var(--surface); }
       <div class="log-list-head">
         <div class="log-list-title" id="log-list-title">기록 목록</div>
         <div class="log-list-head-actions">
-          <button class="btn-import-log" id="btn-open-import">⤓ 워치 데이터 가져오기</button>
+          <button class="btn-import-log" id="btn-open-import" type="button" disabled aria-disabled="true"
+                  data-feature-state="disabled" title="현재 공개 서비스에서는 지원하지 않는 기능입니다.">
+            ⤓ 워치 데이터 가져오기 (준비 중)
+          </button>
           <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
           <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
         </div>
@@ -1020,7 +1032,7 @@ function validateImportFile(file, source) {
 }
 
 const _importBtn = document.getElementById('btn-open-import');
-if (_importBtn) _importBtn.onclick = openImportModal;
+if (_importBtn && !_importBtn.disabled) _importBtn.onclick = openImportModal;
 document.getElementById('import-tab-hae').onclick = () => setImportSource('hae');
 document.getElementById('import-tab-apple').onclick = () => setImportSource('apple');
 document.getElementById('import-tab-samsung').onclick = () => setImportSource('samsung');

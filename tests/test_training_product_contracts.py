@@ -229,7 +229,14 @@ def test_plan_p2_improvements_are_kept():
     assert "generateRacePreparationPlan" in plan
     assert "mobile-add-day" in plan
     assert "moveCardInDay" in plan
-    assert "btn-open-import" in log and "validateImportFile" in log
+    assert 'id="btn-open-import"' in log and "validateImportFile" in log
+    assert 'disabled aria-disabled="true"' in log
+    assert 'data-feature-state="disabled"' in log
+    assert "워치 데이터 가져오기 (준비 중)" in log
+    assert "if (_importBtn && !_importBtn.disabled)" in log
+    assert "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']" in (
+        ROOT / "scripts" / "qa_ui_crawler.py"
+    ).read_text(encoding="utf-8")
     assert "_validate_preview_upload" in health_import
     assert '"customer_id": cid' in health_import
     assert "plan_performance" in report_api
@@ -939,9 +946,10 @@ def test_quality_gate_documentation_is_kept_current():
     assert "품질 검증 게이트 문서화" in checklist
     assert "docs/QUALITY_GATE.md" in claude
     assert "section25:" in pytest_ini
-    assert "건강 앱에서 내보낸 수영 운동 파일" in privacy
+    assert "현재 신규 가져오기 UI는 비활성화" in privacy
     assert "Google Gemini" in privacy and "Atlassian Jira" in privacy
     assert "swimtech_token" in privacy and "swimtech_refresh_token" in privacy
     assert "영상 업로드 기반 영법 분석" in terms
     assert "현재 공개 서비스에서 제공하지 않습니다" in terms
+    assert "건강 앱 내보내기 파일 가져오기는 현재 비활성 상태" in terms
     assert "style=\"display:none\"" not in terms

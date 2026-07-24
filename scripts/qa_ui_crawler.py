@@ -168,8 +168,8 @@ PAGE_EXPECTATIONS = {
         "wait_for_any_text": ["아직 해석할 훈련 기록이 없어요", "기록 습관과 데이터 깊이", "내 수영 데이터를 불러오지 못했습니다."],
     },
     "/training-log": {
-        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop"],
-        "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록"],
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop", "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']"],
+        "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록", "워치 데이터 가져오기 (준비 중)"],
     },
     "/workout": {
         "selectors": ["#workout-progress", "#set-strip", "#current-set-card", "#timer-value", "#timer-toggle", "#rep-complete", "#execution-sheet", "#wake-lock-btn"],
