@@ -497,6 +497,14 @@ def serve_dashboard(request: Request):
     if redir: return redir
     return _serve("dashboard.html")
 
+
+@app.get("/my-data")
+def serve_my_data(request: Request):
+    redir = _auth_redirect(request)
+    if redir: return redir
+    return _serve("my-data.html")
+
+
 # AI 코치 챗봇 페이지
 @app.get("/chat")
 def serve_chat(request: Request):

@@ -137,14 +137,16 @@ def main():
     anonymous = requests.Session()
     anonymous_me = anonymous.get(f"{BASE}/auth/me", timeout=60)
     anonymous_dashboard = anonymous.get(f"{BASE}/api/dashboard/summary", timeout=60)
+    anonymous_my_data = anonymous.get(f"{BASE}/api/account/insights", timeout=60)
     anonymous_onboarding = anonymous.get(f"{BASE}/auth/onboarding", timeout=60)
     rec(
         "A1",
         "비로그인 보호 경계",
         anonymous_me.status_code == 401 and anonymous_dashboard.status_code == 401
+        and anonymous_my_data.status_code == 401
         and anonymous_onboarding.status_code == 401,
         f"me {anonymous_me.status_code}, dashboard {anonymous_dashboard.status_code}, "
-        f"onboarding {anonymous_onboarding.status_code}",
+        f"my-data {anonymous_my_data.status_code}, onboarding {anonymous_onboarding.status_code}",
     )
 
     wrong_login = anonymous.post(
@@ -321,9 +323,11 @@ def main():
     demo_me = demo_sess.get(f"{BASE}/auth/me", timeout=60)
     demo_summary = demo_sess.get(f"{BASE}/api/dashboard/summary", timeout=60)
     demo_report = demo_sess.get(month_url("/api/report/monthly", year, month), timeout=60)
+    demo_my_data = demo_sess.get(f"{BASE}/api/account/insights", timeout=60)
     demo_me_json = jget(demo_me)
     demo_summary_json = jget(demo_summary)
     demo_report_json = jget(demo_report)
+    demo_my_data_json = jget(demo_my_data)
     demo_ok = (
         demo_login.status_code == 200
         and jget(demo_login).get("redirect") == "/landing"
@@ -334,19 +338,26 @@ def main():
         and to_int(demo_summary_json.get("total_distance")) > 0
         and demo_report.status_code == 200
         and to_int(demo_report_json.get("total_distance")) > 0
+        and demo_my_data.status_code == 200
+        and demo_my_data_json.get("is_demo") is True
+        and demo_my_data_json.get("has_data") is True
+        and len(demo_my_data_json.get("monthly_trend") or []) == 12
     )
     rec("6b", "Portfolio demo mode (/auth/demo)", demo_ok,
         f"login {demo_login.status_code}/redirect={jget(demo_login).get('redirect')}, "
         f"me {demo_me.status_code}/demo={demo_me_json.get('is_demo')}, "
         f"summary {demo_summary.status_code}/logs={demo_summary_json.get('total_logs')}/distance={demo_summary_json.get('total_distance')}, "
-        f"report {demo_report.status_code}/distance={demo_report_json.get('total_distance')}")
+        f"report {demo_report.status_code}/distance={demo_report_json.get('total_distance')}, "
+        f"my-data {demo_my_data.status_code}/months={len(demo_my_data_json.get('monthly_trend') or [])}")
 
     baseline_stats = {}
     baseline_report = {}
+    baseline_my_data = {}
     baseline_goal_distance = 0
     try:
         baseline_stats = jget(sess.get(month_url("/api/training-log/stats", year, month), timeout=60))
         baseline_report = jget(sess.get(month_url("/api/report/monthly", year, month), timeout=60))
+        baseline_my_data = jget(sess.get(f"{BASE}/api/account/insights", timeout=60))
         baseline_goal = jget(sess.get(month_url("/api/training-log/goal", year, month), timeout=60))
         baseline_goal_distance = to_int(baseline_goal.get("goal_distance"))
     except Exception:
@@ -358,13 +369,19 @@ def main():
     baseline_plan_distance = to_int(baseline_plan_perf.get("plan_distance"))
     baseline_planned_sets = to_int(baseline_plan_perf.get("planned_sets"))
     baseline_completed_sets = to_int(baseline_plan_perf.get("completed_sets"))
+    baseline_lifetime = baseline_my_data.get("lifetime") or {}
+    baseline_habits = baseline_my_data.get("recording_habits") or {}
+    baseline_lifetime_distance = to_int(baseline_lifetime.get("total_distance"))
+    baseline_lifetime_sessions = to_int(baseline_lifetime.get("total_sessions"))
+    baseline_structured_sessions = to_int(baseline_habits.get("structured_sessions"))
+    baseline_test_attempts = to_int(baseline_habits.get("test_attempts"))
     cleanup_ids = []
     benchmark_ids = []
     readiness_before = None
 
     # ── 7. 메인 화면/라우팅 ─────────────────────────────
     print("\n[7-8] 화면/라우팅 (정적 페이지 200 확인)")
-    pages = {"/landing": "랜딩", "/dashboard": "대시보드", "/plan": "플랜",
+    pages = {"/landing": "랜딩", "/dashboard": "대시보드", "/my-data": "내 수영 데이터", "/plan": "플랜",
              "/training-log": "훈련일지", "/workout": "풀사이드 훈련", "/report": "리포트", "/pool": "수영장", "/clubs": "클럽·반",
              "/community": "커뮤니티", "/challenge": "챌린지", "/badges": "뱃지"}
     bad = []
@@ -652,6 +669,29 @@ def main():
         f"{r.status_code}, total={report.get('total_distance')}, count={report.get('total_count')}, "
         f"avg={report.get('avg_distance')}, goal={perf.get('goal_distance')}, plan_sessions={perf.get('completed_sessions')}, "
         f"tests={benchmark_perf.get('attempts')}/pb={benchmark_perf.get('personal_bests')}")
+
+    my_data_res = sess.get(f"{BASE}/api/account/insights", timeout=60)
+    my_data = jget(my_data_res)
+    my_lifetime = my_data.get("lifetime") or {}
+    my_habits = my_data.get("recording_habits") or {}
+    my_data_ok = (
+        my_data_res.status_code == 200
+        and my_data.get("privacy_scope") == "authenticated_customer_only"
+        and my_data.get("has_data") is True
+        and len(my_data.get("monthly_trend") or []) == 12
+        and bool(my_data.get("stroke_distribution"))
+        and bool(my_data.get("pool_distribution"))
+        and bool(my_data.get("insight_cards"))
+        and to_int(my_lifetime.get("total_distance")) >= baseline_lifetime_distance + expected_added_distance
+        and to_int(my_lifetime.get("total_sessions")) >= baseline_lifetime_sessions + expected_added_count
+        and to_int(my_habits.get("structured_sessions")) >= baseline_structured_sessions + expected_added_count
+        and to_int(my_habits.get("test_attempts")) >= baseline_test_attempts + 2
+        and len(my_data.get("personal_bests") or []) > 0
+    )
+    rec("17c", "내 수영 데이터 장기 대시보드 연동", my_data_ok,
+        f"{my_data_res.status_code}, lifetime={my_lifetime.get('total_distance')}/{my_lifetime.get('total_sessions')}, "
+        f"months={len(my_data.get('monthly_trend') or [])}, structured={my_habits.get('structured_sessions')}, "
+        f"tests={my_habits.get('test_attempts')}, pb={len(my_data.get('personal_bests') or [])}")
 
     benchmark_cleanup = []
     for benchmark_id in benchmark_ids:

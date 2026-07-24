@@ -78,6 +78,7 @@ PAGES = [
     ("/onboarding", "맞춤 훈련 설정"),
     ("/onboarding?mode=edit", "맞춤 훈련 설정 수정"),
     ("/dashboard", "대시보드"),
+    ("/my-data", "내 수영 데이터"),
     ("/plan", "훈련 플랜"),
     ("/training-log", "훈련 일지"),
     ("/workout", "풀사이드 훈련"),
@@ -101,7 +102,7 @@ PAGES = [
 ]
 
 PROTECTED_PATHS = {
-    "/onboarding", "/dashboard", "/plan", "/training-log", "/workout", "/report", "/pool", "/badges",
+    "/onboarding", "/dashboard", "/my-data", "/plan", "/training-log", "/workout", "/report", "/pool", "/badges",
     "/community", "/challenge", "/equipment", "/chat", "/videos",
     "/profile", "/injury", "/coach", "/clubs",
 }
@@ -155,6 +156,10 @@ PAGE_EXPECTATIONS = {
         "texts": ["오늘의 훈련 준비도", "이번 주 훈련 추천"],
         "absent_texts": ["P3 Training Advisor"],
     },
+    "/my-data": {
+        "selectors": ["#data-content", "#lifetime-distance", "#monthly-trend-chart", "#stroke-distribution", "#recording-habits", "#insight-grid", "#personal-best-panel", "#pb-body"],
+        "texts": ["내 기록을, 이해할 수 있는 데이터로", "기록 습관과 데이터 깊이", "현재 개인 최고기록", "JSON은 원본 보관·이동용"],
+    },
     "/training-log": {
         "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop"],
         "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록"],
@@ -168,8 +173,8 @@ PAGE_EXPECTATIONS = {
         "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
     "/profile": {
-        "selectors": ["#p-email", "#training-profile-panel", "#p-training-level", "#p-training-goal", "#p-training-weekly", "#p-training-pool", "#onboarding-edit-link", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
-        "texts": ["맞춤 훈련 설정", "맞춤 훈련 설정 수정", "내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
+        "selectors": ["#p-email", "#training-profile-panel", "#p-training-level", "#p-training-goal", "#p-training-weekly", "#p-training-pool", "#onboarding-edit-link", "#my-data-panel", "#my-data-dashboard-link", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
+        "texts": ["맞춤 훈련 설정", "맞춤 훈련 설정 수정", "내 수영 데이터", "내 데이터 대시보드 보기", "내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
     },
     "/plan": {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],

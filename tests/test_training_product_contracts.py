@@ -517,6 +517,43 @@ def test_personal_data_export_and_account_security_are_qa_mapped():
     assert '"/profile": {' in ui_qa and '"#data-export-btn"' in ui_qa
 
 
+def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    account_api = (ROOT / "api" / "routers" / "account.py").read_text(encoding="utf-8")
+    activity_log = (ROOT / "api" / "activity_log.py").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "my-data.html").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    dashboard = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    profile = (ROOT / "frontend" / "profile.html").read_text(encoding="utf-8")
+    api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert '@router.get("/insights")' in account_api
+    for key in [
+        '"lifetime"', '"recent_90_days"', '"monthly_trend"',
+        '"stroke_distribution"', '"pool_distribution"', '"recording_habits"',
+        '"personal_bests"', '"insight_cards"',
+    ]:
+        assert key in account_api
+    assert '"privacy_scope": "authenticated_customer_only"' in account_api
+    assert '@app.get("/my-data")' in main and 'return _serve("my-data.html")' in main
+    assert '"/my-data":        "내 수영 데이터"' in activity_log
+    for selector in [
+        "data-content", "lifetime-distance", "monthly-trend-chart",
+        "stroke-distribution", "recording-habits", "insight-grid",
+        "personal-best-panel", "pb-body",
+    ]:
+        assert f'id="{selector}"' in page
+    assert "/api/account/insights" in page
+    assert "JSON은 원본 보관·이동용" in page
+    assert 'href="/my-data"' in landing
+    assert 'href="/my-data"' in dashboard
+    assert 'id="my-data-dashboard-link" href="/my-data"' in profile
+    assert "내 수영 데이터 장기 대시보드 연동" in api_qa
+    assert '("/my-data", "내 수영 데이터")' in ui_qa
+    assert '"/my-data": {' in ui_qa
+
+
 def test_landing_url_and_editable_onboarding_are_qa_mapped():
     auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
     api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")

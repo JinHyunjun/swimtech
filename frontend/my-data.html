@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SwimMate — 내 수영 데이터</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00b4d8">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+.data-page { max-width:1120px; margin:0 auto; padding:24px 16px 72px; }
+.data-hero {
+  position:relative; overflow:hidden; margin-bottom:18px; padding:26px;
+  border:.5px solid rgba(72,202,228,.34); border-radius:var(--radius-lg);
+  background:linear-gradient(135deg,rgba(0,180,216,.18),rgba(14,165,233,.06) 48%,var(--surface));
+}
+.data-hero::after {
+  content:""; position:absolute; width:240px; height:240px; right:-90px; top:-110px;
+  border-radius:50%; background:rgba(72,202,228,.11); pointer-events:none;
+}
+.data-kicker { color:var(--cyan); font-size:var(--fs-caption); font-weight:800; letter-spacing:.05em; }
+.data-title { position:relative; z-index:1; margin:7px 0 8px; color:var(--text); font-size:clamp(28px,5vw,46px); font-style:italic; font-weight:900; letter-spacing:-.04em; word-break:keep-all; }
+.data-description { position:relative; z-index:1; max-width:680px; margin:0; color:var(--muted); font-size:var(--fs-body); line-height:1.65; word-break:keep-all; }
+.data-actions { position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+.data-action {
+  display:inline-flex; align-items:center; min-height:40px; padding:8px 13px;
+  border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text);
+  background:rgba(255,255,255,.04); text-decoration:none; font-size:var(--fs-caption); font-weight:700;
+}
+.data-action.primary { color:var(--bg); border-color:var(--blue); background:var(--blue); }
+.demo-banner {
+  display:none; margin-bottom:18px; padding:12px 15px; border:.5px solid rgba(72,202,228,.32);
+  border-radius:var(--radius-md); color:var(--text); background:rgba(72,202,228,.08);
+  font-size:var(--fs-caption); line-height:1.55;
+}
+.range-note { margin:0 0 13px; color:var(--muted); font-size:var(--fs-caption); }
+.summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.summary-card { padding:19px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
+.summary-label { color:var(--muted); font-size:var(--fs-caption); margin-bottom:8px; }
+.summary-value { color:var(--cyan); font-size:clamp(26px,4vw,38px); line-height:1; font-style:italic; font-weight:900; letter-spacing:-.03em; }
+.summary-unit { margin-top:6px; color:var(--muted); font-size:12px; }
+.section-grid { display:grid; grid-template-columns:1.45fr 1fr; gap:14px; margin-bottom:18px; }
+.panel { padding:20px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
+.panel-title { margin:0; color:var(--text); font-size:var(--fs-body-lg); font-weight:800; }
+.panel-desc { margin:5px 0 15px; color:var(--muted); font-size:var(--fs-caption); line-height:1.55; }
+.chart-wrap { position:relative; height:270px; }
+.recent-strip {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:0 0 18px;
+}
+.recent-item { padding:12px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); }
+.recent-item span { display:block; color:var(--muted); font-size:11px; margin-bottom:5px; }
+.recent-item strong { color:var(--text); font-size:var(--fs-body); }
+.change-positive { color:var(--green)!important; }
+.change-negative { color:var(--energy)!important; }
+.distribution-list { display:flex; flex-direction:column; gap:12px; }
+.distribution-head { display:flex; justify-content:space-between; gap:8px; color:var(--text); font-size:var(--fs-caption); }
+.distribution-head span:last-child { color:var(--muted); }
+.distribution-track { height:7px; margin-top:6px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.07); }
+.distribution-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.pool-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; margin-top:16px; }
+.pool-card { padding:12px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); }
+.pool-card strong { display:block; color:var(--cyan); font-size:var(--fs-body-lg); }
+.pool-card span { color:var(--muted); font-size:12px; }
+.habit-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.habit-card { padding:15px; border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); }
+.habit-card span { display:block; min-height:32px; color:var(--muted); font-size:12px; line-height:1.4; }
+.habit-card strong { display:block; margin:5px 0 8px; color:var(--cyan); font-size:var(--fs-heading); font-style:italic; }
+.habit-track { height:6px; overflow:hidden; border-radius:99px; background:rgba(255,255,255,.07); }
+.habit-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--green),var(--cyan)); }
+.habit-meta { margin-top:7px; color:var(--muted); font-size:11px; }
+.insight-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.insight-card { padding:17px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface2); }
+.insight-card.positive,.insight-card.record { border-color:rgba(74,222,128,.3); }
+.insight-card.attention { border-color:rgba(251,146,60,.35); }
+.insight-card h3 { margin:0 0 7px; color:var(--text); font-size:var(--fs-body); }
+.insight-card p { min-height:44px; margin:0 0 11px; color:var(--muted); font-size:var(--fs-caption); line-height:1.55; }
+.insight-card a { color:var(--blue); font-size:var(--fs-caption); font-weight:800; text-decoration:none; }
+.pb-table-wrap { overflow-x:auto; }
+.pb-table { width:100%; border-collapse:collapse; }
+.pb-table th,.pb-table td { padding:11px 9px; border-bottom:.5px solid var(--border); text-align:left; white-space:nowrap; }
+.pb-table th { color:var(--muted); font-size:11px; font-weight:700; }
+.pb-table td { color:var(--text); font-size:var(--fs-caption); }
+.pb-table td.pb-time { color:var(--cyan); font-size:var(--fs-body); font-weight:900; font-style:italic; }
+.empty-panel { display:none; padding:50px 20px; border:.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); text-align:center; }
+.empty-panel h2 { margin:0 0 8px; color:var(--text); }
+.empty-panel p { margin:0 0 18px; color:var(--muted); line-height:1.6; }
+.loading-state { padding:54px 20px; color:var(--muted); text-align:center; }
+.error-state { display:none; padding:18px; border:.5px solid rgba(248,113,113,.35); border-radius:var(--radius-md); color:var(--status-danger); background:rgba(248,113,113,.08); }
+.export-note { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-top:18px; }
+.export-note p { margin:0; color:var(--muted); font-size:var(--fs-caption); line-height:1.6; }
+.export-note a { flex:0 0 auto; color:var(--cyan); font-size:var(--fs-caption); font-weight:800; text-decoration:none; }
+@media (max-width:900px) {
+  .summary-grid,.habit-grid { grid-template-columns:repeat(2,1fr); }
+  .section-grid { grid-template-columns:1fr; }
+}
+@media (max-width:560px) {
+  .data-page { padding:18px 12px 56px; }
+  .data-hero { padding:20px 17px; }
+  .summary-grid,.habit-grid,.insight-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .summary-card,.habit-card { padding:14px; }
+  .recent-strip { grid-template-columns:1fr; }
+  .chart-wrap { height:230px; }
+  .export-note { align-items:flex-start; flex-direction:column; }
+}
+</style>
+<script src="/static/theme.js"></script>
+<script src="/static/utils.js"></script>
+<script src="/static/api.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <a href="/landing" class="back-btn" style="margin-right:8px;">← 홈</a>
+      <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimMate</span></a>
+      <span class="logo-sub">내 수영 데이터</span>
+    </div>
+    <div class="header-right"><a href="/profile" class="back-btn">프로필</a></div>
+  </header>
+
+  <main class="data-page">
+    <section class="data-hero">
+      <div class="data-kicker">MY SWIM DATA</div>
+      <h1 class="data-title">내 기록을, 이해할 수 있는 데이터로</h1>
+      <p class="data-description">JSON 파일을 직접 가공하지 않아도 전체 수영 이력과 최근 변화, 영법·수영장 분포, 세트·사이클 기록 습관과 개인 최고기록을 한눈에 확인할 수 있습니다.</p>
+      <div class="data-actions">
+        <a class="data-action primary" href="/training-log?quick=1">+ 훈련 기록하기</a>
+        <a class="data-action" href="/report">월간 리포트</a>
+        <a class="data-action" href="/profile#data-export-panel">원본 JSON 내보내기</a>
+      </div>
+    </section>
+
+    <div class="demo-banner" id="demo-banner"><strong>비회원 체험 데이터</strong><br>샘플 기록으로 장기 데이터 대시보드의 구성과 해석 방식을 둘러보고 있습니다.</div>
+    <div class="loading-state" id="loading-state">내 수영 기록을 정리하고 있어요...</div>
+    <div class="error-state" id="error-state" role="alert"></div>
+    <section class="empty-panel" id="empty-panel">
+      <h2>아직 해석할 훈련 기록이 없어요</h2>
+      <p>첫 훈련 일지를 남기면 거리·시간·영법·수영장·세트 수행 데이터를 자동으로 연결합니다.</p>
+      <a class="data-action primary" href="/training-log?quick=1">첫 훈련 기록하기</a>
+    </section>
+
+    <div id="data-content" hidden>
+      <p class="range-note" id="data-range">기록 기간을 확인하는 중...</p>
+      <section class="summary-grid" aria-label="전체 수영 이력 요약">
+        <article class="summary-card"><div class="summary-label">누적 거리</div><div class="summary-value" id="lifetime-distance">—</div><div class="summary-unit">전체 훈련 거리</div></article>
+        <article class="summary-card"><div class="summary-label">누적 훈련</div><div class="summary-value" id="lifetime-sessions">—</div><div class="summary-unit" id="lifetime-average">세션당 평균 —</div></article>
+        <article class="summary-card"><div class="summary-label">활동한 달</div><div class="summary-value" id="lifetime-months">—</div><div class="summary-unit" id="lifetime-days">활동일 —</div></article>
+        <article class="summary-card"><div class="summary-label">최장 연속 출석</div><div class="summary-value" id="lifetime-streak">—</div><div class="summary-unit">하루 한 번 이상 기록 기준</div></article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2 class="panel-title">최근 12개월 훈련 추이</h2>
+          <p class="panel-desc">월별 거리와 훈련 횟수를 함께 비교합니다.</p>
+          <div class="recent-strip">
+            <div class="recent-item"><span>최근 90일 거리</span><strong id="recent-distance">—</strong></div>
+            <div class="recent-item"><span>최근 90일 훈련</span><strong id="recent-sessions">—</strong></div>
+            <div class="recent-item"><span>직전 90일 대비</span><strong id="recent-change">—</strong></div>
+          </div>
+          <div class="chart-wrap"><canvas id="monthly-trend-chart"></canvas></div>
+        </article>
+        <article class="panel">
+          <h2 class="panel-title">내 수영 구성</h2>
+          <p class="panel-desc">전체 기록 거리 기준 영법과 수영장 길이 분포입니다.</p>
+          <div class="distribution-list" id="stroke-distribution"></div>
+          <div class="pool-grid" id="pool-distribution"></div>
+        </article>
+      </section>
+
+      <section class="panel" style="margin-bottom:18px;" id="recording-habits">
+        <h2 class="panel-title">기록 습관과 데이터 깊이</h2>
+        <p class="panel-desc">단순 거리뿐 아니라 플랜·세트·실제 사이클을 얼마나 함께 기록했는지 보여줍니다.</p>
+        <div class="habit-grid">
+          <article class="habit-card"><span>세트가 포함된 일지</span><strong id="habit-structured-rate">—</strong><div class="habit-track"><div class="habit-fill" id="habit-structured-fill"></div></div><div class="habit-meta" id="habit-structured-meta">—</div></article>
+          <article class="habit-card"><span>플랜과 연결된 일지</span><strong id="habit-plan-rate">—</strong><div class="habit-track"><div class="habit-fill" id="habit-plan-fill"></div></div><div class="habit-meta" id="habit-plan-meta">—</div></article>
+          <article class="habit-card"><span>실제 사이클 기록률</span><strong id="habit-cycle-rate">—</strong><div class="habit-track"><div class="habit-fill" id="habit-cycle-fill"></div></div><div class="habit-meta" id="habit-cycle-meta">—</div></article>
+          <article class="habit-card"><span>세트 완료율</span><strong id="habit-set-rate">—</strong><div class="habit-track"><div class="habit-fill" id="habit-set-fill"></div></div><div class="habit-meta" id="habit-set-meta">—</div></article>
+        </div>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <h2 class="panel-title">데이터가 알려주는 점</h2>
+          <p class="panel-desc">기록에서 확인되는 변화와 다음 행동을 규칙 기반으로 설명합니다.</p>
+          <div class="insight-grid" id="insight-grid"></div>
+        </article>
+        <article class="panel" id="personal-best-panel">
+          <h2 class="panel-title">현재 개인 최고기록</h2>
+          <p class="panel-desc" id="pb-summary">코스별 PB를 불러오는 중...</p>
+          <div class="pb-table-wrap">
+            <table class="pb-table">
+              <thead><tr><th>종목</th><th>코스</th><th>기록</th><th>날짜</th></tr></thead>
+              <tbody id="pb-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel export-note">
+        <p><strong style="color:var(--text);">JSON은 원본 보관·이동용으로 계속 제공됩니다.</strong><br>이 화면은 원본 데이터에서 의미 있는 지표만 계산하며, 비밀번호·로그인 토큰이나 다른 사용자의 정보는 조회하지 않습니다.</p>
+        <a href="/profile#data-export-panel">내 데이터 원본 내려받기 →</a>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+let monthlyChart = null;
+const numberFormat = new Intl.NumberFormat('ko-KR');
+
+function formatDistance(value) {
+  const meters = Number(value || 0);
+  if (meters >= 1000000) return `${(meters / 1000000).toFixed(2)}Mm`;
+  if (meters >= 1000) return `${(meters / 1000).toFixed(meters >= 10000 ? 1 : 2)}km`;
+  return `${numberFormat.format(meters)}m`;
+}
+
+function formatDuration(milliseconds) {
+  const total = Math.max(0, Number(milliseconds || 0));
+  const minutes = Math.floor(total / 60000);
+  const seconds = Math.floor((total % 60000) / 1000);
+  const hundredths = Math.floor((total % 1000) / 10);
+  return `${minutes}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+}
+
+function safeHref(value) {
+  return typeof value === 'string' && /^\/(?!\/)/.test(value) ? value : '/landing';
+}
+
+function setRate(prefix, rate, numerator, denominator, unit) {
+  const safeRate = Math.max(0, Math.min(100, Number(rate || 0)));
+  document.getElementById(`${prefix}-rate`).textContent = `${safeRate}%`;
+  document.getElementById(`${prefix}-fill`).style.width = `${safeRate}%`;
+  document.getElementById(`${prefix}-meta`).textContent = `${numberFormat.format(numerator || 0)} / ${numberFormat.format(denominator || 0)}${unit}`;
+}
+
+function renderSummary(data) {
+  const life = data.lifetime || {};
+  document.getElementById('lifetime-distance').textContent = formatDistance(life.total_distance);
+  document.getElementById('lifetime-sessions').textContent = `${numberFormat.format(life.total_sessions || 0)}회`;
+  document.getElementById('lifetime-average').textContent = `세션당 평균 ${formatDistance(life.average_distance)}`;
+  document.getElementById('lifetime-months').textContent = `${numberFormat.format(life.active_months || 0)}개월`;
+  document.getElementById('lifetime-days').textContent = `실제 활동일 ${numberFormat.format(life.active_days || 0)}일`;
+  document.getElementById('lifetime-streak').textContent = `${numberFormat.format(life.longest_streak || 0)}일`;
+  const first = life.first_training_date || '—';
+  const last = life.last_training_date || '—';
+  document.getElementById('data-range').textContent = `기록 기간 ${first} ~ ${last} · 누적 ${numberFormat.format(life.total_minutes || 0)}분`;
+
+  const recent = data.recent_90_days || {};
+  document.getElementById('recent-distance').textContent = formatDistance(recent.distance);
+  document.getElementById('recent-sessions').textContent = `${numberFormat.format(recent.sessions || 0)}회`;
+  const change = document.getElementById('recent-change');
+  if (recent.distance_change_rate === null || recent.distance_change_rate === undefined) {
+    change.textContent = '비교 기준 없음';
+  } else {
+    const rate = Number(recent.distance_change_rate);
+    change.textContent = `${rate > 0 ? '+' : ''}${rate}%`;
+    change.className = rate >= 0 ? 'change-positive' : 'change-negative';
+  }
+}
+
+function renderTrend(items) {
+  const canvas = document.getElementById('monthly-trend-chart');
+  if (!window.Chart) {
+    canvas.replaceWith(Object.assign(document.createElement('p'), {textContent:'차트 라이브러리를 불러오지 못했습니다.'}));
+    return;
+  }
+  const styles = getComputedStyle(document.documentElement);
+  monthlyChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: items.map(item => item.month.slice(2).replace('-', '.')),
+      datasets: [
+        {label:'거리 (m)', data:items.map(item => item.distance), backgroundColor:'rgba(0,180,216,.55)', borderColor:'#00b4d8', borderWidth:1, borderRadius:5, yAxisID:'y'},
+        {label:'훈련 횟수', data:items.map(item => item.sessions), type:'line', borderColor:'#4ade80', backgroundColor:'#4ade80', pointRadius:3, tension:.28, yAxisID:'y1'},
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:styles.getPropertyValue('--muted').trim() || '#90c4d4', boxWidth:12}}},
+      scales:{
+        x:{ticks:{color:'#90c4d4'},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{color:'#90c4d4'},grid:{color:'rgba(0,180,216,.08)'}},
+        y1:{beginAtZero:true,position:'right',ticks:{color:'#90c4d4',precision:0},grid:{display:false}},
+      },
+    },
+  });
+}
+
+function renderDistribution(data) {
+  const strokeRoot = document.getElementById('stroke-distribution');
+  strokeRoot.replaceChildren();
+  const strokes = data.stroke_distribution || [];
+  if (!strokes.length) {
+    strokeRoot.textContent = '영법별 기록이 없습니다.';
+    return;
+  }
+  strokes.slice(0, 6).forEach(item => {
+    const row = document.createElement('div');
+    const head = document.createElement('div');
+    head.className = 'distribution-head';
+    const name = document.createElement('span');
+    name.textContent = item.stroke;
+    const value = document.createElement('span');
+    value.textContent = `${formatDistance(item.distance)} · ${item.share}%`;
+    head.append(name, value);
+    const track = document.createElement('div');
+    track.className = 'distribution-track';
+    const fill = document.createElement('div');
+    fill.className = 'distribution-fill';
+    fill.style.width = `${Math.max(0, Math.min(100, Number(item.share || 0)))}%`;
+    track.append(fill);
+    row.append(head, track);
+    strokeRoot.append(row);
+  });
+
+  const poolRoot = document.getElementById('pool-distribution');
+  poolRoot.replaceChildren();
+  (data.pool_distribution || []).forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'pool-card';
+    const strong = document.createElement('strong');
+    strong.textContent = `${item.pool_length}m 풀`;
+    const meta = document.createElement('span');
+    meta.textContent = `${item.sessions}회 · ${formatDistance(item.distance)} · ${item.share}%`;
+    card.append(strong, meta);
+    poolRoot.append(card);
+  });
+}
+
+function renderHabits(data) {
+  const habits = data.recording_habits || {};
+  const totalSessions = Number(data.lifetime?.total_sessions || 0);
+  setRate('habit-structured', habits.structured_session_rate, habits.structured_sessions, totalSessions, '회');
+  setRate('habit-plan', habits.plan_session_rate, habits.plan_sessions, totalSessions, '회');
+  setRate('habit-cycle', habits.cycle_record_rate, habits.cycle_sessions, habits.structured_sessions, '회');
+  setRate('habit-set', habits.set_completion_rate, habits.completed_sets, habits.total_sets, '세트');
+}
+
+function renderInsights(items) {
+  const root = document.getElementById('insight-grid');
+  root.replaceChildren();
+  (items || []).forEach(item => {
+    const card = document.createElement('article');
+    card.className = `insight-card ${item.tone || 'neutral'}`;
+    const title = document.createElement('h3');
+    title.textContent = item.title || '내 수영 데이터';
+    const message = document.createElement('p');
+    message.textContent = item.message || '';
+    const action = document.createElement('a');
+    action.href = safeHref(item.action_href);
+    action.textContent = `${item.action_label || '자세히 보기'} →`;
+    card.append(title, message, action);
+    root.append(card);
+  });
+}
+
+function renderPersonalBests(data) {
+  const items = data.personal_bests || [];
+  const totalEvents = Number(data.recording_habits?.personal_best_events || items.length);
+  document.getElementById('pb-summary').textContent = items.length
+    ? `25m·50m 코스를 분리한 ${totalEvents}개 종목의 현재 최고기록${totalEvents > items.length ? ' 중 최대 12개' : ''}입니다.`
+    : '아직 저장된 테스트 세트 최고기록이 없습니다.';
+  const body = document.getElementById('pb-body');
+  body.replaceChildren();
+  if (!items.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = '훈련 일지에서 첫 테스트 세트를 기록해 보세요.';
+    row.append(cell);
+    body.append(row);
+    return;
+  }
+  items.forEach(item => {
+    const row = document.createElement('tr');
+    const event = document.createElement('td');
+    event.textContent = `${item.stroke_type} ${item.distance_m}m`;
+    const pool = document.createElement('td');
+    pool.textContent = `${item.pool_length}m`;
+    const time = document.createElement('td');
+    time.className = 'pb-time';
+    time.textContent = formatDuration(item.duration_ms);
+    const day = document.createElement('td');
+    day.textContent = item.test_date;
+    row.append(event, pool, time, day);
+    body.append(row);
+  });
+}
+
+async function loadMyData() {
+  try {
+    const response = await fetch('/api/account/insights', {credentials:'include'});
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || '내 수영 데이터를 불러오지 못했습니다.');
+    }
+    const data = await response.json();
+    document.getElementById('loading-state').hidden = true;
+    if (data.is_demo) document.getElementById('demo-banner').style.display = 'block';
+    if (!data.has_data) {
+      document.getElementById('empty-panel').style.display = 'block';
+      return;
+    }
+    document.getElementById('data-content').hidden = false;
+    renderSummary(data);
+    renderTrend(data.monthly_trend || []);
+    renderDistribution(data);
+    renderHabits(data);
+    renderInsights(data.insight_cards);
+    renderPersonalBests(data);
+  } catch (error) {
+    document.getElementById('loading-state').hidden = true;
+    const state = document.getElementById('error-state');
+    state.textContent = error.message || '내 수영 데이터를 불러오지 못했습니다.';
+    state.style.display = 'block';
+  }
+}
+
+loadMyData();
+</script>
+</body>
+</html>

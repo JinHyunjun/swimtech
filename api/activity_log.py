@@ -78,6 +78,7 @@ def log_activity(
 PAGE_MENU_MAP = {
     "/landing":       "랜딩",
     "/dashboard":      "대시보드",
+    "/my-data":        "내 수영 데이터",
     "/plan":           "훈련 플랜",
     "/training-log":   "훈련 일지",
     "/workout":        "풀사이드 훈련",

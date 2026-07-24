@@ -516,6 +516,41 @@ class TestAccountSecurity:
         assert _json_default(Decimal("25.50")) == 25.5
         assert _json_default(datetime(2026, 7, 23, 12, 30)) == "2026-07-23T12:30:00"
 
+    def test_personal_data_insight_helpers_calculate_streaks_and_actions(self):
+        from routers.account import (
+            _build_personal_insight_cards,
+            _longest_streak,
+            _percent,
+            _shift_month,
+        )
+
+        assert _percent(3, 4) == 75
+        assert _percent(3, 0) == 0
+        assert _shift_month(2026, 1, -1) == (2025, 12)
+        assert _longest_streak([
+            date(2026, 7, 1), date(2026, 7, 2), date(2026, 7, 2),
+            date(2026, 7, 5), date(2026, 7, 6), date(2026, 7, 7),
+        ]) == 3
+
+        cards = _build_personal_insight_cards(
+            {
+                "total_sessions": 10, "total_distance": 15000,
+                "total_minutes": 500, "average_distance": 1500,
+            },
+            {
+                "sessions": 6, "distance": 9000, "minutes": 300,
+                "previous_sessions": 4, "previous_distance": 6000,
+                "distance_change_rate": 50.0,
+            },
+            [{"stroke": "자유형", "sessions": 8, "distance": 12000, "share": 80}],
+            {"structured_session_rate": 60},
+            [{"stroke_type": "자유형", "distance_m": 100, "pool_length": 25}],
+        )
+        assert len(cards) == 4
+        assert cards[0]["tone"] == "positive"
+        assert cards[1]["action_href"] == "/plan"
+        assert cards[-1]["tone"] == "record"
+
     def test_auth_version_rejects_tokens_after_all_session_revocation(self, monkeypatch):
         from routers import auth
 

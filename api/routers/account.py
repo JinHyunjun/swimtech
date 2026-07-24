@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 import bcrypt
@@ -43,6 +43,117 @@ def _json_default(value):
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
     return str(value)
+
+
+def _percent(numerator: int | float, denominator: int | float) -> int:
+    return round(float(numerator or 0) / float(denominator or 0) * 100) if denominator else 0
+
+
+def _shift_month(year: int, month: int, offset: int) -> tuple[int, int]:
+    absolute = year * 12 + (month - 1) + offset
+    return absolute // 12, absolute % 12 + 1
+
+
+def _longest_streak(values: list[date]) -> int:
+    ordered = sorted(set(values))
+    longest = current = 0
+    previous = None
+    for value in ordered:
+        current = current + 1 if previous and value == previous + timedelta(days=1) else 1
+        longest = max(longest, current)
+        previous = value
+    return longest
+
+
+def _build_personal_insight_cards(
+    lifetime: dict,
+    recent: dict,
+    stroke_distribution: list[dict],
+    habits: dict,
+    personal_bests: list[dict],
+) -> list[dict]:
+    if not lifetime["total_sessions"]:
+        return [{
+            "tone": "start",
+            "title": "첫 기록이 데이터의 시작이에요",
+            "message": "훈련 일지를 한 번 남기면 거리·시간·영법 추이를 자동으로 정리해 드립니다.",
+            "action_label": "첫 훈련 기록하기",
+            "action_href": "/training-log?quick=1",
+        }]
+
+    cards = []
+    change_rate = recent.get("distance_change_rate")
+    if change_rate is None:
+        cards.append({
+            "tone": "neutral",
+            "title": "최근 90일 기준선을 만드는 중이에요",
+            "message": f"최근 90일에 {recent['sessions']}회, {recent['distance']:,}m를 기록했습니다.",
+            "action_label": "월간 흐름 보기",
+            "action_href": "/report",
+        })
+    elif change_rate >= 5:
+        cards.append({
+            "tone": "positive",
+            "title": "최근 훈련량이 늘고 있어요",
+            "message": f"최근 90일 거리가 직전 90일보다 {abs(change_rate):g}% 증가했습니다. 회복일도 함께 지켜주세요.",
+            "action_label": "다음 훈련 추천",
+            "action_href": "/dashboard",
+        })
+    elif change_rate <= -5:
+        cards.append({
+            "tone": "attention",
+            "title": "최근 훈련량이 줄었어요",
+            "message": f"최근 90일 거리가 직전 90일보다 {abs(change_rate):g}% 감소했습니다. 부담 없는 세션부터 다시 이어가 보세요.",
+            "action_label": "훈련 플랜 고르기",
+            "action_href": "/plan",
+        })
+    else:
+        cards.append({
+            "tone": "steady",
+            "title": "꾸준한 훈련량을 유지하고 있어요",
+            "message": f"최근 90일 거리가 직전 기간과 {abs(change_rate):g}% 이내로 비슷합니다.",
+            "action_label": "월간 흐름 보기",
+            "action_href": "/report",
+        })
+
+    favorite = next((item for item in stroke_distribution if item["distance"] > 0), None)
+    if favorite:
+        cards.append({
+            "tone": "focus",
+            "title": f"{favorite['stroke']}이 가장 큰 비중이에요",
+            "message": f"전체 기록 거리의 {favorite['share']}%가 {favorite['stroke']}입니다. 다른 영법을 섞으면 훈련 자극을 넓힐 수 있어요.",
+            "action_label": "영법별 플랜 보기",
+            "action_href": "/plan",
+        })
+
+    structured_rate = habits["structured_session_rate"]
+    if structured_rate < 50:
+        cards.append({
+            "tone": "attention",
+            "title": "세트 기록을 더 활용해 보세요",
+            "message": f"전체 일지 중 {structured_rate}%에 세트 수행 정보가 있습니다. 세트와 사이클을 남기면 훈련 품질 변화까지 볼 수 있어요.",
+            "action_label": "훈련 일지 열기",
+            "action_href": "/training-log",
+        })
+    else:
+        cards.append({
+            "tone": "positive",
+            "title": "구조화된 훈련 기록이 쌓이고 있어요",
+            "message": f"전체 일지의 {structured_rate}%가 세트 단위로 기록되어 수행률과 사이클 변화를 해석할 수 있습니다.",
+            "action_label": "풀사이드 실행",
+            "action_href": "/workout",
+        })
+
+    if personal_bests:
+        event_count = int(habits.get("personal_best_events") or len(personal_bests))
+        cards.append({
+            "tone": "record",
+            "title": f"{event_count}개 종목의 현재 PB가 있어요",
+            "message": "25m와 50m 코스를 분리한 현재 최고기록을 다음 테스트 세트의 기준으로 활용해 보세요.",
+            "action_label": "테스트 기록 보기",
+            "action_href": "/training-log",
+        })
+    return cards[:4]
 
 
 def _fetch_rows(cur, query: str, params: tuple = ()) -> list[dict]:
@@ -193,6 +304,267 @@ def _build_export(cur, customer_id: int, username: str) -> dict:
             "다른 회원의 계정 프로필은 포함하지 않습니다."
         ),
     }
+
+
+@router.get("/insights")
+@limiter.limit("60/minute")
+def get_personal_data_insights(
+    request: Request,
+    swimtech_token: str = Cookie(default=None),
+):
+    """본인 훈련 기록을 장기 추이와 기록 습관으로 해석해 반환한다."""
+    payload, customer_id = _authenticated_customer(swimtech_token)
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            SELECT COUNT(*),
+                   COALESCE(SUM(total_distance), 0),
+                   COALESCE(SUM(duration_minutes), 0),
+                   MIN(log_date), MAX(log_date),
+                   COUNT(DISTINCT log_date),
+                   COUNT(DISTINCT date_trunc('month', log_date))
+            FROM training_logs
+            WHERE customer_id = %s
+            """,
+            (customer_id,),
+        )
+        row = cur.fetchone() or (0, 0, 0, None, None, 0, 0)
+        total_sessions = int(row[0] or 0)
+        total_distance = int(row[1] or 0)
+        total_minutes = int(row[2] or 0)
+        lifetime = {
+            "total_sessions": total_sessions,
+            "total_distance": total_distance,
+            "total_minutes": total_minutes,
+            "average_distance": round(total_distance / total_sessions) if total_sessions else 0,
+            "average_minutes": round(total_minutes / total_sessions) if total_sessions else 0,
+            "first_training_date": row[3].isoformat() if row[3] else None,
+            "last_training_date": row[4].isoformat() if row[4] else None,
+            "active_days": int(row[5] or 0),
+            "active_months": int(row[6] or 0),
+        }
+
+        cur.execute(
+            "SELECT DISTINCT log_date FROM training_logs WHERE customer_id = %s ORDER BY log_date",
+            (customer_id,),
+        )
+        lifetime["longest_streak"] = _longest_streak([item[0] for item in cur.fetchall()])
+
+        today = date.today()
+        recent_start = today - timedelta(days=89)
+        previous_start = today - timedelta(days=179)
+        previous_end = recent_start - timedelta(days=1)
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE log_date BETWEEN %s AND %s),
+                COALESCE(SUM(total_distance) FILTER (WHERE log_date BETWEEN %s AND %s), 0),
+                COALESCE(SUM(duration_minutes) FILTER (WHERE log_date BETWEEN %s AND %s), 0),
+                COUNT(*) FILTER (WHERE log_date BETWEEN %s AND %s),
+                COALESCE(SUM(total_distance) FILTER (WHERE log_date BETWEEN %s AND %s), 0)
+            FROM training_logs
+            WHERE customer_id = %s
+            """,
+            (
+                recent_start, today,
+                recent_start, today,
+                recent_start, today,
+                previous_start, previous_end,
+                previous_start, previous_end,
+                customer_id,
+            ),
+        )
+        recent_row = cur.fetchone() or (0, 0, 0, 0, 0)
+        recent_distance = int(recent_row[1] or 0)
+        previous_distance = int(recent_row[4] or 0)
+        recent = {
+            "days": 90,
+            "sessions": int(recent_row[0] or 0),
+            "distance": recent_distance,
+            "minutes": int(recent_row[2] or 0),
+            "previous_sessions": int(recent_row[3] or 0),
+            "previous_distance": previous_distance,
+            "distance_change_rate": (
+                round((recent_distance - previous_distance) / previous_distance * 100, 1)
+                if previous_distance else None
+            ),
+        }
+
+        start_year, start_month = _shift_month(today.year, today.month, -11)
+        start_date = date(start_year, start_month, 1)
+        cur.execute(
+            """
+            SELECT to_char(date_trunc('month', log_date), 'YYYY-MM'),
+                   COUNT(*), COALESCE(SUM(total_distance), 0),
+                   COALESCE(SUM(duration_minutes), 0)
+            FROM training_logs
+            WHERE customer_id = %s AND log_date >= %s AND log_date <= %s
+            GROUP BY date_trunc('month', log_date)
+            ORDER BY date_trunc('month', log_date)
+            """,
+            (customer_id, start_date, today),
+        )
+        monthly_rows = {
+            item[0]: {
+                "month": item[0],
+                "sessions": int(item[1] or 0),
+                "distance": int(item[2] or 0),
+                "minutes": int(item[3] or 0),
+            }
+            for item in cur.fetchall()
+        }
+        monthly_trend = []
+        for offset in range(-11, 1):
+            year, month = _shift_month(today.year, today.month, offset)
+            key = f"{year:04d}-{month:02d}"
+            monthly_trend.append(monthly_rows.get(key, {
+                "month": key, "sessions": 0, "distance": 0, "minutes": 0,
+            }))
+
+        cur.execute(
+            """
+            SELECT COALESCE(NULLIF(TRIM(stroke_type), ''), '기타'),
+                   COUNT(*), COALESCE(SUM(total_distance), 0)
+            FROM training_logs
+            WHERE customer_id = %s
+            GROUP BY COALESCE(NULLIF(TRIM(stroke_type), ''), '기타')
+            ORDER BY COALESCE(SUM(total_distance), 0) DESC
+            """,
+            (customer_id,),
+        )
+        stroke_distribution = [{
+            "stroke": item[0],
+            "sessions": int(item[1] or 0),
+            "distance": int(item[2] or 0),
+            "share": _percent(item[2], total_distance),
+        } for item in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT COALESCE(pool_length, 25),
+                   COUNT(*), COALESCE(SUM(total_distance), 0)
+            FROM training_logs
+            WHERE customer_id = %s
+            GROUP BY COALESCE(pool_length, 25)
+            ORDER BY COALESCE(pool_length, 25)
+            """,
+            (customer_id,),
+        )
+        pool_distribution = [{
+            "pool_length": int(item[0] or 25),
+            "sessions": int(item[1] or 0),
+            "distance": int(item[2] or 0),
+            "share": _percent(item[2], total_distance),
+        } for item in cur.fetchall()]
+
+        structured_sessions = cycle_sessions = total_sets = completed_sets = 0
+        if _table_exists(cur, "training_log_sets"):
+            cur.execute(
+                """
+                SELECT COUNT(DISTINCT training_log_id),
+                       COUNT(DISTINCT training_log_id) FILTER (
+                           WHERE actual_cycle_seconds IS NOT NULL
+                       ),
+                       COUNT(*),
+                       COUNT(*) FILTER (WHERE status = 'completed')
+                FROM training_log_sets
+                WHERE customer_id = %s
+                """,
+                (customer_id,),
+            )
+            set_row = cur.fetchone() or (0, 0, 0, 0)
+            structured_sessions = int(set_row[0] or 0)
+            cycle_sessions = int(set_row[1] or 0)
+            total_sets = int(set_row[2] or 0)
+            completed_sets = int(set_row[3] or 0)
+
+        plan_sessions = 0
+        if _table_exists(cur, "plan_completions"):
+            cur.execute(
+                """
+                SELECT COUNT(DISTINCT training_log_id)
+                FROM plan_completions
+                WHERE customer_id = %s AND training_log_id IS NOT NULL
+                """,
+                (customer_id,),
+            )
+            plan_sessions = int((cur.fetchone() or (0,))[0] or 0)
+
+        test_attempts = personal_best_events = 0
+        personal_bests = []
+        if _table_exists(cur, "swim_test_results"):
+            cur.execute(
+                """
+                SELECT COUNT(*),
+                       COUNT(DISTINCT (stroke_type, distance_m, pool_length))
+                FROM swim_test_results
+                WHERE customer_id = %s
+                """,
+                (customer_id,),
+            )
+            benchmark_row = cur.fetchone() or (0, 0)
+            test_attempts = int(benchmark_row[0] or 0)
+            personal_best_events = int(benchmark_row[1] or 0)
+            cur.execute(
+                """
+                SELECT DISTINCT ON (stroke_type, distance_m, pool_length)
+                       test_date, stroke_type, distance_m, pool_length, duration_ms
+                FROM swim_test_results
+                WHERE customer_id = %s
+                ORDER BY stroke_type, distance_m, pool_length,
+                         duration_ms, test_date, id
+                LIMIT 12
+                """,
+                (customer_id,),
+            )
+            personal_bests = [{
+                "test_date": item[0].isoformat(),
+                "stroke_type": item[1],
+                "distance_m": int(item[2]),
+                "pool_length": int(item[3]),
+                "duration_ms": int(item[4]),
+            } for item in cur.fetchall()]
+
+        habits = {
+            "structured_sessions": structured_sessions,
+            "structured_session_rate": _percent(structured_sessions, total_sessions),
+            "plan_sessions": plan_sessions,
+            "plan_session_rate": _percent(plan_sessions, total_sessions),
+            "cycle_sessions": cycle_sessions,
+            "cycle_record_rate": _percent(cycle_sessions, structured_sessions),
+            "total_sets": total_sets,
+            "completed_sets": completed_sets,
+            "set_completion_rate": _percent(completed_sets, total_sets),
+            "test_attempts": test_attempts,
+            "personal_best_events": personal_best_events,
+        }
+        insight_cards = _build_personal_insight_cards(
+            lifetime, recent, stroke_distribution, habits, personal_bests
+        )
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "has_data": total_sessions > 0,
+            "is_demo": bool(payload.get("is_demo")),
+            "privacy_scope": "authenticated_customer_only",
+            "lifetime": lifetime,
+            "recent_90_days": recent,
+            "monthly_trend": monthly_trend,
+            "stroke_distribution": stroke_distribution,
+            "pool_distribution": pool_distribution,
+            "recording_habits": habits,
+            "personal_bests": personal_bests,
+            "insight_cards": insight_cards,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("personal data insights failed")
+        raise HTTPException(500, "내 수영 데이터를 불러오지 못했습니다.")
+    finally:
+        cur.close()
+        conn.close()
 
 
 @router.post("/export")
