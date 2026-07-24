@@ -35,9 +35,10 @@ SwimMate는 프레임워크 빌드 단계가 없는 다중 페이지 애플리�
 - 공통 UI 유틸리티: `frontend/static/utils.js`
 - 테마: `frontend/static/theme.js`
 - 아이콘: `frontend/static/icons.svg`, `frontend/static/icons/*`
+- 기능 가이드 캡처: `frontend/static/tutorial/*`
 - PWA: `frontend/manifest.json`, `frontend/sw.js`
 
-`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다.
+`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다. 공개 `/tutorial`은 API 상태에 의존하지 않는 정적 설명 페이지로, 랜딩에서 진입해 실제 QA 캡처와 기능별 내부 경로를 보여준다.
 
 Vercel은 clean URL과 rewrite를 사용한다.
 
@@ -56,7 +57,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | Prefix | 라우터 | 책임 |
 | --- | --- | --- |
 | `/auth` | `auth.py` | 가입, 로그인, 데모, 토큰 갱신, 로그아웃, 탈퇴, 닉네임, OAuth |
-| `/api/account` | `account.py` | 개인 데이터 JSON 내보내기, 비밀번호 변경, 모든 세션 무효화 |
+| `/api/account` | `account.py` | 개인 데이터 JSON 내보내기·장기 인사이트, 비밀번호 변경, 모든 세션 무효화 |
 | `/customers` | `customers.py` | 관리자용 고객 조회·생성 |
 | `/api/dashboard` | `dashboard.py` | 요약, 이력, 준비도, 주간 목표, 훈련 어드바이저 |
 | `/api/training-log` | `training_log.py` | 일지 CRUD, 통계, 연속 출석, 목표, 플랜 연동 |

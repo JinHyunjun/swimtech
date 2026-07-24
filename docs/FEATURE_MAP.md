@@ -24,6 +24,7 @@
 | `/`, `/app` | 공개 리다이렉트 | 대표 홈 주소 통일 | 307 → `/landing` | 활성 |
 | `/landing` | 로그인 | 대표 서비스 메뉴, 미완료 맞춤 설정 안내, 프로필 동선, PWA 설치 안내 | `/auth/me`, 페이지 조회 로그 | 활성 |
 | `/login`, `/register` | 공개 | 로컬 로그인·가입, Google/Kakao OAuth, 비회원 체험 | `/auth/login`, `/auth/register`, `/auth/demo` | 활성 |
+| `/tutorial` | 공개 | 실제 화면 기반 개인 훈련·성장 데이터·코치·클럽·정보 기능 설명과 목적별 바로가기 | 정적 콘텐츠, `frontend/static/tutorial/*` | 활성 |
 | `/privacy`, `/terms` | 공개 | 현재 데이터 처리와 이용 조건 | 정적 문서 | 활성 |
 | `/plan` | 공개 조회, 저장은 로그인 | 목적·풀 길이·레벨·사이클·드릴/대시 플랜, 대회 준비, 교정 포인트 추천, 직접 구성, 템플릿·즐겨찾기·공유 | `/api/plans`, `/api/training-log/from-plan` | 활성 |
 | `/drill` | 공개 | 자유형·배영·평영·접영별 드릴 가이드 | 정적 큐레이션 | 활성 |

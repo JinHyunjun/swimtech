@@ -377,6 +377,11 @@ def landing_page():
         return FileResponse(path)
     return RedirectResponse(url="/login")
 
+# 기능 가이드 (로그인 불필요)
+@app.get("/tutorial")
+def tutorial_page():
+    return _serve("tutorial.html")
+
 # 개인정보처리방침 (로그인 불필요)
 @app.get("/privacy")
 def privacy_page():

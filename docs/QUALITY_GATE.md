@@ -16,13 +16,14 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 핵심 자동 테스트는 단위·계약·Jira 통합 93개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 49개 API 시나리오와 `qa_ui_crawler.py`의 역할별 27개 화면 검증으로 일괄 확인하고 실행별 리포트를 증적으로 보관한다.
+현재 핵심 자동 테스트는 단위·계약·Jira 통합 94개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 49개 API 시나리오와 `qa_ui_crawler.py`의 역할별 28개 화면 검증으로 일괄 확인하고 실행별 리포트를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
 | 변경 유형 | 반드시 확인할 것 | 테스트·문서 연결 |
 | --- | --- | --- |
 | 새 공개 페이지·메뉴 | 200 응답, 보호 페이지 리다이렉트, 핵심 DOM, 모바일 레이아웃, 콘솔 오류 없음 | `tests/test_swimtech.py`, `PAGE_EXPECTATIONS`, `PAGES` |
+| 스크린샷 기능 가이드 | 랜딩 진입 배너, 공개 200, 개인·실행·성장·코치·탐색 섹션, 기능별 캡처·대체 텍스트, 내부 CTA, 홈 링크, 모바일 단일 열, 비활성 영상 분석·워치 직접 연동 오인 문구 없음 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS["/tutorial"]`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `check_home_link_targets`, `auth.py` 계약 테스트 |
 | 개인화 온보딩 | 인증 경계, 저장·재조회, 로그인 분기, `/auth/me` 일치, 추천 풀·수준·목표 반영, 플랜 기본값, 체험 계정 변경 차단 | `qa_runner.py` A1·6a, `PAGE_EXPECTATIONS["/onboarding"]`, Alembic 리비전 계약 |
 | 프로필·계정 보안 | 현재 설정 표시·수정 진입, 현재 비밀번호 재확인, 데이터 내보내기 민감정보 제외, 비밀번호 변경·전체 로그아웃·탈퇴 뒤 이전 토큰 거부, 데모 변경 차단 | `qa_runner.py` 6d·6e, `PAGE_EXPECTATIONS["/profile"]`, Alembic `20260723_07` |

@@ -558,6 +558,34 @@ def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
     assert '"wait_for_any_text"' in ui_qa
 
 
+def test_feature_tutorial_is_screenshot_based_and_qa_mapped():
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    activity_log = (ROOT / "api" / "activity_log.py").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    tutorial = (ROOT / "frontend" / "tutorial.html").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    screenshot_dir = ROOT / "frontend" / "static" / "tutorial"
+
+    assert '@app.get("/tutorial")' in main
+    assert 'return _serve("tutorial.html")' in main
+    assert '"/tutorial":      "기능 가이드"' in activity_log
+    assert 'id="tutorial-guide-card"' in landing and 'href="/tutorial"' in landing
+    for section_id in [
+        "tutorial-hero", "personal-flow", "execution-flow", "growth-flow",
+        "coach-flow", "explore-flow", "decision-guide",
+    ]:
+        assert f'id="{section_id}"' in tutorial
+    assert tutorial.count("data-tutorial-shot=") >= 12
+    assert tutorial.count('src="/static/tutorial/') >= 12
+    assert len(list(screenshot_dir.glob("*"))) >= 12
+    assert "훈련 일지와 테스트 세트" in tutorial
+    assert "내 수영 데이터" in tutorial
+    assert "코치 연결과 클럽·반" in tutorial
+    assert "영상 영법 분석 기능은 현재 제공하지 않음" in tutorial
+    assert '("/tutorial", "기능 가이드")' in ui_qa
+    assert '"/tutorial": {' in ui_qa
+
+
 def test_landing_url_and_editable_onboarding_are_qa_mapped():
     auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
     api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
@@ -879,11 +907,12 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 93개" in quality_doc
+    assert "단위·계약·Jira 통합 94개" in quality_doc
     assert "49개 API 시나리오" in quality_doc
     assert "30073137555" in quality_doc
-    assert "27개 화면 검증" in quality_doc
+    assert "28개 화면 검증" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
+    assert "스크린샷 기능 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
     assert "Playwright E2E 정의 104개" in quality_doc

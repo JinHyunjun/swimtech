@@ -77,6 +77,7 @@ def log_activity(
 # 정적 경로(page) → 메뉴명 매핑. 활동 분석 화면에서 "메뉴별 클릭 수"로 보여줄 때 사용.
 PAGE_MENU_MAP = {
     "/landing":       "랜딩",
+    "/tutorial":      "기능 가이드",
     "/dashboard":      "대시보드",
     "/my-data":        "내 수영 데이터",
     "/plan":           "훈련 플랜",

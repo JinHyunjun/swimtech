@@ -342,9 +342,59 @@
   font-size: var(--fs-caption);
   font-weight: 800;
 }
+.guide-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 16px 17px;
+  overflow: hidden;
+  border: 1px solid rgba(47,240,196,.26);
+  border-radius: var(--radius-md);
+  color: inherit;
+  background: linear-gradient(120deg,rgba(0,180,216,.14),rgba(47,240,196,.06),var(--surface));
+  text-decoration: none;
+}
+.guide-banner::after {
+  content: "";
+  position: absolute;
+  right: -32px;
+  top: -54px;
+  width: 130px;
+  height: 130px;
+  border: 20px solid rgba(72,202,228,.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.guide-banner:hover { border-color: var(--cyan); transform: translateY(-2px); }
+.guide-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  color: #03121c;
+  background: var(--cyan);
+  font-size: 22px;
+  font-weight: 900;
+}
+.guide-banner strong { display: block; color: var(--text); font-size: var(--fs-body-lg); margin-bottom: 4px; }
+.guide-banner span { color: var(--muted); font-size: var(--fs-caption); line-height: 1.5; }
+.guide-banner-cta {
+  position: relative;
+  z-index: 1;
+  color: var(--cyan)!important;
+  font-weight: 800;
+  white-space: nowrap;
+}
 @media (max-width: 540px) {
   .setup-notice { align-items: flex-start; flex-direction: column; }
   .setup-notice a { width: 100%; text-align: center; }
+  .guide-banner { grid-template-columns: auto 1fr; }
+  .guide-banner-cta { grid-column: 1 / -1; padding-left: 58px; }
 }
 </style>
 </head>
@@ -386,6 +436,15 @@
         </div>
         <a href="/onboarding">지금 설정하기</a>
       </div>
+
+      <a href="/tutorial" class="guide-banner" id="tutorial-guide-card">
+        <div class="guide-banner-icon" aria-hidden="true">?</div>
+        <div>
+          <strong>처음이라면 기능 가이드부터 확인하세요</strong>
+          <span>개인 훈련, 성장 데이터, 코치·클럽 기능을 실제 화면과 순서대로 설명합니다.</span>
+        </div>
+        <span class="guide-banner-cta">스크린샷으로 둘러보기 →</span>
+      </a>
 
       <!-- 🤖 AI 서비스 -->
       <div class="menu-section">

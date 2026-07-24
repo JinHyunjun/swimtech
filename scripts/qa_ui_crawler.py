@@ -75,6 +75,7 @@ ACTION_TIMEOUT_MS = 5000
 # 로그인 후 둘러볼 메뉴 (api/main.py에 등록된 실제 라우트 기준)
 PAGES = [
     ("/landing", "랜딩"),
+    ("/tutorial", "기능 가이드"),
     ("/onboarding", "맞춤 훈련 설정"),
     ("/onboarding?mode=edit", "맞춤 훈련 설정 수정"),
     ("/dashboard", "대시보드"),
@@ -139,6 +140,11 @@ RESULTS = []  # 페이지별 결과 dict 리스트
 PAGE_EXPECTATIONS = {
     "/login": {
         "selectors": ["#login-btn", "#demo-btn"],
+    },
+    "/tutorial": {
+        "selectors": ["#tutorial-hero", "#personal-flow", "#execution-flow", "#growth-flow", "#coach-flow", "#explore-flow", "#decision-guide", "[data-tutorial-shot]"],
+        "texts": ["기능이 많아도", "훈련 일지와 테스트 세트", "내 수영 데이터", "코치 연결과 클럽·반", "어디로 가야 할지 모르겠다면"],
+        "absent_texts": ["영상 영법 분석 기능을 제공합니다", "Apple Watch와 실시간 연동"],
     },
     "/onboarding": {
         "selectors": ["#onboarding-form", "[data-field='level']", "[data-field='goal']", "[data-field='weekly_goal']", "[data-field='preferred_pool_length']", "#next-btn"],
