@@ -314,7 +314,9 @@
 <script>
 "use strict";
 
-let curYear, curMonth;
+const initialMonth = new Date();
+let curYear = initialMonth.getFullYear();
+let curMonth = initialMonth.getMonth() + 1;
 let strokeChart, weeklyChart;
 let shareToken = "";
 
@@ -323,9 +325,6 @@ let shareToken = "";
     const res = await fetch('/auth/me', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/login'; return; }
   } catch { window.location.href = '/login'; return; }
-  const now = new Date();
-  curYear  = now.getFullYear();
-  curMonth = now.getMonth() + 1;
   await loadReport();
   loadYearHeatmap();
 })();

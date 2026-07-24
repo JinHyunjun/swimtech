@@ -250,6 +250,9 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "POSITION('@' IN COALESCE(tl.memo, ''))" in report_api
     assert "stat-avg" in report_page
     assert "평균 거리 (m)" in report_page
+    assert "const initialMonth = new Date();" in report_page
+    assert "let curYear = initialMonth.getFullYear();" in report_page
+    assert "let curMonth = initialMonth.getMonth() + 1;" in report_page
 
 
 def test_training_logs_persist_structured_set_execution_data():
@@ -552,6 +555,7 @@ def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
     assert "내 수영 데이터 장기 대시보드 연동" in api_qa
     assert '("/my-data", "내 수영 데이터")' in ui_qa
     assert '"/my-data": {' in ui_qa
+    assert '"wait_for_any_text"' in ui_qa
 
 
 def test_landing_url_and_editable_onboarding_are_qa_mapped():

@@ -158,7 +158,8 @@ PAGE_EXPECTATIONS = {
     },
     "/my-data": {
         "selectors": ["#data-content", "#lifetime-distance", "#monthly-trend-chart", "#stroke-distribution", "#recording-habits", "#insight-grid", "#personal-best-panel", "#pb-body"],
-        "texts": ["내 기록을, 이해할 수 있는 데이터로", "기록 습관과 데이터 깊이", "현재 개인 최고기록", "JSON은 원본 보관·이동용"],
+        "texts": ["내 기록을, 이해할 수 있는 데이터로", "전체 수영 이력", "원본 JSON 내보내기"],
+        "wait_for_any_text": ["아직 해석할 훈련 기록이 없어요", "기록 습관과 데이터 깊이", "내 수영 데이터를 불러오지 못했습니다."],
     },
     "/training-log": {
         "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop"],
@@ -166,7 +167,8 @@ PAGE_EXPECTATIONS = {
     },
     "/workout": {
         "selectors": ["#workout-progress", "#set-strip", "#current-set-card", "#timer-value", "#timer-toggle", "#rep-complete", "#execution-sheet", "#wake-lock-btn"],
-        "texts": ["풀사이드 훈련", "훈련 일지에서 세트 선택"],
+        "texts": ["풀사이드 훈련"],
+        "wait_for_any_text": ["실행할 훈련을 선택해주세요", "저장된 세트가 없습니다", "훈련을 불러오지 못했습니다", "세트 완료"],
     },
     "/report": {
         "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs"],
@@ -298,6 +300,18 @@ def check_page_expectations(page, path):
         except Exception:
             errors.append({"type": "missing_selector", "selector": selector})
     body_text = ""
+    settled_texts = expected.get("wait_for_any_text", [])
+    if settled_texts:
+        for _ in range(30):
+            try:
+                body_text = page.locator("body").inner_text(timeout=3000)
+            except Exception:
+                body_text = ""
+            if any(text in body_text for text in settled_texts):
+                break
+            page.wait_for_timeout(500)
+        else:
+            errors.append({"type": "async_state_not_settled", "expected_any": settled_texts})
     try:
         body_text = page.locator("body").inner_text(timeout=3000)
     except Exception:
