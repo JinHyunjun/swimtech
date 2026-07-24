@@ -909,7 +909,7 @@ def test_quality_gate_documentation_is_kept_current():
     assert "SwimMate 품질 검증 게이트" in quality_doc
     assert "단위·계약·Jira 통합 94개" in quality_doc
     assert "49개 API 시나리오" in quality_doc
-    assert "30073137555" in quality_doc
+    assert "30075211320" in quality_doc
     assert "28개 화면 검증" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
     assert "스크린샷 기능 가이드" in quality_doc
