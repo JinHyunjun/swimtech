@@ -180,6 +180,10 @@ PAGE_EXPECTATIONS = {
         "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs"],
         "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
+    "/chat": {
+        "selectors": ["#chat-messages", "#chat-input", "#send-btn", "#chat-grounding-info", ".sample-grid", ".grounding-info"],
+        "texts": ["영법·훈련·사이클·규정·장비·안전", "공식·교육기관 자료 기반", "개인화 질문에만 내 기록 반영", "의료 진단·영상 분석 미제공"],
+    },
     "/profile": {
         "selectors": ["#p-email", "#training-profile-panel", "#p-training-level", "#p-training-goal", "#p-training-weekly", "#p-training-pool", "#onboarding-edit-link", "#my-data-panel", "#my-data-dashboard-link", "#password-panel", "#password-save-btn", "#data-export-panel", "#data-export-btn", "#session-security-panel", "#logout-all-btn", "#withdraw-open-btn"],
         "texts": ["맞춤 훈련 설정", "맞춤 훈련 설정 수정", "내 수영 데이터", "내 데이터 대시보드 보기", "내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],

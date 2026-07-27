@@ -159,7 +159,23 @@
 }
 .welcome-icon  { font-size: var(--fs-display); margin-bottom: 14px; line-height: 1; }
 .welcome-title { font-size: var(--fs-heading); font-weight: 700; color: var(--blue); margin-bottom: 8px; }
-.welcome-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.75; margin-bottom: 28px; }
+.welcome-desc  { font-size: var(--fs-body); color: var(--muted); line-height: 1.75; margin-bottom: 16px; }
+.grounding-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  max-width: 620px;
+  margin: 0 auto 24px;
+}
+.grounding-info span {
+  padding: 5px 9px;
+  border: 0.5px solid rgba(34,211,238,.28);
+  border-radius: 999px;
+  color: #90dbe9;
+  background: rgba(34,211,238,.06);
+  font-size: var(--fs-caption);
+}
 .sample-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -203,6 +219,38 @@
   background: var(--surface);
   color: #e8f4f8;
   border-bottom-left-radius: 3px;
+}
+.answer-meta {
+  width: min(70%, 760px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.answer-meta-badge,
+.answer-meta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 3px 7px;
+  border: 0.5px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  color: #9dcbd7;
+  text-decoration: none;
+  line-height: 1.3;
+}
+.answer-meta-badge.personalized {
+  border-color: rgba(52,211,153,.35);
+  color: #7ee2b8;
+  background: rgba(52,211,153,.07);
+}
+.answer-meta a:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
 }
 .msg-bubble p { margin: 0 0 8px; }
 .msg-bubble p:last-child { margin-bottom: 0; }
@@ -301,6 +349,9 @@
 #send-btn:disabled { opacity: .35; cursor: not-allowed; }
 #send-btn:not(:disabled):hover { opacity: .82; }
 .input-hint { font-size: var(--fs-caption); color: var(--muted); margin-top: 6px; padding-left: 2px; }
+@media (max-width: 768px) {
+  .answer-meta { width: 88%; }
+}
 </style>
 </head>
 <body>
@@ -367,10 +418,10 @@ function toggleMobileSidebar() {
 }
 
 const SAMPLES = [
-  '자유형 팔꿈치 각도를 어떻게 교정하나요?',
-  '수영 전 스트레칭 루틴 알려줘',
-  '접영 돌핀킥 연습 방법은?',
-  '수영 후 근육 회복 방법은?'
+  '내 최근 훈련과 컨디션을 바탕으로 다음 세션을 추천해줘',
+  '25m 풀에서 자유형 50m 사이클은 어떻게 정하나요?',
+  '평영 경기에서 실격될 수 있는 동작을 알려줘',
+  '오픈워터 수영 전에 확인할 안전수칙은?'
 ];
 
 let sessions = {};
@@ -416,7 +467,11 @@ async function clearHistory() {
         id,
         sessionId: uuid(),
         title: '이전 대화 복원',
-        messages: history.map(h => ({ role: h.role, content: h.content })),
+        messages: history.map(h => ({
+          role: h.role,
+          content: h.content,
+          grounding: h.grounding || null,
+        })),
       };
       saveStorage();
       activateChat(id);
@@ -497,7 +552,13 @@ function renderMessages() {
       <div class="chat-welcome">
         <div class="welcome-icon"><svg class="icon icon-xl" aria-hidden="true"><use href="/static/icons.svg#icon-robot"/></svg></div>
         <div class="welcome-title">SwimMate AI 코치</div>
-        <p class="welcome-desc">수영 기술, 훈련 방법, 지상운동, 스트레칭,<br>대회 정보, 용품 추천 등 수영과 관련된 모든 것을 물어보세요!</p>
+        <p class="welcome-desc">영법·훈련·사이클·규정·장비·안전 등 수영 전반을 물어보세요.<br>내 기록을 묻는 질문에는 로그인된 훈련 데이터를 필요한 범위에서만 반영합니다.</p>
+        <div class="grounding-info" id="chat-grounding-info">
+          <span>공식·교육기관 자료 기반</span>
+          <span>개인화 질문에만 내 기록 반영</span>
+          <span>규정은 기준일과 원문 확인</span>
+          <span>의료 진단·영상 분석 미제공</span>
+        </div>
         <div class="sample-grid">
           ${SAMPLES.map(q =>
             `<div class="sample-card" onclick="sendSample(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</div>`
@@ -507,21 +568,110 @@ function renderMessages() {
     return;
   }
 
-  box.innerHTML = s.messages.map(m => bubbleHTML(m.role, m.content)).join('');
+  box.innerHTML = s.messages.map(m => bubbleHTML(m)).join('');
   box.scrollTop = box.scrollHeight;
 }
 
-function bubbleHTML(role, content) {
+function bubbleHTML(message) {
+  const role = message.role;
+  const content = message.content;
   const inner = role === 'bot'
-    ? marked.parse(content)
+    ? renderSafeMarkdown(content)
     : `<p>${esc(content).replace(/\n/g, '<br>')}</p>`;
-  return `<div class="msg-row ${role}"><div class="msg-bubble">${inner}</div></div>`;
+  const meta = role === 'bot' ? groundingHTML(message.grounding) : '';
+  return `<div class="msg-row ${role}"><div class="msg-bubble">${inner}</div>${meta}</div>`;
 }
 
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderSafeMarkdown(value) {
+  if (typeof marked === 'undefined') {
+    return `<p>${esc(value).replace(/\n/g, '<br>')}</p>`;
+  }
+  try {
+    const template = document.createElement('template');
+    template.innerHTML = marked.parse(String(value || ''));
+    template.content.querySelectorAll(
+      'script,style,iframe,object,embed,form,input,button,textarea,select,meta,link,base,svg,math'
+    ).forEach(node => node.remove());
+    template.content.querySelectorAll('*').forEach(node => {
+      [...node.attributes].forEach(attribute => {
+        const name = attribute.name.toLowerCase();
+        if (name.startsWith('on') || name === 'style' || name === 'src' || name === 'srcdoc') {
+          node.removeAttribute(attribute.name);
+        }
+      });
+      if (node.tagName === 'A') {
+        const href = safeLink(node.getAttribute('href'));
+        if (!href) {
+          node.removeAttribute('href');
+          node.removeAttribute('target');
+        } else {
+          node.setAttribute('href', href);
+          if (href.startsWith('https://')) {
+            node.setAttribute('target', '_blank');
+            node.setAttribute('rel', 'noopener noreferrer');
+          }
+        }
+      }
+    });
+    return template.innerHTML;
+  } catch {
+    return `<p>${esc(value).replace(/\n/g, '<br>')}</p>`;
+  }
+}
+
+function safeLink(value) {
+  const raw = String(value || '').trim();
+  if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === 'https:' ? parsed.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function groundingHTML(grounding) {
+  if (!grounding || grounding.answer_generated === false) return '';
+  const topics = Array.isArray(grounding.topics) ? grounding.topics : [];
+  const sources = Array.isArray(grounding.sources) ? grounding.sources : [];
+  const related = Array.isArray(grounding.related_links) ? grounding.related_links : [];
+  const personalization = grounding.personalization || {};
+  const parts = [];
+
+  if (personalization.applied) {
+    const categories = Array.isArray(personalization.categories)
+      ? personalization.categories.join(' · ')
+      : '';
+    parts.push(`<span class="answer-meta-badge personalized" title="${esc(categories)}">내 기록 반영</span>`);
+  }
+
+  [...new Set(topics.map(item => item.category).filter(Boolean))].slice(0, 2).forEach(category => {
+    parts.push(`<span class="answer-meta-badge">${esc(category)} 지식</span>`);
+  });
+
+  sources.slice(0, 3).forEach(source => {
+    const href = safeLink(source.url);
+    if (!href) return;
+    const label = source.organization || source.title || '공식 출처';
+    parts.push(
+      `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" ` +
+      `title="${esc(source.title || label)}">출처 · ${esc(label)}</a>`
+    );
+  });
+
+  related.slice(0, 2).forEach(link => {
+    const href = safeLink(link.url);
+    if (!href) return;
+    parts.push(`<a href="${esc(href)}">관련 · ${esc(link.title || '가이드')}</a>`);
+  });
+
+  return parts.length ? `<div class="answer-meta">${parts.join('')}</div>` : '';
 }
 
 // ── 전송 ──────────────────────────────────────────────
@@ -568,10 +718,14 @@ async function sendMessage() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
     const answer = data.reply ?? '응답을 받지 못했습니다.';
-    s.messages.push({ role: 'bot', content: answer });
+    s.messages.push({
+      role: 'bot',
+      content: answer,
+      grounding: data.grounding || null,
+    });
   } catch (err) {
     const errMsg = `⚠️ 잠시 연결이 불안정합니다: ${err.message}`;
-    s.messages.push({ role: 'bot', content: errMsg });
+    s.messages.push({ role: 'bot', content: errMsg, grounding: null });
   }
 
   saveStorage();

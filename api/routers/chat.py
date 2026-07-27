@@ -9,75 +9,39 @@ from google.genai import types
 
 from routers.auth import verify_token
 from rate_limit import limiter
-from db import DATABASE_URL, get_db as _get_db
+from db import get_db as _get_db
+from services.chat_personalization import load_personalization
+from services.swimming_knowledge import (
+    build_knowledge_context,
+    grounding_payload,
+    retrieve_knowledge,
+)
 
 router = APIRouter()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+MODEL_FALLBACKS = [
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3-flash-preview",
+]
 
 SYSTEM_PROMPT_BASE = (
-    "당신은 SwimMate의 수영 전문 AI 코치입니다. 수영 영법, 훈련 방법, 호흡법, 체력 관리, "
-    "수영 장비, 부상 예방 등 수영과 관련된 질문에만 친절하고 구체적으로 답변하세요. "
+    "당신은 SwimMate의 수영 전문 AI 어시스턴트입니다. 서비스 사용법에 한정하지 않고 수영 영법, "
+    "훈련 설계, 사이클, 대회 규정, 장비, 안전, 회복, 오픈워터 등 수영 전반의 질문에 친절하고 "
+    "구체적으로 답변하세요. "
     "수영과 무관한 질문(코딩, 정치, 일반 잡담, 다른 운동 등)을 받으면, 정중히 수영 관련 "
     "질문으로 유도하며 답변을 거절하세요. "
-    "답변은 항상 충분히 상세하게, 필요하면 단계별 목록 형태로 구체적으로 설명하세요. "
+    "검수된 지식베이스가 제공되면 우선 근거로 사용하고, 제공되지 않은 출처·통계·최신 확인 결과를 "
+    "지어내지 마세요. 규정은 변경될 수 있으므로 적용 기준과 공식 원문 확인 필요성을 분명히 하세요. "
+    "개인화 데이터가 제공되면 일반 원칙과 사용자 기록에 근거한 해석을 구분하고, 데이터에 없는 기록은 "
+    "추측하지 마세요. 의료 진단이나 치료를 하지 말고 위험 신호나 지속되는 통증에는 훈련 중단과 "
+    "적절한 전문가 확인을 안내하세요. 영상 영법 분석이나 워치 자동 연동이 가능한 것처럼 말하지 마세요. "
+    "답변은 충분히 상세하게, 필요하면 단계별 목록 형태로 구체적으로 설명하세요. "
     "절대로 '어떤 영법/방법이 궁금하신가요?' 같은 되묻기로 답변을 피하지 마세요 — 직전 대화에 "
     "이미 주제가 나와 있다면 그 주제를 그대로 더 깊게 설명하세요."
 )
 
-
-def _get_training_summary(username: str) -> str:
-    """사용자의 최근 훈련 일지를 요약해서, AI 코치가 맞춤 답변을 줄 수 있도록 컨텍스트로 제공.
-    실패해도 챗봇 자체가 죽으면 안 되므로 빈 문자열 반환으로 안전하게 처리."""
-    try:
-        conn = _get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM customers WHERE username = %s", (username,))
-        row = cur.fetchone()
-        if not row:
-            cur.close(); conn.close()
-            return ""
-        cid = row[0]
-
-        cur.execute("""
-            SELECT log_date, stroke_type, total_distance, duration_minutes, intensity
-            FROM training_logs
-            WHERE customer_id = %s
-            ORDER BY log_date DESC
-            LIMIT 8
-        """, (cid,))
-        recent_rows = cur.fetchall()
-
-        cur.execute("""
-            SELECT COUNT(*), COALESCE(SUM(total_distance),0)
-            FROM training_logs
-            WHERE customer_id = %s
-              AND log_date >= date_trunc('month', CURRENT_DATE)
-        """, (cid,))
-        month_count, month_distance = cur.fetchone()
-        cur.close(); conn.close()
-
-        if not recent_rows:
-            return ""
-
-        lines = [
-            f"- {d.isoformat()} {stroke} {dist}m {dur}분 (강도:{intensity or '-'})"
-            for d, stroke, dist, dur, intensity in recent_rows
-        ]
-        stroke_counts: dict = {}
-        for _, stroke, *_ in recent_rows:
-            stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1
-        main_stroke = max(stroke_counts, key=stroke_counts.get) if stroke_counts else "정보 없음"
-
-        return (
-            "\n\n[참고: 이 사용자의 최근 훈련 일지 데이터입니다 — 사용자가 본인의 기록, 페이스, "
-            "진행 상황, 맞춤 추천을 물으면 이 데이터를 적극 활용해 구체적으로 답변하세요. "
-            "이 데이터와 무관한 일반적인 질문에는 굳이 언급하지 마세요.]\n"
-            f"이번 달 누적: {month_count}회, {month_distance}m\n"
-            f"최근 주력 영법: {main_stroke}\n"
-            "최근 훈련 기록(최신순):\n" + "\n".join(lines)
-        )
-    except Exception:
-        return ""
 
 _client = None
 
@@ -127,6 +91,57 @@ class SendMessageRequest(BaseModel):
     content: str
 
 
+def _validated_text(content: str) -> str:
+    user_text = (content or "").strip()
+    if not user_text:
+        raise HTTPException(400, "메시지를 입력해주세요")
+    if len(user_text) > 1000:
+        raise HTTPException(400, "메시지가 너무 길어요 (1000자 이하로 입력해주세요)")
+    return user_text
+
+
+def _context_query(recent: list[tuple[str, str]], current_text: str) -> str:
+    """Keep follow-up questions grounded in the latest user topic."""
+    recent_user_messages = [
+        content for role, content in recent if role == "user"
+    ][-3:]
+    if not recent_user_messages or recent_user_messages[-1] != current_text:
+        recent_user_messages.append(current_text)
+    return "\n".join(recent_user_messages)[-3000:]
+
+
+def _prepare_context(
+    username: str,
+    knowledge_query: str,
+    personalization_query: Optional[str] = None,
+):
+    knowledge_items = retrieve_knowledge(knowledge_query, limit=3)
+    personalization = load_personalization(
+        username,
+        personalization_query if personalization_query is not None else knowledge_query,
+        _get_db,
+    )
+    grounding = grounding_payload(knowledge_items)
+    grounding["personalization"] = personalization.payload()
+    return (
+        build_knowledge_context(knowledge_items),
+        personalization,
+        grounding,
+    )
+
+
+@router.post("/context-preview")
+@limiter.limit("30/minute")
+def context_preview(body: SendMessageRequest, request: Request):
+    """Expose safe grounding metadata for QA without invoking Gemini."""
+    username = _get_username(request)
+    if not username:
+        raise HTTPException(401, "로그인이 필요합니다")
+    user_text = _validated_text(body.content)
+    _, _, grounding = _prepare_context(username, user_text)
+    return {"grounding": grounding}
+
+
 @router.post("/send")
 @limiter.limit("10/minute")
 def send_message(body: SendMessageRequest, request: Request):
@@ -134,11 +149,7 @@ def send_message(body: SendMessageRequest, request: Request):
     if not username:
         raise HTTPException(401, "로그인이 필요합니다")
 
-    user_text = body.content.strip()
-    if not user_text:
-        raise HTTPException(400, "메시지를 입력해주세요")
-    if len(user_text) > 1000:
-        raise HTTPException(400, "메시지가 너무 길어요 (1000자 이하로 입력해주세요)")
+    user_text = _validated_text(body.content)
 
     try:
         _ensure_table()
@@ -154,8 +165,20 @@ def send_message(body: SendMessageRequest, request: Request):
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
 
-    MODEL_FALLBACKS = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3-flash-preview"]
     reply = None
+    generation_succeeded = False
+    grounding = {
+        "knowledge_version": None,
+        "topics": [],
+        "sources": [],
+        "related_links": [],
+        "personalization": {
+            "available": False,
+            "applied": False,
+            "categories": [],
+            "privacy_scope": "authenticated_customer_only",
+        },
+    }
     try:
         client = _get_client()
         conn = _get_db()
@@ -178,8 +201,17 @@ def send_message(body: SendMessageRequest, request: Request):
             for r, c in recent
         ]
 
-        training_summary = _get_training_summary(username)
-        system_instruction = SYSTEM_PROMPT_BASE + training_summary
+        query = _context_query(recent, user_text)
+        knowledge_context, personalization, grounding = _prepare_context(
+            username,
+            query,
+            personalization_query=user_text,
+        )
+        system_instruction = (
+            SYSTEM_PROMPT_BASE
+            + knowledge_context
+            + personalization.text
+        )
 
         last_error = None
         for model_name in MODEL_FALLBACKS:
@@ -195,6 +227,7 @@ def send_message(body: SendMessageRequest, request: Request):
                 )
                 reply = (getattr(response, "text", "") or "").strip()
                 if reply:
+                    generation_succeeded = True
                     break
             except genai.errors.APIError as e:
                 last_error = e
@@ -214,6 +247,8 @@ def send_message(body: SendMessageRequest, request: Request):
     except Exception:
         reply = "지금 AI 코치 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요."
 
+    grounding["answer_generated"] = generation_succeeded
+
     try:
         conn = _get_db()
         cur = conn.cursor()
@@ -228,7 +263,12 @@ def send_message(body: SendMessageRequest, request: Request):
     except Exception as e:
         raise HTTPException(500, f"DB 오류: {e}")
 
-    return {"reply": reply, "id": row[0], "created_at": str(row[1])}
+    return {
+        "reply": reply,
+        "id": row[0],
+        "created_at": str(row[1]),
+        "grounding": grounding,
+    }
 
 
 @router.get("/history")

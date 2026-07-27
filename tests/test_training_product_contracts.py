@@ -914,8 +914,8 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·Jira 통합 94개" in quality_doc
-    assert "49개 API 시나리오" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합 102개" in quality_doc
+    assert "50개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "28개 화면 검증" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
@@ -948,6 +948,9 @@ def test_quality_gate_documentation_is_kept_current():
     assert "section25:" in pytest_ini
     assert "현재 신규 가져오기 UI는 비활성화" in privacy
     assert "Google Gemini" in privacy and "Atlassian Jira" in privacy
+    assert "개인화 질문 시 훈련 설정" in privacy
+    assert "이름·이메일·자유 입력 메모" in privacy
+    assert "AI 코치 지식·개인화" in quality_doc
     assert "swimtech_token" in privacy and "swimtech_refresh_token" in privacy
     assert "영상 업로드 기반 영법 분석" in terms
     assert "현재 공개 서비스에서 제공하지 않습니다" in terms

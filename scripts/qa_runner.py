@@ -139,14 +139,21 @@ def main():
     anonymous_dashboard = anonymous.get(f"{BASE}/api/dashboard/summary", timeout=60)
     anonymous_my_data = anonymous.get(f"{BASE}/api/account/insights", timeout=60)
     anonymous_onboarding = anonymous.get(f"{BASE}/auth/onboarding", timeout=60)
+    anonymous_chat_context = anonymous.post(
+        f"{BASE}/api/chat/context-preview",
+        json={"content": "내 최근 훈련을 분석해줘"},
+        timeout=60,
+    )
     rec(
         "A1",
         "비로그인 보호 경계",
         anonymous_me.status_code == 401 and anonymous_dashboard.status_code == 401
         and anonymous_my_data.status_code == 401
-        and anonymous_onboarding.status_code == 401,
+        and anonymous_onboarding.status_code == 401
+        and anonymous_chat_context.status_code == 401,
         f"me {anonymous_me.status_code}, dashboard {anonymous_dashboard.status_code}, "
-        f"my-data {anonymous_my_data.status_code}, onboarding {anonymous_onboarding.status_code}",
+        f"my-data {anonymous_my_data.status_code}, onboarding {anonymous_onboarding.status_code}, "
+        f"chat-context {anonymous_chat_context.status_code}",
     )
 
     wrong_login = anonymous.post(
@@ -315,6 +322,45 @@ def main():
         }, timeout=60)
     except Exception:
         pass
+
+    knowledge_preview = sess.post(
+        f"{BASE}/api/chat/context-preview",
+        json={"content": "25m 풀 경기의 사이클과 실격 규정을 알려줘"},
+        timeout=60,
+    )
+    personal_preview = sess.post(
+        f"{BASE}/api/chat/context-preview",
+        json={"content": "내 최근 훈련과 컨디션을 바탕으로 맞춤 세션을 추천해줘"},
+        timeout=60,
+    )
+    knowledge_grounding = jget(knowledge_preview).get("grounding") or {}
+    personal_grounding = jget(personal_preview).get("grounding") or {}
+    knowledge_keys = {
+        item.get("key") for item in knowledge_grounding.get("topics") or []
+    }
+    official_organizations = {
+        item.get("organization") for item in knowledge_grounding.get("sources") or []
+    }
+    personal_meta = personal_grounding.get("personalization") or {}
+    chat_grounding_ok = (
+        knowledge_preview.status_code == 200
+        and personal_preview.status_code == 200
+        and {"pool_length", "training_cycle", "competition_rules"} <= knowledge_keys
+        and "World Aquatics" in official_organizations
+        and personal_meta.get("available") is True
+        and personal_meta.get("applied") is True
+        and "훈련 설정" in (personal_meta.get("categories") or [])
+        and personal_meta.get("privacy_scope") == "authenticated_customer_only"
+    )
+    rec(
+        "6c",
+        "AI 코치 지식 근거·본인 기록 개인화 매핑",
+        chat_grounding_ok,
+        f"knowledge {knowledge_preview.status_code}/{sorted(knowledge_keys)}, "
+        f"personal {personal_preview.status_code}/"
+        f"applied={personal_meta.get('applied')}/"
+        f"categories={len(personal_meta.get('categories') or [])}",
+    )
 
     year, month = this_month()
 
