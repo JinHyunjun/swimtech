@@ -233,7 +233,7 @@ SwimMate는 이를 `준비도 확인 → 훈련 선택 → 일지 기록 → 성
 | AI | Google Gemini, 구조화 출력, 규칙 기반 폴백 |
 | Infra | Vercel, Render, GitHub Actions |
 | Collaboration/Ops | Jira Cloud REST API·Webhook, Notion 변경 이력 |
-| Quality | pytest, Playwright, API 시나리오 QA, UI 크롤러 |
+| Quality | pytest, Playwright, API 시나리오 QA, UI 크롤러, Postman CLI |
 
 ## 처음 보는 사람을 위한 기술 스택 설명
 
@@ -257,6 +257,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 | Notion API | Notion 문서를 웹 서비스와 연결하는 API | 공개 릴리즈 노트 `/changelog` 연동 |
 | GitHub Actions | 저장소 변경 후 자동 작업을 실행하는 도구 | 백엔드 변경 시 Render 배포 훅 호출과 health check |
 | pytest / Playwright | 코드와 화면을 자동으로 검사하는 도구 | API 계약, 주요 사용자 흐름, 화면 오류를 회귀 테스트 |
+| Postman / Postman CLI | API 요청을 실행 가능한 문서와 스모크 테스트로 관리하는 도구 | 쿠키 로그인, 일지→리포트·내 데이터 연동과 관리자 권한 경계를 앱·GitHub Actions에서 재실행 |
 
 핵심은 AI가 모든 판단을 대신하는 서비스가 아니라는 점입니다. 훈련 준비도, 주간 추천, 리포트 계산과 지식 검색은 설명 가능한 규칙·검수된 자료·DB 집계로 처리하고, Gemini는 선택된 근거와 최소화한 개인화 데이터를 바탕으로 질문 답변과 코치 문서 초안처럼 “문장을 만들어야 하는 곳”에만 씁니다.
 
@@ -282,11 +283,12 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 
 핵심 자동 테스트와 실제 배포 서비스 검사를 하나의 GitHub Actions 품질 게이트로 관리합니다.
 
-- 단위·계약·지식 검색·Jira 통합 테스트 102개
+- 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 테스트 106개
 - `main` Push·PR에서는 핵심 테스트를 실행합니다.
 - 매일 09:00 KST 및 수동 실행에서는 핵심 테스트에 이어 운영 API와 Chromium UI 검사를 일괄 실행합니다.
 - `scripts/qa_runner.py` — 인증·대표 홈 리다이렉트·AI 지식 근거와 본인 기록 개인화·개인 데이터 내보내기·장기 인사이트·계정 보안, 훈련 기록·테스트 세트·코스별 PB·리포트, 코치 코드, 클럽·반 역할·일정·출석·공지·수행 분석, 관리자 API 등 운영 시나리오 50개를 실제 사용자 흐름으로 점검
 - `scripts/qa_ui_crawler.py` — 로그인 목적지, 홈 링크, 온보딩 수정·계산 스타일, 스크린샷 기능 가이드와 개인 데이터의 기록 있음·빈 상태를 포함한 역할별 주요 28개 페이지의 DOM·콘솔 오류·실패 API와 관리자 화면 매핑을 점검
+- `tests/postman/SwimMate.postman_collection.json` — 공개 health·비로그인 경계, 일반 사용자 쿠키 로그인과 일지→통계·리포트·내 데이터→삭제, 관리자 읽기·페이지네이션을 19개 요청으로 실행하는 Postman 스모크
 - `docs/QUALITY_GATE.md` — 기능 유형별로 반드시 넘어가야 할 검증 기준과 증적 산출물을 정리
 
 `tests/test_swimtech.py`의 Playwright 104개 정의는 과거 로컬 통합 환경용 참고 시나리오로 남겨 두었으며 현재 필수 품질 게이트의 통과 수에는 포함하지 않습니다. 배포 검증 증적은 실행마다 생성되는 핵심 HTML·JUnit 리포트, `qa_report.json`, `qa_ui_report.json`, UI 스크린샷으로 판정합니다.
@@ -295,7 +297,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 
 로그인 검사는 코드에 계정을 저장하지 않고 GitHub Actions Secrets의 일반·학생·관리자 전용 QA 계정으로 수행합니다. 필수 계정이 누락되면 해당 검사를 생략하지 않고 전체 품질 게이트가 실패합니다. 구체적인 판정 기준은 [품질 검증 게이트](./docs/QUALITY_GATE.md)에서 관리합니다.
 
-현재 소스 기준 핵심 102개는 로컬에서 통과했습니다. 최근 배포 운영 검증은 AI 지식·개인화 개선 전 GitHub Actions `30076991403`에서 핵심 94/94, 운영 API 49/49, 일반·코치·학생·관리자 브라우저 28/28을 통과했으며, 새 운영 API 50개와 `/chat` 화면 검증은 배포 후 실행합니다.
+현재 소스 기준 핵심 106개는 로컬에서 통과했습니다. 최근 배포 운영 검증은 AI 지식·개인화 및 Postman 스모크 도입 전 GitHub Actions `30076991403`에서 핵심 94/94, 운영 API 49/49, 일반·코치·학생·관리자 브라우저 28/28을 통과했습니다. 새 운영 API 50개, 브라우저 28개와 Postman 요청 19개는 배포 후 정기·수동 품질 게이트에서 판정합니다.
 
 ## 디렉터리 구성
 
@@ -304,7 +306,7 @@ api/                    FastAPI 애플리케이션과 도메인별 라우터
 frontend/               페이지별 HTML·CSS·Vanilla JavaScript
 docs/                   기능 지도, 아키텍처, 배포, 품질 문서
 scripts/                API QA와 UI 크롤러
-tests/                  단위·계약·Playwright E2E 테스트
+tests/                  단위·계약·Playwright E2E·Postman API 스모크
 db/                     PostgreSQL 스키마와 초기 데이터 스크립트
 analysis/               현재 제품과 분리된 영상 분석 실험 코드
 FEATURE_CHECKLIST.md    기능 우선순위와 완료 기준

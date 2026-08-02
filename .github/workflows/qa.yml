@@ -49,7 +49,7 @@ jobs:
           PYTHONUTF8: "1"
         run: |
           python -m pytest tests/test_api_unit.py tests/test_chat_grounding.py tests/test_training_product_contracts.py \
-            tests/test_coach_crew_jira.py tests/test_jira_integration.py -v --tb=short \
+            tests/test_coach_crew_jira.py tests/test_jira_integration.py tests/test_postman_contract.py -v --tb=short \
             --html=tests/ci_report.html --self-contained-html \
             --junitxml=tests/ci_results.xml
 
@@ -179,10 +179,82 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  postman-smoke:
+    name: Postman production smoke
+    if: >-
+      always() &&
+      needs.core.result == 'success' &&
+      needs.production-api.result == 'success' &&
+      needs.production-ui.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [core, production-api, production-ui]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QA_USERNAME: ${{ secrets.QA_USERNAME }}
+      QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Postman role credentials
+        shell: bash
+        run: |
+          missing=()
+          for name in QA_USERNAME QA_PASSWORD ADMIN_ID ADMIN_PW; do
+            if [ -z "${!name}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing Postman QA secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Build ephemeral Postman environment
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = Path("tests/postman/production.template.postman_environment.json")
+          target = Path("/tmp/swimmate-postman-environment.json")
+          environment = json.loads(source.read_text(encoding="utf-8"))
+          secret_names = {
+              "qa_username": "QA_USERNAME",
+              "qa_password": "QA_PASSWORD",
+              "admin_id": "ADMIN_ID",
+              "admin_pw": "ADMIN_PW",
+          }
+          for entry in environment["values"]:
+              env_name = secret_names.get(entry["key"])
+              if env_name:
+                  entry["value"] = os.environ[env_name]
+          target.write_text(json.dumps(environment), encoding="utf-8")
+          PY
+
+      - name: Run repository Postman collection
+        uses: postmanlabs/postman-cli-action@v1
+        with:
+          command: >-
+            collection run tests/postman/SwimMate.postman_collection.json
+            --environment /tmp/swimmate-postman-environment.json
+            --timeout-request 90000
+            --disable-unicode
+
+      - name: Remove ephemeral Postman environment
+        if: always()
+        shell: bash
+        run: rm -f /tmp/swimmate-postman-environment.json
+
   result:
     name: Quality gate result
     if: always()
-    needs: [core, production-api, production-ui]
+    needs: [core, production-api, production-ui, postman-smoke]
     runs-on: ubuntu-latest
     steps:
       - name: Publish and enforce result
@@ -191,6 +263,7 @@ jobs:
           CORE_RESULT: ${{ needs.core.result }}
           API_RESULT: ${{ needs.production-api.result }}
           UI_RESULT: ${{ needs.production-ui.result }}
+          POSTMAN_RESULT: ${{ needs.postman-smoke.result }}
         run: |
           {
             echo "## SwimMate quality gate"
@@ -199,6 +272,7 @@ jobs:
             echo "| 핵심 테스트 | $CORE_RESULT |"
             echo "| 운영 API | $API_RESULT |"
             echo "| 운영 브라우저 | $UI_RESULT |"
+            echo "| Postman API 스모크 | $POSTMAN_RESULT |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$CORE_RESULT" != "success" ]; then
@@ -207,8 +281,8 @@ jobs:
           fi
 
           if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            if [ "$API_RESULT" != "success" ] || [ "$UI_RESULT" != "success" ]; then
-              echo "::error::The full production quality gate did not pass (API=$API_RESULT, UI=$UI_RESULT)."
+            if [ "$API_RESULT" != "success" ] || [ "$UI_RESULT" != "success" ] || [ "$POSTMAN_RESULT" != "success" ]; then
+              echo "::error::The full production quality gate did not pass (API=$API_RESULT, UI=$UI_RESULT, Postman=$POSTMAN_RESULT)."
               exit 1
             fi
           fi

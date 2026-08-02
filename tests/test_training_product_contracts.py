@@ -914,7 +914,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합 102개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 106개" in quality_doc
     assert "50개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "28개 화면 검증" in quality_doc
@@ -936,6 +936,7 @@ def test_quality_gate_documentation_is_kept_current():
         "공개 메타데이터·정책",
         "릴리즈·문서",
         "영상 분석 재활성화",
+        "실행 가능한 Postman API 문서",
     ]:
         assert required in quality_doc
     assert "[품질 검증 게이트](./docs/QUALITY_GATE.md)" in readme

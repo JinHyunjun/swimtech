@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-07-27
+> 기준일: 2026-08-02
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -14,9 +14,10 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Playwright E2E | `tests/test_swimtech.py` | 주요 페이지 로드, UI 상호작용, 스크린샷 회귀 검증 |
 | 운영 API QA | `scripts/qa_runner.py` | 실제 배포 URL에서 인증, 훈련 일지, 리포트, 준비도, 코치 AI, 관리자 API 흐름 점검 |
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
+| Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합 102개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 50개 API 시나리오와 `qa_ui_crawler.py`의 역할별 28개 화면 검증으로 일괄 확인하고 실행별 리포트를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 106개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 50개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 19개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -25,6 +26,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 새 공개 페이지·메뉴 | 200 응답, 보호 페이지 리다이렉트, 핵심 DOM, 모바일 레이아웃, 콘솔 오류 없음 | `tests/test_swimtech.py`, `PAGE_EXPECTATIONS`, `PAGES` |
 | 스크린샷 기능 가이드 | 랜딩 진입 배너, 공개 200, 개인·실행·성장·코치·탐색 섹션, 기능별 캡처·대체 텍스트, 내부 CTA, 홈 링크, 모바일 단일 열, 비활성 영상 분석·워치 직접 연동 오인 문구 없음 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS["/tutorial"]`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `check_home_link_targets`, `auth.py` 계약 테스트 |
+| 실행 가능한 Postman API 문서 | OpenAPI 탐색과 대표 스모크 분리, Vercel/Render/로컬 환경, 쿠키 로그인, 비로그인 401, 일지 생성·리포트 반영·삭제, 관리자 읽기·로그아웃, 비밀값 미저장 | `tests/postman/`, `tests/test_postman_contract.py`, `.github/workflows/qa.yml` |
 | 개인화 온보딩 | 인증 경계, 저장·재조회, 로그인 분기, `/auth/me` 일치, 추천 풀·수준·목표 반영, 플랜 기본값, 체험 계정 변경 차단 | `qa_runner.py` A1·6a, `PAGE_EXPECTATIONS["/onboarding"]`, Alembic 리비전 계약 |
 | 프로필·계정 보안 | 현재 설정 표시·수정 진입, 현재 비밀번호 재확인, 데이터 내보내기 민감정보 제외, 비밀번호 변경·전체 로그아웃·탈퇴 뒤 이전 토큰 거부, 데모 변경 차단 | `qa_runner.py` 6d·6e, `PAGE_EXPECTATIONS["/profile"]`, Alembic `20260723_07` |
 | 내 수영 데이터 대시보드 | 비로그인 401, 본인 데이터 범위, 데모·기록 있음·빈 상태, 기준/추가 기록에 따른 누적 변화, 최근 90일·고정 12개월, 영법·풀 분포, 구조화 세트·플랜·사이클, 테스트 시도·PB | `qa_runner.py` 17c, `PAGE_EXPECTATIONS["/my-data"]`, 개인 데이터 인사이트 단위·계약 테스트 |
@@ -60,7 +62,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 3. 권한이 필요한 데이터는 본인, 코치-수강생, 관리자 경계가 지켜진다.
 4. 외부 API 키가 없거나 AI가 실패해도 안내 또는 폴백이 있다.
 5. 비용이 생길 수 있는 요청에는 rate limit, 캐시, 전역 예산 중 최소 하나가 있다.
-6. 새 페이지·새 API·새 관리자 지표는 `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py`에 매핑된다.
+6. 새 페이지·새 API·새 관리자 지표는 `scripts/qa_runner.py` 또는 `scripts/qa_ui_crawler.py`에 매핑하고, 외부에서 실행할 대표 흐름이면 Postman Collection도 함께 갱신한다.
 7. 계약 테스트가 README, 체크리스트, 품질 문서, 라우터 등록 상태를 함께 지킨다.
 8. 운영 QA가 만든 임시 데이터는 삭제하거나 기존 상태로 복원한다.
 9. 릴리즈 노트, 저장소 문서, PWA 메타데이터와 정책 문서가 실제 공개 기능과 같은 방향을 말한다.
@@ -74,7 +76,8 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 1. `main` Push·PR에서는 핵심 테스트를 실행한다.
 2. 매일 09:00 KST 및 `workflow_dispatch`에서는 핵심 테스트 통과 후 운영 API와 브라우저 검사를 순차 실행한다.
 3. API가 실패해도 브라우저 검사를 실행해 두 리포트를 모두 수집한다.
-4. 마지막 결과 작업이 필수 단계 전체를 판정한다.
+4. 운영 API와 브라우저 검사가 모두 성공하면 저장소의 Postman Collection을 로컬 파일 방식으로 실행한다.
+5. 마지막 결과 작업이 핵심·운영 API·브라우저·Postman 필수 단계 전체를 판정한다.
 
 로그인 검사는 GitHub Actions Secrets의 전용 계정으로 수행한다. 누락된 계정이 있으면 관리자 검사를 생략하지 않고 사전 검증 단계에서 실패한다.
 
@@ -84,11 +87,15 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 
 QA는 비로그인 401, 잘못된 비밀번호 401, 정상 로그인, 보안 쿠키, 로그아웃 후 세션 폐기, 일반·코치·학생·관리자 권한 경계를 확인한다. 계정 값은 코드와 리포트에 기록하지 않는다. Jira·Gemini 등 외부 키가 없는 환경에서는 해당 연동의 실패 격리와 폴백을 확인하고, 실제 키가 있는 운영 환경에서는 별도 smoke로 정상 경로를 확인한다.
 
+Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collection과 환경 템플릿에는 아이디·비밀번호를 저장하지 않고 GitHub Secrets로 실행 중 `/tmp`에 만든 임시 환경 파일에만 주입한 뒤 항상 삭제한다. 로컬 Collection 파일을 실행하므로 `POSTMAN_API_KEY`는 필요하지 않으며 실행 결과를 Postman Cloud로 전송하지 않는다.
+
 ## 최근 운영 검증
 
 2026-07-24 GitHub Actions `30076991403`에서 핵심 94/94, 운영 API 49/49, 역할별 브라우저 28/28을 통과했다. 운영 health는 Alembic `20260723_07`을 반환했다. `/training-log`의 워치 데이터 버튼은 `disabled`·`aria-disabled`·비활성 기능 상태와 `준비 중` 문구를 운영 DOM에서 확인했고 클릭 대상에서 제외되었으며 훈련 일지 페이지·동작 오류는 0건이었다. 공개 `/tutorial`의 사용자별 경로와 화면 12개, `/api/account/insights`의 본인 데이터 범위, `/my-data`의 데이터 있음·빈 상태·모바일, 월간 리포트의 인증 초기화 회귀와 기존 대표 홈·온보딩·계정 보안 흐름도 함께 통과했다.
 
 2026-07-27에는 배포 전 소스에서 핵심 102/102를 통과했다. 새 운영 정의는 AI 지식·개인화 시나리오 `6c`를 포함한 API 50개와 기존 역할별 브라우저 28개이며, 배포 후 실제 Gemini 답변의 출처·개인화 표시와 함께 다음 운영 실행에서 판정한다.
+
+2026-08-02에는 Postman Collection·환경 템플릿·비밀값 계약 테스트 4개를 추가해 현재 소스 핵심 정의가 106개가 되었다. 공개 health·비로그인 경계, 일반 사용자 일지→통계·리포트·내 데이터→삭제, 관리자 읽기 경계를 합친 19개 요청은 정기·수동 품질 게이트의 마지막 단계로 연결했으며 전체 인증 실행은 다음 운영 Actions에서 판정한다.
 
 ## 산출물
 
@@ -96,3 +103,4 @@ QA는 비로그인 401, 잘못된 비밀번호 401, 정상 로그인, 보안 쿠
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 19개 대표 API 요청과 assertion 결과

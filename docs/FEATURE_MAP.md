@@ -170,4 +170,5 @@ Jira가 설정되지 않거나 호출에 실패해도 코칭 과제는 SwimMate 
 - [기술 구조](./ARCHITECTURE.md)
 - [배포 가이드](./DEPLOYMENT.md)
 - [품질 검증 게이트](./QUALITY_GATE.md)
+- [Postman API 스모크 가이드](../tests/postman/README.md)
 - [기능 체크리스트](../FEATURE_CHECKLIST.md)

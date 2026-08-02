@@ -74,3 +74,8 @@ trim_*.py
 qa_report.json
 qa_ui_report.json
 qa_ui_screenshots/
+
+# Postman 로컬 비밀값·실행 결과 (빈 템플릿만 추적)
+tests/postman/*.postman_environment.json
+!tests/postman/*.template.postman_environment.json
+tests/postman/results/

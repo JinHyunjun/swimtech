@@ -1,0 +1,702 @@
+{
+  "info": {
+    "_postman_id": "7ee51dd2-6594-49e0-b429-58ad5c5c3202",
+    "name": "SwimMate API Smoke",
+    "description": "SwimMate의 대표 API 흐름을 실행 가능한 문서로 제공하는 배포 스모크 Collection입니다. 전체 회귀 검사는 scripts/qa_runner.py가 담당하며, 이 Collection은 인증 쿠키, 훈련 일지-리포트-내 데이터 연동, 관리자 권한 경계를 짧게 검증합니다. 훈련 기록은 전용 QA 계정에 생성한 뒤 같은 실행에서 삭제합니다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const now = new Date(Date.now() + (9 * 60 * 60 * 1000));",
+          "pm.collectionVariables.set('today', now.toISOString().slice(0, 10));",
+          "pm.collectionVariables.set('year', String(now.getUTCFullYear()));",
+          "pm.collectionVariables.set('month', String(now.getUTCMonth() + 1));",
+          "if (!pm.collectionVariables.get('run_marker')) {",
+          "  pm.collectionVariables.set('run_marker', 'postman-' + Date.now());",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://swimtech.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "qa_username",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "qa_password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_pw",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "today",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "year",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "month",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "run_marker",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "training_log_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "baseline_total_distance",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "baseline_count",
+      "value": "0",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Public & Anonymous",
+      "description": "배포 상태와 비로그인 보호 경계를 확인합니다. 인증 정보가 없어도 실행할 수 있습니다.",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/health",
+            "description": "Render 콜드 스타트를 깨우고 DB 마이그레이션 상태가 정상인지 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('health 200', () => pm.response.to.have.status(200));",
+                  "pm.test('DB 스키마가 준비됨', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('healthy');",
+                  "  pm.expect(body.schema_revision).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/logout",
+            "description": "Collection Runner에 남아 있을 수 있는 인증 쿠키를 지웁니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('세션 초기화 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anonymous Me Is Rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/me",
+            "description": "비로그인 사용자가 보호된 본인 정보 API에 접근할 수 없는지 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('비로그인 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 User Training Data Loop",
+      "description": "일반 사용자 로그인부터 훈련 일지 생성, 월간 통계·리포트·내 데이터 반영, 삭제와 로그아웃까지 하나의 데이터 생명주기를 검증합니다.",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{qa_username}}\",\n  \"password\": \"{{qa_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "전용 QA 사용자로 로그인합니다. 응답 쿠키는 Postman Cookie Jar가 이후 요청에 자동 전송합니다."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.variables.get('qa_username') || !pm.variables.get('qa_password')) {",
+                  "  throw new Error('qa_username과 qa_password가 필요합니다. 공유 환경 파일에는 비밀번호를 저장하지 마세요.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('일반 사용자 로그인 200', () => pm.response.to.have.status(200));",
+                  "pm.test('대표 홈은 landing', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ok');",
+                  "  pm.expect(body.redirect).to.eql('/landing');",
+                  "  pm.expect(body.is_admin).to.eql(false);",
+                  "});",
+                  "pm.test('인증 쿠키 발급', () => pm.expect(pm.cookies.has('swimtech_token')).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('로그인 세션 유지', () => pm.response.to.have.status(200));",
+                  "pm.test('본인 사용자명 일치', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.username).to.eql(pm.variables.get('qa_username'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Baseline Monthly Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/training-log/stats?year={{year}}&month={{month}}",
+            "description": "스모크 기록 생성 전 월간 거리와 횟수를 저장합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('기준 통계 조회 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('baseline_total_distance', String(Number(body.total_distance || 0)));",
+                  "pm.collectionVariables.set('baseline_count', String(Number(body.count || 0)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Smoke Training Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"log_date\": \"{{today}}\",\n  \"stroke_type\": \"자유형\",\n  \"pool_length\": 25,\n  \"total_distance\": 300,\n  \"duration_minutes\": 15,\n  \"intensity\": \"보통\",\n  \"memo\": \"Postman smoke {{run_marker}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/training-log",
+            "description": "연동 검증에 사용할 300m 훈련 일지를 생성합니다. 뒤의 Delete 요청이 같은 ID를 정리합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('훈련 일지 생성', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const body = pm.response.json();",
+                  "const id = body.id || body.log_id;",
+                  "pm.test('생성 ID 반환', () => pm.expect(id).to.exist);",
+                  "if (id) pm.collectionVariables.set('training_log_id', String(id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Monthly Stats Reflect Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/training-log/stats?year={{year}}&month={{month}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('월간 통계 반영', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  const distance = Number(pm.collectionVariables.get('baseline_total_distance'));",
+                  "  const count = Number(pm.collectionVariables.get('baseline_count'));",
+                  "  pm.expect(Number(body.total_distance)).to.be.at.least(distance + 300);",
+                  "  pm.expect(Number(body.count)).to.be.at.least(count + 1);",
+                  "  pm.expect(body).to.have.property('avg_distance');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Monthly Report Reflects Same Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/report/monthly?year={{year}}&month={{month}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('월간 리포트가 같은 일지를 집계', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  const distance = Number(pm.collectionVariables.get('baseline_total_distance'));",
+                  "  const count = Number(pm.collectionVariables.get('baseline_count'));",
+                  "  pm.expect(Number(body.total_distance)).to.be.at.least(distance + 300);",
+                  "  pm.expect(Number(body.total_count)).to.be.at.least(count + 1);",
+                  "  pm.expect(body).to.have.property('avg_distance');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My Data Uses Authenticated Scope",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/account/insights"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('내 데이터 조회 200', () => pm.response.to.have.status(200));",
+                  "pm.test('본인 데이터 범위', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.privacy_scope).to.eql('authenticated_customer_only');",
+                  "  pm.expect(body.has_data).to.eql(true);",
+                  "  pm.expect(body).to.have.property('lifetime');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Smoke Training Log",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/training-log/{{training_log_id}}",
+            "description": "Collection이 만든 임시 훈련 일지만 삭제합니다."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('training_log_id')) {",
+                  "  throw new Error('정리할 training_log_id가 없습니다. 생성 요청 결과를 확인하세요.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('임시 훈련 일지 삭제 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.unset('training_log_id');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Monthly Stats Restored",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/training-log/stats?year={{year}}&month={{month}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('삭제 후 기준 통계 복원', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(Number(body.total_distance)).to.eql(Number(pm.collectionVariables.get('baseline_total_distance')));",
+                  "  pm.expect(Number(body.count)).to.eql(Number(pm.collectionVariables.get('baseline_count')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('로그아웃 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me After Logout Is Rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('로그아웃 후 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "20 Admin Read-only Boundary",
+      "description": "관리자 전용 계정의 로그인 목적지, 운영 대시보드와 페이지네이션, 로그아웃 뒤 권한 차단을 읽기 전용으로 확인합니다.",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_id}}\",\n  \"password\": \"{{admin_pw}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.variables.get('admin_id') || !pm.variables.get('admin_pw')) {",
+                  "  throw new Error('admin_id와 admin_pw가 필요합니다.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('관리자 로그인 200', () => pm.response.to.have.status(200));",
+                  "pm.test('관리자 역할과 목적지', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.is_admin).to.eql(true);",
+                  "  pm.expect(body.redirect).to.eql('/admin');",
+                  "});",
+                  "pm.test('관리자 인증 쿠키 발급', () => pm.expect(pm.cookies.has('swimtech_token')).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/dashboard"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('관리자 대시보드 200', () => pm.response.to.have.status(200));",
+                  "pm.test('JSON 객체 응답', () => pm.expect(pm.response.json()).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Users Page 20",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/users?page=1&page_size=20",
+            "description": "슈퍼 관리자 화면의 20개 단위 페이지네이션 API를 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('사용자 페이지네이션 200', () => pm.response.to.have.status(200));",
+                  "pm.test('페이지 응답은 객체', () => pm.expect(pm.response.json()).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('관리자 로그아웃 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin API After Logout Is Rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/dashboard"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('로그아웃 뒤 관리자 API 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
