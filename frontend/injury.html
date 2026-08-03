@@ -70,6 +70,51 @@
   margin-top: 6px;
 }
 
+.medical-notice {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  color: var(--muted);
+  background: rgba(245,158,11,.07);
+  border: 0.5px solid rgba(245,158,11,.28);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-caption);
+  line-height: 1.65;
+}
+.medical-notice strong { color: var(--amber); }
+
+.readiness-card {
+  padding: 18px;
+  margin-bottom: 16px;
+  background: rgba(13,33,55,.85);
+  border: 0.5px solid rgba(0,180,216,.2);
+  border-radius: var(--radius-lg);
+}
+.readiness-title { color: var(--text); font-size: var(--fs-body-lg); font-weight: 700; margin-bottom: 5px; }
+.readiness-desc { color: var(--muted); font-size: var(--fs-caption); line-height: 1.6; }
+.readiness-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
+.readiness-btn {
+  min-height: 70px;
+  padding: 10px;
+  color: var(--muted);
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-caption);
+  line-height: 1.45;
+}
+.readiness-btn:hover, .readiness-btn.active { color: var(--text); border-color: var(--blue); background: rgba(0,180,216,.08); }
+.readiness-result { display: none; margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-md); font-size: var(--fs-caption); line-height: 1.65; }
+.readiness-result.green { display: block; color: #86efac; background: rgba(74,222,128,.08); border: 0.5px solid rgba(74,222,128,.25); }
+.readiness-result.yellow { display: block; color: #fde68a; background: rgba(245,158,11,.08); border: 0.5px solid rgba(245,158,11,.25); }
+.readiness-result.red { display: block; color: #fca5a5; background: rgba(248,113,113,.08); border: 0.5px solid rgba(248,113,113,.25); }
+
+.prevention-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 22px; }
+.prevention-item { padding: 13px; background: rgba(13,33,55,.72); border: 0.5px solid rgba(0,180,216,.14); border-radius: var(--radius-md); }
+.prevention-item strong { display: block; color: var(--cyan); font-size: var(--fs-caption); margin-bottom: 5px; }
+.prevention-item span { color: var(--muted); font-size: var(--fs-caption); line-height: 1.5; }
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -306,6 +351,8 @@
   font-size: var(--fs-caption);
   color: rgba(144,196,212,0.4);
 }
+.ref-note a { color: rgba(72,202,228,.8); text-decoration: none; }
+.ref-note a:hover { text-decoration: underline; }
 
 .injury-yt-btn {
   display: inline-flex;
@@ -376,8 +423,12 @@
   font-size: var(--fs-caption);
 }
 
+@media (max-width: 760px) {
+  .prevention-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 500px) {
   .stretch-grid { grid-template-columns: 1fr; }
+  .readiness-options, .prevention-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -395,7 +446,29 @@
     <div class="injury-inner">
       <div class="injury-header">
         <h1>🩺 부상 예방 가이드</h1>
-        <p>수영 중 흔히 발생하는 부위별 부상 원인과 예방 스트레칭을 확인하세요</p>
+        <p>통증을 참는 법이 아니라, 중단 시점과 안전한 훈련 원칙을 확인하세요</p>
+      </div>
+
+      <div class="medical-notice" role="note">
+        <strong>의료 진단이 아닌 일반 안전 정보입니다.</strong> 통증의 원인과 회복 속도는 사람마다 다릅니다. 갑작스럽고 심한 통증, 변형, 저림·무감각, 피부가 차갑거나 색이 변하는 증상이 있으면 수영을 중단하고 119 또는 의료기관의 도움을 받으세요.
+      </div>
+
+      <section class="readiness-card" aria-labelledby="readiness-title">
+        <div class="readiness-title" id="readiness-title">오늘 수영 전 상태 체크</div>
+        <div class="readiness-desc">현재 상태와 가장 가까운 항목을 선택하세요. 결과는 진단이 아니라 훈련 강도를 판단하기 위한 안전 기준입니다.</div>
+        <div class="readiness-options">
+          <button class="readiness-btn" type="button" data-readiness="green">🟢 통증이 없고<br>평소처럼 움직인다</button>
+          <button class="readiness-btn" type="button" data-readiness="yellow">🟡 뻐근함·가벼운 불편이<br>있지만 일상 동작은 가능하다</button>
+          <button class="readiness-btn" type="button" data-readiness="red">🔴 통증이 심해지거나<br>저림·약화·움직임 제한이 있다</button>
+        </div>
+        <div class="readiness-result" id="readiness-result" aria-live="polite"></div>
+      </section>
+
+      <div class="prevention-grid" aria-label="공통 예방 원칙">
+        <div class="prevention-item"><strong>1. 점진적 워밍업</strong><span>가벼운 전신 움직임과 쉬운 수영으로 강도를 천천히 올립니다.</span></div>
+        <div class="prevention-item"><strong>2. 부하 관리</strong><span>거리·강도·패들 크기를 동시에 크게 늘리지 않습니다.</span></div>
+        <div class="prevention-item"><strong>3. 통증 동작 중단</strong><span>불편을 만드는 영법이나 장비는 빼고, 지속되면 세션을 종료합니다.</span></div>
+        <div class="prevention-item"><strong>4. 회복과 기록</strong><span>통증 부위·시점·강도를 일지에 남기고 반복 패턴을 확인합니다.</span></div>
       </div>
 
       <!-- 부위 탭 -->
@@ -413,7 +486,7 @@
           <div class="section-header">
             <div class="section-icon">🦾</div>
             <div class="section-title">어깨 부상 예방</div>
-            <div class="section-sub">Swimmer's Shoulder — 수영 선수 어깨 통증의 가장 흔한 원인</div>
+            <div class="section-sub">반복적인 머리 위 동작과 급격한 훈련량 증가는 어깨 부담을 높일 수 있습니다</div>
           </div>
           <div class="section-body">
             <div class="cause-list">
@@ -465,12 +538,6 @@
               </div>
             </div>
 
-            <div class="check-section" style="display:none">
-              <div class="check-title">📊 SwimMate 분석으로 확인할 것</div>
-              <div class="check-item">팔꿈치 각도가 권장 범위 내인지 확인</div>
-              <div class="check-item">좌우 대칭 점수 85점 이상 유지</div>
-            </div>
-
             <div class="stretch-title" style="margin-top:18px;">🏋️ 추가 강화 루틴</div>
             <div class="stretch-grid">
               <div class="stretch-card">
@@ -502,17 +569,17 @@
               </div>
             </div>
             <div class="tip-section">
-              <div class="tip-title">💡 전문가 TIP</div>
+              <div class="tip-title">💡 훈련 원칙</div>
               <div class="tip-body">
-                어깨 통증이 없는 날에도 <strong>저항 밴드 외회전 운동을 주 3회</strong> 꾸준히 하면 로테이터 커프를 강화해 부상을 예방할 수 있어요.<br>
-                패들 사용 전 반드시 어깨 준비 운동을 하고, 처음에는 작은 사이즈 패들부터 시작하세요.
+                통증이 없는 범위에서 어깨와 등 주변 근육을 규칙적으로 강화하고, 패들은 작은 크기와 짧은 거리부터 시작하세요.<br>
+                스트로크 중 통증이 나타나면 자세를 억지로 유지하지 말고 패들을 빼거나 해당 세트를 중단하세요.
               </div>
             </div>
             <div class="hospital-section">
               <div class="hospital-title">🚨 병원 진료가 필요한 경우</div>
               <div class="hospital-item">야간에 어깨 통증으로 잠을 깰 때</div>
               <div class="hospital-item">팔을 위로 들 때 특정 각도에서 날카로운 통증이 느껴질 때</div>
-              <div class="hospital-item">2주 이상 휴식 후에도 통증이 지속될 때 (정형외과/스포츠의학과 권장)</div>
+              <div class="hospital-item">통증·약화·관절 움직임 제한이 지속되거나 일상 동작에 영향을 줄 때</div>
             </div>
             <a href="https://www.youtube.com/results?search_query=swimmer+shoulder+stretching+injury+prevention"
                target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 어깨 스트레칭 더 보기</a>
@@ -611,10 +678,10 @@
               </div>
             </div>
             <div class="tip-section">
-              <div class="tip-title">💡 전문가 TIP</div>
+              <div class="tip-title">💡 훈련 원칙</div>
               <div class="tip-body">
-                평영 훈련량이 많다면 <strong>발목 유연성 운동을 매일</strong> 실시하세요. 발목이 충분히 돌아가야 무릎에 걸리는 비틀림 힘이 줄어들어요.<br>
-                증상이 있을 때 억지로 평영을 계속하는 것은 만성 무릎 손상으로 이어질 수 있으니 즉시 자유형으로 전환하세요.
+                평영 킥에서 불편이 생기면 킥 범위를 억지로 넓히지 말고 평영 세트를 중단하세요.<br>
+                통증 없이 가능한 다른 영법이나 가벼운 물 걷기로 바꿔도 불편이 계속되면 그날 훈련을 종료하세요.
               </div>
             </div>
             <div class="hospital-section">
@@ -720,17 +787,17 @@
               </div>
             </div>
             <div class="tip-section">
-              <div class="tip-title">💡 전문가 TIP</div>
+              <div class="tip-title">💡 훈련 원칙</div>
               <div class="tip-body">
-                허리 통증의 90%는 <strong>코어 강화로 예방 가능</strong>합니다. 접영 훈련 전 항상 플랭크와 브릿지로 코어를 활성화한 뒤 입수하세요.<br>
-                접영 스트로크 시 허리가 지나치게 아치형이 되지 않도록 복부를 살짝 조이는 것을 항상 의식하세요.
+                허리 통증의 원인은 다양하므로 <strong>코어 운동만으로 예방된다고 단정할 수 없습니다.</strong> 통증이 없는 범위의 몸통 안정화 운동은 훈련을 준비하는 한 방법입니다.<br>
+                접영에서 허리를 과하게 젖히지 말고, 통증이 생기면 접영과 돌핀킥 세트를 중단하세요.
               </div>
             </div>
             <div class="hospital-section">
               <div class="hospital-title">🚨 병원 진료가 필요한 경우</div>
-              <div class="hospital-item">다리 저림·방사통이 엉덩이 아래까지 내려올 때 (추간판 탈출 의심)</div>
-              <div class="hospital-item">아침에 허리가 30분 이상 뻣뻣할 때</div>
-              <div class="hospital-item">허리 통증으로 누운 자세에서도 불편할 때 (정형외과/신경외과 권장)</div>
+              <div class="hospital-item">허리 통증과 함께 다리 저림·무감각·근력 저하가 나타날 때</div>
+              <div class="hospital-item">통증이 빠르게 심해지거나 휴식 중에도 계속될 때</div>
+              <div class="hospital-item">통증이 지속되어 일상 동작이나 수면에 영향을 줄 때</div>
             </div>
             <a href="https://www.youtube.com/results?search_query=swimming+lower+back+core+strengthening+exercises"
                target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 허리 코어 강화 더 보기</a>
@@ -819,33 +886,31 @@
               </div>
             </div>
             <div class="tip-section">
-              <div class="tip-title">💡 전문가 TIP</div>
+              <div class="tip-title">💡 훈련 원칙</div>
               <div class="tip-body">
-                자유형 호흡 시 <strong>한쪽 귀가 항상 물속에 있는 상태</strong>를 유지하면 목에 걸리는 부담이 절반 이하로 줄어요.<br>
-                배영을 마친 후 반드시 목 전후 스트레칭을 해주세요. 배영에서 머리가 좌우로 흔들리면 경추 주변 근육에 만성 피로가 쌓입니다.
+                자유형 호흡은 머리만 들어 올리기보다 몸통 회전과 함께 편안한 범위에서 연습하세요.<br>
+                배영에서 머리를 억지로 고정하거나 목을 과하게 젖히지 말고, 뻐근함이 커지면 영법을 바꾸거나 세션을 종료하세요.
               </div>
             </div>
             <div class="hospital-section">
               <div class="hospital-title">🚨 병원 진료가 필요한 경우</div>
               <div class="hospital-item">목 통증과 함께 손가락 저림이나 무감각이 생길 때</div>
               <div class="hospital-item">목을 돌릴 때 현기증이나 두통이 동반될 때</div>
-              <div class="hospital-item">1주 이상 목 통증이 지속될 때 (정형외과/신경외과 권장)</div>
+              <div class="hospital-item">통증이나 움직임 제한이 지속되어 일상생활에 영향을 줄 때</div>
             </div>
             <a href="https://www.youtube.com/results?search_query=swimming+neck+stretching+injury+prevention"
                target="_blank" rel="noopener" class="injury-yt-btn">▶ YouTube — 목 스트레칭 더 보기</a>
 
-            <div class="check-section" style="display:none">
-              <div class="check-title">📊 SwimMate 분석으로 확인할 것</div>
-              <div class="check-item">머리/시선 자세 점수 확인</div>
-              <div class="check-item">호흡 구간 머리 각도 패턴 분석</div>
-            </div>
           </div>
         </div>
 
       </div>
 
       <div class="ref-note">
-        참고 출처: PMC4000476 (어깨), PMC3438875 (무릎) — 스포츠 의학 연구 기반
+        일반 안전 기준 참고: <a href="https://orthoinfo.aaos.org/staying-healthy/swimming-injury-prevention/" target="_blank" rel="noopener">AAOS 수영 부상 예방</a> ·
+        <a href="https://www.nhs.uk/conditions/sprains-and-strains/" target="_blank" rel="noopener">NHS 염좌·근육 손상 경고 신호</a> ·
+        <a href="https://www.swimming.org/justswim/musculoskeletal-conditions-swimming/" target="_blank" rel="noopener">Swim England 통증 시 수영 조절</a><br>
+        마지막 검토: 2026-08-03 · 증상에 대한 판단은 의료 전문가와 상담하세요.
       </div>
 
     </div>
@@ -862,6 +927,21 @@ function switchTab(el) {
   el.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
 }
+
+const readinessMessages = {
+  green: '가벼운 워밍업으로 시작하고 첫 세트에서 움직임을 다시 확인하세요. 새 통증이 생기거나 자세가 무너지면 강도를 낮춥니다.',
+  yellow: '고강도·대시·패들 세트는 보류하고 쉬운 수영으로 반응을 확인하세요. 불편을 만드는 동작은 중단하고 증상이 지속되거나 심해지면 의료 전문가와 상담하세요.',
+  red: '오늘 수영은 중단하세요. 갑작스럽고 심한 통증, 변형, 저림·무감각, 피부가 차갑거나 색이 변하는 증상은 119 또는 의료기관의 즉각적인 평가가 필요할 수 있습니다.',
+};
+document.querySelectorAll('.readiness-btn').forEach(button => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.readiness-btn').forEach(item => item.classList.toggle('active', item === button));
+    const state = button.dataset.readiness;
+    const result = document.getElementById('readiness-result');
+    result.className = `readiness-result ${state}`;
+    result.textContent = readinessMessages[state];
+  });
+});
 </script>
 <script src="/static/theme.js"></script>
     <script src="/static/utils.js"></script>

@@ -86,8 +86,27 @@ def test_analysis_routers_are_not_publicly_registered():
 
 def test_drill_loads_shared_utils_before_initializing_tabs():
     drill = (ROOT / "frontend" / "drill.html").read_text(encoding="utf-8")
+    injury = (ROOT / "frontend" / "injury.html").read_text(encoding="utf-8")
+    equipment = (ROOT / "frontend" / "equipment.html").read_text(encoding="utf-8")
+    faq = (ROOT / "frontend" / "faq.html").read_text(encoding="utf-8")
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
 
     assert drill.index('/static/utils.js') < drill.index("SW.initTabs")
+    for marker in ["drill-search", "data-focus", "data-level", "data-pool", "출발 사이클"]:
+        assert marker in drill
+    assert "의료 진단이 아닌 일반 안전 정보" in injury
+    assert "data-readiness=\"yellow\"" in injury
+    assert "허리 통증의 90%" not in injury
+    assert "부담이 절반 이하" not in injury
+    assert "SwimMate 분석으로 확인할 것" not in injury
+    assert "data-tab=\"swimwear\"" in equipment
+    assert "World Aquatics 승인 수영복" in equipment
+    assert "new URLSearchParams(window.location.search)" in equipment
+    assert "수영복은 어떻게 골라야 하나요" in faq
+    assert "data-hidden=\"true\"" not in faq
+    assert "이메일 자동 비밀번호 재설정은 제공하지 않습니다" in faq
+    assert "직접 가져오거나 동기화하지 않습니다" in faq
+    assert 'href="/equipment?tab=swimwear"' in landing
 
 
 def test_readme_describes_current_training_helper_and_retires_analysis_claims():

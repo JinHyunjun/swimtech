@@ -192,6 +192,25 @@ PAGE_EXPECTATIONS = {
         "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
         "texts": ["내 플랜", "직접 구성"],
     },
+    "/drill": {
+        "selectors": ["#drill-search", "#focus-filters", "#level-filters", "#pool-filters", "#drill-count", ".drill-apply", ".tab-btn[data-tab='freestyle']", ".tab-btn[data-tab='backstroke']"],
+        "texts": ["한 세션에는 교정 포인트 1~2개만", "출발 사이클", "25m", "50m"],
+        "absent_texts": ["SwimMate 분석으로 확인할 것"],
+    },
+    "/injury": {
+        "selectors": [".medical-notice", ".readiness-card", "[data-readiness='green']", "[data-readiness='yellow']", "[data-readiness='red']", "#readiness-result", ".prevention-grid", ".hospital-section", ".ref-note a"],
+        "texts": ["의료 진단이 아닌 일반 안전 정보", "오늘 수영 전 상태 체크", "통증 동작 중단", "마지막 검토"],
+        "absent_texts": ["허리 통증의 90%", "부담이 절반 이하", "SwimMate 분석으로 확인할 것"],
+    },
+    "/equipment": {
+        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip"],
+        "texts": ["수영 장비·수영복 가이드", "보조 장비 사용법과 목적에 맞는 수영복 선택 기준"],
+    },
+    "/faq": {
+        "selectors": ["#search", "#faq-list", ".faq-item[data-q*='수영복']", ".faq-item[data-q*='드릴']", ".faq-item[data-q*='통증']"],
+        "texts": ["훈련용 수영복은 어떻게 골라야 하나요?", "드릴은 몇 개를 골라 어떻게 세트에 넣나요?", "뻐근하거나 통증이 있는데 수영해도 되나요?"],
+        "absent_texts": ["Google Sheets에 저장", "어떻게 촬영해야 분석이 잘 되나요", "분석 정확도는 얼마나 되나요", "PDF 저장"],
+    },
     "/badges": {
         "selectors": ["#next-badge-panel", "#series-grid", ".badge-stage-card", ".next-badge-card", ".badge-card"],
         "texts": ["다음으로 노릴 뱃지", "단계별 뱃지 여정"],
@@ -468,6 +487,47 @@ def check_home_link_targets(page):
     return errors
 
 
+def check_information_guide_interactions(page, path):
+    """정보·도움 화면의 필터와 선택 결과가 실제 DOM 상태를 바꾸는지 읽기 전용으로 확인한다."""
+    actions, errors = [], []
+    try:
+        if path == "/drill":
+            page.fill("#drill-search", "호흡")
+            page.click("#focus-filters [data-focus='breath']")
+            page.click("#pool-filters [data-pool='50']")
+            visible = page.locator("#tab-freestyle .drill-card:visible")
+            if visible.count() < 1 or "50m" not in visible.first.locator(".drill-apply").inner_text():
+                raise AssertionError("호흡 필터 또는 50m 적용 예시가 렌더링되지 않음")
+            actions.append({"action": "드릴 검색·목적 필터·50m 적용 예시", "status": "ok"})
+            page.fill("#drill-search", "")
+            page.click("#focus-filters [data-focus='all']")
+            page.click("#pool-filters [data-pool='25']")
+        elif path == "/injury":
+            page.click("[data-readiness='yellow']")
+            result = page.locator("#readiness-result")
+            if not result.is_visible() or "고강도·대시·패들 세트는 보류" not in result.inner_text():
+                raise AssertionError("상태 체크 결과가 표시되지 않음")
+            actions.append({"action": "부상 예방 주의 상태 체크", "status": "ok"})
+        elif path == "/equipment":
+            page.click(".tab-btn[data-tab='swimwear']")
+            page.click("[data-suit-purpose='race']")
+            result = page.locator("#suit-recommendation")
+            if not page.locator("#tab-swimwear").is_visible() or "대회용 선택" not in result.inner_text():
+                raise AssertionError("수영복 목적별 안내가 표시되지 않음")
+            actions.append({"action": "수영복 구매 탭·대회 목적 선택", "status": "ok"})
+            page.click(".tab-btn[data-tab='all']")
+        elif path == "/faq":
+            page.fill("#search", "수영복")
+            visible = page.locator(".faq-item:visible")
+            if visible.count() < 1 or "수영복" not in visible.first.inner_text():
+                raise AssertionError("수영복 FAQ 검색 결과가 표시되지 않음")
+            actions.append({"action": "수영복 FAQ 검색", "status": "ok"})
+            page.fill("#search", "")
+    except Exception as error:
+        errors.append({"type": "information_guide_interaction_failed", "path": path, "error": str(error)[:200]})
+    return actions, errors
+
+
 def check_public_demo_entry(context):
     page = context.new_page()
     entry = {"page": "/login", "label": "Portfolio demo entry", "actions": [], "page_errors": []}
@@ -644,6 +704,10 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
 
     expectation_errors = check_page_expectations(page, path)
     expectation_errors.extend(check_home_link_targets(page))
+    if path in {"/drill", "/injury", "/equipment", "/faq"}:
+        guide_actions, guide_errors = check_information_guide_interactions(page, path)
+        entry["actions"].extend(guide_actions)
+        expectation_errors.extend(guide_errors)
     if path.split("?", 1)[0] == "/admin":
         admin_actions, admin_errors = check_admin_search_and_charts(page)
         entry["actions"].extend(admin_actions)

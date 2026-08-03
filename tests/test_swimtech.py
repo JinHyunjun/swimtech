@@ -405,6 +405,12 @@ def test_drill_cards_visible(page: Page):
     page.wait_for_timeout(500)
     cards = page.locator(".drill-card")
     assert cards.count() >= 1, "드릴 카드 없음"
+    expect(page.locator("#drill-search")).to_be_visible()
+    expect(page.locator(".drill-apply").first).to_contain_text("출발 사이클")
+    page.click('[data-focus="breath"]')
+    expect(page.locator("#tab-freestyle .drill-card:visible").first).to_contain_text("호흡")
+    page.click('[data-pool="50"]')
+    expect(page.locator("#tab-freestyle .drill-card:visible .drill-apply").first).to_contain_text("50m")
     shot(page, "07_drill_cards")
 
 
@@ -437,7 +443,7 @@ def test_faq_search(page: Page):
     """검색어 입력 → 관련 항목만 필터링."""
     goto(page, "/faq")
 
-    page.fill("#search", "촬영")
+    page.fill("#search", "수영복")
     page.wait_for_timeout(400)
 
     visible_items = [
@@ -1172,13 +1178,19 @@ def test_equipment_load(page: Page):
     goto(page, "/equipment")
     page.wait_for_timeout(600)
 
-    # 탭 3개 (전체 / 기초장비 / 상급장비)
+    # 탭 4개 (전체 / 기초장비 / 상급장비 / 수영복 구매)
     tabs = page.locator(".tab-btn")
-    assert tabs.count() == 3, f"tab-btn 개수 불일치: {tabs.count()}"
+    assert tabs.count() == 4, f"tab-btn 개수 불일치: {tabs.count()}"
 
     # 전체 탭에 장비 카드 존재
     cards = page.locator("#grid-all .eq-card")
     assert cards.count() >= 8, f"장비 카드 개수 부족: {cards.count()}"
+
+    page.click('.tab-btn[data-tab="swimwear"]')
+    expect(page.locator("#tab-swimwear")).to_be_visible()
+    expect(page.locator("#suit-recommendation")).to_contain_text("훈련용 선택")
+    page.click('[data-suit-purpose="race"]')
+    expect(page.locator("#suit-recommendation")).to_contain_text("대회용 선택")
 
     shot(page, "19_equipment_load")
 
@@ -1228,6 +1240,7 @@ def test_equipment_landing_card(page: Page):
 
     card = page.locator("a.menu-card[href='/equipment']")
     expect(card).to_be_visible()
+    expect(page.locator("a.menu-card[href='/equipment?tab=swimwear']")).to_be_visible()
 
     shot(page, "19_equipment_landing_card")
 
@@ -1637,6 +1650,10 @@ def test_injury_expert_tip(page: Page):
 
     expect(page.locator(".tip-section").first).to_be_visible()
     expect(page.locator(".hospital-section").first).to_be_visible()
+    page.click('[data-readiness="yellow"]')
+    expect(page.locator("#readiness-result")).to_be_visible()
+    expect(page.locator("#readiness-result")).to_contain_text("고강도·대시·패들 세트는 보류")
+    expect(page.locator(".ref-note a")).to_have_count(3)
 
     shot(page, "24_injury_expert_tip")
 

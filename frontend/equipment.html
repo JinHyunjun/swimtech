@@ -265,11 +265,56 @@
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+.swimwear-hero {
+  padding: 20px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(0,180,216,.11), rgba(72,202,228,.04));
+  border: 0.5px solid rgba(0,180,216,.25);
+  border-radius: var(--radius-lg);
+}
+.swimwear-hero h2 { margin: 0 0 6px; color: var(--text); font-size: var(--fs-title); }
+.swimwear-hero p { margin: 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; }
+.purpose-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 16px; }
+.purpose-btn {
+  padding: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-caption);
+}
+.purpose-btn.active { color: var(--blue); border-color: rgba(0,180,216,.45); background: rgba(0,180,216,.08); }
+.suit-recommendation { margin-top: 12px; padding: 13px 15px; color: var(--muted); background: rgba(74,222,128,.06); border: 0.5px solid rgba(74,222,128,.22); border-radius: var(--radius-md); font-size: var(--fs-caption); line-height: 1.65; }
+.suit-recommendation strong { color: #4ade80; }
+.buy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.buy-card { padding: 18px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+.buy-card h3 { margin: 0 0 10px; color: var(--text); font-size: var(--fs-body-lg); }
+.buy-card p, .buy-card li { color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; }
+.buy-card ul { margin: 0; padding-left: 18px; }
+.buy-card li + li { margin-top: 7px; }
+.suit-table-wrap { overflow-x: auto; margin-top: 16px; border: 0.5px solid var(--border); border-radius: var(--radius-lg); }
+.suit-table { width: 100%; border-collapse: collapse; min-width: 660px; background: var(--surface); }
+.suit-table th, .suit-table td { padding: 12px 14px; border-bottom: 0.5px solid var(--border); color: var(--muted); font-size: var(--fs-caption); text-align: left; line-height: 1.55; }
+.suit-table th { color: var(--text); background: rgba(0,180,216,.06); }
+.suit-table tr:last-child td { border-bottom: 0; }
+.care-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+.care-step { padding: 12px; color: var(--muted); background: rgba(255,255,255,.025); border: 0.5px solid var(--border); border-radius: var(--radius-md); font-size: var(--fs-caption); line-height: 1.5; }
+.care-step strong { display: block; color: var(--cyan); margin-bottom: 4px; }
+.guide-sources { margin-top: 14px; color: var(--muted); font-size: var(--fs-caption); line-height: 1.7; }
+.guide-sources a { color: var(--blue); text-decoration: none; }
+.guide-sources a:hover { text-decoration: underline; }
+
+@media (max-width: 800px) {
+  .care-strip { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 600px) {
   .eq-page { padding: 14px; }
   .eq-grid { grid-template-columns: 1fr; }
   .eq-icon { font-size: var(--fs-heading); }
   .eq-name { font-size: var(--fs-body); }
+  .purpose-picker, .buy-grid, .care-strip { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -280,7 +325,7 @@
     <div class="header-left">
       <a href="/landing" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius: var(--radius-sm);font-size: var(--fs-body);margin-right:8px;text-decoration:none;white-space:nowrap;">← 홈</a>
       <a href="/landing" style="text-decoration:none;color:inherit;"><span class="logo">SwimMate</span></a>
-      <span class="logo-sub">장비 가이드</span>
+      <span class="logo-sub">장비·수영복 가이드</span>
     </div>
   </header>
 
@@ -288,8 +333,8 @@
 
     <div class="eq-topbar">
       <div>
-        <div class="eq-title">🎽 수영 장비 가이드</div>
-        <div class="eq-sub">훈련 효과를 높이는 보조 장비 완벽 가이드 · 카드를 눌러 상세 정보 확인</div>
+        <div class="eq-title">🎽 수영 장비·수영복 가이드</div>
+        <div class="eq-sub">보조 장비 사용법과 목적에 맞는 수영복 선택 기준을 확인하세요</div>
       </div>
     </div>
 
@@ -298,6 +343,7 @@
       <button class="tab-btn active" data-tab="all">🏊 전체</button>
       <button class="tab-btn" data-tab="basic">🟢 기초장비</button>
       <button class="tab-btn" data-tab="advanced">🔴 상급장비</button>
+      <button class="tab-btn" data-tab="swimwear">🩱 수영복 구매</button>
     </div>
 
     <!-- 전체 탭 -->
@@ -313,6 +359,79 @@
     <!-- 상급장비 탭 -->
     <div id="tab-advanced" class="tab-content" data-tab="advanced">
       <div class="eq-grid" id="grid-advanced"></div>
+    </div>
+
+    <div id="tab-swimwear" class="tab-content" data-tab="swimwear">
+      <section class="swimwear-hero">
+        <h2>수영복, 가격보다 목적과 핏부터</h2>
+        <p>브랜드별 치수가 달라 숫자만 비교하기보다 공식 사이즈표와 실제 움직임을 함께 확인해야 합니다. 먼저 주 사용 목적을 선택하면 우선 확인할 기준을 안내합니다.</p>
+        <div class="purpose-picker" role="group" aria-label="수영복 사용 목적">
+          <button class="purpose-btn" type="button" data-suit-purpose="casual">주 1~2회·입문</button>
+          <button class="purpose-btn active" type="button" data-suit-purpose="training">정기 훈련</button>
+          <button class="purpose-btn" type="button" data-suit-purpose="race">대회·기록 측정</button>
+        </div>
+        <div class="suit-recommendation" id="suit-recommendation" aria-live="polite"></div>
+      </section>
+
+      <div class="buy-grid">
+        <article class="buy-card">
+          <h3>1. 맞는 핏 체크</h3>
+          <ul>
+            <li>가슴·등·엉덩이 쪽이 뜨거나 주름지지 않고 몸에 평평하게 닿는지 확인합니다.</li>
+            <li>어깨끈과 다리 둘레가 흘러내리지 않되, 깊은 자국·저림·순환 제한을 만들 정도로 조이지 않아야 합니다.</li>
+            <li>양팔을 머리 위로 올리고 크게 회전해도 당김이나 말려 올라감이 없어야 합니다.</li>
+            <li>온라인 구매 전 브랜드 공식 사이즈표에서 가슴·허리·엉덩이 실측값을 비교하고 교환 조건을 확인합니다.</li>
+          </ul>
+        </article>
+        <article class="buy-card">
+          <h3>2. 소재와 내구성</h3>
+          <ul>
+            <li><strong>폴리에스터 비중이 높은 훈련복</strong>은 일반적으로 염소 노출이 잦은 정기 훈련에서 내구성을 우선할 때 적합합니다.</li>
+            <li><strong>엘라스테인 혼방</strong>은 신축성과 부드러운 착용감을 주지만 열·마찰·염소 관리가 중요합니다.</li>
+            <li>소재명만으로 수명을 단정하지 말고 제조사 관리법, 봉제, 안감, 사용 빈도를 함께 봅니다.</li>
+          </ul>
+        </article>
+        <article class="buy-card">
+          <h3>3. 디자인보다 먼저 볼 것</h3>
+          <ul>
+            <li>오래 수영할수록 어깨 가동 범위, 끈 안정성, 안감과 비침 여부가 중요합니다.</li>
+            <li>실내 풀 위주라면 염소 내구성, 야외 수영이 많다면 자외선 노출과 밝은 색상의 비침 가능성을 확인합니다.</li>
+            <li>패드·브라컵·안감 구성은 개인 선호와 시설 규정을 확인해 선택합니다.</li>
+          </ul>
+        </article>
+        <article class="buy-card">
+          <h3>4. 레이싱 수트 주의</h3>
+          <ul>
+            <li>압박이 강한 경기용 수트는 매일 훈련용과 목적이 다르며, 착용 시간과 움직임 제한을 고려해야 합니다.</li>
+            <li>공인 대회 출전용이라면 구매 전에 해당 대회 규정과 World Aquatics 승인 모델 목록을 확인합니다.</li>
+            <li>승인 마크가 있다고 내 몸에 맞거나 기록 향상을 보장하는 것은 아닙니다. 가능하면 대회 전 미리 착용 절차를 연습합니다.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="suit-table-wrap">
+        <table class="suit-table">
+          <thead><tr><th>사용 목적</th><th>우선 기준</th><th>핏</th><th>구매 전 질문</th></tr></thead>
+          <tbody>
+            <tr><td>입문·가벼운 이용</td><td>편안함, 예산, 쉬운 착탈</td><td>틈은 없고 움직임은 편안하게</td><td>꾸준히 입을 디자인인가?</td></tr>
+            <tr><td>정기 훈련</td><td>염소 내구성, 안정적인 끈·봉제</td><td>반복 동작에도 위치가 유지되게</td><td>주당 사용 횟수와 관리 방식에 맞나?</td></tr>
+            <tr><td>대회·기록</td><td>규정, 압박, 종목과 거리</td><td>제조사 가이드에 따라 단단하게</td><td>승인 모델인가? 대회 전에 시험 착용했나?</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="care-strip" aria-label="수영복 관리 순서">
+        <div class="care-step"><strong>① 바로 헹구기</strong>수영 직후 차갑고 깨끗한 물로 염소와 소금을 제거합니다.</div>
+        <div class="care-step"><strong>② 비틀지 않기</strong>세게 비틀어 짜거나 거친 탈수로 원단을 늘리지 않습니다.</div>
+        <div class="care-step"><strong>③ 그늘 건조</strong>직사광선·건조기·다리미 같은 열을 피하고 완전히 말립니다.</div>
+        <div class="care-step"><strong>④ 마른 상태 보관</strong>젖은 채 가방에 오래 두지 않고 거친 바닥 마찰을 피합니다.</div>
+      </div>
+
+      <div class="guide-sources">
+        선택 기준 참고: <a href="https://speedo.com/en-us/pages/size-guides" target="_blank" rel="noopener">Speedo 핏·관리 가이드</a> ·
+        대회 규정 확인: <a href="https://www.worldaquatics.com/swimming/approved-swimwear" target="_blank" rel="noopener">World Aquatics 승인 수영복</a><br>
+        특정 브랜드나 제품의 구매를 권유하지 않으며, 실제 제품의 공식 사이즈표와 대회 규정을 최종 확인하세요. 마지막 검토: 2026-08-03
+      </div>
     </div>
 
   </div>
@@ -548,9 +667,29 @@ function renderGrids() {
   });
 }
 
-SW.initTabs('.tab-bar', '.tab-content');
+const SUIT_PURPOSES = {
+  casual: '<strong>입문용 선택:</strong> 복잡한 기능보다 편안한 팔 회전, 비침 없는 안감, 쉬운 착탈과 교환 가능한 가격대를 우선하세요.',
+  training: '<strong>훈련용 선택:</strong> 염소 노출을 견디는 소재, 반복 스트로크에도 움직이지 않는 끈과 봉제, 주당 사용 횟수에 맞는 내구성을 우선하세요.',
+  race: '<strong>대회용 선택:</strong> 참가 대회의 복장 규정과 승인 모델 여부를 먼저 확인하고, 압박과 착용 난이도를 대회 전에 반드시 시험하세요.',
+};
 
+function selectSuitPurpose(button) {
+  document.querySelectorAll('[data-suit-purpose]').forEach(item => item.classList.toggle('active', item === button));
+  document.getElementById('suit-recommendation').innerHTML = SUIT_PURPOSES[button.dataset.suitPurpose];
+}
+
+document.querySelectorAll('[data-suit-purpose]').forEach(button => {
+  button.addEventListener('click', () => selectSuitPurpose(button));
+});
+
+SW.initTabs('.tab-bar', '.tab-content');
 renderGrids();
+selectSuitPurpose(document.querySelector('[data-suit-purpose="training"]'));
+
+const requestedTab = new URLSearchParams(window.location.search).get('tab');
+if (['all', 'basic', 'advanced', 'swimwear'].includes(requestedTab)) {
+  document.querySelector(`.tab-btn[data-tab="${requestedTab}"]`)?.click();
+}
 </script>
 </body>
 </html>
