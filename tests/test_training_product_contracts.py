@@ -88,6 +88,7 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
     drill = (ROOT / "frontend" / "drill.html").read_text(encoding="utf-8")
     injury = (ROOT / "frontend" / "injury.html").read_text(encoding="utf-8")
     equipment = (ROOT / "frontend" / "equipment.html").read_text(encoding="utf-8")
+    swimwear_sizing = (ROOT / "frontend" / "static" / "swimwear-sizing.js").read_text(encoding="utf-8")
     faq = (ROOT / "frontend" / "faq.html").read_text(encoding="utf-8")
     landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
 
@@ -102,6 +103,12 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
     assert "data-tab=\"swimwear\"" in equipment
     assert "World Aquatics 승인 수영복" in equipment
     assert "new URLSearchParams(window.location.search)" in equipment
+    assert "/static/swimwear-sizing.js" in equipment
+    for marker in ["brand-size-guide", "size-recommender-form", "current-model", "recommend-grid"]:
+        assert marker in equipment
+    for marker in ["Speedo", "arena", "TYR", "Mizuno", "Nike Swim", "RACE_MODEL_PATTERN", "proxyFromCurrent", "recommend"]:
+        assert marker in swimwear_sizing
+    assert "innerHTML" not in swimwear_sizing
     assert "수영복은 어떻게 골라야 하나요" in faq
     assert "data-hidden=\"true\"" not in faq
     assert "이메일 자동 비밀번호 재설정은 제공하지 않습니다" in faq

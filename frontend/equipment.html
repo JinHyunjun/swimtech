@@ -306,8 +306,93 @@
 .guide-sources a { color: var(--blue); text-decoration: none; }
 .guide-sources a:hover { text-decoration: underline; }
 
+.sizing-section {
+  margin-top: 18px;
+  padding: 20px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.sizing-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.sizing-heading h3 { margin: 0 0 5px; color: var(--text); font-size: var(--fs-body-lg); }
+.sizing-heading p { margin: 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; }
+.profile-switch, .brand-switch { display: flex; gap: 7px; flex-wrap: wrap; }
+.profile-switch { margin-bottom: 12px; }
+.size-switch-btn, .brand-switch-btn {
+  padding: 8px 12px;
+  color: var(--muted);
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-caption);
+}
+.size-switch-btn.active, .brand-switch-btn.active { color: var(--blue); border-color: rgba(0,180,216,.48); background: rgba(0,180,216,.09); }
+.brand-switch { margin-bottom: 12px; }
+.brand-chart-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin: 14px 0 8px; }
+.brand-chart-meta strong { color: var(--text); }
+.brand-chart-meta p { margin: 3px 0 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.55; }
+.official-link { color: var(--blue); font-size: var(--fs-caption); text-decoration: none; white-space: nowrap; }
+.official-link:hover { text-decoration: underline; }
+.brand-size-table { min-width: 720px; }
+.brand-size-table td:first-child { color: var(--cyan); font-weight: 700; }
+.sizing-footnote { margin: 10px 0 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; }
+
+.recommender-section {
+  background: linear-gradient(145deg, rgba(72,202,228,.07), rgba(74,222,128,.035));
+  border-color: rgba(72,202,228,.28);
+}
+.recommender-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field.full { grid-column: 1 / -1; }
+.form-field label { color: var(--text); font-size: var(--fs-caption); font-weight: 600; }
+.form-field small { color: var(--muted); font-size: calc(var(--fs-caption) - 1px); line-height: 1.45; }
+.form-field input, .form-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  color: var(--text);
+  background: rgba(3,20,30,.55);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--fs-caption);
+}
+.form-field input:focus, .form-field select:focus { outline: 2px solid rgba(0,180,216,.24); border-color: rgba(0,180,216,.55); }
+.measure-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.measure-grid .form-field input { min-width: 0; }
+.recommend-submit {
+  padding: 12px 18px;
+  color: #02151d;
+  background: linear-gradient(135deg, #48cae4, #4ade80);
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+.recommend-submit:hover { filter: brightness(1.05); }
+.recommend-submit.full { grid-column: 1 / -1; }
+.recommend-message { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-md); font-size: var(--fs-caption); line-height: 1.65; }
+.recommend-message.error { color: #fda4af; background: rgba(248,113,113,.08); border: 0.5px solid rgba(248,113,113,.25); }
+.recommend-message.notice { color: var(--muted); background: rgba(250,204,21,.06); border: 0.5px solid rgba(250,204,21,.22); }
+.recommend-result { margin-top: 14px; }
+.recommend-result[hidden] { display: none; }
+.recommend-summary { padding: 14px; color: var(--muted); background: rgba(0,180,216,.06); border-radius: var(--radius-md); font-size: var(--fs-caption); line-height: 1.7; }
+.recommend-summary strong { color: var(--cyan); }
+.recommend-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.recommend-card { padding: 13px; background: rgba(3,20,30,.48); border: 0.5px solid var(--border); border-radius: var(--radius-md); }
+.recommend-card span { display: block; color: var(--muted); font-size: calc(var(--fs-caption) - 1px); }
+.recommend-card strong { display: block; margin: 5px 0; color: #4ade80; font-size: var(--fs-body-lg); }
+.recommend-card a { color: var(--blue); font-size: calc(var(--fs-caption) - 1px); text-decoration: none; }
+.recommend-card a:hover { text-decoration: underline; }
+.recommend-disclaimer { margin: 10px 0 0; color: var(--muted); font-size: calc(var(--fs-caption) - 1px); line-height: 1.6; }
+
 @media (max-width: 800px) {
   .care-strip { grid-template-columns: repeat(2, 1fr); }
+  .recommend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .measure-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   .eq-page { padding: 14px; }
@@ -315,6 +400,9 @@
   .eq-icon { font-size: var(--fs-heading); }
   .eq-name { font-size: var(--fs-body); }
   .purpose-picker, .buy-grid, .care-strip { grid-template-columns: 1fr; }
+  .sizing-section { padding: 15px; }
+  .sizing-heading, .brand-chart-meta { flex-direction: column; }
+  .recommender-form, .measure-grid, .recommend-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -373,6 +461,97 @@
         <div class="suit-recommendation" id="suit-recommendation" aria-live="polite"></div>
       </section>
 
+      <section class="sizing-section" id="brand-size-guide">
+        <div class="sizing-heading">
+          <div>
+            <h3>브랜드별 공식 사이즈표</h3>
+            <p>성인 일반·훈련용 기준을 cm로 통일했습니다. 브랜드·국가·제품군에 따라 라벨 체계가 다르므로 구매할 모델의 공식표를 마지막에 다시 확인하세요.</p>
+          </div>
+        </div>
+        <div class="profile-switch" role="group" aria-label="사이즈표 수영복 유형">
+          <button class="size-switch-btn active" type="button" data-size-profile="women" aria-pressed="true">여성 원피스</button>
+          <button class="size-switch-btn" type="button" data-size-profile="men" aria-pressed="false">남성 브리프·재머</button>
+        </div>
+        <div class="brand-switch" id="brand-size-tabs" role="tablist" aria-label="수영복 브랜드"></div>
+        <div class="brand-chart-meta">
+          <div>
+            <strong id="brand-chart-title"></strong>
+            <p id="brand-chart-note"></p>
+          </div>
+          <a class="official-link" id="brand-chart-source" href="#" target="_blank" rel="noopener">공식 사이즈표 확인 ↗</a>
+        </div>
+        <div class="suit-table-wrap">
+          <table class="suit-table brand-size-table" id="brand-size-table">
+            <thead><tr id="brand-size-head"></tr></thead>
+            <tbody id="brand-size-body"></tbody>
+          </table>
+        </div>
+        <p class="sizing-footnote">표의 수치는 제품 실측이 아니라 제조사가 안내한 신체 치수입니다. arena의 일반 수영복 표는 구간이 아닌 기준값이며, 레이싱·테크수트는 이 표를 사용하지 않습니다.</p>
+      </section>
+
+      <section class="sizing-section recommender-section" id="size-recommender">
+        <div class="sizing-heading">
+          <div>
+            <h3>내 수영복 기준 브랜드별 사이즈 추천</h3>
+            <p>현재 모델과 사이즈의 착용감을 기준으로 환산합니다. 신체 치수를 함께 입력하면 모델·라벨만 입력했을 때보다 정확도가 높아집니다.</p>
+          </div>
+        </div>
+        <form class="recommender-form" id="size-recommender-form" novalidate>
+          <div class="form-field">
+            <label for="recommender-profile">수영복 유형</label>
+            <select id="recommender-profile">
+              <option value="women">여성 원피스</option>
+              <option value="men">남성 브리프·재머</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="current-brand">현재 브랜드</label>
+            <select id="current-brand">
+              <option value="auto">모델명에서 자동 인식</option>
+              <option value="speedo">Speedo</option>
+              <option value="arena">arena</option>
+              <option value="tyr">TYR</option>
+              <option value="mizuno">Mizuno</option>
+              <option value="nike">Nike Swim</option>
+            </select>
+          </div>
+          <div class="form-field full">
+            <label for="current-model">현재 입고 있는 모델명</label>
+            <input id="current-model" type="text" maxlength="100" autocomplete="off" placeholder="예: 미즈노 엑서수트 N2MAD785 / Speedo Endurance+" required>
+            <small>품번까지 입력하면 레이싱 수트 여부를 구분할 때 도움이 됩니다.</small>
+          </div>
+          <div class="form-field">
+            <label for="current-size">현재 사이즈</label>
+            <input id="current-size" type="text" maxlength="16" autocomplete="off" placeholder="예: M, 85, 32" required>
+          </div>
+          <div class="form-field">
+            <label for="current-fit">현재 착용감</label>
+            <select id="current-fit">
+              <option value="good">잘 맞음</option>
+              <option value="tight">너무 타이트함</option>
+              <option value="loose">조금 헐거움</option>
+            </select>
+          </div>
+          <div class="form-field full">
+            <label>신체 치수 (cm, 선택)</label>
+            <div class="measure-grid">
+              <div class="form-field"><label for="measure-bust">가슴</label><input id="measure-bust" type="number" min="50" max="160" step="0.5" inputmode="decimal" placeholder="예: 88"></div>
+              <div class="form-field"><label for="measure-waist">허리</label><input id="measure-waist" type="number" min="45" max="150" step="0.5" inputmode="decimal" placeholder="예: 72"></div>
+              <div class="form-field"><label for="measure-hip">엉덩이</label><input id="measure-hip" type="number" min="55" max="170" step="0.5" inputmode="decimal" placeholder="예: 94"></div>
+              <div class="form-field" id="torso-field"><label for="measure-torso">몸통 한 바퀴</label><input id="measure-torso" type="number" min="110" max="210" step="0.5" inputmode="decimal" placeholder="예: 154"></div>
+            </div>
+            <small>여성 원피스는 가슴·엉덩이·몸통, 남성 브리프·재머는 허리·엉덩이 치수가 특히 유용합니다.</small>
+          </div>
+          <button class="recommend-submit full" type="submit">브랜드별 추천 사이즈 보기</button>
+        </form>
+        <div id="recommend-message" aria-live="assertive"></div>
+        <div class="recommend-result" id="recommend-result" hidden>
+          <div class="recommend-summary" id="recommend-summary"></div>
+          <div class="recommend-grid" id="recommend-grid"></div>
+          <p class="recommend-disclaimer">추천은 공식 신체 치수표를 비교한 구매 후보이며 착용을 보장하지 않습니다. 원단·컷·안감·국가별 라벨과 개인 선호에 따라 달라질 수 있으므로 주문 전 해당 상품 상세표와 교환 조건을 확인하세요.</p>
+        </div>
+      </section>
+
       <div class="buy-grid">
         <article class="buy-card">
           <h3>1. 맞는 핏 체크</h3>
@@ -428,9 +607,13 @@
       </div>
 
       <div class="guide-sources">
-        선택 기준 참고: <a href="https://speedo.com/en-us/pages/size-guides" target="_blank" rel="noopener">Speedo 핏·관리 가이드</a> ·
+        브랜드 공식표: <a href="https://speedo.com/en-us/pages/size-guides" target="_blank" rel="noopener">Speedo</a> ·
+        <a href="https://www.arenasport.com/en_row/size-guide" target="_blank" rel="noopener">arena</a> ·
+        <a href="https://tyr.com/pages/sizing-swim" target="_blank" rel="noopener">TYR</a> ·
+        <a href="https://jpn.mizuno.com/ec/include_html/size/size_swim.html" target="_blank" rel="noopener">Mizuno</a> ·
+        <a href="https://www.nike.com/kr/size-fit/womens-swimsuit" target="_blank" rel="noopener">Nike Swim</a> ·
         대회 규정 확인: <a href="https://www.worldaquatics.com/swimming/approved-swimwear" target="_blank" rel="noopener">World Aquatics 승인 수영복</a><br>
-        특정 브랜드나 제품의 구매를 권유하지 않으며, 실제 제품의 공식 사이즈표와 대회 규정을 최종 확인하세요. 마지막 검토: 2026-08-03
+        특정 브랜드나 제품의 구매를 권유하지 않으며, 추천 결과보다 실제 상품의 공식 사이즈표와 교환 조건을 우선하세요. 마지막 검토: 2026-08-03
       </div>
     </div>
 
@@ -440,6 +623,7 @@
 <script src="/static/theme.js"></script>
     <script src="/static/utils.js"></script>
     <script src="/static/api.js"></script>
+    <script src="/static/swimwear-sizing.js"></script>
 <script>
 "use strict";
 
@@ -682,13 +866,219 @@ document.querySelectorAll('[data-suit-purpose]').forEach(button => {
   button.addEventListener('click', () => selectSuitPurpose(button));
 });
 
+const SIZE_DATA = window.SWIMWEAR_SIZING;
+let activeSizeProfile = 'women';
+let activeSizeBrand = 'speedo';
+
+function formatBodyRange(range, pointValues) {
+  if (!range) return '—';
+  if (pointValues && range[0] === range[1]) return String(range[0]);
+  return range[0] === range[1] ? String(range[0]) : `${range[0]}–${range[1]}`;
+}
+
+function renderBrandSwitch() {
+  const container = document.getElementById('brand-size-tabs');
+  container.replaceChildren();
+  SIZE_DATA.BRAND_ORDER.forEach(brand => {
+    const chart = SIZE_DATA.CHARTS[activeSizeProfile][brand];
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `brand-switch-btn${brand === activeSizeBrand ? ' active' : ''}`;
+    button.dataset.sizeBrand = brand;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(brand === activeSizeBrand));
+    button.textContent = chart.name;
+    button.addEventListener('click', () => {
+      activeSizeBrand = brand;
+      renderBrandChart();
+    });
+    container.appendChild(button);
+  });
+}
+
+function renderBrandChart() {
+  const chart = SIZE_DATA.CHARTS[activeSizeProfile][activeSizeBrand];
+  renderBrandSwitch();
+  document.getElementById('brand-chart-title').textContent = `${chart.name} · ${chart.scope}`;
+  document.getElementById('brand-chart-note').textContent = chart.note;
+  const source = document.getElementById('brand-chart-source');
+  source.href = chart.source;
+  source.setAttribute('aria-label', `${chart.name} 공식 사이즈표 새 창에서 확인`);
+
+  const headings = activeSizeProfile === 'women'
+    ? [['size', '표기 사이즈'], ['bust', '가슴'], ['waist', '허리'], ['hip', '엉덩이'], ['torso', '몸통 한 바퀴']]
+    : [['size', '표기 사이즈'], ['chest', '가슴'], ['waist', '허리'], ['hip', '엉덩이']];
+  const head = document.getElementById('brand-size-head');
+  head.replaceChildren();
+  headings.forEach(([, label]) => {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = label;
+    head.appendChild(th);
+  });
+
+  const body = document.getElementById('brand-size-body');
+  body.replaceChildren();
+  chart.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    headings.forEach(([key]) => {
+      const td = document.createElement('td');
+      td.textContent = key === 'size' ? row.size : formatBodyRange(row[key], chart.pointValues);
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('[data-size-profile]').forEach(button => {
+  button.addEventListener('click', () => {
+    activeSizeProfile = button.dataset.sizeProfile;
+    document.querySelectorAll('[data-size-profile]').forEach(item => item.classList.toggle('active', item === button));
+    document.querySelectorAll('[data-size-profile]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    renderBrandChart();
+  });
+});
+
+function readMeasurement(id) {
+  const field = document.getElementById(id);
+  if (!field.value) return null;
+  const value = Number(field.value);
+  return Number.isFinite(value) ? value : null;
+}
+
+function showRecommendMessage(text, type = 'error') {
+  const message = document.getElementById('recommend-message');
+  message.className = `recommend-message ${type}`;
+  message.textContent = text;
+}
+
+function clearRecommendMessage() {
+  const message = document.getElementById('recommend-message');
+  message.className = '';
+  message.textContent = '';
+}
+
+function renderRecommendations(results, context) {
+  const result = document.getElementById('recommend-result');
+  const summary = document.getElementById('recommend-summary');
+  const grid = document.getElementById('recommend-grid');
+  summary.replaceChildren();
+  grid.replaceChildren();
+
+  const title = document.createElement('strong');
+  title.textContent = `${context.model} · ${context.size} 기준`;
+  summary.appendChild(title);
+  summary.appendChild(document.createTextNode(` — ${context.method}으로 비교했습니다. 추천 신뢰도: ${context.confidence}.`));
+
+  results.forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'recommend-card';
+    const brand = document.createElement('span');
+    brand.textContent = item.name;
+    const size = document.createElement('strong');
+    size.textContent = item.alternate ? `${item.size} · 경계 ${item.alternate}` : item.size;
+    const hint = document.createElement('span');
+    hint.textContent = item.unavailable ? '비교 가능한 치수를 더 입력하세요' : item.alternate ? '두 사이즈 경계 후보' : '우선 확인 후보';
+    const link = document.createElement('a');
+    link.href = item.source;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = '공식표 재확인 ↗';
+    card.append(brand, size, hint, link);
+    grid.appendChild(card);
+  });
+  result.hidden = false;
+}
+
+document.getElementById('recommender-profile').addEventListener('change', event => {
+  const isWomen = event.target.value === 'women';
+  document.getElementById('torso-field').hidden = !isWomen;
+  if (!isWomen) document.getElementById('measure-torso').value = '';
+});
+
+document.getElementById('size-recommender-form').addEventListener('submit', event => {
+  event.preventDefault();
+  clearRecommendMessage();
+  document.getElementById('recommend-result').hidden = true;
+
+  const profile = document.getElementById('recommender-profile').value;
+  const model = document.getElementById('current-model').value.trim();
+  const size = document.getElementById('current-size').value.trim();
+  const fit = document.getElementById('current-fit').value;
+  const selectedBrand = document.getElementById('current-brand').value;
+  if (!model || !size) {
+    showRecommendMessage('현재 모델명과 사이즈를 모두 입력해 주세요.');
+    return;
+  }
+  const invalidMeasurement = ['measure-bust', 'measure-waist', 'measure-hip', 'measure-torso']
+    .map(id => document.getElementById(id))
+    .find(field => field.value && !field.checkValidity());
+  if (invalidMeasurement) {
+    showRecommendMessage('신체 치수는 각 입력란에 표시된 cm 범위 안에서 입력해 주세요.');
+    invalidMeasurement.focus();
+    return;
+  }
+  if (SIZE_DATA.isRaceModel(model)) {
+    showRecommendMessage('입력한 모델은 레이싱·테크수트 계열로 감지됐습니다. 일반 훈련복 표로 교차 환산하면 원단 손상이나 잘못된 구매로 이어질 수 있어 추천에서 제외합니다. 해당 모델의 공식 전용 표를 이용해 주세요.', 'notice');
+    return;
+  }
+
+  const detectedBrand = selectedBrand === 'auto' ? SIZE_DATA.detectBrand(model) : selectedBrand;
+  const explicit = {
+    bust: profile === 'women' ? readMeasurement('measure-bust') : null,
+    chest: profile === 'men' ? readMeasurement('measure-bust') : null,
+    waist: readMeasurement('measure-waist'),
+    hip: readMeasurement('measure-hip'),
+    torso: profile === 'women' ? readMeasurement('measure-torso') : null,
+  };
+  const explicitCount = Object.values(explicit).filter(value => value != null).length;
+  let measurements = { ...explicit };
+  let method = '';
+
+  if (detectedBrand) {
+    const currentChart = SIZE_DATA.CHARTS[profile][detectedBrand];
+    const currentRow = SIZE_DATA.findRow(currentChart, size);
+    if (currentRow) {
+      const proxy = SIZE_DATA.proxyFromCurrent(currentChart, currentRow, fit);
+      measurements = Object.fromEntries(Object.keys(proxy).map(key => [key, explicit[key] ?? proxy[key]]));
+      const fitText = fit === 'tight' ? '너무 타이트한 착용감' : fit === 'loose' ? '조금 헐거운 착용감' : '잘 맞는 착용감';
+      method = explicitCount ? `신체 치수 ${explicitCount}개와 ${currentChart.name} ${fitText}` : `${currentChart.name} 공식표와 ${fitText}`;
+    } else if (!explicitCount) {
+      showRecommendMessage(`${currentChart.name}의 현재 지원 표에서 “${size}” 사이즈를 찾지 못했습니다. 국가별 라벨일 수 있으므로 현재 브랜드를 확인하거나 신체 치수를 하나 이상 입력해 주세요.`);
+      return;
+    } else {
+      method = `입력한 신체 치수 ${explicitCount}개`;
+      showRecommendMessage('현재 사이즈 라벨은 공식 지원 표에서 찾지 못해 신체 치수만으로 계산했습니다.', 'notice');
+    }
+  } else if (explicitCount) {
+    method = `입력한 신체 치수 ${explicitCount}개`;
+    showRecommendMessage('모델명에서 브랜드를 인식하지 못해 신체 치수만으로 계산했습니다.', 'notice');
+  } else {
+    showRecommendMessage('모델명에서 브랜드를 인식하지 못했습니다. 현재 브랜드를 직접 선택하거나 신체 치수를 하나 이상 입력해 주세요.');
+    return;
+  }
+
+  const usableCount = Object.values(measurements).filter(value => value != null).length;
+  if (!usableCount) {
+    showRecommendMessage('추천에 사용할 수 있는 치수가 없습니다. 신체 치수를 하나 이상 입력해 주세요.');
+    return;
+  }
+  const confidence = explicitCount >= 3 ? '높음' : explicitCount >= 1 ? '보통' : '참고용';
+  const recommendations = SIZE_DATA.recommend(profile, measurements);
+  renderRecommendations(recommendations, { model, size, method, confidence });
+});
+
 SW.initTabs('.tab-bar', '.tab-content');
 renderGrids();
 selectSuitPurpose(document.querySelector('[data-suit-purpose="training"]'));
+renderBrandChart();
 
 const requestedTab = new URLSearchParams(window.location.search).get('tab');
 if (['all', 'basic', 'advanced', 'swimwear'].includes(requestedTab)) {
   document.querySelector(`.tab-btn[data-tab="${requestedTab}"]`)?.click();
+}
+if (window.location.hash) {
+  window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ block: 'start' }));
 }
 </script>
 </body>

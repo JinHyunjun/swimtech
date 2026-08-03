@@ -203,8 +203,8 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["허리 통증의 90%", "부담이 절반 이하", "SwimMate 분석으로 확인할 것"],
     },
     "/equipment": {
-        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip"],
-        "texts": ["수영 장비·수영복 가이드", "보조 장비 사용법과 목적에 맞는 수영복 선택 기준"],
+        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "#size-recommender-form", "#current-model", "#current-size", "#recommend-result"],
+        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "내 수영복 기준 브랜드별 사이즈 추천", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
     },
     "/faq": {
         "selectors": ["#search", "#faq-list", ".faq-item[data-q*='수영복']", ".faq-item[data-q*='드릴']", ".faq-item[data-q*='통증']"],
@@ -515,6 +515,35 @@ def check_information_guide_interactions(page, path):
             if not page.locator("#tab-swimwear").is_visible() or "대회용 선택" not in result.inner_text():
                 raise AssertionError("수영복 목적별 안내가 표시되지 않음")
             actions.append({"action": "수영복 구매 탭·대회 목적 선택", "status": "ok"})
+
+            page.click("[data-size-profile='men']")
+            page.click("[data-size-brand='arena']")
+            if "남성 일반 수영복" not in page.locator("#brand-chart-title").inner_text():
+                raise AssertionError("브랜드별 남성 사이즈표가 전환되지 않음")
+            if page.locator("#brand-size-body tr").count() < 5:
+                raise AssertionError("브랜드 사이즈표 행이 부족함")
+            actions.append({"action": "브랜드·수영복 유형별 공식 사이즈표", "status": "ok"})
+
+            page.select_option("#recommender-profile", "women")
+            page.select_option("#current-brand", "auto")
+            page.fill("#current-model", "미즈노 엑서수트 N2MAD785")
+            page.fill("#current-size", "M")
+            page.fill("#measure-bust", "83")
+            page.fill("#measure-waist", "64")
+            page.fill("#measure-hip", "91")
+            page.fill("#measure-torso", "154")
+            page.click(".recommend-submit")
+            if not page.locator("#recommend-result").is_visible() or page.locator("#recommend-grid .recommend-card").count() != 5:
+                raise AssertionError("현재 모델 기반 브랜드별 추천 5개가 표시되지 않음")
+            if "신뢰도: 높음" not in page.locator("#recommend-summary").inner_text():
+                raise AssertionError("실측 기반 추천 신뢰도가 표시되지 않음")
+            actions.append({"action": "현재 모델·실측 기반 브랜드별 사이즈 추천", "status": "ok"})
+
+            page.fill("#current-model", "Speedo Fastskin LZR")
+            page.click(".recommend-submit")
+            if "레이싱·테크수트 계열" not in page.locator("#recommend-message").inner_text():
+                raise AssertionError("레이싱 수트 전용 표 안전 경계가 표시되지 않음")
+            actions.append({"action": "레이싱 수트 일반표 교차 추천 차단", "status": "ok"})
             page.click(".tab-btn[data-tab='all']")
         elif path == "/faq":
             page.fill("#search", "수영복")

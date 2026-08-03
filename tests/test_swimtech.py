@@ -1192,6 +1192,33 @@ def test_equipment_load(page: Page):
     page.click('[data-suit-purpose="race"]')
     expect(page.locator("#suit-recommendation")).to_contain_text("대회용 선택")
 
+    # 브랜드별 공식표 — 여성/남성 유형과 브랜드를 바꾸면 실제 표가 갱신된다.
+    expect(page.locator("#brand-size-tabs .brand-switch-btn")).to_have_count(5)
+    page.click('[data-size-profile="men"]')
+    page.click('[data-size-brand="arena"]')
+    expect(page.locator("#brand-chart-title")).to_contain_text("남성 일반 수영복")
+    assert page.locator("#brand-size-body tr").count() >= 5
+
+    # 현재 모델·실측을 함께 사용한 5개 브랜드 교차 추천.
+    page.select_option("#recommender-profile", "women")
+    page.select_option("#current-brand", "auto")
+    page.fill("#current-model", "미즈노 엑서수트 N2MAD785")
+    page.fill("#current-size", "M")
+    page.fill("#measure-bust", "83")
+    page.fill("#measure-waist", "64")
+    page.fill("#measure-hip", "91")
+    page.fill("#measure-torso", "154")
+    page.click(".recommend-submit")
+    expect(page.locator("#recommend-result")).to_be_visible()
+    expect(page.locator("#recommend-grid .recommend-card")).to_have_count(5)
+    expect(page.locator("#recommend-summary")).to_contain_text("신뢰도: 높음")
+
+    # 테크수트는 일반 훈련복 표로 잘못 환산하지 않는다.
+    page.fill("#current-model", "Speedo Fastskin LZR")
+    page.click(".recommend-submit")
+    expect(page.locator("#recommend-message")).to_contain_text("레이싱·테크수트 계열")
+    expect(page.locator("#recommend-result")).to_be_hidden()
+
     shot(page, "19_equipment_load")
 
 
