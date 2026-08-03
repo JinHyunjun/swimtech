@@ -157,9 +157,10 @@
 .verify-btn.approve { border-color:rgba(74,222,128,.45); color:var(--status-success); }
 .verify-btn.reject { border-color:rgba(248,113,113,.45); color:var(--status-danger); }
 
-.search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.search-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .search-input {
   flex: 1;
+  min-width: 220px;
   background: var(--bg);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -168,6 +169,16 @@
   font-size: var(--fs-body);
 }
 .search-input:focus { outline: none; border-color: var(--accent-primary); }
+.search-category-select {
+  min-width: 135px;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: var(--fs-body);
+}
+.search-category-select:focus { outline: none; border-color: var(--accent-primary); }
 .btn-mini {
   background: var(--accent-primary);
   color: #06121c;
@@ -178,6 +189,37 @@
   font-weight: 700;
   cursor: pointer;
 }
+.btn-mini.secondary {
+  background: var(--bg);
+  color: var(--muted);
+  border: 0.5px solid var(--border);
+}
+
+.panel-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.panel-heading-row .panel-title { margin-bottom: 0; }
+.chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 16px;
+}
+.chart-card {
+  min-width: 0;
+  background: rgba(255,255,255,.02);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.chart-title { color: var(--text); font-weight: 700; margin-bottom: 4px; }
+.chart-caption { color: var(--muted); font-size: var(--fs-caption); line-height: 1.5; margin-bottom: 12px; }
+.chart-wrap { position: relative; height: 300px; min-height: 260px; }
+.traffic-kpis { margin: 0 0 16px; }
 
 .menu-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .menu-bar-label { width: 110px; font-size: var(--fs-caption); color: var(--muted); flex-shrink: 0; }
@@ -292,6 +334,8 @@
 @media (max-width: 760px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
   .health-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-wrap { height: 260px; }
 }
 </style>
     <script src="/static/theme.js"></script>
@@ -340,6 +384,40 @@
     </div>
 
     <div class="panel">
+      <div class="panel-heading-row">
+        <div>
+          <div class="panel-title">방문·가입 흐름</div>
+          <div class="chart-caption" style="margin-bottom:0;">페이지 조회와 식별 가능한 방문자, 로그인 회원, 신규 가입 변화를 함께 봅니다.</div>
+        </div>
+        <label class="page-size-control">조회 기간
+          <select class="page-size-select" id="d-chart-days">
+            <option value="7">최근 7일</option>
+            <option value="30" selected>최근 30일</option>
+            <option value="90">최근 90일</option>
+          </select>
+        </label>
+      </div>
+      <div class="summary-cards traffic-kpis">
+        <div class="summary-card"><div class="label">기간 내 페이지 조회</div><div class="value" id="d-page-views">—</div></div>
+        <div class="summary-card"><div class="label">추정 순 방문자</div><div class="value energy" id="d-visitors">—</div></div>
+        <div class="summary-card"><div class="label">로그인 방문 회원</div><div class="value" id="d-active-users">—</div></div>
+        <div class="summary-card"><div class="label">기간 내 신규 가입</div><div class="value" id="d-period-signups">—</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">일별 방문 추이</div>
+          <div class="chart-caption">조회 수·추정 방문자·로그인 회원·가입자를 날짜별로 비교합니다.</div>
+          <div class="chart-wrap"><canvas id="d-traffic-chart" role="img" aria-label="일별 페이지 조회, 방문자, 로그인 회원과 가입자 추이 그래프"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">가입 방식 분포</div>
+          <div class="chart-caption">일반·카카오·구글 계정 비중입니다.</div>
+          <div class="chart-wrap"><canvas id="d-provider-chart" role="img" aria-label="가입 방식별 회원 분포 그래프"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-title">최근 가입자</div>
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -358,8 +436,14 @@
   <section class="admin-section" id="tab-users">
     <div class="panel">
       <div class="search-row">
-        <input type="text" class="search-input" id="u-search" placeholder="이름, 이메일, 아이디, 닉네임으로 검색">
-        <button class="btn-mini" id="u-search-btn">검색</button>
+        <select class="search-category-select" id="u-search-by" aria-label="사용자 검색 항목">
+          <option value="all">전체 항목</option><option value="id">회원 ID</option><option value="name">이름</option>
+          <option value="email">이메일</option><option value="username">아이디</option><option value="nickname">닉네임</option>
+          <option value="provider">가입 방식</option><option value="status">상태</option>
+        </select>
+        <input type="text" class="search-input" id="u-search" placeholder="검색어 입력 · 가입 방식은 일반/카카오/구글, 상태는 활성/탈퇴">
+        <button class="btn-mini list-search-btn" data-list="users">검색</button>
+        <button class="btn-mini secondary list-search-reset" data-list="users">초기화</button>
       </div>
       <div class="table-controls">
         <label class="page-size-control">표시 개수
@@ -402,6 +486,15 @@
         <div class="summary-card"><div class="label">선택 인증 검토</div><div class="value energy" id="c-pending">—</div></div>
         <div class="summary-card"><div class="label">30일 AI 강습안</div><div class="value" id="c-documents">—</div></div>
         <div class="summary-card"><div class="label">30일 회원 배포</div><div class="value" id="c-published">—</div></div>
+      </div>
+      <div class="search-row">
+        <select class="search-category-select" id="c-search-by" aria-label="코치 검색 항목">
+          <option value="all">전체 항목</option><option value="name">이름</option><option value="username">아이디</option>
+          <option value="email">이메일</option><option value="specialty">전문 분야·경력</option><option value="credential">자격 정보</option>
+        </select>
+        <input type="text" class="search-input" id="c-search" placeholder="코치 이름, 아이디, 전문 분야, 자격 정보 검색">
+        <button class="btn-mini list-search-btn" data-list="coaches">검색</button>
+        <button class="btn-mini secondary list-search-reset" data-list="coaches">초기화</button>
       </div>
       <div class="table-controls">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -593,6 +686,15 @@
         <button class="log-filter-btn" data-type="logout">로그아웃</button>
         <button class="log-filter-btn" data-type="page_view">페이지 조회</button>
       </div>
+      <div class="search-row">
+        <select class="search-category-select" id="l-search-by" aria-label="운영 로그 검색 항목">
+          <option value="all">전체 항목</option><option value="username">아이디</option><option value="path">페이지·경로</option>
+          <option value="action">동작</option><option value="method">HTTP 방식</option><option value="ip">IP</option>
+        </select>
+        <input type="text" class="search-input" id="l-search" placeholder="아이디, 경로, 동작, IP로 로그 검색">
+        <button class="btn-mini list-search-btn" data-list="logs">검색</button>
+        <button class="btn-mini secondary list-search-reset" data-list="logs">초기화</button>
+      </div>
       <div class="table-controls">
         <label class="page-size-control">표시 개수
           <select class="page-size-select" id="l-page-size" data-list="logs">
@@ -633,6 +735,15 @@
         <button class="log-filter-btn" data-type="개선 제안">개선 제안</button>
         <button class="log-filter-btn" data-type="기타">기타</button>
       </div>
+      <div class="search-row">
+        <select class="search-category-select" id="f-search-by" aria-label="피드백 검색 항목">
+          <option value="all">전체 항목</option><option value="author">작성자</option><option value="page">페이지</option>
+          <option value="title">제목</option><option value="content">내용</option><option value="email">이메일</option>
+        </select>
+        <input type="text" class="search-input" id="f-search" placeholder="작성자, 페이지, 제목, 내용, 이메일로 검색">
+        <button class="btn-mini list-search-btn" data-list="feedback">검색</button>
+        <button class="btn-mini secondary list-search-reset" data-list="feedback">초기화</button>
+      </div>
       <div class="table-controls">
         <label class="page-size-control">표시 개수
           <select class="page-size-select" id="f-page-size" data-list="feedback">
@@ -672,12 +783,14 @@ const EVENT_LABEL = {
 };
 const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
 const listState = {
-  users: { page: 1, pageSize: 20, q: '', totalPages: 1 },
-  coaches: { page: 1, pageSize: 20, status: 'all', totalPages: 1 },
-  logs: { page: 1, pageSize: 50, eventType: '', totalPages: 1 },
-  feedback: { page: 1, pageSize: 50, feedbackType: '', totalPages: 1 },
+  users: { page: 1, pageSize: 20, q: '', searchBy: 'all', totalPages: 1 },
+  coaches: { page: 1, pageSize: 20, status: 'all', q: '', searchBy: 'all', totalPages: 1 },
+  logs: { page: 1, pageSize: 50, eventType: '', q: '', searchBy: 'all', totalPages: 1 },
+  feedback: { page: 1, pageSize: 50, feedbackType: '', q: '', searchBy: 'all', totalPages: 1 },
 };
 const prefixList = { u: 'users', c: 'coaches', l: 'logs', f: 'feedback' };
+const listPrefix = { users: 'u', coaches: 'c', logs: 'l', feedback: 'f' };
+const adminCharts = {};
 
 function fmtDate(s) {
   if (!s) return '-';
@@ -692,6 +805,45 @@ function buildQuery(params) {
     if (value !== undefined && value !== null && value !== '') qs.set(key, value);
   });
   return qs.toString();
+}
+
+function chartColor(variable, fallback) {
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || fallback;
+}
+function replaceChart(key, canvasId, config) {
+  if (typeof Chart === 'undefined') return;
+  if (adminCharts[key]) adminCharts[key].destroy();
+  const canvas = document.getElementById(canvasId);
+  if (canvas) adminCharts[key] = new Chart(canvas, config);
+}
+function renderDashboardCharts(data) {
+  const trend = data.traffic_trend || [];
+  const text = chartColor('--text', '#e8f5fb');
+  const muted = chartColor('--muted', '#8ca7b7');
+  const grid = 'rgba(148,163,184,.14)';
+  replaceChart('traffic', 'd-traffic-chart', {
+    type: 'line',
+    data: {
+      labels: trend.map(item => String(item.date || '').slice(5)),
+      datasets: [
+        { label:'페이지 조회', data:trend.map(item => item.page_views || 0), borderColor:'#00b4d8', backgroundColor:'rgba(0,180,216,.12)', fill:true, tension:.3, pointRadius:2 },
+        { label:'추정 방문자', data:trend.map(item => item.visitors || 0), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.08)', tension:.3, pointRadius:2 },
+        { label:'로그인 회원', data:trend.map(item => item.active_users || 0), borderColor:'#4ade80', backgroundColor:'rgba(74,222,128,.08)', tension:.3, pointRadius:2 },
+        { label:'신규 가입', data:trend.map(item => item.signups || 0), borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.08)', tension:.3, pointRadius:2 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      scales:{ x:{ticks:{color:muted,maxTicksLimit:10},grid:{color:grid}}, y:{beginAtZero:true,ticks:{color:muted,precision:0},grid:{color:grid}} },
+      plugins:{ legend:{position:'bottom',labels:{color:text,boxWidth:12,usePointStyle:true}}, tooltip:{mode:'index',intersect:false} },
+    },
+  });
+  const provider = data.by_provider || {};
+  replaceChart('provider', 'd-provider-chart', {
+    type:'doughnut',
+    data:{ labels:['일반','카카오','구글'], datasets:[{ data:[provider.local || 0, provider.kakao || 0, provider.google || 0], backgroundColor:['#00b4d8','#ffd400','#a78bfa'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{position:'bottom',labels:{color:text,boxWidth:12,usePointStyle:true}} } },
+  });
 }
 function updatePager(prefix, total, page, pageSize) {
   const list = prefixList[prefix];
@@ -766,14 +918,20 @@ document.querySelectorAll('.admin-tab').forEach(btn => {
 });
 
 // 1) 대시보드
-async function loadDashboard() {
+async function loadDashboard(days = Number(document.getElementById('d-chart-days').value || 30)) {
   try {
-    const data = await authedFetch('/api/admin/dashboard');
+    const data = await authedFetch('/api/admin/dashboard?days=' + days);
     document.getElementById('d-total').textContent = data.total_users.toLocaleString();
     document.getElementById('d-today').textContent = data.today_signups.toLocaleString();
     document.getElementById('d-week').textContent = data.week_signups.toLocaleString();
     document.getElementById('d-provider').innerHTML =
       `카카오 ${data.by_provider.kakao} · 구글 ${data.by_provider.google} · 일반 ${data.by_provider.local}`;
+    const traffic = data.traffic_summary || {};
+    document.getElementById('d-page-views').textContent = fmtNumber(traffic.page_views);
+    document.getElementById('d-visitors').textContent = fmtNumber(traffic.visitors);
+    document.getElementById('d-active-users').textContent = fmtNumber(traffic.active_users);
+    document.getElementById('d-period-signups').textContent = fmtNumber(traffic.signups);
+    renderDashboardCharts(data);
 
     const body = document.getElementById('d-recent-body');
     if (!data.recent_signups.length) {
@@ -782,9 +940,9 @@ async function loadDashboard() {
     }
     body.innerHTML = data.recent_signups.map(u => `
       <tr>
-        <td>${u.name}</td>
-        <td>${u.username}</td>
-        <td><span class="pill ${u.provider}">${PROVIDER_LABEL[u.provider] || u.provider}</span></td>
+        <td>${escapeHtml(u.name || '-')}</td>
+        <td>${escapeHtml(u.username || '-')}</td>
+        <td><span class="pill ${escapeHtml(u.provider)}">${escapeHtml(PROVIDER_LABEL[u.provider] || u.provider)}</span></td>
         <td>${fmtDate(u.created_at)}</td>
       </tr>
     `).join('');
@@ -799,6 +957,7 @@ async function loadUsers(q = listState.users.q) {
   try {
     const query = buildQuery({
       q: listState.users.q,
+      search_by: listState.users.searchBy,
       page: listState.users.page,
       page_size: listState.users.pageSize,
     });
@@ -812,10 +971,10 @@ async function loadUsers(q = listState.users.q) {
     body.innerHTML = data.users.map(u => `
       <tr>
         <td>${u.id}</td>
-        <td>${u.name}</td>
-        <td>${u.email}</td>
-        <td>${u.username}</td>
-        <td>${u.nickname || '-'}</td>
+        <td>${escapeHtml(u.name || '-')}</td>
+        <td>${escapeHtml(u.email || '-')}</td>
+        <td>${escapeHtml(u.username || '-')}</td>
+        <td>${escapeHtml(u.nickname || '-')}</td>
         <td><span class="pill ${u.provider}">${PROVIDER_LABEL[u.provider] || u.provider}</span></td>
         <td>${fmtDate(u.created_at)}</td>
         <td>${fmtDate(u.last_login_at)}</td>
@@ -824,16 +983,6 @@ async function loadUsers(q = listState.users.q) {
     `).join('');
   } catch (e) { console.error(e); }
 }
-document.getElementById('u-search-btn').addEventListener('click', () => {
-  listState.users.page = 1;
-  loadUsers(document.getElementById('u-search').value);
-});
-document.getElementById('u-search').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    listState.users.page = 1;
-    loadUsers(e.target.value);
-  }
-});
 
 // 3) 코치 운영 및 선택 자격 인증
 const COACH_STATUS_LABEL = { unverified:'등록 완료', pending:'인증 검토 대기', verified:'본인 확인', rejected:'인증 반려' };
@@ -841,7 +990,7 @@ async function loadCoaches() {
   const body = document.getElementById('c-body');
   body.innerHTML = '<tr><td colspan="6" class="loading-state">불러오는 중...</td></tr>';
   try {
-    const query = buildQuery({ status:listState.coaches.status, page:listState.coaches.page, page_size:listState.coaches.pageSize });
+    const query = buildQuery({ status:listState.coaches.status, q:listState.coaches.q, search_by:listState.coaches.searchBy, page:listState.coaches.page, page_size:listState.coaches.pageSize });
     const data = await authedFetch('/api/admin/coaches?' + query);
     const summary = data.summary || {};
     document.getElementById('c-registered').textContent = fmtNumber(summary.registered);
@@ -980,6 +1129,8 @@ async function loadLogs(eventType = listState.logs.eventType) {
   try {
     const query = buildQuery({
       event_type: listState.logs.eventType,
+      q: listState.logs.q,
+      search_by: listState.logs.searchBy,
       page: listState.logs.page,
       page_size: listState.logs.pageSize,
     });
@@ -994,9 +1145,9 @@ async function loadLogs(eventType = listState.logs.eventType) {
       <tr>
         <td>${fmtDate(l.created_at)}</td>
         <td><span class="pill ${l.event_type === 'login_fail' ? 'fail' : 'success'}">${EVENT_LABEL[l.event_type] || l.event_type}</span></td>
-        <td>${l.username || '-'}</td>
-        <td>${l.path || l.page || '-'}</td>
-        <td>${l.ip_address || '-'}</td>
+        <td>${escapeHtml(l.username || '-')}</td>
+        <td>${escapeHtml(l.path || l.page || '-')}</td>
+        <td>${escapeHtml(l.ip_address || '-')}</td>
       </tr>
     `).join('');
   } catch (e) { console.error(e); }
@@ -1013,7 +1164,12 @@ document.querySelectorAll('#log-filter .log-filter-btn').forEach(btn => {
 // 5) 피드백
 function escapeHtml(s) {
   if (!s) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 function renderFeedbackAuthor(f) {
   const main = f.author_nickname || f.author_name || f.author_display || '비로그인';
@@ -1030,6 +1186,8 @@ async function loadFeedback(feedbackType = listState.feedback.feedbackType) {
   try {
     const query = buildQuery({
       feedback_type: listState.feedback.feedbackType,
+      q: listState.feedback.q,
+      search_by: listState.feedback.searchBy,
       page: listState.feedback.page,
       page_size: listState.feedback.pageSize,
     });
@@ -1060,6 +1218,37 @@ document.querySelectorAll('#feedback-filter .log-filter-btn').forEach(btn => {
     listState.feedback.page = 1;
     loadFeedback(btn.dataset.type);
   });
+});
+
+function applyListSearch(list, reset = false) {
+  const state = listState[list];
+  const prefix = listPrefix[list];
+  if (!state || !prefix) return;
+  const input = document.getElementById(`${prefix}-search`);
+  const select = document.getElementById(`${prefix}-search-by`);
+  if (reset) {
+    if (input) input.value = '';
+    if (select) select.value = 'all';
+  }
+  state.q = input ? input.value.trim() : '';
+  state.searchBy = select ? select.value : 'all';
+  state.page = 1;
+  reloadList(list);
+}
+document.querySelectorAll('.list-search-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyListSearch(btn.dataset.list));
+});
+document.querySelectorAll('.list-search-reset').forEach(btn => {
+  btn.addEventListener('click', () => applyListSearch(btn.dataset.list, true));
+});
+Object.entries(listPrefix).forEach(([list, prefix]) => {
+  document.getElementById(`${prefix}-search`)?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') applyListSearch(list);
+  });
+});
+
+document.getElementById('d-chart-days').addEventListener('change', event => {
+  loadDashboard(Number(event.target.value || 30));
 });
 
 document.querySelectorAll('.page-size-select').forEach(select => {

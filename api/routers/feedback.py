@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Cookie
 from pydantic import BaseModel
 
-from routers.admin import _require_admin
+from routers.admin import _build_search_filter, _require_admin, _where_clause
 from routers.auth import decode_token
 from db import DATABASE_URL, get_db as _get_db
 
@@ -104,6 +104,8 @@ def submit_feedback(body: FeedbackRequest, swimtech_token: str = Cookie(default=
 def list_feedback(
     swimtech_token: str = Cookie(default=None),
     feedback_type: str = None,
+    q: str = None,
+    search_by: str = "all",
     page: int = 1,
     page_size: int = 50,
 ):
@@ -134,15 +136,38 @@ def list_feedback(
         FROM feedback f
         {author_join}
     """
+    conditions = []
+    params = []
     if feedback_type:
-        cur.execute(select_sql + """
-            WHERE f.feedback_type = %s
+        conditions.append("f.feedback_type = %s")
+        params.append(feedback_type)
+    field_map = {
+        "all": (
+            "COALESCE(f.page, '')", "COALESCE(f.title, '')", "COALESCE(f.content, '')",
+            "COALESCE(f.email, '')", "COALESCE(f.username, '')", "COALESCE(c.username, '')",
+            "COALESCE(c.nickname, '')", "COALESCE(c.name, '')", "COALESCE(c.email, '')",
+        ),
+        "author": (
+            "COALESCE(f.username, '')", "COALESCE(c.username, '')", "COALESCE(c.nickname, '')",
+            "COALESCE(c.name, '')",
+        ),
+        "page": ("COALESCE(f.page, '')",),
+        "title": ("COALESCE(f.title, '')",),
+        "content": ("COALESCE(f.content, '')",),
+        "email": ("COALESCE(f.email, '')", "COALESCE(c.email, '')"),
+    }
+    search_clause, search_params, search_by, q = _build_search_filter(q, search_by, field_map)
+    if search_clause:
+        conditions.append(search_clause)
+        params.extend(search_params)
+    where = _where_clause(conditions)
+    cur.execute(
+        select_sql + f"""
+            {where}
             ORDER BY f.created_at DESC LIMIT %s OFFSET %s
-        """, (feedback_type, page_size, offset))
-    else:
-        cur.execute(select_sql + """
-            ORDER BY f.created_at DESC LIMIT %s OFFSET %s
-        """, (page_size, offset))
+        """,
+        (*params, page_size, offset),
+    )
 
     items = [{
         "id": r[0], "feedback_type": r[1], "page": r[2], "title": r[3],
@@ -152,10 +177,15 @@ def list_feedback(
         "author_display": r[12],
     } for r in cur.fetchall()]
 
-    cur.execute("SELECT COUNT(*) FROM feedback" + (" WHERE feedback_type = %s" if feedback_type else ""),
-                (feedback_type,) if feedback_type else ())
+    cur.execute(
+        f"SELECT COUNT(DISTINCT f.id) FROM feedback f {author_join} {where}",
+        tuple(params),
+    )
     total = cur.fetchone()[0]
 
     cur.close()
     conn.close()
-    return {"items": items, "total": total, "page": page, "page_size": page_size}
+    return {
+        "items": items, "total": total, "page": page, "page_size": page_size,
+        "feedback_type": feedback_type or "", "q": q, "search_by": search_by,
+    }

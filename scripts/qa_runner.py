@@ -1046,7 +1046,7 @@ def main():
         f"{badges_res.status_code}, total={badges_json.get('total_count')}, next={len(badges_json.get('next_badges', []))}")
 
     if admin_sess:
-        admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard", timeout=60)
+        admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard?days=30", timeout=60)
         admin_users = admin_sess.get(f"{BASE}/api/admin/users?page_size=100", timeout=60)
         admin_users_page2 = admin_sess.get(f"{BASE}/api/admin/users?page=2&page_size=20", timeout=60)
         admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)
@@ -1058,6 +1058,28 @@ def main():
         admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page=2&page_size=20", timeout=60)
         admin_feedback = admin_sess.get(f"{BASE}/api/feedback?page_size=20", timeout=60)
         admin_feedback_page2 = admin_sess.get(f"{BASE}/api/feedback?page=2&page_size=20", timeout=60)
+        search_marker = "qa-admin-search-no-match-7f3a"
+        admin_users_search = admin_sess.get(
+            f"{BASE}/api/admin/users",
+            params={"search_by": "username", "q": search_marker, "page": 1, "page_size": 20},
+            timeout=60,
+        )
+        admin_coaches_search = admin_sess.get(
+            f"{BASE}/api/admin/coaches",
+            params={"status": "all", "search_by": "specialty", "q": search_marker, "page": 1, "page_size": 20},
+            timeout=60,
+        )
+        admin_logs_search = admin_sess.get(
+            f"{BASE}/api/admin/logs",
+            params={"search_by": "path", "q": search_marker, "page": 1, "page_size": 20},
+            timeout=60,
+        )
+        admin_feedback_search = admin_sess.get(
+            f"{BASE}/api/feedback",
+            params={"search_by": "title", "q": search_marker, "page": 1, "page_size": 20},
+            timeout=60,
+        )
+        dashboard_json = jget(admin_dashboard)
         users_json = jget(admin_users)
         users_page2_json = jget(admin_users_page2)
         coaches_json = jget(admin_coaches)
@@ -1073,6 +1095,33 @@ def main():
             admin_feedback.status_code == 200
             and isinstance(feedback_items, list)
             and (not feedback_items or "author_display" in feedback_items[0])
+        )
+        traffic_trend = dashboard_json.get("traffic_trend") or []
+        traffic_summary = dashboard_json.get("traffic_summary") or {}
+        admin_chart_ok = (
+            dashboard_json.get("chart_days") == 30
+            and len(traffic_trend) == 30
+            and all(
+                key in traffic_summary
+                for key in ("page_views", "visitors", "active_users", "signups")
+            )
+            and all(
+                key in traffic_trend[0]
+                for key in ("date", "page_views", "visitors", "active_users", "signups")
+            )
+        )
+        search_responses = [
+            (admin_users_search, "username"),
+            (admin_coaches_search, "specialty"),
+            (admin_logs_search, "path"),
+            (admin_feedback_search, "title"),
+        ]
+        admin_search_ok = all(
+            response.status_code == 200
+            and jget(response).get("search_by") == category
+            and jget(response).get("q") == search_marker
+            and jget(response).get("total") == 0
+            for response, category in search_responses
         )
         admin_paging_ok = (
             admin_users.status_code == 200
@@ -1104,6 +1153,8 @@ def main():
             and admin_page_view_logs.status_code == 200
             and admin_paging_ok
             and feedback_author_ok
+            and admin_chart_ok
+            and admin_search_ok
             and "logs_30d" in health_summary
             and "plan_completions_30d" in health_summary
             and "readiness_checkins_7d" in health_summary
@@ -1125,6 +1176,7 @@ def main():
             f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "
             f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}/page2={feedback_page2_json.get('page')}, "
+            f"category_search={admin_search_ok}, traffic_chart={admin_chart_ok}/{len(traffic_trend)}일, "
             f"logs_30d={health_summary.get('logs_30d')}, plan_completions={health_summary.get('plan_completions_30d')}, "
             f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점, "
             f"clubs={health_summary.get('active_clubs')}/classes={health_summary.get('active_classes')}/"

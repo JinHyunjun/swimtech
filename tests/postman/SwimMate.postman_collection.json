@@ -616,7 +616,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('관리자 대시보드 200', () => pm.response.to.have.status(200));",
-                  "pm.test('JSON 객체 응답', () => pm.expect(pm.response.json()).to.be.an('object'));"
+                  "pm.test('JSON 객체 응답', () => pm.expect(pm.response.json()).to.be.an('object'));",
+                  "pm.test('30일 방문·가입 그래프 데이터', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.chart_days).to.eql(30);",
+                  "  pm.expect(body.traffic_trend).to.be.an('array').with.lengthOf(30);",
+                  "  pm.expect(body.traffic_summary).to.include.all.keys('page_views', 'visitors', 'active_users', 'signups');",
+                  "});"
                 ]
               }
             }
@@ -632,8 +638,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/users?page=1&page_size=20",
-            "description": "슈퍼 관리자 화면의 20개 단위 페이지네이션 API를 확인합니다."
+            "url": "{{base_url}}/api/admin/users?search_by=username&q={{qa_username}}&page=1&page_size=20",
+            "description": "슈퍼 관리자 화면의 아이디 카테고리 검색과 20개 단위 페이지네이션 API를 확인합니다."
           },
           "event": [
             {
@@ -642,7 +648,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('사용자 페이지네이션 200', () => pm.response.to.have.status(200));",
-                  "pm.test('페이지 응답은 객체', () => pm.expect(pm.response.json()).to.be.an('object'));"
+                  "pm.test('페이지 응답은 객체', () => pm.expect(pm.response.json()).to.be.an('object'));",
+                  "pm.test('아이디 카테고리 검색 반영', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.search_by).to.eql('username');",
+                  "  pm.expect(body.q).to.eql(pm.variables.get('qa_username'));",
+                  "  pm.expect(body.users.some(user => user.username === pm.variables.get('qa_username'))).to.eql(true);",
+                  "});"
                 ]
               }
             }

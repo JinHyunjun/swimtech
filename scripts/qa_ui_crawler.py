@@ -131,9 +131,9 @@ CLICKABLE_SELECTOR = (
     "a[href^='/']"
 )
 
-# /admin은 실제 운영 데이터를 다루는 관리자 패널이라 탭·필터 전환만 검사하고
-# (현재 백엔드에 삭제/차단류 엔드포인트가 없긴 하지만) 향후 추가될 액션 버튼은 건드리지 않는다.
-ADMIN_CLICKABLE_SELECTOR = ".admin-tab, .log-filter-btn, [data-tab], [data-type], #u-search-btn"
+# /admin은 실제 운영 데이터를 다루므로 탭·유형 필터만 일반 크롤 대상으로 삼는다.
+# 카테고리 검색과 그래프는 아래 전용 읽기 검사에서 응답 계약까지 확인한다.
+ADMIN_CLICKABLE_SELECTOR = ".admin-tab, .log-filter-btn, [data-tab], [data-type]"
 
 RESULTS = []  # 페이지별 결과 dict 리스트
 
@@ -205,13 +205,94 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last"],
+        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.
         "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "피드백"],
     },
 }
+
+
+def check_admin_search_and_charts(page):
+    """관리자 그래프 렌더링과 네 목록의 읽기 전용 카테고리 검색을 실제 응답으로 확인한다."""
+    actions, errors = [], []
+    try:
+        page.wait_for_function(
+            "typeof Chart !== 'undefined' && Chart.getChart('d-traffic-chart') && Chart.getChart('d-provider-chart')",
+            timeout=12000,
+        )
+        dataset_count = page.evaluate(
+            "Chart.getChart('d-traffic-chart').data.datasets.length"
+        )
+        label_count = page.evaluate(
+            "Chart.getChart('d-traffic-chart').data.labels.length"
+        )
+        if dataset_count < 4 or label_count < 7:
+            errors.append({
+                "type": "admin_chart_contract",
+                "datasets": dataset_count,
+                "labels": label_count,
+            })
+        else:
+            actions.append({
+                "action": f"관리자 방문·가입 그래프 {dataset_count}개 지표/{label_count}일",
+                "status": "ok",
+            })
+    except Exception as error:
+        errors.append({"type": "admin_chart_render_failed", "error": str(error)[:200]})
+
+    marker = "qa-admin-ui-no-match-7f3a"
+    search_specs = [
+        ("users", "u", "username", "/api/admin/users"),
+        ("coaches", "c", "specialty", "/api/admin/coaches"),
+        ("logs", "l", "path", "/api/admin/logs"),
+        ("feedback", "f", "title", "/api/feedback"),
+    ]
+    for list_name, prefix, category, api_path in search_specs:
+        try:
+            page.click(f".admin-tab[data-tab='{list_name}']")
+            page.wait_for_timeout(150)
+            page.select_option(f"#{prefix}-search-by", category)
+            page.fill(f"#{prefix}-search", marker)
+            with page.expect_response(
+                lambda response, expected=api_path: expected in response.url and "q=" in response.url,
+                timeout=12000,
+            ) as response_info:
+                page.click(f".list-search-btn[data-list='{list_name}']")
+            response = response_info.value
+            payload = response.json()
+            if (
+                response.status != 200
+                or payload.get("search_by") != category
+                or payload.get("q") != marker
+                or payload.get("total") != 0
+            ):
+                errors.append({
+                    "type": "admin_category_search_contract",
+                    "list": list_name,
+                    "status": response.status,
+                    "search_by": payload.get("search_by"),
+                    "total": payload.get("total"),
+                })
+            else:
+                actions.append({"action": f"관리자 {list_name} {category} 검색", "status": "ok"})
+            with page.expect_response(
+                lambda reset_response, expected=api_path: expected in reset_response.url,
+                timeout=12000,
+            ):
+                page.click(f".list-search-reset[data-list='{list_name}']")
+        except Exception as error:
+            errors.append({
+                "type": "admin_category_search_failed",
+                "list": list_name,
+                "error": str(error)[:200],
+            })
+    try:
+        page.click(".admin-tab[data-tab='dashboard']")
+    except Exception:
+        pass
+    return actions, errors
 
 
 def slug(text, n=40):
@@ -563,6 +644,10 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
 
     expectation_errors = check_page_expectations(page, path)
     expectation_errors.extend(check_home_link_targets(page))
+    if path.split("?", 1)[0] == "/admin":
+        admin_actions, admin_errors = check_admin_search_and_charts(page)
+        entry["actions"].extend(admin_actions)
+        expectation_errors.extend(admin_errors)
     if expectation_errors:
         entry["page_errors"].append({
             "phase": "expectations",

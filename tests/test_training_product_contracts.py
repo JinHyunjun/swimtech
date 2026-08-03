@@ -841,6 +841,60 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "페이지 조회" not in admin_expectation
 
 
+def test_admin_category_search_and_traffic_charts_are_fully_mapped():
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    feedback_api = (ROOT / "api" / "routers" / "feedback.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    postman = (ROOT / "tests" / "postman" / "SwimMate.postman_collection.json").read_text(encoding="utf-8")
+
+    assert "def _build_search_filter" in admin_api
+    assert 'category = search_by if search_by in field_map else "all"' in admin_api
+    assert 'search_by: str = "all"' in admin_api
+    assert 'search_by: str = "all"' in feedback_api
+    assert '"traffic_summary"' in admin_api
+    assert '"traffic_trend"' in admin_api
+    assert "generate_series" in admin_api
+    assert "customer:" in admin_api and "ip:" in admin_api
+
+    for selector in [
+        "d-chart-days", "d-page-views", "d-visitors", "d-active-users",
+        "d-traffic-chart", "d-provider-chart", "u-search-by", "u-search",
+        "c-search-by", "c-search", "l-search-by", "l-search",
+        "f-search-by", "f-search",
+    ]:
+        assert f'id="{selector}"' in admin_page
+    assert "renderDashboardCharts" in admin_page
+    assert "new Chart" in admin_page
+    assert "list-search-btn" in admin_page and "list-search-reset" in admin_page
+    assert "search_by: listState.users.searchBy" in admin_page
+    assert "search_by:listState.coaches.searchBy" in admin_page
+    assert "search_by: listState.logs.searchBy" in admin_page
+    assert "search_by: listState.feedback.searchBy" in admin_page
+
+    assert "admin_search_ok" in qa_api and "admin_chart_ok" in qa_api
+    assert "check_admin_search_and_charts" in qa_ui
+    assert "admin_category_search_contract" in qa_ui
+    assert "admin_chart_render_failed" in qa_ui
+    assert "search_by=username" in postman
+    assert "30일 방문·가입 그래프 데이터" in postman
+
+    import sys
+    sys.path.insert(0, str(ROOT / "api"))
+    from routers.admin import _build_search_filter
+
+    field_map = {"all": ("username", "email"), "username": ("username",)}
+    clause, params, category, term = _build_search_filter(
+        "qa-user", "username; DROP TABLE customers", field_map
+    )
+    assert category == "all"
+    assert "DROP TABLE" not in clause
+    assert clause == "(username ILIKE %s OR email ILIKE %s)"
+    assert params == ["%qa-user%", "%qa-user%"]
+    assert term == "qa-user"
+
+
 def test_badge_progression_content_is_kept():
     badge_api = (ROOT / "api" / "routers" / "badge.py").read_text(encoding="utf-8")
     badge_page = (ROOT / "frontend" / "badge.html").read_text(encoding="utf-8")
@@ -914,7 +968,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 106개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 107개" in quality_doc
     assert "50개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "28개 화면 검증" in quality_doc

@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-02
+> 기준일: 2026-08-03
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 106개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 50개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 19개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 107개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 104개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 50개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 19개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -46,7 +46,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 코치용 반 수행·출석 분석 | 현재 학생·지난 일정 집계, 출석률/기록 완료율 분리, 학생별 신호, 코치 코드 비연동 개인훈련 비공개, 학생 조회 403, 테스트 데이터 정리 | `qa_runner.py` 18i, `club_operations.py`·`clubs.html` 계약 테스트 |
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
-| 슈퍼 관리자 | 관리자 로그인·권한, 페이지네이션, 20/50/100 page size, 운영 지표, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `PAGE_EXPECTATIONS["/admin"]` |
+| 슈퍼 관리자 | 관리자 로그인·권한, 네 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 7/30/90일 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
 | DB 스키마 변경 | Alembic 순차 리비전, 단일 head, Render/FastAPI 시작 전 upgrade, health 리비전 일치 | `api/alembic/`, `alembic heads`, `qa_runner.py` health |
 | AI·외부 연동 | Gemini rate limit, 모델 폴백 순서, 구조화 출력 검증, 답변 생성 실패 안내, OAuth·Kakao·Notion 키 없음 상태 | 관련 라우터 계약 테스트, 운영 smoke |
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
@@ -96,6 +96,8 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 2026-07-27에는 배포 전 소스에서 핵심 102/102를 통과했다. 새 운영 정의는 AI 지식·개인화 시나리오 `6c`를 포함한 API 50개와 기존 역할별 브라우저 28개이며, 배포 후 실제 Gemini 답변의 출처·개인화 표시와 함께 다음 운영 실행에서 판정한다.
 
 2026-08-02에는 Postman Collection·환경 템플릿·비밀값 계약 테스트 4개를 추가해 현재 소스 핵심 정의가 106개가 되었다. 공개 health·비로그인 경계, 일반 사용자 일지→통계·리포트·내 데이터→삭제, 관리자 읽기 경계를 합친 19개 요청은 정기·수동 품질 게이트의 마지막 단계로 연결했으며 전체 인증 실행은 다음 운영 Actions에서 판정한다.
+
+2026-08-03에는 슈퍼 관리자 사용자·코치·운영 로그·피드백의 필드별 검색과 7/30/90일 방문·가입 그래프를 추가했다. 소스 핵심 정의는 107개이며, 운영 API QA는 네 검색의 서버 응답과 30일 연속 시계열을, UI QA는 실제 검색 요청·초기화와 Chart.js 4개 추이 데이터셋 렌더링을 읽기 전용으로 검사한다. Postman 19개 요청의 관리자 단계에도 그래프 데이터와 사용자 아이디 검색 assertion을 추가했으며 전체 운영 검증은 배포 후 판정한다.
 
 ## 산출물
 

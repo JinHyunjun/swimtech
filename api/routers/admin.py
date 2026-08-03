@@ -71,6 +71,30 @@ def _normalize_page_size(value, default=20):
     return size if size in (20, 50, 100) else default
 
 
+def _clean_search(value):
+    """관리자 검색어를 공백 제거 후 과도한 쿼리를 막는 길이로 제한한다."""
+    return str(value or "").strip()[:100]
+
+
+def _build_search_filter(q, search_by, field_map):
+    """화이트리스트 컬럼만 사용하는 ILIKE 검색 조건을 만든다.
+
+    컬럼 표현식은 서버 코드에 선언된 field_map에서만 가져오므로 search_by 값이
+    SQL 식별자로 직접 들어가지 않는다.
+    """
+    term = _clean_search(q)
+    category = search_by if search_by in field_map else "all"
+    if not term:
+        return "", [], category, term
+    expressions = field_map[category]
+    clause = "(" + " OR ".join(f"{expr} ILIKE %s" for expr in expressions) + ")"
+    return clause, [f"%{term}%"] * len(expressions), category, term
+
+
+def _where_clause(conditions):
+    return "WHERE " + " AND ".join(conditions) if conditions else ""
+
+
 def _ensure_coach_verification(cur):
     cur.execute("SELECT to_regclass('public.coaches')")
     if not cur.fetchone()[0]:
@@ -161,9 +185,10 @@ def track_page_view(request: Request, swimtech_token: str = Cookie(default=None)
 
 
 @router.get("/dashboard")
-def get_dashboard(swimtech_token: str = Cookie(default=None)):
+def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
     _require_admin(swimtech_token)
     _ensure_table()
+    days = min(90, max(7, _safe_int(days, 30)))
     conn = _get_db()
     cur = conn.cursor()
 
@@ -203,6 +228,79 @@ def get_dashboard(swimtech_token: str = Cookie(default=None)):
         for r in cur.fetchall()
     ]
 
+    cur.execute("""
+        WITH dates AS (
+            SELECT generate_series(
+                CURRENT_DATE - ((%s - 1) * INTERVAL '1 day'),
+                CURRENT_DATE,
+                INTERVAL '1 day'
+            )::date AS day
+        ), daily_activity AS (
+            SELECT created_at::date AS day,
+                   COUNT(*) FILTER (WHERE event_type = 'page_view') AS page_views,
+                   COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN
+                       CASE
+                           WHEN customer_id IS NOT NULL THEN 'customer:' || customer_id::text
+                           WHEN NULLIF(username, '') IS NOT NULL THEN 'username:' || username
+                           WHEN NULLIF(ip_address, '') IS NOT NULL THEN 'ip:' || ip_address
+                           ELSE 'anonymous:' || id::text
+                       END
+                   END) AS visitors,
+                   COUNT(DISTINCT customer_id) FILTER (
+                       WHERE event_type = 'page_view' AND customer_id IS NOT NULL
+                   ) AS active_users
+            FROM user_activity_logs
+            WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+            GROUP BY created_at::date
+        ), daily_signups AS (
+            SELECT created_at::date AS day, COUNT(*) AS signups
+            FROM customers
+            WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+              AND COALESCE(status, 'active') <> 'deleted'
+            GROUP BY created_at::date
+        )
+        SELECT dates.day,
+               COALESCE(daily_activity.page_views, 0),
+               COALESCE(daily_activity.visitors, 0),
+               COALESCE(daily_activity.active_users, 0),
+               COALESCE(daily_signups.signups, 0)
+        FROM dates
+        LEFT JOIN daily_activity ON daily_activity.day = dates.day
+        LEFT JOIN daily_signups ON daily_signups.day = dates.day
+        ORDER BY dates.day
+    """, (days, days, days))
+    traffic_trend = [{
+        "date": str(r[0]),
+        "page_views": _safe_int(r[1]),
+        "visitors": _safe_int(r[2]),
+        "active_users": _safe_int(r[3]),
+        "signups": _safe_int(r[4]),
+    } for r in cur.fetchall()]
+
+    cur.execute("""
+        SELECT COUNT(*) FILTER (WHERE event_type = 'page_view'),
+               COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN
+                   CASE
+                       WHEN customer_id IS NOT NULL THEN 'customer:' || customer_id::text
+                       WHEN NULLIF(username, '') IS NOT NULL THEN 'username:' || username
+                       WHEN NULLIF(ip_address, '') IS NOT NULL THEN 'ip:' || ip_address
+                       ELSE 'anonymous:' || id::text
+                   END
+               END),
+               COUNT(DISTINCT customer_id) FILTER (
+                   WHERE event_type = 'page_view' AND customer_id IS NOT NULL
+               )
+        FROM user_activity_logs
+        WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+    """, (days,))
+    traffic_row = cur.fetchone()
+    traffic_summary = {
+        "page_views": _safe_int(traffic_row[0]),
+        "visitors": _safe_int(traffic_row[1]),
+        "active_users": _safe_int(traffic_row[2]),
+        "signups": sum(item["signups"] for item in traffic_trend),
+    }
+
     cur.close()
     conn.close()
     return {
@@ -215,11 +313,20 @@ def get_dashboard(swimtech_token: str = Cookie(default=None)):
             "local": by_provider.get("local", 0),
         },
         "recent_signups": recent,
+        "chart_days": days,
+        "traffic_summary": traffic_summary,
+        "traffic_trend": traffic_trend,
     }
 
 
 @router.get("/users")
-def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: int = 1, page_size: int = 20):
+def list_users(
+    swimtech_token: str = Cookie(default=None),
+    q: str = None,
+    search_by: str = "all",
+    page: int = 1,
+    page_size: int = 20,
+):
     _require_admin(swimtech_token)
     conn = _get_db()
     cur = conn.cursor()
@@ -227,30 +334,38 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
     page_size = _normalize_page_size(page_size, 20)
     offset = max(0, (page - 1) * page_size)
 
-    if q:
-        like = f"%{q}%"
-        cur.execute("""
-            SELECT id, name, email, username, nickname,
-                   COALESCE(social_provider,'local'),
-                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
-                   last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
-                   COALESCE(status,'active')
-            FROM customers
-            WHERE (name ILIKE %s OR email ILIKE %s OR username ILIKE %s OR nickname ILIKE %s)
-            ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
-        """, (like, like, like, like, page_size, offset))
-    else:
-        cur.execute("""
-            SELECT id, name, email, username, nickname,
-                   COALESCE(social_provider,'local'),
-                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
-                   last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
-                   COALESCE(status,'active')
-            FROM customers
-            ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
-        """, (page_size, offset))
+    field_map = {
+        "all": (
+            "id::text", "COALESCE(name, '')", "COALESCE(email, '')", "COALESCE(username, '')",
+            "COALESCE(nickname, '')", "COALESCE(social_provider, 'local')", "COALESCE(status, 'active')",
+        ),
+        "id": ("id::text",),
+        "name": ("COALESCE(name, '')",),
+        "email": ("COALESCE(email, '')",),
+        "username": ("COALESCE(username, '')",),
+        "nickname": ("COALESCE(nickname, '')",),
+        "provider": ("COALESCE(social_provider, 'local')",),
+        "status": ("COALESCE(status, 'active')",),
+    }
+    raw_q = _clean_search(q)
+    localized_values = {
+        "provider": {"일반": "local", "카카오": "kakao", "구글": "google"},
+        "status": {"활성": "active", "탈퇴": "deleted"},
+    }
+    search_q = localized_values.get(search_by, {}).get(raw_q, raw_q)
+    search_clause, search_params, search_by, _ = _build_search_filter(search_q, search_by, field_map)
+    where = _where_clause([search_clause] if search_clause else [])
+    cur.execute(f"""
+        SELECT id, name, email, username, nickname,
+               COALESCE(social_provider,'local'),
+               created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
+               last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
+               COALESCE(status,'active')
+        FROM customers
+        {where}
+        ORDER BY created_at DESC
+        LIMIT %s OFFSET %s
+    """, (*search_params, page_size, offset))
 
     users = [{
         "id": r[0], "name": r[1], "email": r[2], "username": r[3], "nickname": r[4],
@@ -258,17 +373,14 @@ def list_users(swimtech_token: str = Cookie(default=None), q: str = None, page: 
         "last_login_at": str(r[7]) if r[7] else None, "status": r[8],
     } for r in cur.fetchall()]
 
-    if q:
-        cur.execute("""
-            SELECT COUNT(*) FROM customers
-            WHERE (name ILIKE %s OR email ILIKE %s OR username ILIKE %s OR nickname ILIKE %s)
-        """, (like, like, like, like))
-    else:
-        cur.execute("SELECT COUNT(*) FROM customers")
+    cur.execute(f"SELECT COUNT(*) FROM customers {where}", tuple(search_params))
     total = cur.fetchone()[0]
     cur.close()
     conn.close()
-    return {"users": users, "total": total, "page": page, "page_size": page_size}
+    return {
+        "users": users, "total": total, "page": page, "page_size": page_size,
+        "q": raw_q, "search_by": search_by,
+    }
 
 
 @router.get("/activity")
@@ -320,6 +432,8 @@ def get_activity(swimtech_token: str = Cookie(default=None)):
 def list_coach_verifications(
     swimtech_token: str = Cookie(default=None),
     status: str = "all",
+    q: str = None,
+    search_by: str = "all",
     page: int = 1,
     page_size: int = 20,
 ):
@@ -329,12 +443,15 @@ def list_coach_verifications(
     page_size = _normalize_page_size(page_size, 20)
     offset = (page - 1) * page_size
     status = status if status in ("unverified", "pending", "verified", "rejected", "all") else "all"
+    q = _clean_search(q)
+    search_by = search_by if search_by in ("all", "name", "username", "email", "specialty", "credential") else "all"
     conn = _get_db()
     cur = conn.cursor()
     try:
         if not _ensure_coach_verification(cur):
             conn.commit()
             return {"coaches": [], "total": 0, "page": page, "page_size": page_size, "status": status,
+                    "q": q, "search_by": search_by,
                     "summary": {"registered": 0, "unverified": 0, "pending": 0, "verified": 0, "rejected": 0, "documents_30d": 0, "published_30d": 0}}
         cur.execute("""
             SELECT COUNT(*),
@@ -360,8 +477,32 @@ def list_coach_verifications(
             docs = cur.fetchone()
             summary["documents_30d"] = _safe_int(docs[0])
             summary["published_30d"] = _safe_int(docs[1])
-        where = "" if status == "all" else "WHERE COALESCE(co.verification_status, 'unverified') = %s"
-        params = [] if status == "all" else [status]
+        conditions = []
+        params = []
+        if status != "all":
+            conditions.append("COALESCE(co.verification_status, 'unverified') = %s")
+            params.append(status)
+        field_map = {
+            "all": (
+                "COALESCE(c.name, '')", "COALESCE(c.username, '')", "COALESCE(c.email, '')",
+                "COALESCE(co.specialty, '')", "COALESCE(co.career, '')",
+                "COALESCE(co.credential_type, '')", "COALESCE(co.credential_number, '')",
+                "COALESCE(co.credential_organization, '')",
+            ),
+            "name": ("COALESCE(c.name, '')",),
+            "username": ("COALESCE(c.username, '')",),
+            "email": ("COALESCE(c.email, '')",),
+            "specialty": ("COALESCE(co.specialty, '')", "COALESCE(co.career, '')"),
+            "credential": (
+                "COALESCE(co.credential_type, '')", "COALESCE(co.credential_number, '')",
+                "COALESCE(co.credential_organization, '')",
+            ),
+        }
+        search_clause, search_params, search_by, q = _build_search_filter(q, search_by, field_map)
+        if search_clause:
+            conditions.append(search_clause)
+            params.extend(search_params)
+        where = _where_clause(conditions)
         cur.execute(
             f"""
             SELECT co.id, c.name, c.username, c.email, co.specialty, co.career,
@@ -385,13 +526,13 @@ def list_coach_verifications(
             "verified_by": r[13],
         } for r in cur.fetchall()]
         cur.execute(
-            f"SELECT COUNT(*) FROM coaches co {where}",
+            f"SELECT COUNT(*) FROM coaches co JOIN customers c ON c.id = co.customer_id {where}",
             tuple(params),
         )
         total = _safe_int(cur.fetchone()[0])
         conn.commit()
         return {"coaches": coaches, "total": total, "page": page, "page_size": page_size,
-                "status": status, "summary": summary}
+                "status": status, "q": q, "search_by": search_by, "summary": summary}
     finally:
         cur.close()
         conn.close()
@@ -792,7 +933,14 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
 
 
 @router.get("/logs")
-def get_logs(swimtech_token: str = Cookie(default=None), event_type: str = None, page: int = 1, page_size: int = 50):
+def get_logs(
+    swimtech_token: str = Cookie(default=None),
+    event_type: str = None,
+    q: str = None,
+    search_by: str = "all",
+    page: int = 1,
+    page_size: int = 50,
+):
     """운영 로그: 로그인 성공/실패, 가입, 소셜로그인, 일지작성, 플랜공유, 오류 등."""
     _require_admin(swimtech_token)
     _ensure_table()
@@ -802,21 +950,34 @@ def get_logs(swimtech_token: str = Cookie(default=None), event_type: str = None,
     page_size = _normalize_page_size(page_size, 50)
     offset = max(0, (page - 1) * page_size)
 
+    conditions = []
+    params = []
     if event_type:
-        cur.execute("""
-            SELECT id, username, event_type, page, action, method, path,
-                   ip_address, created_at, metadata
-            FROM user_activity_logs
-            WHERE event_type = %s
-            ORDER BY created_at DESC LIMIT %s OFFSET %s
-        """, (event_type, page_size, offset))
-    else:
-        cur.execute("""
-            SELECT id, username, event_type, page, action, method, path,
-                   ip_address, created_at, metadata
-            FROM user_activity_logs
-            ORDER BY created_at DESC LIMIT %s OFFSET %s
-        """, (page_size, offset))
+        conditions.append("event_type = %s")
+        params.append(event_type)
+    field_map = {
+        "all": (
+            "COALESCE(username, '')", "COALESCE(page, '')", "COALESCE(path, '')",
+            "COALESCE(action, '')", "COALESCE(method, '')", "COALESCE(ip_address, '')",
+        ),
+        "username": ("COALESCE(username, '')",),
+        "path": ("COALESCE(page, '')", "COALESCE(path, '')"),
+        "action": ("COALESCE(action, '')",),
+        "method": ("COALESCE(method, '')",),
+        "ip": ("COALESCE(ip_address, '')",),
+    }
+    search_clause, search_params, search_by, q = _build_search_filter(q, search_by, field_map)
+    if search_clause:
+        conditions.append(search_clause)
+        params.extend(search_params)
+    where = _where_clause(conditions)
+    cur.execute(f"""
+        SELECT id, username, event_type, page, action, method, path,
+               ip_address, created_at, metadata
+        FROM user_activity_logs
+        {where}
+        ORDER BY created_at DESC LIMIT %s OFFSET %s
+    """, (*params, page_size, offset))
 
     logs = [{
         "id": r[0], "username": r[1], "event_type": r[2], "page": r[3],
@@ -824,12 +985,12 @@ def get_logs(swimtech_token: str = Cookie(default=None), event_type: str = None,
         "created_at": str(r[8]), "metadata": r[9],
     } for r in cur.fetchall()]
 
-    if event_type:
-        cur.execute("SELECT COUNT(*) FROM user_activity_logs WHERE event_type = %s", (event_type,))
-    else:
-        cur.execute("SELECT COUNT(*) FROM user_activity_logs")
+    cur.execute(f"SELECT COUNT(*) FROM user_activity_logs {where}", tuple(params))
     total = cur.fetchone()[0]
 
     cur.close()
     conn.close()
-    return {"logs": logs, "total": total, "page": page, "page_size": page_size}
+    return {
+        "logs": logs, "total": total, "page": page, "page_size": page_size,
+        "event_type": event_type or "", "q": q, "search_by": search_by,
+    }
