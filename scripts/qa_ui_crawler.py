@@ -203,8 +203,8 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["허리 통증의 90%", "부담이 절반 이하", "SwimMate 분석으로 확인할 것"],
     },
     "/equipment": {
-        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "#size-recommender-form", "#current-model", "#current-size", "#current-size-region", "#target-purchase-region", "#size-reference-confirm", "#recommend-result"],
-        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "내 수영복 기준 브랜드별 사이즈 참고 비교", "구매 확정값이 아닙니다", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
+        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "[data-chart-unit='in']", "#size-recommender-form", "#measurement-unit", "#measure-bust-conversion", "#current-model", "#current-size", "#current-size-region", "#target-purchase-region", "#size-reference-confirm", "#recommend-result"],
+        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "공식표 표시 단위", "신체 치수 입력 단위", "내 수영복 기준 브랜드별 사이즈 참고 비교", "구매 확정값이 아닙니다", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
     },
     "/faq": {
         "selectors": ["#search", "#faq-list", ".faq-item[data-q*='수영복']", ".faq-item[data-q*='드릴']", ".faq-item[data-q*='통증']"],
@@ -524,6 +524,10 @@ def check_information_guide_interactions(page, path):
                 raise AssertionError("브랜드 공식표 기준 지역이 표시되지 않음")
             if page.locator("#brand-size-body tr").count() < 5:
                 raise AssertionError("브랜드 사이즈표 행이 부족함")
+            page.click("[data-chart-unit='in']")
+            if "가슴 (in)" not in page.locator("#brand-size-head").inner_text() or "33.1" not in page.locator("#brand-size-body tr").first.inner_text():
+                raise AssertionError("공식 사이즈표 cm→inch 전환이 동작하지 않음")
+            page.click("[data-chart-unit='cm']")
             actions.append({"action": "브랜드·수영복 유형별 공식 사이즈표", "status": "ok"})
 
             page.select_option("#recommender-profile", "women")
@@ -532,20 +536,29 @@ def check_information_guide_interactions(page, path):
             page.fill("#current-size", "M")
             page.select_option("#current-size-region", "jp")
             page.select_option("#target-purchase-region", "kr")
-            page.fill("#measure-bust", "83")
-            page.fill("#measure-waist", "64")
-            page.fill("#measure-hip", "91")
-            page.fill("#measure-torso", "154")
+            page.select_option("#measurement-unit", "in")
+            page.fill("#measure-bust", "32.7")
+            page.fill("#measure-waist", "25.2")
+            page.fill("#measure-hip", "35.8")
+            page.fill("#measure-torso", "60.6")
+            if "83.1 cm" not in page.locator("#measure-bust-conversion").inner_text():
+                raise AssertionError("inch 입력의 cm 즉시 환산이 표시되지 않음")
+            page.select_option("#measurement-unit", "cm")
+            if page.locator("#measure-bust").input_value() != "83.1":
+                raise AssertionError("inch→cm 단위 전환 시 물리적 치수가 보존되지 않음")
+            page.select_option("#measurement-unit", "in")
+            if page.locator("#measure-bust").input_value() != "32.7":
+                raise AssertionError("cm→inch 왕복 단위 전환 시 물리적 치수가 보존되지 않음")
             page.check("#size-reference-confirm")
             page.click(".recommend-submit")
             if not page.locator("#recommend-result").is_visible() or page.locator("#recommend-grid .recommend-card").count() != 5:
                 raise AssertionError("현재 모델 기반 브랜드별 참고 후보 5개가 표시되지 않음")
             summary_text = page.locator("#recommend-summary").inner_text()
-            if "실측 4개 반영" not in summary_text or "구매 예정 지역: 대한민국(KR)" not in summary_text:
-                raise AssertionError("실측 범위와 구매 예정 국가가 표시되지 않음")
+            if "실측 4개 반영" not in summary_text or "inch 입력 → cm 정규화" not in summary_text or "구매 예정 지역: 대한민국(KR)" not in summary_text:
+                raise AssertionError("실측 범위·입력 단위 정규화와 구매 예정 국가가 표시되지 않음")
             if page.locator("#recommend-grid .region-mismatch").count() < 1:
                 raise AssertionError("공식표와 구매 지역 불일치가 표시되지 않음")
-            actions.append({"action": "현재 모델·실측 기반 국가별 사이즈 참고 비교", "status": "ok"})
+            actions.append({"action": "현재 모델·inch 실측 기반 국가별 사이즈 참고 비교", "status": "ok"})
 
             page.fill("#current-model", "Speedo Endurance+")
             page.fill("#current-size", "30")

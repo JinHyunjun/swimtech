@@ -24,7 +24,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 변경 유형 | 반드시 확인할 것 | 테스트·문서 연결 |
 | --- | --- | --- |
 | 새 공개 페이지·메뉴 | 200 응답, 보호 페이지 리다이렉트, 핵심 DOM, 모바일 레이아웃, 콘솔 오류 없음 | `tests/test_swimtech.py`, `PAGE_EXPECTATIONS`, `PAGES` |
-| 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·위험 과장 문구 제거·공식 출처, 수영복 목적 선택·5개 브랜드 공식표·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 시 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단·직접 탭 진입·FAQ 검색 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
+| 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·공식 출처, 수영복 5개 브랜드 공식표 cm/inch 전환·입력 단위 전환 시 값 보존·반대 단위 즉시 환산·cm 내부 정규화·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
 | 스크린샷 기능 가이드 | 랜딩 진입 배너, 공개 200, 개인·실행·성장·코치·탐색 섹션, 기능별 캡처·대체 텍스트, 내부 CTA, 홈 링크, 모바일 단일 열, 비활성 영상 분석·워치 직접 연동 오인 문구 없음 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS["/tutorial"]`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `check_home_link_targets`, `auth.py` 계약 테스트 |
 | 실행 가능한 Postman API 문서 | OpenAPI 탐색과 대표 스모크 분리, Vercel/Render/로컬 환경, 쿠키 로그인, 비로그인 401, 일지 생성·리포트 반영·삭제, 관리자 읽기·로그아웃, 비밀값 미저장 | `tests/postman/`, `tests/test_postman_contract.py`, `.github/workflows/qa.yml` |

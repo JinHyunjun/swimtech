@@ -316,9 +316,11 @@
 .sizing-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .sizing-heading h3 { margin: 0 0 5px; color: var(--text); font-size: var(--fs-body-lg); }
 .sizing-heading p { margin: 0; color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; }
-.profile-switch, .brand-switch { display: flex; gap: 7px; flex-wrap: wrap; }
+.profile-switch, .brand-switch, .unit-switch { display: flex; gap: 7px; flex-wrap: wrap; }
 .profile-switch { margin-bottom: 12px; }
-.size-switch-btn, .brand-switch-btn {
+.sizing-controls { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.unit-control-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: calc(var(--fs-caption) - 1px); }
+.size-switch-btn, .brand-switch-btn, .unit-switch-btn {
   padding: 8px 12px;
   color: var(--muted);
   background: rgba(255,255,255,.025);
@@ -328,7 +330,7 @@
   font: inherit;
   font-size: var(--fs-caption);
 }
-.size-switch-btn.active, .brand-switch-btn.active { color: var(--blue); border-color: rgba(0,180,216,.48); background: rgba(0,180,216,.09); }
+.size-switch-btn.active, .brand-switch-btn.active, .unit-switch-btn.active { color: var(--blue); border-color: rgba(0,180,216,.48); background: rgba(0,180,216,.09); }
 .brand-switch { margin-bottom: 12px; }
 .brand-chart-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin: 14px 0 8px; }
 .brand-chart-meta strong { color: var(--text); }
@@ -374,6 +376,8 @@
 .form-field input:focus, .form-field select:focus { outline: 2px solid rgba(0,180,216,.24); border-color: rgba(0,180,216,.55); }
 .measure-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
 .measure-grid .form-field input { min-width: 0; }
+.measure-conversion { min-height: 1.35em; color: var(--cyan) !important; }
+.unit-explainer { margin-top: 3px; }
 .recommend-submit {
   padding: 12px 18px;
   color: #02151d;
@@ -481,12 +485,21 @@
         <div class="sizing-heading">
           <div>
             <h3>브랜드별 공식 사이즈표</h3>
-            <p>신체 치수는 cm로 통일했지만, 표기 사이즈는 각 제조사 공식몰의 국가·지역 기준을 그대로 사용합니다. 같은 숫자·문자라도 판매 국가와 제품군이 다르면 의미가 달라질 수 있습니다.</p>
+            <p>신체 치수 표는 cm와 inch 중 익숙한 단위로 전환할 수 있고, 표기 사이즈는 각 제조사 공식몰의 국가·지역 기준을 그대로 사용합니다. 같은 숫자·문자라도 판매 국가와 제품군이 다르면 의미가 달라질 수 있습니다.</p>
           </div>
         </div>
-        <div class="profile-switch" role="group" aria-label="사이즈표 수영복 유형">
-          <button class="size-switch-btn active" type="button" data-size-profile="women" aria-pressed="true">여성 원피스</button>
-          <button class="size-switch-btn" type="button" data-size-profile="men" aria-pressed="false">남성 브리프·재머</button>
+        <div class="sizing-controls">
+          <div class="profile-switch" role="group" aria-label="사이즈표 수영복 유형">
+            <button class="size-switch-btn active" type="button" data-size-profile="women" aria-pressed="true">여성 원피스</button>
+            <button class="size-switch-btn" type="button" data-size-profile="men" aria-pressed="false">남성 브리프·재머</button>
+          </div>
+          <div>
+            <span class="unit-control-label">공식표 표시 단위</span>
+            <div class="unit-switch" role="group" aria-label="공식 사이즈표 표시 단위">
+              <button class="unit-switch-btn active" type="button" data-chart-unit="cm" aria-pressed="true">cm</button>
+              <button class="unit-switch-btn" type="button" data-chart-unit="in" aria-pressed="false">inch</button>
+            </div>
+          </div>
         </div>
         <div class="brand-switch" id="brand-size-tabs" role="tablist" aria-label="수영복 브랜드"></div>
         <div class="brand-chart-meta">
@@ -503,7 +516,7 @@
             <tbody id="brand-size-body"></tbody>
           </table>
         </div>
-        <p class="sizing-footnote">표의 수치는 완성된 수영복의 실측이 아니라 제조사가 안내한 신체 치수입니다. arena의 일반 수영복 표는 구간이 아닌 기준값이며, 레이싱·테크수트는 이 표를 사용하지 않습니다. 현재 페이지의 표와 실제 구매처 국가가 다르면 반드시 해당 판매 페이지의 표를 우선하세요.</p>
+        <p class="sizing-footnote">표의 수치는 완성된 수영복의 실측이 아니라 제조사가 안내한 신체 치수입니다. inch 표시는 1 inch = 2.54 cm로 환산한 값이며 원문의 반올림 방식과 소수점이 다를 수 있습니다. arena의 일반 수영복 표는 구간이 아닌 기준값이며, 레이싱·테크수트는 이 표를 사용하지 않습니다. 실제 구매처의 공식표를 우선하세요.</p>
       </section>
 
       <section class="sizing-section recommender-section" id="size-recommender">
@@ -579,14 +592,22 @@
             <small>결과마다 공식표 기준 지역과 구매 예정 지역의 일치 여부를 표시합니다.</small>
           </div>
           <div class="form-field full">
-            <label>신체 치수 (cm, 선택)</label>
+            <label for="measurement-unit">신체 치수 입력 단위</label>
+            <select id="measurement-unit">
+              <option value="cm">센티미터(cm)</option>
+              <option value="in">인치(inch)</option>
+            </select>
+            <small class="unit-explainer" id="measurement-unit-note">1 inch = 2.54 cm입니다. 입력한 cm 아래에 inch 환산값을 바로 표시합니다.</small>
+          </div>
+          <div class="form-field full">
+            <label>신체 치수 (<span id="measurement-unit-label">cm</span>, 선택)</label>
             <div class="measure-grid">
-              <div class="form-field"><label for="measure-bust">가슴</label><input id="measure-bust" type="number" min="50" max="160" step="0.5" inputmode="decimal" placeholder="예: 88"></div>
-              <div class="form-field"><label for="measure-waist">허리</label><input id="measure-waist" type="number" min="45" max="150" step="0.5" inputmode="decimal" placeholder="예: 72"></div>
-              <div class="form-field"><label for="measure-hip">엉덩이</label><input id="measure-hip" type="number" min="55" max="170" step="0.5" inputmode="decimal" placeholder="예: 94"></div>
-              <div class="form-field" id="torso-field"><label for="measure-torso">몸통 한 바퀴</label><input id="measure-torso" type="number" min="110" max="210" step="0.5" inputmode="decimal" placeholder="예: 154"></div>
+              <div class="form-field"><label for="measure-bust">가슴</label><input id="measure-bust" type="number" min="50" max="160" step="0.5" inputmode="decimal" placeholder="예: 88"><small class="measure-conversion" id="measure-bust-conversion">환산값이 표시됩니다.</small></div>
+              <div class="form-field"><label for="measure-waist">허리</label><input id="measure-waist" type="number" min="45" max="150" step="0.5" inputmode="decimal" placeholder="예: 72"><small class="measure-conversion" id="measure-waist-conversion">환산값이 표시됩니다.</small></div>
+              <div class="form-field"><label for="measure-hip">엉덩이</label><input id="measure-hip" type="number" min="55" max="170" step="0.5" inputmode="decimal" placeholder="예: 94"><small class="measure-conversion" id="measure-hip-conversion">환산값이 표시됩니다.</small></div>
+              <div class="form-field" id="torso-field"><label for="measure-torso">몸통 한 바퀴</label><input id="measure-torso" type="number" min="110" max="210" step="0.5" inputmode="decimal" placeholder="예: 154"><small class="measure-conversion" id="measure-torso-conversion">환산값이 표시됩니다.</small></div>
             </div>
-            <small>cm 신체 치수 자체는 국가와 무관합니다. 비교에 사용되는 사이즈 라벨의 국가·지역이 다르므로 위 항목을 함께 선택하세요. 여성 원피스는 가슴·엉덩이·몸통, 남성 브리프·재머는 허리·엉덩이 치수가 특히 유용합니다.</small>
+            <small>cm와 inch 중 익숙한 단위로 입력할 수 있으며 계산 전 내부에서 cm로 정규화합니다. 신체 치수 자체는 국가와 무관하고, 비교에 사용되는 사이즈 라벨의 국가·지역은 위 항목으로 구분합니다.</small>
           </div>
           <label class="reference-confirm" for="size-reference-confirm">
             <input id="size-reference-confirm" type="checkbox" required>
@@ -927,11 +948,28 @@ const MARKET_LABELS = {
 };
 let activeSizeProfile = 'women';
 let activeSizeBrand = 'speedo';
+let activeChartUnit = 'cm';
+let activeMeasurementUnit = 'cm';
+
+function cmToInches(value) {
+  return value / 2.54;
+}
+
+function inchesToCm(value) {
+  return value * 2.54;
+}
+
+function formatUnitValue(value, unit) {
+  const converted = unit === 'in' ? cmToInches(value) : value;
+  return Number(converted.toFixed(1)).toString();
+}
 
 function formatBodyRange(range, pointValues) {
   if (!range) return '—';
-  if (pointValues && range[0] === range[1]) return String(range[0]);
-  return range[0] === range[1] ? String(range[0]) : `${range[0]}–${range[1]}`;
+  const low = formatUnitValue(range[0], activeChartUnit);
+  const high = formatUnitValue(range[1], activeChartUnit);
+  if (pointValues && range[0] === range[1]) return low;
+  return range[0] === range[1] ? low : `${low}–${high}`;
 }
 
 function renderBrandSwitch() {
@@ -959,14 +997,15 @@ function renderBrandChart() {
   renderBrandSwitch();
   document.getElementById('brand-chart-title').textContent = `${chart.name} · ${chart.scope}`;
   document.getElementById('brand-chart-note').textContent = chart.note;
-  document.getElementById('brand-chart-region').textContent = `공식표 기준 지역: ${chart.regionLabel} · 표기 체계: ${chart.labelSystem}`;
+  document.getElementById('brand-chart-region').textContent = `공식표 기준 지역: ${chart.regionLabel} · 표기 체계: ${chart.labelSystem} · 현재 표시: ${activeChartUnit === 'in' ? 'inch' : 'cm'}`;
   const source = document.getElementById('brand-chart-source');
   source.href = chart.source;
   source.setAttribute('aria-label', `${chart.name} 공식 사이즈표 새 창에서 확인`);
 
+  const displayUnit = activeChartUnit === 'in' ? 'in' : 'cm';
   const headings = activeSizeProfile === 'women'
-    ? [['size', '표기 사이즈'], ['bust', '가슴 (cm)'], ['waist', '허리 (cm)'], ['hip', '엉덩이 (cm)'], ['torso', '몸통 한 바퀴 (cm)']]
-    : [['size', '표기 사이즈'], ['chest', '가슴 (cm)'], ['waist', '허리 (cm)'], ['hip', '엉덩이 (cm)']];
+    ? [['size', '표기 사이즈'], ['bust', `가슴 (${displayUnit})`], ['waist', `허리 (${displayUnit})`], ['hip', `엉덩이 (${displayUnit})`], ['torso', `몸통 한 바퀴 (${displayUnit})`]]
+    : [['size', '표기 사이즈'], ['chest', `가슴 (${displayUnit})`], ['waist', `허리 (${displayUnit})`], ['hip', `엉덩이 (${displayUnit})`]];
   const head = document.getElementById('brand-size-head');
   head.replaceChildren();
   headings.forEach(([, label]) => {
@@ -998,11 +1037,80 @@ document.querySelectorAll('[data-size-profile]').forEach(button => {
   });
 });
 
+document.querySelectorAll('[data-chart-unit]').forEach(button => {
+  button.addEventListener('click', () => {
+    activeChartUnit = button.dataset.chartUnit;
+    document.querySelectorAll('[data-chart-unit]').forEach(item => {
+      const active = item === button;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', String(active));
+    });
+    renderBrandChart();
+  });
+});
+
+const MEASUREMENT_FIELDS = {
+  'measure-bust': { min: 50, max: 160, placeholder: 88 },
+  'measure-waist': { min: 45, max: 150, placeholder: 72 },
+  'measure-hip': { min: 55, max: 170, placeholder: 94 },
+  'measure-torso': { min: 110, max: 210, placeholder: 154 },
+};
+
+function updateMeasurementConversion(id) {
+  const field = document.getElementById(id);
+  const output = document.getElementById(`${id}-conversion`);
+  const value = Number(field.value);
+  if (!field.value || !Number.isFinite(value)) {
+    output.textContent = '환산값이 표시됩니다.';
+    return;
+  }
+  if (activeMeasurementUnit === 'in') {
+    output.textContent = `환산: ${Number(inchesToCm(value).toFixed(1))} cm`;
+  } else {
+    output.textContent = `환산: ${Number(cmToInches(value).toFixed(1))} inch`;
+  }
+}
+
+function applyMeasurementUnit(nextUnit, convertExisting = true) {
+  const previousUnit = activeMeasurementUnit;
+  activeMeasurementUnit = nextUnit;
+  Object.entries(MEASUREMENT_FIELDS).forEach(([id, config]) => {
+    const field = document.getElementById(id);
+    const current = Number(field.value);
+    if (convertExisting && field.value && Number.isFinite(current) && previousUnit !== nextUnit) {
+      const valueInCm = previousUnit === 'in' ? inchesToCm(current) : current;
+      const converted = nextUnit === 'in' ? cmToInches(valueInCm) : valueInCm;
+      field.value = Number(converted.toFixed(1));
+    }
+    field.min = nextUnit === 'in' ? Number(cmToInches(config.min).toFixed(1)) : config.min;
+    field.max = nextUnit === 'in' ? Number(cmToInches(config.max).toFixed(1)) : config.max;
+    field.step = nextUnit === 'in' ? '0.1' : '0.5';
+    const placeholder = nextUnit === 'in' ? cmToInches(config.placeholder) : config.placeholder;
+    field.placeholder = `예: ${Number(placeholder.toFixed(1))}`;
+    updateMeasurementConversion(id);
+  });
+  document.getElementById('measurement-unit-label').textContent = nextUnit === 'in' ? 'inch' : 'cm';
+  document.getElementById('measurement-unit-note').textContent = nextUnit === 'in'
+    ? '1 inch = 2.54 cm입니다. 입력한 inch 아래에 cm 환산값을 바로 표시하며 계산은 cm로 정규화합니다.'
+    : '1 inch = 2.54 cm입니다. 입력한 cm 아래에 inch 환산값을 바로 표시합니다.';
+  document.getElementById('recommend-result').hidden = true;
+  clearRecommendMessage();
+}
+
+document.getElementById('measurement-unit').addEventListener('change', event => {
+  applyMeasurementUnit(event.target.value);
+});
+
+Object.keys(MEASUREMENT_FIELDS).forEach(id => {
+  document.getElementById(id).addEventListener('input', () => updateMeasurementConversion(id));
+});
+
 function readMeasurement(id) {
   const field = document.getElementById(id);
   if (!field.value) return null;
   const value = Number(field.value);
-  return Number.isFinite(value) ? value : null;
+  if (!Number.isFinite(value)) return null;
+  return activeMeasurementUnit === 'in' ? inchesToCm(value) : value;
 }
 
 function showRecommendMessage(text, type = 'error') {
@@ -1060,7 +1168,10 @@ function renderRecommendations(results, context) {
 document.getElementById('recommender-profile').addEventListener('change', event => {
   const isWomen = event.target.value === 'women';
   document.getElementById('torso-field').hidden = !isWomen;
-  if (!isWomen) document.getElementById('measure-torso').value = '';
+  if (!isWomen) {
+    document.getElementById('measure-torso').value = '';
+    updateMeasurementConversion('measure-torso');
+  }
 });
 
 document.getElementById('size-recommender-form').addEventListener('submit', event => {
@@ -1088,7 +1199,7 @@ document.getElementById('size-recommender-form').addEventListener('submit', even
     .map(id => document.getElementById(id))
     .find(field => field.value && !field.checkValidity());
   if (invalidMeasurement) {
-    showRecommendMessage('신체 치수는 각 입력란에 표시된 cm 범위 안에서 입력해 주세요.');
+    showRecommendMessage(`신체 치수는 각 입력란에 표시된 ${activeMeasurementUnit === 'in' ? 'inch' : 'cm'} 범위 안에서 입력해 주세요.`);
     invalidMeasurement.focus();
     return;
   }
@@ -1106,6 +1217,7 @@ document.getElementById('size-recommender-form').addEventListener('submit', even
     torso: profile === 'women' ? readMeasurement('measure-torso') : null,
   };
   const explicitCount = Object.values(explicit).filter(value => value != null).length;
+  const measurementMethod = activeMeasurementUnit === 'in' ? 'inch 입력을 cm로 환산한' : 'cm로 입력한';
   let measurements = { ...explicit };
   let method = '';
 
@@ -1117,24 +1229,24 @@ document.getElementById('size-recommender-form').addEventListener('submit', even
       const proxy = SIZE_DATA.proxyFromCurrent(currentChart, currentRow, fit);
       measurements = Object.fromEntries(Object.keys(proxy).map(key => [key, explicit[key] ?? proxy[key]]));
       const fitText = fit === 'tight' ? '너무 타이트한 착용감' : fit === 'loose' ? '조금 헐거운 착용감' : '잘 맞는 착용감';
-      method = explicitCount ? `신체 치수 ${explicitCount}개와 ${currentChart.regionLabel} ${fitText}` : `${currentChart.regionLabel} 라벨과 ${fitText}`;
+      method = explicitCount ? `${measurementMethod} 신체 치수 ${explicitCount}개와 ${currentChart.regionLabel} ${fitText}` : `${currentChart.regionLabel} 라벨과 ${fitText}`;
     } else if (!regionMatches && !explicitCount) {
       const selectedRegionLabel = MARKET_LABELS[currentRegion];
       showRecommendMessage(`현재 사이즈는 ${selectedRegionLabel} 라벨인데 지원 중인 ${currentChart.name} 표는 ${currentChart.regionLabel} 기준입니다. 같은 “${size}”라도 의미가 다를 수 있어 라벨만으로 환산하지 않습니다. 신체 치수를 입력하거나 현재 모델의 해당 국가 공식표를 확인해 주세요.`, 'notice');
       return;
     } else if (!regionMatches) {
       measurements = { ...explicit };
-      method = `입력한 신체 치수 ${explicitCount}개만 사용(현재 라벨 지역과 공식표 지역 불일치)`;
+      method = `${measurementMethod} 신체 치수 ${explicitCount}개만 사용(현재 라벨 지역과 공식표 지역 불일치)`;
       showRecommendMessage(`현재 사이즈 라벨 지역(${MARKET_LABELS[currentRegion]})과 ${currentChart.name} 표 기준(${currentChart.regionLabel})이 달라 현재 사이즈·착용감은 계산에서 제외했습니다.`, 'notice');
     } else if (!explicitCount) {
       showRecommendMessage(`${currentChart.name} ${currentChart.regionLabel} 지원 표에서 “${size}” 라벨을 찾지 못했습니다. 신체 치수를 입력하거나 현재 모델의 상품 상세표를 확인해 주세요.`);
       return;
     } else {
-      method = `입력한 신체 치수 ${explicitCount}개`;
+      method = `${measurementMethod} 신체 치수 ${explicitCount}개`;
       showRecommendMessage('현재 사이즈 라벨은 공식 지원 표에서 찾지 못해 신체 치수만으로 계산했습니다.', 'notice');
     }
   } else if (explicitCount) {
-    method = `입력한 신체 치수 ${explicitCount}개`;
+    method = `${measurementMethod} 신체 치수 ${explicitCount}개`;
     showRecommendMessage('모델명에서 브랜드를 인식하지 못해 신체 치수만으로 계산했습니다.', 'notice');
   } else {
     showRecommendMessage('모델명에서 브랜드를 인식하지 못했습니다. 현재 브랜드를 직접 선택하거나 신체 치수를 하나 이상 입력해 주세요.');
@@ -1146,7 +1258,8 @@ document.getElementById('size-recommender-form').addEventListener('submit', even
     showRecommendMessage('참고 비교에 사용할 수 있는 치수가 없습니다. 신체 치수를 하나 이상 입력해 주세요.');
     return;
   }
-  const comparisonLevel = explicitCount >= 3 ? `실측 ${explicitCount}개 반영` : explicitCount >= 1 ? `일부 실측 ${explicitCount}개 반영` : '현재 라벨 기반 참고만 사용';
+  const inputUnitSummary = activeMeasurementUnit === 'in' ? 'inch 입력 → cm 정규화' : 'cm 입력';
+  const comparisonLevel = explicitCount >= 3 ? `실측 ${explicitCount}개 반영 · ${inputUnitSummary}` : explicitCount >= 1 ? `일부 실측 ${explicitCount}개 반영 · ${inputUnitSummary}` : '현재 라벨 기반 참고만 사용';
   const recommendations = SIZE_DATA.recommend(profile, measurements);
   renderRecommendations(recommendations, {
     model,
@@ -1162,6 +1275,7 @@ SW.initTabs('.tab-bar', '.tab-content');
 renderGrids();
 selectSuitPurpose(document.querySelector('[data-suit-purpose="training"]'));
 renderBrandChart();
+applyMeasurementUnit('cm', false);
 
 const requestedTab = new URLSearchParams(window.location.search).get('tab');
 if (['all', 'basic', 'advanced', 'swimwear'].includes(requestedTab)) {
