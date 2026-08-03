@@ -1197,24 +1197,43 @@ def test_equipment_load(page: Page):
     page.click('[data-size-profile="men"]')
     page.click('[data-size-brand="arena"]')
     expect(page.locator("#brand-chart-title")).to_contain_text("남성 일반 수영복")
+    expect(page.locator("#brand-chart-region")).to_contain_text("arena 국제몰(en_ROW)")
     assert page.locator("#brand-size-body tr").count() >= 5
 
-    # 현재 모델·실측을 함께 사용한 5개 브랜드 교차 추천.
+    # 구매 비보장 안내를 확인한 뒤 현재 모델·실측으로 5개 브랜드를 참고 비교한다.
+    expect(page.locator("#sizing-reference-warning")).to_contain_text("구매 확정값이 아닙니다")
     page.select_option("#recommender-profile", "women")
     page.select_option("#current-brand", "auto")
     page.fill("#current-model", "미즈노 엑서수트 N2MAD785")
     page.fill("#current-size", "M")
+    page.select_option("#current-size-region", "jp")
+    page.select_option("#target-purchase-region", "kr")
     page.fill("#measure-bust", "83")
     page.fill("#measure-waist", "64")
     page.fill("#measure-hip", "91")
     page.fill("#measure-torso", "154")
+    page.check("#size-reference-confirm")
     page.click(".recommend-submit")
     expect(page.locator("#recommend-result")).to_be_visible()
     expect(page.locator("#recommend-grid .recommend-card")).to_have_count(5)
-    expect(page.locator("#recommend-summary")).to_contain_text("신뢰도: 높음")
+    expect(page.locator("#recommend-summary")).to_contain_text("실측 4개 반영")
+    expect(page.locator("#recommend-summary")).to_contain_text("구매 예정 지역: 대한민국(KR)")
+    expect(page.locator("#recommend-grid .recommend-card").first).to_contain_text("공식표:")
+    expect(page.locator(".recommend-disclaimer")).to_contain_text("구매 확정값이 아닙니다")
+
+    # 현재 라벨 국가와 보유 공식표 지역이 다르면 라벨만으로 환산하지 않는다.
+    page.fill("#current-model", "Speedo Endurance+")
+    page.fill("#current-size", "30")
+    page.select_option("#current-size-region", "kr")
+    for field_id in ["measure-bust", "measure-waist", "measure-hip", "measure-torso"]:
+        page.fill(f"#{field_id}", "")
+    page.click(".recommend-submit")
+    expect(page.locator("#recommend-message")).to_contain_text("같은 “30”이라도 의미가 다를 수 있어")
+    expect(page.locator("#recommend-result")).to_be_hidden()
 
     # 테크수트는 일반 훈련복 표로 잘못 환산하지 않는다.
     page.fill("#current-model", "Speedo Fastskin LZR")
+    page.select_option("#current-size-region", "us")
     page.click(".recommend-submit")
     expect(page.locator("#recommend-message")).to_contain_text("레이싱·테크수트 계열")
     expect(page.locator("#recommend-result")).to_be_hidden()

@@ -104,11 +104,14 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
     assert "World Aquatics 승인 수영복" in equipment
     assert "new URLSearchParams(window.location.search)" in equipment
     assert "/static/swimwear-sizing.js" in equipment
-    for marker in ["brand-size-guide", "size-recommender-form", "current-model", "recommend-grid"]:
+    for marker in ["brand-size-guide", "size-recommender-form", "current-model", "current-size-region", "target-purchase-region", "size-reference-confirm", "recommend-grid"]:
         assert marker in equipment
-    for marker in ["Speedo", "arena", "TYR", "Mizuno", "Nike Swim", "RACE_MODEL_PATTERN", "proxyFromCurrent", "recommend"]:
+    for marker in ["Speedo", "arena", "TYR", "Mizuno", "Nike Swim", "regionCode", "regionLabel", "labelSystem", "RACE_MODEL_PATTERN", "proxyFromCurrent", "recommend"]:
         assert marker in swimwear_sizing
     assert "innerHTML" not in swimwear_sizing
+    for marker in ["구매 확정값이 아닙니다", "결과를 맹신하지 마세요", "모델별 원단", "공식표 기준 지역"]:
+        assert marker in equipment
+    assert "구매·착용을 보장하지 않습니다" in faq
     assert "수영복은 어떻게 골라야 하나요" in faq
     assert "data-hidden=\"true\"" not in faq
     assert "이메일 자동 비밀번호 재설정은 제공하지 않습니다" in faq

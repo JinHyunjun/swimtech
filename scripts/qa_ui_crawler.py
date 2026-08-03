@@ -203,8 +203,8 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["허리 통증의 90%", "부담이 절반 이하", "SwimMate 분석으로 확인할 것"],
     },
     "/equipment": {
-        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "#size-recommender-form", "#current-model", "#current-size", "#recommend-result"],
-        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "내 수영복 기준 브랜드별 사이즈 추천", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
+        "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "#size-recommender-form", "#current-model", "#current-size", "#current-size-region", "#target-purchase-region", "#size-reference-confirm", "#recommend-result"],
+        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "내 수영복 기준 브랜드별 사이즈 참고 비교", "구매 확정값이 아닙니다", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
     },
     "/faq": {
         "selectors": ["#search", "#faq-list", ".faq-item[data-q*='수영복']", ".faq-item[data-q*='드릴']", ".faq-item[data-q*='통증']"],
@@ -520,6 +520,8 @@ def check_information_guide_interactions(page, path):
             page.click("[data-size-brand='arena']")
             if "남성 일반 수영복" not in page.locator("#brand-chart-title").inner_text():
                 raise AssertionError("브랜드별 남성 사이즈표가 전환되지 않음")
+            if "arena 국제몰(en_ROW)" not in page.locator("#brand-chart-region").inner_text():
+                raise AssertionError("브랜드 공식표 기준 지역이 표시되지 않음")
             if page.locator("#brand-size-body tr").count() < 5:
                 raise AssertionError("브랜드 사이즈표 행이 부족함")
             actions.append({"action": "브랜드·수영복 유형별 공식 사이즈표", "status": "ok"})
@@ -528,18 +530,35 @@ def check_information_guide_interactions(page, path):
             page.select_option("#current-brand", "auto")
             page.fill("#current-model", "미즈노 엑서수트 N2MAD785")
             page.fill("#current-size", "M")
+            page.select_option("#current-size-region", "jp")
+            page.select_option("#target-purchase-region", "kr")
             page.fill("#measure-bust", "83")
             page.fill("#measure-waist", "64")
             page.fill("#measure-hip", "91")
             page.fill("#measure-torso", "154")
+            page.check("#size-reference-confirm")
             page.click(".recommend-submit")
             if not page.locator("#recommend-result").is_visible() or page.locator("#recommend-grid .recommend-card").count() != 5:
-                raise AssertionError("현재 모델 기반 브랜드별 추천 5개가 표시되지 않음")
-            if "신뢰도: 높음" not in page.locator("#recommend-summary").inner_text():
-                raise AssertionError("실측 기반 추천 신뢰도가 표시되지 않음")
-            actions.append({"action": "현재 모델·실측 기반 브랜드별 사이즈 추천", "status": "ok"})
+                raise AssertionError("현재 모델 기반 브랜드별 참고 후보 5개가 표시되지 않음")
+            summary_text = page.locator("#recommend-summary").inner_text()
+            if "실측 4개 반영" not in summary_text or "구매 예정 지역: 대한민국(KR)" not in summary_text:
+                raise AssertionError("실측 범위와 구매 예정 국가가 표시되지 않음")
+            if page.locator("#recommend-grid .region-mismatch").count() < 1:
+                raise AssertionError("공식표와 구매 지역 불일치가 표시되지 않음")
+            actions.append({"action": "현재 모델·실측 기반 국가별 사이즈 참고 비교", "status": "ok"})
+
+            page.fill("#current-model", "Speedo Endurance+")
+            page.fill("#current-size", "30")
+            page.select_option("#current-size-region", "kr")
+            for field_id in ["measure-bust", "measure-waist", "measure-hip", "measure-torso"]:
+                page.fill(f"#{field_id}", "")
+            page.click(".recommend-submit")
+            if "같은 “30”이라도 의미가 다를 수 있어" not in page.locator("#recommend-message").inner_text():
+                raise AssertionError("국가별 라벨 불일치 환산이 차단되지 않음")
+            actions.append({"action": "현재 사이즈 라벨 국가 불일치 환산 차단", "status": "ok"})
 
             page.fill("#current-model", "Speedo Fastskin LZR")
+            page.select_option("#current-size-region", "us")
             page.click(".recommend-submit")
             if "레이싱·테크수트 계열" not in page.locator("#recommend-message").inner_text():
                 raise AssertionError("레이싱 수트 전용 표 안전 경계가 표시되지 않음")

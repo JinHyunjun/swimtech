@@ -18,7 +18,10 @@
     women: {
       speedo: {
         name: "Speedo",
-        scope: "여성 일반·훈련용 글로벌 표",
+        scope: "여성 일반·훈련용 미국 공식몰 표",
+        regionCode: "us",
+        regionLabel: "미국 공식몰(en-US)",
+        labelSystem: "Speedo 숫자 라벨",
         note: "Speedo 숫자 표기 기준입니다. Fastskin은 모델 전용 표를 사용하세요.",
         source: "https://speedo.com/en-us/pages/size-guides",
         rows: [
@@ -36,7 +39,10 @@
       },
       arena: {
         name: "arena",
-        scope: "여성 일반 수영복 글로벌 표",
+        scope: "여성 일반 수영복 국제몰 표",
+        regionCode: "intl",
+        regionLabel: "arena 국제몰(en_ROW)",
+        labelSystem: "국제몰 숫자 라벨",
         note: "공식표의 기준 신체 치수입니다. 국내 유통 제품은 라벨 체계를 다시 확인하세요.",
         source: "https://www.arenasport.com/en_row/size-guide/women",
         pointValues: true,
@@ -58,6 +64,9 @@
       tyr: {
         name: "TYR",
         scope: "여성 Performance 성인 표",
+        regionCode: "us",
+        regionLabel: "미국 공식몰(TYR US)",
+        labelSystem: "미국 Performance 숫자 라벨",
         note: "미국 공식 Performance 숫자 표기입니다. 테크수트는 전용 표를 확인하세요.",
         source: "https://tyr.com/pages/sizing-swim",
         rows: [
@@ -76,6 +85,9 @@
       mizuno: {
         name: "Mizuno",
         scope: "여성 일반 수영복 JIS 표",
+        regionCode: "jp",
+        regionLabel: "일본 공식몰(JIS)",
+        labelSystem: "일본 JIS 문자 라벨",
         note: "일본 공식 일반 수영복 표입니다. GX-SONIC은 모델 전용 표를 사용하세요.",
         source: "https://jpn.mizuno.com/ec/include_html/size/size_swim.html",
         rows: [
@@ -90,6 +102,9 @@
       nike: {
         name: "Nike Swim",
         scope: "여성 수영복 한국 표",
+        regionCode: "kr",
+        regionLabel: "나이키 코리아(KR)",
+        labelSystem: "문자·KR 숫자 병기",
         note: "KR 라벨을 함께 표시합니다. 두 치수가 갈리면 Nike는 엉덩이 치수를 우선 안내합니다.",
         source: "https://www.nike.com/kr/size-fit/womens-swimsuit",
         rows: [
@@ -105,7 +120,10 @@
     men: {
       speedo: {
         name: "Speedo",
-        scope: "남성 일반·훈련용 글로벌 표",
+        scope: "남성 일반·훈련용 미국 공식몰 표",
+        regionCode: "us",
+        regionLabel: "미국 공식몰(en-US)",
+        labelSystem: "Speedo 숫자 라벨",
         note: "일반/훈련용 재머 기준입니다. Fastskin은 압박과 표가 달라 전용 표가 필요합니다.",
         source: "https://speedo.com/en-us/pages/size-guides",
         rows: [
@@ -123,7 +141,10 @@
       },
       arena: {
         name: "arena",
-        scope: "남성 일반 수영복 글로벌 표",
+        scope: "남성 일반 수영복 국제몰 표",
+        regionCode: "intl",
+        regionLabel: "arena 국제몰(en_ROW)",
+        labelSystem: "국제몰 숫자 라벨",
         note: "공식표의 기준 신체 치수입니다. 국내 제품의 숫자 라벨과 동일한 체계인지 확인하세요.",
         source: "https://www.arenasport.com/en_row/size-guide/men",
         pointValues: true,
@@ -143,6 +164,9 @@
       tyr: {
         name: "TYR",
         scope: "남성 Performance 성인 표",
+        regionCode: "us",
+        regionLabel: "미국 공식몰(TYR US)",
+        labelSystem: "미국 Performance 숫자 라벨",
         note: "미국 공식 Performance 숫자 표기입니다. Avictor 등 테크수트는 전용 표를 확인하세요.",
         source: "https://tyr.com/pages/sizing-swim",
         rows: [
@@ -159,6 +183,9 @@
       mizuno: {
         name: "Mizuno",
         scope: "남성 일반 수영복 JIS 표",
+        regionCode: "jp",
+        regionLabel: "일본 공식몰(JIS)",
+        labelSystem: "일본 JIS 문자 라벨",
         note: "일본 공식 일반 수영복 표입니다. GX-SONIC은 모델별 전용 표를 사용하세요.",
         source: "https://jpn.mizuno.com/ec/include_html/size/size_swim.html",
         rows: [
@@ -172,7 +199,10 @@
       },
       nike: {
         name: "Nike Swim",
-        scope: "남성 트레이닝 수영복 표",
+        scope: "남성 트레이닝 수영복 한국 공식몰 표",
+        regionCode: "kr",
+        regionLabel: "나이키 코리아(KR)",
+        labelSystem: "한국 공식몰 숫자 라벨",
         note: "압박감 있는 트레이닝 라인 숫자 표기입니다. 편한 핏을 원하면 제조사는 한 치수 크게 안내합니다.",
         source: "https://www.nike.com/kr/size-fit/mens-training-swimsuit",
         rows: [
@@ -264,6 +294,9 @@
           alternate: "",
           note: chart.note,
           source: chart.source,
+          regionCode: chart.regionCode,
+          regionLabel: chart.regionLabel,
+          labelSystem: chart.labelSystem,
           score: best.score,
           unavailable: true,
         };
@@ -276,6 +309,9 @@
         alternate: boundary ? next.row.size : "",
         note: chart.note,
         source: chart.source,
+        regionCode: chart.regionCode,
+        regionLabel: chart.regionLabel,
+        labelSystem: chart.labelSystem,
         score: best.score,
         unavailable: false,
       };
