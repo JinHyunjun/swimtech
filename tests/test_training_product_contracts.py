@@ -91,6 +91,7 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
     swimwear_sizing = (ROOT / "frontend" / "static" / "swimwear-sizing.js").read_text(encoding="utf-8")
     faq = (ROOT / "frontend" / "faq.html").read_text(encoding="utf-8")
     landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
 
     assert drill.index('/static/utils.js') < drill.index("SW.initTabs")
     for marker in ["drill-search", "data-focus", "data-level", "data-pool", "출발 사이클"]:
@@ -119,6 +120,16 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
     assert "이메일 자동 비밀번호 재설정은 제공하지 않습니다" in faq
     assert "직접 가져오거나 동기화하지 않습니다" in faq
     assert 'href="/equipment?tab=swimwear"' in landing
+
+    equipment_expectation = qa_ui.split('"/equipment": {', 1)[1].split("    },", 1)[0]
+    assert '"texts": ["수영 장비·수영복 가이드"]' in equipment_expectation
+    assert "swimwear_required_texts" in qa_ui
+    assert "수영복 탭 필수 문구 누락" in qa_ui
+    assert "라벨만으로 환산하지 않습니다" in qa_ui
+    assert 'page.locator("#recommend-result").is_visible()' in qa_ui
+    assert "같은 “30”이라도 의미가 다를 수 있어" not in qa_ui
+    assert "searchable_text" in qa_ui
+    assert 'counter_text != f"{visible_count}건"' in qa_ui
 
 
 def test_readme_describes_current_training_helper_and_retires_analysis_claims():

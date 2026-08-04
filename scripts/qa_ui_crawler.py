@@ -204,7 +204,9 @@ PAGE_EXPECTATIONS = {
     },
     "/equipment": {
         "selectors": [".tab-btn[data-tab='swimwear']", "#tab-swimwear", "[data-suit-purpose='casual']", "[data-suit-purpose='training']", "[data-suit-purpose='race']", "#suit-recommendation", ".suit-table", ".care-strip", "#brand-size-guide", "#brand-size-tabs", "#brand-size-table", "[data-chart-unit='in']", "#size-recommender-form", "#measurement-unit", "#measure-bust-conversion", "#current-model", "#current-size", "#current-size-region", "#target-purchase-region", "#size-reference-confirm", "#recommend-result"],
-        "texts": ["수영 장비·수영복 가이드", "브랜드별 공식 사이즈표", "공식표 표시 단위", "신체 치수 입력 단위", "내 수영복 기준 브랜드별 사이즈 참고 비교", "구매 확정값이 아닙니다", "Speedo", "arena", "TYR", "Mizuno", "Nike Swim"],
+        # 최초 진입에서는 수영복 탭이 숨겨져 있으므로 항상 보이는 제목만 확인한다.
+        # 탭 내부 문구는 check_information_guide_interactions()에서 탭을 연 뒤 검증한다.
+        "texts": ["수영 장비·수영복 가이드"],
     },
     "/faq": {
         "selectors": ["#search", "#faq-list", ".faq-item[data-q*='수영복']", ".faq-item[data-q*='드릴']", ".faq-item[data-q*='통증']"],
@@ -510,6 +512,26 @@ def check_information_guide_interactions(page, path):
             actions.append({"action": "부상 예방 주의 상태 체크", "status": "ok"})
         elif path == "/equipment":
             page.click(".tab-btn[data-tab='swimwear']")
+            swimwear_text = page.locator("#tab-swimwear").inner_text()
+            swimwear_required_texts = [
+                "브랜드별 공식 사이즈표",
+                "공식표 표시 단위",
+                "신체 치수 입력 단위",
+                "내 수영복 기준 브랜드별 사이즈 참고 비교",
+                "구매 확정값이 아닙니다",
+                "Speedo",
+                "arena",
+                "TYR",
+                "Mizuno",
+                "Nike Swim",
+            ]
+            missing_swimwear_texts = [
+                text for text in swimwear_required_texts if text not in swimwear_text
+            ]
+            if missing_swimwear_texts:
+                raise AssertionError(
+                    "수영복 탭 필수 문구 누락: " + ", ".join(missing_swimwear_texts)
+                )
             page.click("[data-suit-purpose='race']")
             result = page.locator("#suit-recommendation")
             if not page.locator("#tab-swimwear").is_visible() or "대회용 선택" not in result.inner_text():
@@ -566,7 +588,11 @@ def check_information_guide_interactions(page, path):
             for field_id in ["measure-bust", "measure-waist", "measure-hip", "measure-torso"]:
                 page.fill(f"#{field_id}", "")
             page.click(".recommend-submit")
-            if "같은 “30”이라도 의미가 다를 수 있어" not in page.locator("#recommend-message").inner_text():
+            mismatch_message = page.locator("#recommend-message").inner_text()
+            if (
+                "라벨만으로 환산하지 않습니다" not in mismatch_message
+                or page.locator("#recommend-result").is_visible()
+            ):
                 raise AssertionError("국가별 라벨 불일치 환산이 차단되지 않음")
             actions.append({"action": "현재 사이즈 라벨 국가 불일치 환산 차단", "status": "ok"})
 
@@ -578,10 +604,22 @@ def check_information_guide_interactions(page, path):
             actions.append({"action": "레이싱 수트 일반표 교차 추천 차단", "status": "ok"})
             page.click(".tab-btn[data-tab='all']")
         elif path == "/faq":
-            page.fill("#search", "수영복")
+            query = "수영복"
+            page.fill("#search", query)
             visible = page.locator(".faq-item:visible")
-            if visible.count() < 1 or "수영복" not in visible.first.inner_text():
+            visible_count = visible.count()
+            total_count = page.locator(".faq-item").count()
+            counter_text = page.locator("#search-count").inner_text()
+            if visible_count < 1 or visible_count >= total_count or counter_text != f"{visible_count}건":
                 raise AssertionError("수영복 FAQ 검색 결과가 표시되지 않음")
+            for index in range(visible_count):
+                item = visible.nth(index)
+                searchable_text = " ".join([
+                    item.get_attribute("data-q") or "",
+                    item.locator(".faq-a").text_content() or "",
+                ]).lower()
+                if query not in searchable_text:
+                    raise AssertionError("수영복과 무관한 FAQ 항목이 검색 결과에 남아 있음")
             actions.append({"action": "수영복 FAQ 검색", "status": "ok"})
             page.fill("#search", "")
     except Exception as error:
