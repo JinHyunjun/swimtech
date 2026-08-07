@@ -119,15 +119,21 @@ def test_landing_load(page: Page):
     # 헤더 로고
     expect(page.locator(".logo").first).to_be_visible()
 
-    # 주요 카드 버튼 14개 이상
-    cards = page.locator(".menu-card")
-    assert cards.count() >= 14, f"menu-card count: {cards.count()}"
+    # 첫 화면은 훈련량 요약, 전체 기능은 카테고리형 사이드바로 분리
+    expect(page.locator("#service-sidebar")).to_be_visible()
+    expect(page.locator("#home-week-distance")).to_be_visible()
+    expect(page.locator("#home-week-sessions")).to_be_visible()
+    expect(page.locator("#home-month-distance")).to_be_visible()
+    expect(page.locator("#home-total-distance")).to_be_visible()
+    expect(page.locator("#home-history")).to_be_visible()
+    expect(page.locator("#advisor-title")).to_be_visible()
 
-    # 핵심 CTA 버튼 텍스트 확인
-    btn_texts = page.locator(".hero-btn, .menu-btn").all_text_contents()
-    # AI 코치 hero-btn + 메뉴 카드 menu-btn
-    assert any("대화" in t for t in btn_texts), "AI코치 버튼 없음"
-    assert any("보기" in t or "찾기" in t for t in btn_texts), "수영장/드릴 버튼 없음"
+    service_links = page.locator(".service-nav-link")
+    assert service_links.count() >= 20, f"service-nav-link count: {service_links.count()}"
+    expect(page.locator(".service-nav-link[href='/training-log']")).to_be_visible()
+    expect(page.locator(".service-nav-link[href='/plan']")).to_be_visible()
+    expect(page.locator(".service-nav-link[href='/report']")).to_be_visible()
+    expect(page.locator(".service-nav-link[href='/dashboard']")).to_be_visible()
 
     shot(page, "01_landing")
 
@@ -1292,13 +1298,13 @@ def test_equipment_card_toggle(page: Page):
 
 
 def test_equipment_landing_card(page: Page):
-    """/landing — 정보/도움 섹션에 장비 가이드 카드 존재 확인."""
+    """/landing — 탐색과 도움 메뉴에 장비·수영복 가이드 링크가 존재하는지 확인."""
     goto(page, "/landing")
     page.wait_for_timeout(500)
 
-    card = page.locator("a.menu-card[href='/equipment']")
-    expect(card).to_be_visible()
-    expect(page.locator("a.menu-card[href='/equipment?tab=swimwear']")).to_be_visible()
+    link = page.locator("a.service-nav-link[href='/equipment']")
+    expect(link).to_be_visible()
+    expect(page.locator("a.service-nav-link[href='/equipment?tab=swimwear']")).to_be_visible()
 
     shot(page, "19_equipment_landing_card")
 

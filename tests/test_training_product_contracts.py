@@ -192,9 +192,48 @@ def test_training_dashboard_is_visible_from_the_landing_page():
     icons = (ROOT / "frontend" / "static" / "icons.svg").read_text(encoding="utf-8")
 
     assert 'href="/dashboard"' in landing
-    assert "훈련 대시보드" in landing
+    assert "상세 훈련 대시보드" in landing
     assert "#icon-dashboard" in landing
     assert 'id="icon-dashboard"' in icons
+
+
+def test_landing_is_a_personal_training_home_with_categorized_service_navigation():
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    for marker in (
+        'id="service-sidebar"',
+        'id="menu-toggle"',
+        'id="home-week-distance"',
+        'id="home-week-sessions"',
+        'id="home-month-distance"',
+        'id="home-total-distance"',
+        'id="weekly-bar"',
+        'id="home-history"',
+        'id="advisor-title"',
+    ):
+        assert marker in landing
+
+    for heading in ("내 훈련 홈", "기록과 훈련", "코칭과 함께", "탐색과 도움"):
+        assert heading in landing
+
+    for endpoint in (
+        "/api/dashboard/summary",
+        "/api/dashboard/weekly",
+        "/api/dashboard/history",
+        "/api/dashboard/training-advisor",
+    ):
+        assert endpoint in landing
+
+    assert "@media (max-width:900px)" in landing
+    assert "aria-expanded" in landing
+    assert "syncHeaderOffset" in landing
+    assert "sidebarBackdrop.setAttribute('aria-hidden', String(!open))" in landing
+    assert "if (summaryResult.status === 'fulfilled') renderSummary(summaryResult.value)" in landing
+    assert "if (weeklyResult.status === 'fulfilled')" in landing
+    assert '"/landing": {' in ui_qa
+    assert "#service-sidebar" in ui_qa
+    assert "무엇을 도와드릴까요? 원하는 서비스를 선택해주세요" not in landing
 
 
 def test_render_deploy_hook_is_triggered_for_backend_changes():
