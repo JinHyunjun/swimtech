@@ -236,6 +236,49 @@ def test_landing_is_a_personal_training_home_with_categorized_service_navigation
     assert "무엇을 도와드릴까요? 원하는 서비스를 선택해주세요" not in landing
 
 
+def test_feature_pages_keep_the_shared_service_navigation_visible():
+    service_nav = (ROOT / "frontend" / "static" / "service-nav.js").read_text(encoding="utf-8")
+    static_theme = (ROOT / "frontend" / "static" / "theme.js").read_text(encoding="utf-8")
+    root_theme = (ROOT / "frontend" / "theme.js").read_text(encoding="utf-8")
+    static_style = (ROOT / "frontend" / "static" / "style.css").read_text(encoding="utf-8")
+    root_style = (ROOT / "frontend" / "style.css").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    for route in (
+        "/dashboard", "/training-log", "/plan", "/workout", "/report", "/my-data",
+        "/badges", "/chat", "/coach", "/clubs", "/challenge", "/community",
+        "/pool", "/drill", "/injury", "/equipment", "/videos", "/glossary",
+        "/faq", "/tutorial", "/profile", "/feedback", "/changelog",
+    ):
+        assert f"'{route}'" in static_theme
+        assert f"'{route}'" in root_theme
+        assert f"href: '{route}'" in service_nav
+
+    for excluded_route in ("'/landing'", "'/login'", "'/register'", "'/admin'", "'/onboarding'", "'/privacy'", "'/terms'"):
+        assert excluded_route not in static_theme
+        assert excluded_route not in root_theme
+
+    for marker in (
+        "global-service-nav", "global-service-nav-toggle", "global-service-nav-backdrop",
+        "aria-current", "MOBILE_QUERY", "aria-expanded", "aria-hidden", "inert",
+        "swimmate:service-nav-ready", "fetch('/auth/me'", "profile.is_demo",
+        "profile.is_admin", "textContent = displayName",
+    ):
+        assert marker in service_nav
+
+    assert "--global-service-nav-width: 268px" in static_style
+    assert "body.global-service-nav-enabled" in static_style
+    assert "body.global-service-nav-open" in static_style
+    assert "@media (max-width: 900px)" in static_style
+    assert static_style == root_style
+    assert "SERVICE_NAV_PATHS" in ui_qa
+    assert "def check_service_navigation(page, path):" in ui_qa
+    assert "check_service_navigation(page, path)" in ui_qa
+    assert "service_navigation_mobile_open_failed" in ui_qa
+    assert "service_navigation_mobile_escape_close_failed" in ui_qa
+    assert ":not(.global-service-nav-link):not(.service-nav-link)" in ui_qa
+
+
 def test_render_deploy_hook_is_triggered_for_backend_changes():
     workflow = (ROOT / ".github" / "workflows" / "render-deploy.yml").read_text(encoding="utf-8")
 
@@ -1049,7 +1092,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 108개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 109개" in quality_doc
     assert "50개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "28개 화면 검증" in quality_doc
@@ -1057,7 +1100,7 @@ def test_quality_gate_documentation_is_kept_current():
     assert "스크린샷 기능 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
-    assert "Playwright E2E 정의 104개" in quality_doc
+    assert "Playwright E2E 정의 105개" in quality_doc
     assert "유일한 필수 품질 게이트" in quality_doc
     assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [

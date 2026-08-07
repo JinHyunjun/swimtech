@@ -138,6 +138,32 @@ def test_landing_load(page: Page):
     shot(page, "01_landing")
 
 
+def test_feature_pages_keep_service_navigation_and_mobile_drawer(page: Page):
+    """기능 화면 사이를 홈으로 돌아가지 않고 공통 메뉴로 이동한다."""
+    goto(page, "/dashboard")
+    nav = page.locator("#global-service-nav")
+    expect(nav).to_be_visible()
+    expect(page.locator(".global-service-nav-link[href='/dashboard']")).to_have_attribute("aria-current", "page")
+    assert page.locator(".global-service-nav-link").count() >= 25
+
+    page.locator(".global-service-nav-link[href='/plan']").click()
+    page.wait_for_url(re.compile(r"/plan(?:\?.*)?$"), timeout=10_000)
+    expect(page.locator("#global-service-nav")).to_be_visible()
+    expect(page.locator(".global-service-nav-link[href='/plan']")).to_have_attribute("aria-current", "page")
+
+    page.set_viewport_size({"width": 390, "height": 844})
+    toggle = page.locator("#global-service-nav-toggle")
+    expect(toggle).to_be_visible()
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-expanded", "true")
+    expect(page.locator("#global-service-nav.open")).to_be_visible()
+    expect(page.locator("body")).to_have_class(re.compile(r"global-service-nav-open"))
+    page.keyboard.press("Escape")
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    shot(page, "01_feature_service_navigation_mobile")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # 2. /login
 # ══════════════════════════════════════════════════════════════════════════

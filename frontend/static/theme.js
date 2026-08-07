@@ -17,6 +17,25 @@
   // 저장된 테마 즉시 적용 (FOUC 방지)
   var saved = localStorage.getItem(STORAGE_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
+
+  // 랜딩에서 사용하던 서비스 메뉴를 주요 기능 페이지에서도 계속 사용할 수 있게 한다.
+  function loadServiceNavigation() {
+    var servicePaths = [
+      '/dashboard', '/my-data', '/plan', '/training-log', '/training_log',
+      '/workout', '/report', '/pool', '/drill', '/faq', '/glossary',
+      '/badges', '/badge', '/changelog', '/community', '/challenge', '/equipment',
+      '/feedback', '/chat', '/videos', '/profile', '/injury', '/coach',
+      '/clubs', '/tutorial'
+    ];
+    var currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    if (servicePaths.indexOf(currentPath) === -1) return;
+    if (document.querySelector('script[data-service-navigation]')) return;
+    var script = document.createElement('script');
+    script.src = '/static/service-nav.js';
+    script.dataset.serviceNavigation = 'true';
+    document.head.appendChild(script);
+  }
+  loadServiceNavigation();
  
   function injectButton() {
     if (document.getElementById('theme-toggle-btn')) return;

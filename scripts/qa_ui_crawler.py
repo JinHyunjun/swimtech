@@ -108,6 +108,14 @@ PROTECTED_PATHS = {
     "/profile", "/injury", "/coach", "/clubs",
 }
 
+# 랜딩을 제외한 주요 기능 화면에는 동일한 서비스 사이드바가 유지되어야 한다.
+SERVICE_NAV_PATHS = {
+    "/dashboard", "/my-data", "/plan", "/training-log", "/workout", "/report",
+    "/pool", "/drill", "/faq", "/glossary", "/badges", "/changelog",
+    "/community", "/challenge", "/equipment", "/feedback", "/chat", "/videos",
+    "/profile", "/injury", "/coach", "/clubs", "/tutorial",
+}
+
 # 되돌릴 수 없는 동작 — 클릭하지 않고 "존재 확인"만 한다
 DESTRUCTIVE_PATTERN = re.compile(
     r"탈퇴|회원\s*탈퇴|로그아웃|log\s*out|logout|delete\s*account|withdraw|결제|구독\s*취소",
@@ -128,7 +136,7 @@ CLICKABLE_SELECTOR = (
     "button:not([disabled]), [role='button'], .tab-btn, .chip, .pool-filter-btn, "
     "[data-tab], [data-filter], [data-pool-length], [data-cycle-level], [data-type-filter], "
     "summary, .accordion-q, .faq-q, "
-    "a[href^='/']"
+    "a[href^='/']:not(.global-service-nav-link):not(.service-nav-link)"
 )
 
 # /admin은 실제 운영 데이터를 다루므로 탭·유형 필터만 일반 크롤 대상으로 삼는다.
@@ -525,6 +533,101 @@ def check_home_link_targets(page):
     return errors
 
 
+def check_service_navigation(page, path):
+    """주요 기능 페이지에서 공통 메뉴의 구조·활성 상태·대표 이동 경로를 검증한다."""
+    route = path.split("?", 1)[0].rstrip("/") or "/"
+    if route not in SERVICE_NAV_PATHS:
+        return []
+
+    errors = []
+    sidebar = page.locator("#global-service-nav")
+    try:
+        sidebar.wait_for(state="attached", timeout=7000)
+    except Exception:
+        return [{"type": "missing_service_navigation", "path": route}]
+
+    required_hrefs = {
+        "/landing", "/dashboard", "/training-log", "/plan", "/workout", "/report",
+        "/my-data", "/chat", "/coach", "/clubs", "/pool", "/drill", "/injury",
+        "/equipment", "/tutorial", "/profile", "/feedback",
+    }
+    actual_hrefs = set()
+    try:
+        links = page.locator("#global-service-nav .global-service-nav-link")
+        for index in range(links.count()):
+            href = links.nth(index).get_attribute("href")
+            if href:
+                actual_hrefs.add(href)
+        if links.count() < 25:
+            errors.append({"type": "service_navigation_link_count", "actual": links.count(), "minimum": 25})
+    except Exception as error:
+        errors.append({"type": "service_navigation_links_unreadable", "error": str(error)[:160]})
+
+    missing_hrefs = sorted(required_hrefs - actual_hrefs)
+    if missing_hrefs:
+        errors.append({"type": "service_navigation_missing_hrefs", "hrefs": missing_hrefs})
+
+    active = page.locator("#global-service-nav .global-service-nav-link[aria-current='page']")
+    try:
+        if active.count() != 1:
+            errors.append({"type": "service_navigation_active_count", "actual": active.count(), "expected": 1})
+        elif active.first.get_attribute("data-route") != route:
+            errors.append({
+                "type": "service_navigation_wrong_active_route",
+                "expected": route,
+                "actual": active.first.get_attribute("data-route"),
+            })
+    except Exception as error:
+        errors.append({"type": "service_navigation_active_unreadable", "error": str(error)[:160]})
+
+    try:
+        if not page.locator("body.global-service-nav-enabled").count():
+            errors.append({"type": "service_navigation_body_layout_missing"})
+        if page.locator("#global-service-nav-toggle").count() != 1:
+            errors.append({"type": "service_navigation_toggle_missing"})
+        if page.viewport_size and page.viewport_size["width"] > 900:
+            position = sidebar.evaluate("element => getComputedStyle(element).position")
+            if position != "fixed" or not sidebar.is_visible():
+                errors.append({"type": "service_navigation_not_persistent_desktop", "position": position})
+        overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
+        if overflow > 1:
+            errors.append({"type": "service_navigation_horizontal_overflow", "pixels": overflow})
+    except Exception as error:
+        errors.append({"type": "service_navigation_layout_unreadable", "error": str(error)[:160]})
+
+    # 대표 화면에서 모바일 드로어의 열기·ESC 닫기·스크롤 잠금까지 실제로 동작시킨다.
+    if route == "/dashboard":
+        original_viewport = page.viewport_size
+        try:
+            page.set_viewport_size({"width": 390, "height": 844})
+            toggle = page.locator("#global-service-nav-toggle")
+            toggle.wait_for(state="visible", timeout=3000)
+            if sidebar.get_attribute("aria-hidden") != "true":
+                errors.append({"type": "service_navigation_mobile_initial_state"})
+            toggle.click()
+            page.wait_for_timeout(250)
+            if (
+                toggle.get_attribute("aria-expanded") != "true"
+                or "open" not in (sidebar.get_attribute("class") or "").split()
+                or not page.locator("body.global-service-nav-open").count()
+                or not page.locator("#global-service-nav-backdrop.open").count()
+            ):
+                errors.append({"type": "service_navigation_mobile_open_failed"})
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(250)
+            if toggle.get_attribute("aria-expanded") != "false" or page.locator("body.global-service-nav-open").count():
+                errors.append({"type": "service_navigation_mobile_escape_close_failed"})
+            overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
+            if overflow > 1:
+                errors.append({"type": "service_navigation_mobile_horizontal_overflow", "pixels": overflow})
+        except Exception as error:
+            errors.append({"type": "service_navigation_mobile_interaction_failed", "error": str(error)[:160]})
+        finally:
+            if original_viewport:
+                page.set_viewport_size(original_viewport)
+    return errors
+
+
 def check_information_guide_interactions(page, path):
     """정보·도움 화면의 필터와 선택 결과가 실제 DOM 상태를 바꾸는지 읽기 전용으로 확인한다."""
     actions, errors = [], []
@@ -838,6 +941,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
     page.screenshot(path=str(SHOT_DIR / f"{slug(path)}_00_load.png"))
 
     expectation_errors = check_page_expectations(page, path)
+    expectation_errors.extend(check_service_navigation(page, path))
     expectation_errors.extend(check_home_link_targets(page))
     if path in {"/drill", "/injury", "/equipment", "/faq"}:
         guide_actions, guide_errors = check_information_guide_interactions(page, path)
