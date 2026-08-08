@@ -276,7 +276,11 @@
 .toast.show { opacity: 1; }
 
 @media (max-width: 500px) {
-  .student-actions { flex-wrap: wrap; gap: 6px; }
+  .student-card { align-items:flex-start; flex-wrap:wrap; gap:10px; padding:12px; }
+  .student-info { flex:1 1 calc(100% - 50px); }
+  .student-name,.student-meta { overflow-wrap:anywhere; word-break:keep-all; }
+  .student-actions { display:grid; width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .student-actions .s-btn { width:100%; min-width:0; padding:7px 4px; }
   .coach-profile { flex-direction: column; }
   .coach-page { padding: 18px 12px 72px; }
   .coach-overview-grid { grid-template-columns:1fr; }

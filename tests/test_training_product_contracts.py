@@ -918,6 +918,7 @@ def test_plan_p6_coach_code_ai_class_operations_are_connected():
     assert 'id="disconnect-coach-btn"' in coach_page
     assert "shareInviteCode" in coach_page
     assert 'id="coach-ai-studio"' in coach_page
+    assert ".student-actions { display:grid; width:100%; grid-template-columns:repeat(4,minmax(0,1fr));" in coach_page
     assert 'id="coach-ai-insight"' in coach_page
     assert 'id="my-class-documents"' in coach_page
     assert 'data-tab="coaches"' in admin_page
