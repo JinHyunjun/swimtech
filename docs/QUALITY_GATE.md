@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 109개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 105개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 50개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 19개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 106개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 20개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -40,6 +40,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 준비도·주간 어드바이저 | 체크인 저장·복원, 낮은 준비도에서 회복 우선 추천, 관리자 7일 지표 | `qa_runner.py` 18a, `/admin` UI 기대값 |
 | 훈련 플랜 | 풀 길이, 사이클, 드릴·대시 필터, 품질 검증, 템플릿, 즐겨찾기, 공유, 일지 전송 | `plan.html` 계약 테스트, Playwright plan 섹션 |
 | 헬스 데이터 가져오기 비활성 경계 | 훈련 일지 버튼의 `disabled`·`aria-disabled`·`준비 중` 문구, 클릭 이벤트 미연결, 워치 직접 동기화·파일 가져오기를 제공 기능으로 오인할 문구 없음 | 훈련 일지 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]` |
+| 운동 스크린샷 AI 확인 등록 | 인증 필수, PNG/JPEG/WEBP/HEIC/HEIF 파일 서명·8MB 제한, Gemini 구조화 출력, 프롬프트 주입 무시, 원본 이미지 비저장, 20분 고객별 확인 토큰, 연도·거리 합계·랩×풀 경고, 사용자 수정 전 일지 미생성, 의미 기반 중복 방지, 일지·영법 세트·월간 영법 분포·관리자 30일 등록 건수 연동 | `TestWorkoutScreenshotImport`, 스크린샷 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]`·`["/admin"]`, Playwright `test_training_log_screenshot_import_review_flow`, 운영 API·Postman 확인 토큰 경계 |
 | 월간 리포트 | 훈련 일지와 같은 사용자 기준, 평균 거리, 플랜·세트 수행률, 사이클 포함률, 목표 달성률, 공유 링크, 비동기 인증 완료 전 월 이동 시 유효한 연·월 유지 | `qa_runner.py` 17, `report.py` 계약 테스트, UI 비동기 안정화 검사 |
 | 뱃지·챌린지 | 실제 일지 기반 진행률, 랭킹, 참가·탈퇴, 다음 뱃지, 목표 단계 | Playwright challenge/badge, `badge.py` 계약 테스트 |
 | 커뮤니티·알림 | 게시글·댓글·좋아요·북마크·신고, 태그·멘션, 이미지 제한, 읽음 처리 | `test_api_unit.py`, Playwright community, `qa_runner.py` 관리자 피드백 |
@@ -114,10 +115,12 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 
 같은 날 랜딩의 카테고리 메뉴를 23개 주요 기능 경로와 릴리즈 노트에 공통 적용했다. 데스크톱은 268px 고정 사이드바, 900px 이하는 오버레이 드로어를 사용하고 현재 경로 활성화, 일반·체험·비로그인 사용자 표시, 관리자 링크 조건부 노출을 한 스크립트에서 관리한다. UI QA는 기존 일반 링크 자동 클릭 대상에서 공통 메뉴를 분리해 모든 적용 화면의 링크·활성 경로·본문 정렬·가로 넘침을 읽고, `/dashboard`에서 모바일 열기·ESC 닫기·스크롤 잠금을 실제로 실행한다. 로컬 핵심 109/109와 [GitHub Actions `31145322123`](https://github.com/JinHyunjun/swimtech/actions/runs/31145322123)을 통과했고, 운영 비회원 체험의 23/23 경로에서 고정 메뉴·현재 링크·가로 넘침과 페이지 스크립트 오류 0건을 확인했다. 데스크톱 `/dashboard → /plan`, 390px 모바일 `/plan → /report`, 완전 비로그인 `/drill` 메뉴를 직접 검증한 뒤 P20을 완료했다.
 
+2026-08-08에는 Apple Fitness 수영 스크린샷 AI 확인 등록의 배포 전 검증을 추가했다. 핵심 115/115와 Alembic 단일 head, Playwright 106개 수집, 훈련 일지 인라인 JavaScript 구문 검사가 통과했다. 모의 Apple 예시의 multipart `/preview`는 1,125m·영법 5종을 `needs_confirmation`으로 반환했고, Gemini 3.1 Flash-Lite 실제 멀티모달 호출은 일반 훈련 플랜 화면을 완료 운동이 아닌 것으로 구조화 판정했다. 파일 서명·연도 경고·거리/랩/칼로리 일관성·고객별 토큰·확정 트랜잭션·원본 비저장을 자동 검사하며, P21 완료와 Notion 반영은 운영 Apple Fitness 원본으로 추출→사용자 확인→일지·세트·월간 리포트→중복 거부까지 확인한 뒤 판정한다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
-- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 19개 대표 API 요청과 assertion 결과
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 20개 대표 API 요청과 assertion 결과

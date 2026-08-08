@@ -213,6 +213,29 @@ def main():
     note = "일반계정은 소셜전용(400) — 의도된 동작" if r.status_code == 400 else "설정됨"
     rec(6, "닉네임 설정", expected, f"{r.status_code} ({note})")
 
+    screenshot_unknown = sess.post(
+        f"{BASE}/api/training-log/screenshot/confirm",
+        json={
+            "preview_token": "qa-invalid-screenshot-preview",
+            "log_date": time.strftime("%Y-%m-%d"),
+            "total_distance": 1000,
+            "duration_minutes": 40,
+            "pool_length": 25,
+            "stroke_type": "자유수영",
+            "intensity": "보통",
+            "stroke_distances": [],
+        },
+        timeout=60,
+    )
+    screenshot_unknown_body = jget(screenshot_unknown)
+    rec(
+        "6f",
+        "운동 스크린샷 확인 토큰 경계",
+        screenshot_unknown.status_code == 404
+        and "다시 분석" in str(screenshot_unknown_body.get("detail") or ""),
+        f"status {screenshot_unknown.status_code}, detail={screenshot_unknown_body.get('detail')}",
+    )
+
     export_wrong = sess.post(
         f"{BASE}/api/account/export",
         json={"current_password": f"{pw}-invalid"},
@@ -1167,6 +1190,8 @@ def main():
             and "test_results_30d" in health_summary
             and "test_users_30d" in health_summary
             and "personal_bests_30d" in health_summary
+            and "screenshot_imports_30d" in health_summary
+            and "screenshot_import_users_30d" in health_summary
             and isinstance(health_json.get("watchlist"), list)
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
@@ -1181,7 +1206,8 @@ def main():
             f"readiness={health_summary.get('readiness_checkins_7d')}/{health_summary.get('readiness_avg_score_7d')}점, "
             f"clubs={health_summary.get('active_clubs')}/classes={health_summary.get('active_classes')}/"
             f"attendance={health_summary.get('attendance_rate_30d')}%, "
-            f"tests={health_summary.get('test_results_30d')}/pb={health_summary.get('personal_bests_30d')}")
+            f"tests={health_summary.get('test_results_30d')}/pb={health_summary.get('personal_bests_30d')}, "
+            f"screenshots={health_summary.get('screenshot_imports_30d')}/users={health_summary.get('screenshot_import_users_30d')}")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")

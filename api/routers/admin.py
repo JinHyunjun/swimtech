@@ -616,7 +616,8 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                to_regclass('public.swim_class_sessions'),
                to_regclass('public.swim_class_attendance'),
                to_regclass('public.swim_class_notices'),
-               to_regclass('public.swim_test_results')
+               to_regclass('public.swim_test_results'),
+               to_regclass('public.wearable_workouts')
     """)
     (
         has_training_logs,
@@ -630,6 +631,7 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         has_class_attendance,
         has_class_notices,
         has_test_results,
+        has_wearable_workouts,
     ) = [
         bool(x) for x in cur.fetchone()
     ]
@@ -660,6 +662,8 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         "test_results_30d": 0,
         "test_users_30d": 0,
         "personal_bests_30d": 0,
+        "screenshot_imports_30d": 0,
+        "screenshot_import_users_30d": 0,
     }
     pool_distribution = []
     stroke_distribution = []
@@ -759,6 +763,17 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         row = cur.fetchone()
         summary["goal_users_this_month"] = _safe_int(row[0])
         summary["goal_achievement_rate"] = round(_safe_float(row[1]))
+
+    if has_wearable_workouts:
+        cur.execute("""
+            SELECT COUNT(*), COUNT(DISTINCT customer_id)
+            FROM wearable_workouts
+            WHERE RIGHT(provider, 11) = '_screenshot'
+              AND created_at >= NOW() - INTERVAL '30 days'
+        """)
+        row = cur.fetchone()
+        summary["screenshot_imports_30d"] = _safe_int(row[0])
+        summary["screenshot_import_users_30d"] = _safe_int(row[1])
 
     if has_custom_plans:
         cur.execute("""

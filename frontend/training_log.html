@@ -160,6 +160,41 @@
 }
 .import-source-tab.active { border-color: var(--blue); color: var(--blue); }
 
+.screenshot-drop {
+  display: block; border: 1.5px dashed var(--blue); border-radius: var(--radius-md);
+  padding: 18px; text-align: center; cursor: pointer; background: rgba(0,180,216,.05);
+  transition: background .2s, border-color .2s;
+}
+.screenshot-drop:hover { background: rgba(0,180,216,.1); border-color: var(--cyan); }
+.screenshot-drop input[type=file] { display: none; }
+.screenshot-preview {
+  width: 100%; max-height: 280px; object-fit: contain; margin-top: 14px;
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: #000;
+}
+.screenshot-privacy {
+  margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: rgba(74,222,128,.08); color: var(--muted); font-size: var(--fs-caption); line-height: 1.55;
+}
+.screenshot-question {
+  padding: 13px 14px; margin-bottom: 16px; border: 0.5px solid var(--cyan);
+  border-radius: var(--radius-sm); background: rgba(72,202,228,.08); color: var(--text);
+  font-size: var(--fs-body); font-weight: 700;
+}
+.screenshot-confidence { color: var(--cyan); font-size: var(--fs-caption); margin-top: -10px; margin-bottom: 14px; }
+.screenshot-warning-list {
+  display: none; margin: 4px 0 14px; padding: 10px 12px 10px 28px;
+  border-radius: var(--radius-sm); background: rgba(250,204,21,.08); color: #fde68a;
+  font-size: var(--fs-caption); line-height: 1.5;
+}
+.screenshot-warning-list.visible { display: block; }
+.screenshot-metric-note { color: var(--muted); font-size: var(--fs-caption); margin: -5px 0 12px; }
+.screenshot-strokes {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+}
+.screenshot-stroke-field label { display: block; color: var(--muted); font-size: var(--fs-caption); margin-bottom: 4px; }
+.screenshot-stroke-field input { padding: 8px 9px; }
+.screenshot-loading { color: var(--cyan); font-size: var(--fs-caption); margin-top: 10px; min-height: 18px; }
+
 .log-item {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
   padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;
@@ -258,8 +293,9 @@ select.form-control option { background: var(--surface); }
   .benchmark-row .benchmark-date { display:none; }
   .log-list-head { align-items:stretch; flex-direction:column; gap:10px; }
   .log-list-head-actions { width:100%; flex-wrap:wrap; }
-  #btn-open-import { flex:1 1 100%; justify-content:center; }
+  #btn-open-screenshot, #btn-open-import { flex:1 1 100%; justify-content:center; }
   #btn-quick-log, #btn-open-modal { flex:1 1 0; justify-content:center; }
+  .screenshot-strokes { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ── 월간 목표 ── */
@@ -389,6 +425,9 @@ select.form-control option { background: var(--surface); }
       <div class="log-list-head">
         <div class="log-list-title" id="log-list-title">기록 목록</div>
         <div class="log-list-head-actions">
+          <button class="btn-import-log" id="btn-open-screenshot" type="button">
+            📷 운동 스크린샷 등록
+          </button>
           <button class="btn-import-log" id="btn-open-import" type="button" disabled aria-disabled="true"
                   data-feature-state="disabled" title="현재 공개 서비스에서는 지원하지 않는 기능입니다.">
             ⤓ 워치 데이터 가져오기 (준비 중)
@@ -437,6 +476,78 @@ select.form-control option { background: var(--surface); }
     <div class="form-row"><label class="form-label" for="b-notes">메모 (선택)</label><input class="form-control" id="b-notes" maxlength="300" placeholder="예: 푸시 스타트, 오리발 없음"></div>
     <div id="benchmark-error" style="display:none;color:var(--red);font-size:var(--fs-caption);"></div>
     <div class="modal-actions"><button class="btn-cancel" id="btn-benchmark-cancel" type="button">취소</button><button class="btn-submit" id="btn-benchmark-save" type="button">기록 저장</button></div>
+  </div>
+</div>
+
+<!-- 운동 스크린샷 AI 등록 모달 -->
+<div class="modal-backdrop hidden" id="screenshot-modal-backdrop">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">운동 스크린샷으로 일지 등록</div>
+
+    <div id="screenshot-step-pick">
+      <div class="form-row">
+        <label class="form-label" for="screenshot-source">운동 앱</label>
+        <select class="form-control" id="screenshot-source">
+          <option value="apple_fitness">Apple Fitness 수영 (1차 지원)</option>
+        </select>
+      </div>
+      <label class="screenshot-drop" id="screenshot-drop">
+        <strong style="display:block;color:var(--text);margin-bottom:5px;">사진첩에서 운동 요약 스크린샷 선택</strong>
+        <span id="screenshot-file-label" style="color:var(--muted);font-size:var(--fs-caption);">PNG·JPEG·WEBP·HEIC·HEIF, 최대 8MB</span>
+        <input type="file" id="screenshot-file-input" accept="image/png,image/jpeg,image/webp,image/heic,image/heif">
+      </label>
+      <img id="screenshot-preview-image" class="screenshot-preview hidden" alt="선택한 운동 스크린샷 미리보기">
+      <div class="screenshot-privacy">
+        선택한 이미지 1장만 Gemini 분석에 일시 전송됩니다. SwimMate 서버와 DB에는 원본 이미지를 저장하지 않으며,
+        사용자가 다음 단계에서 확인하기 전에는 훈련 일지가 생성되지 않습니다.
+      </div>
+      <div class="screenshot-loading" id="screenshot-analysis-status" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="screenshot-pick-cancel" type="button">취소</button>
+        <button class="btn-submit" id="screenshot-analyze-btn" type="button" disabled>AI로 내용 읽기</button>
+      </div>
+    </div>
+
+    <div id="screenshot-step-confirm" class="hidden">
+      <div class="screenshot-question">AI가 아래와 같이 읽었습니다. 실제로 한 운동이 맞나요?</div>
+      <div class="screenshot-confidence" id="screenshot-confidence"></div>
+      <ul class="screenshot-warning-list" id="screenshot-warnings"></ul>
+
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-date">운동 날짜</label><input class="form-control" type="date" id="shot-date"></div>
+        <div class="form-row"><label class="form-label" for="shot-pool">수영장 길이</label><select class="form-control" id="shot-pool"><option value="25">25m</option><option value="50">50m</option></select></div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-distance">총 거리 (m)</label><input class="form-control" type="number" min="1" max="100000" id="shot-distance"></div>
+        <div class="form-row"><label class="form-label" for="shot-duration">운동 시간 (분)</label><input class="form-control" type="number" min="1" max="1440" id="shot-duration"></div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-stroke">대표 영법</label><select class="form-control" id="shot-stroke"><option>자유형</option><option>배영</option><option>평영</option><option>접영</option><option>혼영</option><option>자유수영</option></select></div>
+        <div class="form-row"><label class="form-label" for="shot-intensity">강도</label><select class="form-control" id="shot-intensity"><option>쉬움</option><option selected>보통</option><option>힘듦</option></select></div>
+      </div>
+
+      <div class="form-label">영법별 거리 (m)</div>
+      <div class="screenshot-strokes" id="screenshot-strokes"></div>
+      <div class="screenshot-metric-note">영법별 합계가 총거리보다 작으면 남은 거리는 ‘기타’로 저장됩니다.</div>
+
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-active-calories">활동 칼로리 (kcal)</label><input class="form-control" type="number" min="0" max="10000" id="shot-active-calories"></div>
+        <div class="form-row"><label class="form-label" for="shot-total-calories">총 칼로리 (kcal)</label><input class="form-control" type="number" min="0" max="10000" id="shot-total-calories"></div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-pace">평균 페이스 (/100m, m:ss)</label><input class="form-control" inputmode="numeric" placeholder="예: 2:50" id="shot-pace"></div>
+        <div class="form-row"><label class="form-label" for="shot-heart-rate">평균 심박수 (bpm)</label><input class="form-control" type="number" min="20" max="260" id="shot-heart-rate"></div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-row"><label class="form-label" for="shot-laps">랩</label><input class="form-control" type="number" min="1" max="10000" id="shot-laps"></div>
+        <div class="form-row"><label class="form-label" for="shot-memo">추가 메모</label><input class="form-control" maxlength="500" placeholder="선택 입력" id="shot-memo"></div>
+      </div>
+      <div id="screenshot-confirm-error" style="display:none;color:var(--red);font-size:var(--fs-caption);margin-top:6px;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="screenshot-back-btn" type="button">다시 선택</button>
+        <button class="btn-submit" id="screenshot-confirm-btn" type="button">확인하고 일지에 저장</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -972,6 +1083,247 @@ async function openQuickLog() {
     button.textContent = originalText;
   }
 }
+
+// ── 운동 스크린샷 AI 등록 ───────────────────────────────────
+const SCREENSHOT_STROKES = [
+  ['freestyle', '자유형'], ['backstroke', '배영'], ['breaststroke', '평영'],
+  ['butterfly', '접영'], ['kickboard', '킥판'], ['mixed', '혼영'], ['other', '기타'],
+];
+let screenshotFile = null;
+let screenshotObjectUrl = '';
+let screenshotPreviewToken = '';
+
+function resetScreenshotModal() {
+  screenshotFile = null;
+  screenshotPreviewToken = '';
+  if (screenshotObjectUrl) URL.revokeObjectURL(screenshotObjectUrl);
+  screenshotObjectUrl = '';
+  document.getElementById('screenshot-file-input').value = '';
+  document.getElementById('screenshot-file-label').textContent = 'PNG·JPEG·WEBP·HEIC·HEIF, 최대 8MB';
+  document.getElementById('screenshot-preview-image').classList.add('hidden');
+  document.getElementById('screenshot-preview-image').removeAttribute('src');
+  document.getElementById('screenshot-analysis-status').textContent = '';
+  document.getElementById('screenshot-analyze-btn').disabled = true;
+  document.getElementById('screenshot-step-pick').classList.remove('hidden');
+  document.getElementById('screenshot-step-confirm').classList.add('hidden');
+  document.getElementById('screenshot-confirm-error').style.display = 'none';
+}
+
+function openScreenshotModal() {
+  resetScreenshotModal();
+  document.getElementById('screenshot-modal-backdrop').classList.remove('hidden');
+}
+
+function closeScreenshotModal() {
+  resetScreenshotModal();
+  document.getElementById('screenshot-modal-backdrop').classList.add('hidden');
+}
+
+function screenshotNumber(value) {
+  if (String(value ?? '').trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function paceSecondsToText(seconds) {
+  const value = Number(seconds || 0);
+  return value > 0 ? `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}` : '';
+}
+
+function paceTextToSeconds(text) {
+  const match = String(text || '').trim().match(/^(\d{1,2}):([0-5]\d)$/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function durationSecondsText(seconds) {
+  const value = Number(seconds || 0);
+  if (!value) return '';
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const rest = value % 60;
+  return `${hours ? `${hours}시간 ` : ''}${minutes}분 ${rest}초`;
+}
+
+function renderScreenshotConfirmation(data) {
+  const workout = data.workout || {};
+  screenshotPreviewToken = data.preview_token || '';
+  document.getElementById('shot-date').value = workout.log_date || '';
+  document.getElementById('shot-pool').value = String(workout.pool_length || 25);
+  document.getElementById('shot-distance').value = workout.total_distance || '';
+  document.getElementById('shot-duration').value = workout.duration_minutes || '';
+  document.getElementById('shot-stroke').value = workout.stroke_type || '자유수영';
+  document.getElementById('shot-intensity').value = '보통';
+  document.getElementById('shot-active-calories').value = workout.active_calories_kcal ?? '';
+  document.getElementById('shot-total-calories').value = workout.total_calories_kcal ?? '';
+  document.getElementById('shot-pace').value = paceSecondsToText(workout.average_pace_seconds_per_100m);
+  document.getElementById('shot-heart-rate').value = workout.average_heart_rate_bpm ?? '';
+  document.getElementById('shot-laps').value = workout.lap_count ?? '';
+  document.getElementById('shot-memo').value = '';
+
+  const strokeMap = Object.fromEntries((workout.stroke_distances || []).map(item => [item.stroke, Number(item.distance_m || 0)]));
+  const strokes = document.getElementById('screenshot-strokes');
+  strokes.innerHTML = '';
+  SCREENSHOT_STROKES.forEach(([key, label]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'screenshot-stroke-field';
+    const caption = document.createElement('label');
+    caption.htmlFor = `shot-stroke-${key}`;
+    caption.textContent = label;
+    const input = document.createElement('input');
+    input.className = 'form-control';
+    input.type = 'number';
+    input.min = '0';
+    input.max = '100000';
+    input.id = `shot-stroke-${key}`;
+    input.dataset.stroke = key;
+    input.value = strokeMap[key] || '';
+    wrap.append(caption, input);
+    strokes.appendChild(wrap);
+  });
+
+  const confidence = Math.round(Number(data.confidence || 0) * 100);
+  const timing = [workout.start_time && `시작 ${workout.start_time}`, workout.end_time && `종료 ${workout.end_time}`, durationSecondsText(workout.duration_seconds)].filter(Boolean);
+  document.getElementById('screenshot-confidence').textContent =
+    `인식 확신도 ${confidence}%${timing.length ? ` · ${timing.join(' · ')}` : ''} · 반드시 직접 확인해주세요.`;
+
+  const warnings = document.getElementById('screenshot-warnings');
+  warnings.innerHTML = '';
+  (workout.warnings || []).forEach(message => {
+    const item = document.createElement('li');
+    item.textContent = message;
+    warnings.appendChild(item);
+  });
+  warnings.classList.toggle('visible', warnings.children.length > 0);
+  document.getElementById('screenshot-step-pick').classList.add('hidden');
+  document.getElementById('screenshot-step-confirm').classList.remove('hidden');
+}
+
+document.getElementById('btn-open-screenshot').onclick = openScreenshotModal;
+document.getElementById('screenshot-pick-cancel').onclick = closeScreenshotModal;
+document.getElementById('screenshot-back-btn').onclick = resetScreenshotModal;
+document.getElementById('screenshot-modal-backdrop').addEventListener('click', event => {
+  if (event.target.id === 'screenshot-modal-backdrop') closeScreenshotModal();
+});
+
+document.getElementById('screenshot-file-input').addEventListener('change', event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    alert('8MB 이하 이미지만 선택해주세요.');
+    event.target.value = '';
+    return;
+  }
+  const supportedMime = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'].includes(file.type);
+  const supportedExtension = /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name || '');
+  if (!supportedMime && !supportedExtension) {
+    alert('PNG, JPEG, WEBP, HEIC 또는 HEIF 이미지만 지원합니다.');
+    event.target.value = '';
+    return;
+  }
+  screenshotFile = file;
+  if (screenshotObjectUrl) URL.revokeObjectURL(screenshotObjectUrl);
+  screenshotObjectUrl = URL.createObjectURL(file);
+  const preview = document.getElementById('screenshot-preview-image');
+  preview.src = screenshotObjectUrl;
+  preview.classList.remove('hidden');
+  preview.onerror = () => preview.classList.add('hidden');
+  document.getElementById('screenshot-file-label').textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)}MB`;
+  document.getElementById('screenshot-analyze-btn').disabled = false;
+  document.getElementById('screenshot-analysis-status').textContent = '';
+});
+
+document.getElementById('screenshot-analyze-btn').onclick = async () => {
+  if (!screenshotFile) return;
+  const button = document.getElementById('screenshot-analyze-btn');
+  const status = document.getElementById('screenshot-analysis-status');
+  button.disabled = true;
+  button.textContent = '분석 중...';
+  status.textContent = '이미지에서 거리·시간·영법·풀 길이를 읽고 있습니다.';
+  const form = new FormData();
+  form.append('image', screenshotFile);
+  form.append('source', document.getElementById('screenshot-source').value);
+  try {
+    const response = await fetch('/api/training-log/screenshot/preview', {
+      method: 'POST', credentials: 'include', body: form,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '이미지를 분석하지 못했습니다.');
+    if (!data.can_confirm) throw new Error(data.message || '수영 운동 화면으로 확인되지 않았습니다.');
+    renderScreenshotConfirmation(data);
+  } catch (error) {
+    status.textContent = error.message || '이미지 분석 중 오류가 발생했습니다.';
+  } finally {
+    button.disabled = !screenshotFile;
+    button.textContent = 'AI로 내용 읽기';
+  }
+};
+
+document.getElementById('screenshot-confirm-btn').onclick = async () => {
+  const errorBox = document.getElementById('screenshot-confirm-error');
+  errorBox.style.display = 'none';
+  const paceText = document.getElementById('shot-pace').value.trim();
+  const paceSeconds = paceText ? paceTextToSeconds(paceText) : null;
+  const strokeDistances = Array.from(document.querySelectorAll('#screenshot-strokes input[data-stroke]'))
+    .map(input => ({ stroke: input.dataset.stroke, distance_m: Number(input.value || 0) }))
+    .filter(item => item.distance_m > 0);
+  const body = {
+    preview_token: screenshotPreviewToken,
+    log_date: document.getElementById('shot-date').value,
+    total_distance: Number(document.getElementById('shot-distance').value || 0),
+    duration_minutes: Number(document.getElementById('shot-duration').value || 0),
+    pool_length: Number(document.getElementById('shot-pool').value),
+    stroke_type: document.getElementById('shot-stroke').value,
+    intensity: document.getElementById('shot-intensity').value,
+    active_calories_kcal: screenshotNumber(document.getElementById('shot-active-calories').value),
+    total_calories_kcal: screenshotNumber(document.getElementById('shot-total-calories').value),
+    average_pace_seconds_per_100m: paceSeconds,
+    average_heart_rate_bpm: screenshotNumber(document.getElementById('shot-heart-rate').value),
+    lap_count: screenshotNumber(document.getElementById('shot-laps').value),
+    stroke_distances: strokeDistances,
+    memo: document.getElementById('shot-memo').value.trim() || null,
+  };
+  const strokeSum = strokeDistances.reduce((sum, item) => sum + item.distance_m, 0);
+  let validation = '';
+  if (!body.log_date) validation = '운동 날짜를 확인해주세요.';
+  else if (body.total_distance < 1) validation = '총거리를 확인해주세요.';
+  else if (body.duration_minutes < 1) validation = '운동 시간을 확인해주세요.';
+  else if (body.total_distance % body.pool_length !== 0) validation = '총거리는 선택한 수영장 길이의 배수여야 합니다.';
+  else if (body.lap_count && body.lap_count * body.pool_length !== body.total_distance) validation = '랩×수영장 길이와 총거리가 다릅니다.';
+  else if (strokeSum > body.total_distance) validation = '영법별 거리 합계가 총거리보다 큽니다.';
+  else if (body.active_calories_kcal !== null && body.total_calories_kcal !== null && body.total_calories_kcal < body.active_calories_kcal) validation = '총 칼로리는 활동 칼로리보다 작을 수 없습니다.';
+  else if (paceText && paceSeconds === null) validation = '평균 페이스는 m:ss 형식으로 입력해주세요.';
+  if (validation) {
+    errorBox.textContent = validation;
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  const button = document.getElementById('screenshot-confirm-btn');
+  button.disabled = true;
+  button.textContent = '저장 중...';
+  try {
+    const response = await fetch('/api/training-log/screenshot/confirm', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '운동을 저장하지 못했습니다.');
+    closeScreenshotModal();
+    refresh();
+    if (data.status === 'duplicate') {
+      alert('이미 등록된 운동이라 중복 저장하지 않았습니다.');
+    } else {
+      showReportToast(body.log_date, false, data.training_log_id || null);
+    }
+  } catch (error) {
+    errorBox.textContent = error.message || '운동 저장 중 오류가 발생했습니다.';
+    errorBox.style.display = 'block';
+  } finally {
+    button.disabled = false;
+    button.textContent = '확인하고 일지에 저장';
+  }
+};
 
 // ── 운동 데이터 가져오기 (Health Auto Export / 애플 건강 / 삼성헬스) ──────────────
 let importSource = 'hae';

@@ -35,7 +35,7 @@
 | `/changelog` | 공개 | Notion 공개 릴리즈 노트 표시 | `/api/changelog` | `NOTION_TOKEN` 필요, 없으면 503 |
 | `/dashboard` | 로그인 | 요약, 주간 목표, 준비도, 개인 수준·목표·선호 풀 기반 규칙 훈련 어드바이저, 최근 기록 | `/api/dashboard/*`, `training_logs`, `training_readiness`, `customers` | 활성 |
 | `/my-data` | 로그인 | 평생 누적, 최근 90일 비교, 12개월 추이, 영법·풀 분포, 기록 습관, 테스트 시도·코스별 PB, 규칙 기반 인사이트 | `/api/account/insights`, `training_logs`, `training_log_sets`, `plan_completions`, `swim_test_results` | 활성 |
-| `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 테스트 세트·코스별 PB, 최근 기록 복사. 워치·건강 파일 가져오기 진입은 `준비 중` 비활성 상태 | `/api/training-log/*`, `/api/training-log/{id}/sets`, `/api/benchmarks` | 일지 활성, 가져오기 UI 비활성 |
+| `/training-log` | 로그인 | 일지 CRUD, 세트별 계획·수행·사이클, 월간 목표·통계·캘린더·연속 출석, 테스트 세트·코스별 PB, 최근 기록 복사. Apple Fitness 수영 스크린샷은 AI 초안→사용자 확인·수정→일지·영법 세트 저장. 워치 직접 동기화와 건강 전체 파일 가져오기는 `준비 중` 비활성 상태 | `/api/training-log/*`, `/api/training-log/screenshot/*`, `/api/training-log/{id}/sets`, `/api/benchmarks` | 일지·스크린샷 확인 등록 활성, 직접 동기화·전체 파일 UI 비활성 |
 | `/workout?log={id}` | 로그인 | 풀사이드 현재·다음 세트, 출발 사이클/스톱워치, 반복 완료, RPE·상태·메모, 화면 켜짐 유지 | `GET /api/training-log/{id}/sets`, `PATCH /api/training-log/{id}/sets/{set_id}` | 활성 |
 | `/report` | 로그인 | 월간 거리·횟수·평균·시간·칼로리, 영법·주차·요일, 성장률·연속 출석, 플랜·세트 수행률, 테스트 시도·신규 PB·현재 최고기록, 공유 | `/api/report/monthly`, `/heatmap`, `/share/{token}`, `swim_test_results` | 활성 |
 | `/badges` | 로그인 | 단계형 뱃지, 다음 목표, 뱃지 여정 | `/api/badges`, 훈련 일지 집계 | 활성 |
@@ -50,7 +50,7 @@
 | `/profile` | 로그인 | 계정·이메일, 현재 맞춤 훈련 설정, 닉네임·비밀번호 변경, 내 데이터 대시보드 진입, JSON 데이터 내보내기, 모든 기기 로그아웃, 재인증 회원 탈퇴 | `/auth/me`, `/api/account/*`, `DELETE /auth/me` | 활성 |
 | `/onboarding` | 로그인 | 수준·목표·주간 횟수·25m/50m 선호 풀 최초 설정 | `GET/PUT /auth/onboarding`, `customers` | 활성 |
 | `/onboarding?mode=edit` | 로그인 | 기존 맞춤 훈련 설정을 불러와 수정하고 프로필로 복귀 | `GET/PUT /auth/onboarding`, `/auth/me` | 활성 |
-| `/admin` | 슈퍼 관리자 | 사용자·페이지 조회·운영 로그·피드백·훈련 상태·코치 운영 | `/api/admin/*`, `/api/feedback` | 활성 |
+| `/admin` | 슈퍼 관리자 | 사용자·페이지 조회·운영 로그·피드백·훈련 상태·30일 AI 스크린샷 등록·코치 운영 | `/api/admin/*`, `/api/feedback` | 활성 |
 
 주요 기능 페이지는 데스크톱에서 공통 고정 사이드바를 유지하므로 `/landing`으로 돌아오지 않고 다른 서비스로 바로 이동한다. 900px 이하에서는 같은 메뉴를 버튼·오버레이 드로어로 열며 로그인·회원가입·온보딩·관리자·개인정보·약관 화면은 각 흐름에 집중하도록 공통 메뉴 적용 대상에서 제외한다.
 
@@ -59,7 +59,7 @@
 1. 로그인 후 `/landing`의 간결한 개인 훈련 홈으로 이동한다. 이번 주·이번 달·누적 훈련량과 최근 기록, 다음 추천을 먼저 확인하고 다른 기능은 카테고리형 사이드바에서 선택한다. 기능 화면으로 이동한 뒤에도 같은 메뉴를 사용해 다른 서비스로 바로 전환한다. 설정이 미완료라면 랜딩 안내에서 수준·목표·주간 횟수·선호 풀을 저장하고, 완료된 설정은 프로필에서 다시 수정한다.
 2. 대시보드 어드바이저와 플랜 생성 폼이 같은 설정을 추천 거리·목표 세트·풀 길이·난이도 기본값으로 사용한다.
 3. 사용자가 대시보드 준비도를 저장하거나 플랜을 선택한다.
-4. 일지를 직접 작성하거나 플랜에서 세트가 포함된 일지를 만든 뒤 풀사이드 실행 화면을 연다.
+4. 일지를 직접 작성하거나 플랜에서 세트가 포함된 일지를 만든다. 또는 사용자가 Apple Fitness 수영 요약 이미지 1장을 선택해 AI가 읽은 값을 확인·수정하고 일지와 영법별 완료 세트로 확정한다.
 5. 출발 사이클 또는 스톱워치로 반복을 진행하고 실제 횟수·거리·평균 사이클·RPE·상태·메모를 한 세트씩 저장한다.
 6. 일지의 총거리·시간은 `training_logs`, 반복·거리·사이클·완료량은 소유권이 같은 `training_log_sets`에 순서대로 저장된다.
 7. 단일 세트 저장과 같은 트랜잭션에서 실제 완료 거리 합계가 일지 총거리에 반영된다.
@@ -70,11 +70,14 @@
 12. 테스트 기록을 일지에 연결할 때는 같은 소유자·날짜·풀 길이를 검사하고, 월간 리포트는 해당 월 시도·신규 PB와 전체 현재 최고기록을 함께 집계한다.
 13. `/my-data`는 같은 고객 ID의 전체 기록을 평생 누적·최근 90일·12개월·영법·풀·기록 습관·코스별 PB로 다시 읽어 장기 변화와 다음 행동을 설명한다. JSON 내보내기는 백업·이동용 원본 역할을 유지한다.
 
-건강 데이터 가져오기는 현재 공개 화면에서 비활성 상태다.
+워치 직접 동기화와 건강 전체 파일 가져오기는 현재 공개 화면에서 비활성 상태다. 이와 별도로 사용자가 직접 선택한 운동 스크린샷 확인 등록은 활성 상태다.
 
 - 훈련 일지의 `워치 데이터 가져오기 (준비 중)` 버튼은 `disabled`와 `aria-disabled`를 사용하며 모달 열기 이벤트를 연결하지 않는다.
 - `/api/training-log/import/*`와 파서 코드는 향후 재검증을 위해 남아 있지만 현재 사용자 기능으로 소개하지 않는다.
 - Apple Watch·Galaxy Watch 직접 동기화와 Health Auto Export·Apple 건강·Samsung Health 파일 가져오기를 현재 제공 기능으로 약속하지 않는다.
+- `/api/training-log/screenshot/preview`는 PNG·JPEG·WEBP·HEIC·HEIF 서명을 확인한 선택 이미지 한 장만 Gemini에 전달하고, 서버·DB에는 원본 이미지를 저장하지 않는다.
+- AI 결과는 즉시 기록하지 않는다. 고객별 20분 확인 토큰, 값 범위·영법 합계·랩×풀 길이 경고와 사용자 수정 단계를 거친 `/confirm` 요청만 `training_logs`, `training_log_sets`, `wearable_workouts`에 구조화 값을 저장한다.
+- 1차 인식 대상은 Apple Fitness 수영 요약이며 공급자 필드는 Samsung Health 확장과 분리돼 있다.
 
 ## 코치·수강생 기능
 
@@ -164,7 +167,8 @@ Jira가 설정되지 않거나 호출에 실패해도 코칭 과제는 SwimMate 
 | `/api/video-stream/*` | 410 |
 | `analysis/`, worker, MediaPipe/OpenCV | 저장소의 실험·레거시 코드, 공개 제품 경로와 분리 |
 | Apple Watch·Galaxy Watch 직접 동기화 | 미지원 |
-| 건강 앱 내보내기 파일 가져오기 | 공개 UI 비활성, 파서·API 코드는 재검증 전까지 비노출 |
+| 건강 앱 전체 내보내기 파일 가져오기 | 공개 UI 비활성, 파서·API 코드는 재검증 전까지 비노출 |
+| 운동 스크린샷 AI 확인 등록 | Apple Fitness 수영 요약 1차 지원. 선택 이미지 일시 분석, 원본 비저장, 사용자 확인 후 일지·영법 세트 저장 |
 
 ## 관련 문서
 

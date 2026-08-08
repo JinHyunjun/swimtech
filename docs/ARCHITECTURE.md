@@ -67,6 +67,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/api/dashboard` | `dashboard.py` | 요약, 이력, 준비도, 주간 목표, 훈련 어드바이저 |
 | `/api/training-log` | `training_log.py` | 일지 CRUD, 통계, 연속 출석, 목표, 플랜 연동 |
 | `/api/training-log/import` | `health_import.py` | 건강 앱 내보내기 파일 미리보기·확정 코드. 현재 공개 UI는 비활성 |
+| `/api/training-log/screenshot` | `workout_screenshot.py` | 사용자 선택 운동 이미지의 Gemini 구조화 추출, 일관성 경고, 고객별 확인 토큰, 확인 후 일지·영법 세트 저장. 원본 이미지 비저장 |
 | `/api/benchmarks` | `benchmarks.py` | 테스트 세트 저장·조회·삭제, 영법·거리·코스별 PB 판정 |
 | `/api/report` | `report.py` | 월간 집계, 히트맵, 공유 리포트 |
 | `/api/plans` | `plans.py` | 커스텀 플랜, 즐겨찾기, 공유 |
@@ -114,7 +115,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `swim_test_results`: 테스트 날짜, 영법, 거리, 풀 길이, 0.01초 단위 기록, 선택 일지 연결
 - `custom_plans`: 사용자 플랜 JSON과 메타데이터
 - `plan_completions`: 플랜 세션과 실제 일지의 연결
-- `wearable_workouts`: 과거·재검증용 건강 앱 내보내기 원본 운동과 변환 일지 ID. 현재 신규 가져오기 UI는 비활성
+- `wearable_workouts`: 건강 앱 파일 또는 확인된 운동 스크린샷의 공급자·중복 지문·구조화 값과 변환 일지 ID. 스크린샷은 AI 초안·사용자 확정값·이미지 SHA-256만 보관하고 원본 이미지 바이트는 저장하지 않음
 - `user_badges`, `challenges`, `challenge_participants`: 성취·참여
 
 `training_logs.customer_id`가 대시보드, 개인 데이터 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
@@ -173,7 +174,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 ### 훈련 일지 → 월간 리포트
 
 ```text
-직접 기록 / 플랜 완료
+직접 기록 / 플랜 완료 / 확인된 운동 스크린샷
            │
            ▼
      training_logs
@@ -186,7 +187,34 @@ Vercel은 clean URL과 rewrite를 사용한다.
         swim_test_results ── 코스별 PB ─────→ 월간 리포트
 ```
 
-`training_logs`의 총거리는 기존 대시보드·뱃지·챌린지 호환 기준으로 유지한다. 세트 일괄 갱신에서 실제 완료 거리 동기화를 선택하면 같은 트랜잭션에서 총거리도 바뀌어 월간 리포트가 즉시 일치한다. 세트 조회·교체는 일지 소유자 customer ID를 확인하고, 일지 삭제 시 외래키 cascade로 함께 제거된다. 서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
+`training_logs`의 총거리는 기존 대시보드·뱃지·챌린지 호환 기준으로 유지한다. 세트 일괄 갱신에서 실제 완료 거리 동기화를 선택하면 같은 트랜잭션에서 총거리도 바뀌어 월간 리포트가 즉시 일치한다. 스크린샷에서 확인한 영법별 거리는 완료 상태의 `training_log_sets`로 저장되며, 월간 영법 분포는 구조화 세트가 있으면 세트 거리를 우선하고 미분류 차이는 기타 거리로 보존한다. 세트 조회·교체는 일지 소유자 customer ID를 확인하고, 일지 삭제 시 외래키 cascade로 함께 제거된다. 서로 다른 화면에서 사용자 식별 기준이 달라지면 거리·횟수가 0으로 보일 수 있으므로 customer ID와 월 필터를 함께 테스트한다.
+
+### 운동 스크린샷 → 사용자 확인 → 훈련 일지
+
+```text
+브라우저 사진 선택기 (이미지 1장)
+        │  PNG/JPEG/WEBP/HEIC/HEIF · 최대 8MB · 파일 서명 검사
+        ▼
+POST /api/training-log/screenshot/preview
+        │  이미지 바이트는 Gemini 요청 동안만 메모리에 존재
+        ▼
+Gemini 구조화 추출 ── 날짜·거리·시간·풀·페이스·심박·랩·영법별 거리
+        │
+        ├── 서버 범위 검사·거리 합계·랩×풀 길이 경고
+        └── 고객별 20분 확인 토큰 (이미지 SHA-256, 구조화 값만 보유)
+                              │
+                  사용자 확인·수정: “이 운동이 맞나요?”
+                              │
+                              ▼
+POST /api/training-log/screenshot/confirm
+        ├── 의미 기반 중복 지문 → wearable_workouts
+        ├── 총거리·시간 → training_logs
+        └── 영법별 완료 거리 → training_log_sets
+                              │
+                              └── 대시보드·월간 리포트·내 데이터
+```
+
+미리보기는 어떠한 일지도 만들지 않는다. 확인 토큰은 로그인 customer ID에 묶이고 20분 후 만료되며, 이미지 속 텍스트는 명령이 아닌 데이터로 취급해 프롬프트 주입을 무시한다. 연도가 보이지 않는 Apple Fitness 화면은 가장 가까운 과거 연도를 임시 제안하되 경고를 표시하고 날짜 입력을 사용자에게 맡긴다. 같은 사용자·공급자·날짜·시작 시각·거리·시간·풀 길이 조합은 중복 저장하지 않는다. 1차 지원 공급자는 Apple Fitness이고 Samsung Health는 같은 공급자 모델로 확장할 수 있다.
 
 ### 훈련 기록 → 내 수영 데이터
 

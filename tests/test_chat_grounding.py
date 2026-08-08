@@ -165,4 +165,4 @@ def test_chat_model_family_is_unchanged_and_context_preview_is_registered():
     assert '"#chat-grounding-info"' in ui_qa
     assert "renderSafeMarkdown" in chat_page
     assert "script,style,iframe,object,embed" in chat_page
-    assert "P14 — 구현 완료·운영 검증 대기" in checklist
+    assert "P14 — 완료" in checklist

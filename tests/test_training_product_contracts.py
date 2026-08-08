@@ -135,7 +135,7 @@ def test_drill_loads_shared_utils_before_initializing_tabs():
 def test_readme_describes_current_training_helper_and_retires_analysis_claims():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "# 🏊 SwimMate — 수영 훈련을 기록하고 설계하는 올인원 도우미" in readme
+    assert "# 🏊 SwimMate — 수영 훈련 기록 및 설계 올인원 도우미" in readme
     assert "영상 영법 분석 — 개선 중 · 공개 서비스 비활성" in readme
     assert "Vercel 프론트엔드 + Render FastAPI + Neon PostgreSQL" in readme
     assert "코치 코드" in readme and "비회원 체험" in readme
@@ -1092,15 +1092,15 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 109개" in quality_doc
-    assert "50개 API 시나리오" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개" in quality_doc
+    assert "51개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "28개 화면 검증" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
     assert "스크린샷 기능 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
-    assert "Playwright E2E 정의 105개" in quality_doc
+    assert "Playwright E2E 정의 106개" in quality_doc
     assert "유일한 필수 품질 게이트" in quality_doc
     assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [
@@ -1135,3 +1135,35 @@ def test_quality_gate_documentation_is_kept_current():
     assert "현재 공개 서비스에서 제공하지 않습니다" in terms
     assert "건강 앱 내보내기 파일 가져오기는 현재 비활성 상태" in terms
     assert "style=\"display:none\"" not in terms
+
+
+def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_ephemeral():
+    page = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    api = (ROOT / "api" / "routers" / "workout_screenshot.py").read_text(encoding="utf-8")
+    report = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    crawler = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+
+    assert 'id="btn-open-screenshot"' in page
+    assert 'id="screenshot-modal-backdrop"' in page
+    assert "실제로 한 운동이 맞나요" in page
+    assert "확인하고 일지에 저장" in page
+    assert "원본 이미지를 저장하지" in page
+    assert "/api/training-log/screenshot/preview" in page
+    assert "/api/training-log/screenshot/confirm" in page
+    assert '@router.post("/preview")' in api
+    assert '@router.post("/confirm")' in api
+    assert "del data" in api
+    assert '"original_image_stored": False' in api
+    assert "_replace_training_sets" in api
+    assert "ON CONFLICT (customer_id, provider, external_id) DO NOTHING" in api
+    assert "workout_screenshot.router" in main
+    assert "structured_strokes" in report
+    assert "#btn-open-screenshot" in crawler
+    assert '"screenshot_imports_30d"' in admin_api
+    assert 'id="h-screenshot-imports"' in admin_page
+    assert "screenshot_imports_30d" in qa_api
+    assert "#h-screenshot-imports" in crawler

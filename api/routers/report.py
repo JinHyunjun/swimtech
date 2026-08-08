@@ -98,7 +98,7 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT log_date, stroke_type, total_distance, duration_minutes
+        SELECT id, log_date, stroke_type, total_distance, duration_minutes
         FROM training_logs
         WHERE customer_id = %s
           AND EXTRACT(YEAR FROM log_date) = %s
@@ -123,6 +123,7 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
 
     plan_performance = _empty_plan_performance()
     benchmark_performance = _empty_benchmark_performance()
+    structured_strokes: dict[int, list[tuple[str, float]]] = {}
     cur.execute(
         "SELECT to_regclass('public.plan_completions'), "
         "to_regclass('public.training_goals'), to_regclass('public.training_log_sets'), "
@@ -158,6 +159,20 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
             "cycle_adherence_rate": round(cycle_logs / completed_sessions * 100) if completed_sessions else 0,
         })
     if has_training_log_sets:
+        cur.execute("""
+            SELECT tls.training_log_id, tls.stroke_type, COALESCE(tls.completed_distance_m, 0)
+            FROM training_log_sets tls
+            JOIN training_logs tl ON tl.id = tls.training_log_id
+            WHERE tls.customer_id = %s
+              AND tls.completed_distance_m > 0
+              AND EXTRACT(YEAR FROM tl.log_date) = %s
+              AND EXTRACT(MONTH FROM tl.log_date) = %s
+            ORDER BY tls.training_log_id, tls.set_order
+        """, (customer_id, year, month))
+        for training_log_id, stroke_type, completed_distance in cur.fetchall():
+            structured_strokes.setdefault(int(training_log_id), []).append(
+                ((stroke_type or "").strip(), float(completed_distance or 0))
+            )
         cur.execute("""
             SELECT COUNT(*),
                    COUNT(*) FILTER (WHERE tls.status = 'completed'),
@@ -255,13 +270,23 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
     weekday_freq = [0] * 7
     weekly_dist: dict = {}
 
-    for log_date, stroke_type, dist_v, dur_v in rows:
+    for training_log_id, log_date, stroke_type, dist_v, dur_v in rows:
         dist = float(dist_v or 0)
         mins = float(dur_v or 0)
         total_distance += dist
         total_minutes += mins
-        bucket = _BUCKET.get((stroke_type or "").strip(), "other")
-        stroke_dist[bucket] += dist
+        set_strokes = structured_strokes.get(int(training_log_id), [])
+        structured_total = sum(set_distance for _, set_distance in set_strokes)
+        if set_strokes and structured_total <= dist:
+            for set_stroke, set_distance in set_strokes:
+                bucket = _BUCKET.get(set_stroke, "other")
+                stroke_dist[bucket] += set_distance
+            # Preserve the training-log total if a partially completed/recorded set breakdown exists.
+            if structured_total < dist:
+                stroke_dist["other"] += dist - structured_total
+        else:
+            bucket = _BUCKET.get((stroke_type or "").strip(), "other")
+            stroke_dist[bucket] += dist
         weekday_freq[log_date.weekday()] += 1
         week_num = (log_date.day - 1) // 7 + 1
         weekly_dist[week_num] = weekly_dist.get(week_num, 0) + dist

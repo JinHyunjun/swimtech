@@ -260,6 +260,45 @@
           ]
         },
         {
+          "name": "Screenshot Confirm Rejects Unknown Preview",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preview_token\": \"postman-invalid-preview-token\",\n  \"log_date\": \"{{today}}\",\n  \"total_distance\": 1000,\n  \"duration_minutes\": 40,\n  \"pool_length\": 25,\n  \"stroke_type\": \"자유수영\",\n  \"intensity\": \"보통\",\n  \"stroke_distances\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/training-log/screenshot/confirm",
+            "description": "AI 미리보기 없이 일지를 생성할 수 없고, 로그인한 사용자에게 발급된 확인 토큰만 허용하는지 검사합니다. 실제 운동 기록은 생성하지 않습니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('미리보기 없는 확정 거부', () => pm.response.to.have.status(404));",
+                  "pm.test('재분석 안내 반환', () => pm.expect(pm.response.json().detail).to.include('다시 분석'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Baseline Monthly Stats",
           "request": {
             "method": "GET",

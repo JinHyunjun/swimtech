@@ -582,3 +582,206 @@ class TestAccountSecurity:
         state["row"] = (1, "deleted")
         newer_token = auth.create_token("qauser", 44, auth_version=1)
         assert auth.decode_token(newer_token) == {}
+
+
+# ---------------------------------------------------------------------------
+# 12. AI workout screenshot extraction and user-confirmed import
+# ---------------------------------------------------------------------------
+class TestWorkoutScreenshotImport:
+    def test_supported_image_signatures_are_detected_without_trusting_mime(self):
+        import json
+        from routers.workout_screenshot import AIWorkoutExtraction, _detect_image_mime
+
+        assert _detect_image_mime(b"\x89PNG\r\n\x1a\nrest") == "image/png"
+        assert _detect_image_mime(b"\xff\xd8\xffrest") == "image/jpeg"
+        assert _detect_image_mime(b"RIFFxxxxWEBPrest") == "image/webp"
+        assert _detect_image_mime(b"xxxxftypheicrest") == "image/heic"
+        assert _detect_image_mime(b"not-an-image") is None
+        assert '"default"' not in json.dumps(AIWorkoutExtraction.model_json_schema())
+
+    def test_apple_swim_values_are_normalized_with_a_year_review_warning(self):
+        from datetime import date
+        from routers.workout_screenshot import (
+            AIWorkoutExtraction,
+            ExtractedStrokeDistance,
+            _normalize_extraction,
+        )
+
+        result = _normalize_extraction(
+            AIWorkoutExtraction(
+                is_swim_workout=True,
+                provider="apple_fitness",
+                workout_year=None,
+                workout_month=7,
+                workout_day=17,
+                start_time="10:03",
+                end_time="10:49",
+                duration_seconds=2731,
+                total_distance_m=1600,
+                active_calories_kcal=400,
+                total_calories_kcal=483,
+                average_pace_seconds_per_100m=170,
+                average_heart_rate_bpm=150,
+                lap_count=32,
+                pool_length_m=50,
+                stroke_distances=[
+                    ExtractedStrokeDistance(stroke="breaststroke", distance_m=100),
+                    ExtractedStrokeDistance(stroke="freestyle", distance_m=1500),
+                ],
+                confidence=0.97,
+            ),
+            today=date(2026, 8, 8),
+        )
+
+        assert result["log_date"] == "2026-07-17"
+        assert result["duration_minutes"] == 46
+        assert result["total_distance"] == 1600
+        assert result["stroke_type"] == "혼영"
+        assert sum(item["distance_m"] for item in result["stroke_distances"]) == 1600
+        assert any("연도" in warning for warning in result["warnings"])
+        assert not any("영법별 합계" in warning for warning in result["warnings"])
+
+    def test_confirmed_strokes_fill_unclassified_remainder_and_reject_overflow(self):
+        from datetime import date
+        from fastapi import HTTPException
+        from routers.workout_screenshot import (
+            ConfirmStrokeDistance,
+            ScreenshotConfirmRequest,
+            _build_training_sets,
+        )
+
+        request = ScreenshotConfirmRequest(
+            preview_token="x" * 24,
+            log_date=date(2026, 7, 26),
+            total_distance=1125,
+            duration_minutes=120,
+            pool_length=25,
+            stroke_type="혼영",
+            stroke_distances=[
+                ConfirmStrokeDistance(stroke="backstroke", distance_m=50),
+                ConfirmStrokeDistance(stroke="breaststroke", distance_m=150),
+                ConfirmStrokeDistance(stroke="butterfly", distance_m=200),
+                ConfirmStrokeDistance(stroke="kickboard", distance_m=325),
+                ConfirmStrokeDistance(stroke="freestyle", distance_m=400),
+            ],
+        )
+        sets = _build_training_sets(request)
+        assert sum(item["completed_distance_m"] for item in sets) == 1125
+        assert all(item["status"] == "completed" for item in sets)
+
+        request.stroke_distances.append(ConfirmStrokeDistance(stroke="other", distance_m=25))
+        with pytest.raises(HTTPException) as exc_info:
+            _build_training_sets(request)
+        assert exc_info.value.status_code == 400
+
+    def test_preview_tokens_are_customer_scoped_and_do_not_store_image_bytes(self):
+        from fastapi import HTTPException
+        from routers import workout_screenshot
+
+        token = workout_screenshot._save_preview(
+            77,
+            "a" * 64,
+            {"provider": "apple_fitness", "total_distance": 1600},
+            "gemini-test",
+        )
+        preview = workout_screenshot._get_preview(token, 77)
+        assert preview["image_digest"] == "a" * 64
+        assert "image" not in preview and "image_bytes" not in preview
+        with pytest.raises(HTTPException) as exc_info:
+            workout_screenshot._get_preview(token, 78)
+        assert exc_info.value.status_code == 404
+        workout_screenshot._pop_preview(token)
+
+    def test_confirm_creates_log_and_structured_sets_in_one_transaction(self, monkeypatch):
+        from datetime import date
+        from routers import workout_screenshot
+
+        class Cursor:
+            def __init__(self):
+                self.queries = []
+                self.next_row = None
+
+            def execute(self, query, params=None):
+                self.queries.append((query, params))
+                if "INSERT INTO wearable_workouts" in query:
+                    self.next_row = (501,)
+                elif "INSERT INTO training_logs" in query:
+                    self.next_row = (601,)
+
+            def fetchone(self):
+                row, self.next_row = self.next_row, None
+                return row
+
+            def close(self):
+                pass
+
+        class Connection:
+            def __init__(self):
+                self.cursor_instance = Cursor()
+                self.committed = False
+                self.rolled_back = False
+
+            def cursor(self):
+                return self.cursor_instance
+
+            def commit(self):
+                self.committed = True
+
+            def rollback(self):
+                self.rolled_back = True
+
+            def close(self):
+                pass
+
+        connection = Connection()
+        captured_sets = []
+        popped = []
+        monkeypatch.setattr(workout_screenshot, "_get_customer_id", lambda request: 77)
+        monkeypatch.setattr(workout_screenshot, "_ensure_wearable_table", lambda: None)
+        monkeypatch.setattr(workout_screenshot, "_get_db", lambda: connection)
+        monkeypatch.setattr(
+            workout_screenshot,
+            "_get_preview",
+            lambda token, cid: {
+                "customer_id": cid,
+                "image_digest": "b" * 64,
+                "model_name": "gemini-test",
+                "extracted": {
+                    "provider": "apple_fitness",
+                    "start_time": "10:03",
+                    "end_time": "10:49",
+                },
+            },
+        )
+        monkeypatch.setattr(
+            workout_screenshot,
+            "_replace_training_sets",
+            lambda cur, cid, log_id, sets: captured_sets.extend(sets),
+        )
+        monkeypatch.setattr(workout_screenshot, "_pop_preview", lambda token: popped.append(token))
+
+        body = workout_screenshot.ScreenshotConfirmRequest(
+            preview_token="p" * 24,
+            log_date=date(2026, 7, 17),
+            total_distance=1600,
+            duration_minutes=46,
+            pool_length=50,
+            stroke_type="혼영",
+            active_calories_kcal=400,
+            average_heart_rate_bpm=150,
+            lap_count=32,
+            stroke_distances=[
+                workout_screenshot.ConfirmStrokeDistance(stroke="breaststroke", distance_m=100),
+                workout_screenshot.ConfirmStrokeDistance(stroke="freestyle", distance_m=1500),
+            ],
+        )
+        result = workout_screenshot.confirm_workout_screenshot.__wrapped__(body, object())
+
+        assert result["status"] == "created"
+        assert result["training_log_id"] == 601
+        assert sum(item["completed_distance_m"] for item in captured_sets) == 1600
+        assert connection.committed is True and connection.rolled_back is False
+        assert popped == ["p" * 24]
+        raw_params = connection.cursor_instance.queries[0][1]
+        assert '"original_image_stored": false' in raw_params[-1]
+        assert "image_bytes" not in raw_params[-1]

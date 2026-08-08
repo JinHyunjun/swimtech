@@ -1000,6 +1000,24 @@ def test_training_log_load(page: Page):
     shot(page, "15_training_log_load")
 
 
+def test_training_log_screenshot_import_review_flow(page: Page):
+    """스크린샷 등록은 선택 이미지·개인정보 안내·사용자 확인 단계를 먼저 제공한다."""
+    goto(page, "/training-log")
+    page.wait_for_timeout(1000)
+
+    trigger = page.locator("#btn-open-screenshot")
+    expect(trigger).to_be_visible()
+    trigger.click()
+    expect(page.locator("#screenshot-modal-backdrop")).to_be_visible()
+    expect(page.locator("#screenshot-file-input")).to_have_attribute(
+        "accept", "image/png,image/jpeg,image/webp,image/heic,image/heif"
+    )
+    expect(page.locator(".screenshot-privacy")).to_contain_text("원본 이미지를 저장하지")
+    expect(page.locator("#screenshot-analyze-btn")).to_be_disabled()
+    shot(page, "15_training_log_screenshot_import")
+    page.locator("#screenshot-pick-cancel").click()
+
+
 def test_training_log_api_requires_login(browser, browser_context_args):
     """GET /api/training-log — 비로그인 요청은 401 응답."""
     ctx = browser.new_context(**browser_context_args)
