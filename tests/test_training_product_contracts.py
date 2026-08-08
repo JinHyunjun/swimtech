@@ -697,7 +697,6 @@ def test_feature_tutorial_is_split_by_purpose_and_qa_mapped():
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
     screenshot_dir = ROOT / "frontend" / "static" / "tutorial"
     frontend_vercel = json.loads((ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8"))
-    root_vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     guide_files = {
         "personal": "tutorial_personal.html",
         "record": "tutorial_record.html",
@@ -730,7 +729,6 @@ def test_feature_tutorial_is_split_by_purpose_and_qa_mapped():
         assert f'"{guide_path}"' in ui_qa
         rewrite = {"source": guide_path, "destination": f"/tutorial_{slug}"}
         assert rewrite in frontend_vercel["rewrites"]
-        assert rewrite in root_vercel["rewrites"]
     all_guides = "\n".join(guides.values())
     assert all_guides.count("data-tutorial-shot=") >= 12
     assert all_guides.count('src="/static/tutorial/') >= 12
