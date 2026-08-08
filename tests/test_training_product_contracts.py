@@ -1191,6 +1191,7 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     assert "def check_responsive_layout" in crawler
     assert "check_responsive_layout(page, path)" in crawler
     assert "insideHorizontalScroller" in crawler
+    assert "element.closest('#map')" in crawler
     assert "grid-template-columns: minmax(0,1fr)" in faq_page
     assert "grid-template-columns: minmax(0,1fr)" in videos_page
     assert "실제로 한 운동이 맞나요" in page

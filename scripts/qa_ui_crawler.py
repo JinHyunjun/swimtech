@@ -668,6 +668,9 @@ def check_responsive_layout(page, path):
               const ignored = element => Boolean(
                 element.closest('[aria-hidden="true"], [hidden], .global-service-nav-backdrop') ||
                 element.closest('.service-sidebar:not(.open)') ||
+                // Kakao 지도는 패닝을 위해 #map 경계 밖에 타일 이미지를 배치한 뒤
+                // 지도 컨테이너에서 잘라낸다. 문서 overflow가 아닌 정상 렌더링이다.
+                element.closest('#map') ||
                 element.matches('script, style, link, meta, path, br')
               );
               const insideHorizontalScroller = element => {
