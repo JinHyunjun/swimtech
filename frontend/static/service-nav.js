@@ -68,7 +68,9 @@
   function isActive(item) {
     var currentPath = canonicalPath(window.location.pathname);
     var itemUrl = new URL(item.href, window.location.origin);
-    if (canonicalPath(itemUrl.pathname) !== currentPath) return false;
+    var itemPath = canonicalPath(itemUrl.pathname);
+    var tutorialDetail = itemPath === '/tutorial' && currentPath.indexOf('/tutorial/') === 0;
+    if (itemPath !== currentPath && !tutorialDetail) return false;
     var currentTab = new URLSearchParams(window.location.search).get('tab');
     if (item.matchQuery) return currentTab === item.matchQuery;
     if (currentPath === '/equipment') return currentTab !== 'swimwear';

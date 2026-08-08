@@ -1,6 +1,6 @@
 # SwimMate 기술 구조
 
-> 코드 기준일: 2026-08-07
+> 코드 기준일: 2026-08-08
 
 ## 한눈에 보는 구조
 
@@ -35,11 +35,12 @@ SwimMate는 프레임워크 빌드 단계가 없는 다중 페이지 애플리�
 - 공통 UI 유틸리티: `frontend/static/utils.js`
 - 테마: `frontend/static/theme.js`
 - 기능 페이지 공통 내비게이션: `frontend/static/service-nav.js`
+- 목적별 사용 가이드 공통 UI: `frontend/static/tutorial-guide.css`, `tutorial-guide.js`
 - 아이콘: `frontend/static/icons.svg`, `frontend/static/icons/*`
 - 기능 가이드 캡처: `frontend/static/tutorial/*`
 - PWA: `frontend/manifest.json`, `frontend/sw.js`
 
-`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다. 공개 `/tutorial`은 API 상태에 의존하지 않는 정적 설명 페이지로, 랜딩에서 진입해 실제 QA 캡처와 기능별 내부 경로를 보여준다.
+`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다. 공개 `/tutorial`은 API 상태에 의존하지 않는 짧은 가이드 허브이고, `/tutorial/{personal|record|data|coach|help}`는 실제 QA 캡처와 사용 순서를 목적별로 나눈 정적 상세 페이지다. 공통 CSS와 활성 카테고리 스크립트로 화면 밀도와 탐색 방식을 일치시키며, 기존 서비스 사이드바도 모든 상세 경로에서 유지한다.
 
 대표 홈 `/landing`은 별도의 기능 카드 목록 대신 개인 훈련 요약을 우선 렌더링한다. `/auth/me`로 사용자·역할·온보딩 상태를 확인하고 `/api/dashboard/summary`, `/weekly`, `/history`, `/training-advisor`를 병렬 조회해 이번 주·월간·누적 훈련량, 최근 기록과 다음 세션을 표시한다. 모든 서비스 경로는 카테고리형 왼쪽 사이드바에 모으며 준비도 입력과 상세 차트는 `/dashboard`에 유지해 대표 홈의 정보 밀도를 낮춘다.
 
@@ -50,6 +51,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `/api/*`, `/auth/*` → Render
 - `/badges` → 정적 `badge.html`
 - `/training-log` → 정적 `training_log.html`
+- `/tutorial/{personal|record|data|coach|help}` → 목적별 정적 `tutorial_*.html`
 - `/`, `/app` → `/landing` 307 리다이렉트
 - 과거 영상 분석 경로 → `/landing`
 

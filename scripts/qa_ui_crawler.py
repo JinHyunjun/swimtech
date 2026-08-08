@@ -76,6 +76,11 @@ ACTION_TIMEOUT_MS = 5000
 PAGES = [
     ("/landing", "랜딩"),
     ("/tutorial", "기능 가이드"),
+    ("/tutorial/personal", "가이드 · 개인 훈련"),
+    ("/tutorial/record", "가이드 · 기록·스크린샷"),
+    ("/tutorial/data", "가이드 · 성장 데이터"),
+    ("/tutorial/coach", "가이드 · 코치·클럽"),
+    ("/tutorial/help", "가이드 · 정보·도움"),
     ("/onboarding", "맞춤 훈련 설정"),
     ("/onboarding?mode=edit", "맞춤 훈련 설정 수정"),
     ("/dashboard", "대시보드"),
@@ -114,6 +119,7 @@ SERVICE_NAV_PATHS = {
     "/pool", "/drill", "/faq", "/glossary", "/badges", "/changelog",
     "/community", "/challenge", "/equipment", "/feedback", "/chat", "/videos",
     "/profile", "/injury", "/coach", "/clubs", "/tutorial",
+    "/tutorial/personal", "/tutorial/record", "/tutorial/data", "/tutorial/coach", "/tutorial/help",
 }
 
 # 되돌릴 수 없는 동작 — 클릭하지 않고 "존재 확인"만 한다
@@ -186,9 +192,31 @@ PAGE_EXPECTATIONS = {
         "absent_texts": ["무엇을 도와드릴까요? 원하는 서비스를 선택해주세요"],
     },
     "/tutorial": {
-        "selectors": ["#tutorial-hero", "#personal-flow", "#execution-flow", "#growth-flow", "#coach-flow", "#explore-flow", "#decision-guide", "[data-tutorial-shot]"],
-        "texts": ["기능이 많아도", "훈련 일지와 테스트 세트", "내 수영 데이터", "코치 연결과 클럽·반", "어디로 가야 할지 모르겠다면"],
+        "selectors": ["#tutorial-hero", "#guide-categories", "#quick-start", "[data-guide-card='personal']", "[data-guide-card='record']", "[data-guide-card='data']", "[data-guide-card='coach']", "[data-guide-card='help']", "[data-guide-link='home'][aria-current='page']"],
+        "texts": ["필요한 기능만 골라서", "개인 훈련 시작", "기록·AI 스크린샷", "성장 데이터", "코치·클럽 운영", "수영 정보·도움"],
         "absent_texts": ["영상 영법 분석 기능을 제공합니다", "Apple Watch와 실시간 연동"],
+    },
+    "/tutorial/personal": {
+        "selectors": ["#personal-guide-hero", "#personal-steps", "[data-tutorial-shot='personal-settings']", "[data-tutorial-shot='training-dashboard']", "[data-tutorial-shot='training-plan']", "[data-guide-link='personal'][aria-current='page']"],
+        "texts": ["내 기준을 정하고", "처음 사용하는 순서", "추천의 기준 만들기", "오늘 할 수 있는 만큼 판단하기"],
+    },
+    "/tutorial/record": {
+        "selectors": ["#record-guide-hero", "#screenshot-import-flow", "[data-screenshot-guide-preview]", "[data-tutorial-shot='training-log-pb']", "[data-tutorial-shot='poolside-workout']", "[data-guide-link='record'][aria-current='page']"],
+        "texts": ["운동 스크린샷 등록 순서", "실제로 한 운동이 맞나요?", "원본 이미지와 비용·사용량 안내", "워치 직접 연동과 건강 전체 파일 가져오기는 아직 지원하지 않습니다"],
+        "absent_texts": ["Apple Watch와 실시간 연동", "AI가 자동으로 확정 저장"],
+    },
+    "/tutorial/data": {
+        "selectors": ["#data-guide-hero", "#data-relationship", "[data-tutorial-shot='monthly-report']", "[data-tutorial-shot='my-data']", "[data-guide-link='data'][aria-current='page']"],
+        "texts": ["한 번의 기록부터", "세 화면의 차이", "이번 달은 어땠나", "장기적으로 어떻게 변했나"],
+    },
+    "/tutorial/coach": {
+        "selectors": ["#coach-guide-hero", "#coach-roles", "[data-tutorial-shot='clubs-classes']", "[data-tutorial-shot='class-operations']", "[data-guide-link='coach'][aria-current='page']"],
+        "texts": ["개인 운동과 분리된", "누가 무엇을 하나요?", "코치와 학생 연결하기", "반을 운영하고 강습 자료 배포"],
+    },
+    "/tutorial/help": {
+        "selectors": ["#help-guide-hero", "#help-finder", "[data-tutorial-shot='training-guides']", "[data-tutorial-shot='pool-map']", "[data-tutorial-shot='community']", "[data-guide-link='help'][aria-current='page']"],
+        "texts": ["궁금한 주제만 골라", "주제별 바로가기", "검수된 수영 정보 찾기", "브랜드별 수영복 사이즈 참고"],
+        "absent_texts": ["영상 영법 분석을 제공합니다"],
     },
     "/onboarding": {
         "selectors": ["#onboarding-form", "[data-field='level']", "[data-field='goal']", "[data-field='weekly_goal']", "[data-field='preferred_pool_length']", "#next-btn"],

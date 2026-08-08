@@ -11,6 +11,11 @@
     { "source": "/share/:path*", "destination": "/landing", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/tutorial/personal", "destination": "/tutorial_personal" },
+    { "source": "/tutorial/record",   "destination": "/tutorial_record" },
+    { "source": "/tutorial/data",     "destination": "/tutorial_data" },
+    { "source": "/tutorial/coach",    "destination": "/tutorial_coach" },
+    { "source": "/tutorial/help",     "destination": "/tutorial_help" },
     { "source": "/api/:path*",       "destination": "https://swimtech-api.onrender.com/api/:path*" },
     { "source": "/auth/:path*",      "destination": "https://swimtech-api.onrender.com/auth/:path*" },
 

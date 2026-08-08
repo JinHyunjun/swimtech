@@ -78,6 +78,11 @@ def log_activity(
 PAGE_MENU_MAP = {
     "/landing":       "랜딩",
     "/tutorial":      "기능 가이드",
+    "/tutorial/personal": "가이드 · 개인 훈련",
+    "/tutorial/record":   "가이드 · 기록·스크린샷",
+    "/tutorial/data":     "가이드 · 성장 데이터",
+    "/tutorial/coach":    "가이드 · 코치·클럽",
+    "/tutorial/help":     "가이드 · 정보·도움",
     "/dashboard":      "대시보드",
     "/my-data":        "내 수영 데이터",
     "/plan":           "훈련 플랜",

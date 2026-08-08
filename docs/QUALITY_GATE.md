@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-07
+> 기준일: 2026-08-08
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 106개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 28개 화면 검증, Postman의 대표 API 요청 20개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 107개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 33개 화면 검증, Postman의 대표 API 요청 20개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -27,7 +27,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 개인 훈련 대표 홈·사이드바 | `/landing` URL 유지, 본인 이번 주·월간·누적 요약과 최근 기록·어드바이저 API 매핑, 카테고리별 전체 서비스 링크, 데스크톱 고정 사이드바, 모바일 메뉴 열기·닫기·ESC·배경 스크롤 잠금, 일반·데모·관리자·온보딩 상태, 구 카드형 안내 문구 부재 | 랜딩 계약 테스트, `test_landing_load`, `PAGE_EXPECTATIONS["/landing"]`, 운영 데스크톱·390px 확인 |
 | 기능 페이지 공통 내비게이션 | 적용 대상 경로마다 25개 이상 서비스 링크, 현재 경로 1개만 활성화, `/landing` 대표 홈 링크, 데스크톱 268px 고정 배치, 모바일 드로어 열기·ESC 닫기·배경 스크롤 잠금, 공개 화면 비로그인 폴백, 가로 넘침 없음 | `service-nav.js`, 공통 내비게이션 계약·Playwright 참고 테스트, `check_service_navigation` |
 | 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·공식 출처, 수영복 5개 브랜드 공식표 cm/inch 전환·입력 단위 전환 시 값 보존·반대 단위 즉시 환산·cm 내부 정규화·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
-| 스크린샷 기능 가이드 | 랜딩 진입 배너, 공개 200, 개인·실행·성장·코치·탐색 섹션, 기능별 캡처·대체 텍스트, 내부 CTA, 홈 링크, 모바일 단일 열, 비활성 영상 분석·워치 직접 연동 오인 문구 없음 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS["/tutorial"]`, `frontend/static/tutorial/*` |
+| 목적별 사용 가이드 | 랜딩 진입, 허브와 개인·기록/스크린샷·성장·코치/클럽·정보/도움 5개 상세 경로 공개 200, 공통 서비스 사이드바·현재 가이드 카테고리 표시, 화면 캡처·대체 텍스트, 내부 CTA, 모바일 단일 열, AI 사용자 확인·원본 비저장·무료 사용량 제한·워치 직접 연동 비활성 경계 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS`의 `/tutorial*`, `PAGES`, `SERVICE_NAV_PATHS`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `check_home_link_targets`, `auth.py` 계약 테스트 |
 | 실행 가능한 Postman API 문서 | OpenAPI 탐색과 대표 스모크 분리, Vercel/Render/로컬 환경, 쿠키 로그인, 비로그인 401, 일지 생성·리포트 반영·삭제, 관리자 읽기·로그아웃, 비밀값 미저장 | `tests/postman/`, `tests/test_postman_contract.py`, `.github/workflows/qa.yml` |
 | 개인화 온보딩 | 인증 경계, 저장·재조회, 로그인 분기, `/auth/me` 일치, 추천 풀·수준·목표 반영, 플랜 기본값, 체험 계정 변경 차단 | `qa_runner.py` A1·6a, `PAGE_EXPECTATIONS["/onboarding"]`, Alembic 리비전 계약 |

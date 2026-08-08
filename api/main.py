@@ -383,6 +383,21 @@ def landing_page():
 def tutorial_page():
     return _serve("tutorial.html")
 
+_TUTORIAL_DETAIL_FILES = {
+    "personal": "tutorial_personal.html",
+    "record": "tutorial_record.html",
+    "data": "tutorial_data.html",
+    "coach": "tutorial_coach.html",
+    "help": "tutorial_help.html",
+}
+
+@app.get("/tutorial/{guide_name}")
+def tutorial_detail_page(guide_name: str):
+    filename = _TUTORIAL_DETAIL_FILES.get(guide_name)
+    if not filename:
+        raise HTTPException(status_code=404, detail="존재하지 않는 사용 가이드입니다.")
+    return _serve(filename)
+
 # 개인정보처리방침 (로그인 불필요)
 @app.get("/privacy")
 def privacy_page():

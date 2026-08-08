@@ -25,7 +25,8 @@
       '/workout', '/report', '/pool', '/drill', '/faq', '/glossary',
       '/badges', '/badge', '/changelog', '/community', '/challenge', '/equipment',
       '/feedback', '/chat', '/videos', '/profile', '/injury', '/coach',
-      '/clubs', '/tutorial'
+      '/clubs', '/tutorial', '/tutorial/personal', '/tutorial/record',
+      '/tutorial/data', '/tutorial/coach', '/tutorial/help'
     ];
     var currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
     if (servicePaths.indexOf(currentPath) === -1) return;

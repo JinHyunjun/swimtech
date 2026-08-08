@@ -1832,3 +1832,31 @@ def test_community_top_posts(page: Page):
     expect(page.locator("#popular-section")).to_be_attached()
 
     shot(page, "25_community_top_posts")
+
+
+# ═══════════════════════════════════════════════════════════════
+# Section 26 — 목적별 사용 가이드
+# ═══════════════════════════════════════════════════════════════
+
+def test_tutorial_hub_and_focused_guides(page: Page):
+    """사용 가이드가 허브와 목적별 상세 페이지로 분리되어 이동한다."""
+    goto(page, "/tutorial")
+
+    expect(page.locator("#tutorial-hero")).to_be_visible()
+    expect(page.locator("#guide-categories")).to_be_visible()
+    expect(page.locator(".guide-hub-card")).to_have_count(5)
+
+    guide_paths = ["personal", "record", "data", "coach", "help"]
+    for guide_path in guide_paths:
+        expect(page.locator(f'.guide-hub-card[href="/tutorial/{guide_path}"]')).to_be_visible()
+
+    page.locator('.guide-hub-card[href="/tutorial/record"]').click()
+    page.wait_for_url(re.compile(r"/tutorial/record/?$"))
+    expect(page.locator('[data-guide-link="record"]')).to_have_attribute("aria-current", "page")
+    expect(page.locator("#screenshot-import-flow")).to_be_visible()
+    expect(page.locator("[data-screenshot-guide-preview]")).to_contain_text("사용자 확인 전 · 미저장")
+    expect(page.locator("main")).to_contain_text("일반 사용자에게 별도 AI 이용료가 청구되지는 않지만")
+    expect(page.locator("main")).to_contain_text("서버·DB에는 저장되지 않습니다")
+    expect(page.locator("main")).to_contain_text("워치 데이터 가져오기")
+
+    shot(page, "26_tutorial_record_guide")

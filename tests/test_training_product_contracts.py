@@ -689,30 +689,60 @@ def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
     assert '"wait_for_any_text"' in ui_qa
 
 
-def test_feature_tutorial_is_screenshot_based_and_qa_mapped():
+def test_feature_tutorial_is_split_by_purpose_and_qa_mapped():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     activity_log = (ROOT / "api" / "activity_log.py").read_text(encoding="utf-8")
     landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
     tutorial = (ROOT / "frontend" / "tutorial.html").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
     screenshot_dir = ROOT / "frontend" / "static" / "tutorial"
+    frontend_vercel = json.loads((ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8"))
+    root_vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
+    guide_files = {
+        "personal": "tutorial_personal.html",
+        "record": "tutorial_record.html",
+        "data": "tutorial_data.html",
+        "coach": "tutorial_coach.html",
+        "help": "tutorial_help.html",
+    }
+    guides = {
+        slug: (ROOT / "frontend" / filename).read_text(encoding="utf-8")
+        for slug, filename in guide_files.items()
+    }
 
     assert '@app.get("/tutorial")' in main
     assert 'return _serve("tutorial.html")' in main
+    assert '@app.get("/tutorial/{guide_name}")' in main
     assert '"/tutorial":      "기능 가이드"' in activity_log
     assert 'id="tutorial-guide-card"' in landing and 'href="/tutorial"' in landing
-    for section_id in [
-        "tutorial-hero", "personal-flow", "execution-flow", "growth-flow",
-        "coach-flow", "explore-flow", "decision-guide",
-    ]:
-        assert f'id="{section_id}"' in tutorial
-    assert tutorial.count("data-tutorial-shot=") >= 12
-    assert tutorial.count('src="/static/tutorial/') >= 12
+    assert 'id="tutorial-hero"' in tutorial
+    assert 'id="guide-categories"' in tutorial
+    assert 'id="quick-start"' in tutorial
+    for slug, filename in guide_files.items():
+        guide_path = f"/tutorial/{slug}"
+        assert f'"{slug}": "{filename}"' in main
+        assert f'href="{guide_path}"' in tutorial
+        assert f'("{guide_path}", "가이드' in ui_qa
+        assert f'"{guide_path}": {{' in ui_qa
+        assert f'"{guide_path}":' in activity_log
+        assert f"'{guide_path}'" in (ROOT / "frontend" / "static" / "theme.js").read_text(encoding="utf-8")
+        assert f"'{guide_path}'" in (ROOT / "frontend" / "theme.js").read_text(encoding="utf-8")
+        assert f'"{guide_path}"' in ui_qa
+        rewrite = {"source": guide_path, "destination": f"/tutorial_{slug}"}
+        assert rewrite in frontend_vercel["rewrites"]
+        assert rewrite in root_vercel["rewrites"]
+    all_guides = "\n".join(guides.values())
+    assert all_guides.count("data-tutorial-shot=") >= 12
+    assert all_guides.count('src="/static/tutorial/') >= 12
     assert len(list(screenshot_dir.glob("*"))) >= 12
-    assert "훈련 일지와 테스트 세트" in tutorial
-    assert "내 수영 데이터" in tutorial
-    assert "코치 연결과 클럽·반" in tutorial
-    assert "영상 영법 분석 기능은 현재 제공하지 않음" in tutorial
+    assert "운동 스크린샷 등록 순서" in guides["record"]
+    assert "실제로 한 운동이 맞나요?" in guides["record"]
+    assert "원본 이미지와 비용·사용량 안내" in guides["record"]
+    assert "무료 AI 사용량이 소진되면" in guides["record"]
+    assert "워치 직접 연동과 건강 전체 파일 가져오기는 아직 지원하지 않습니다" in guides["record"]
+    assert "AI 스크린샷에서 확인한 영법별 거리" in guides["data"]
+    assert "영상 영법 분석은 제공하지 않음" in guides["help"]
+    assert "tutorialDetail" in (ROOT / "frontend" / "static" / "service-nav.js").read_text(encoding="utf-8")
     assert '("/tutorial", "기능 가이드")' in ui_qa
     assert '"/tutorial": {' in ui_qa
 
@@ -1095,12 +1125,12 @@ def test_quality_gate_documentation_is_kept_current():
     assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개" in quality_doc
     assert "51개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
-    assert "28개 화면 검증" in quality_doc
+    assert "33개 화면 검증" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
-    assert "스크린샷 기능 가이드" in quality_doc
+    assert "목적별 사용 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
-    assert "Playwright E2E 정의 106개" in quality_doc
+    assert "Playwright E2E 정의 107개" in quality_doc
     assert "유일한 필수 품질 게이트" in quality_doc
     assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [

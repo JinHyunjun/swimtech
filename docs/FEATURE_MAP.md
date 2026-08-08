@@ -1,6 +1,6 @@
 # SwimMate 기능 지도
 
-> 코드 기준일: 2026-08-07 · 기준 브랜치: `main`
+> 코드 기준일: 2026-08-08 · 기준 브랜치: `main`
 
 이 문서는 “어떤 사용자가 어느 화면에서 무엇을 하고, 어떤 API와 데이터로 이어지는가”를 빠르게 확인하기 위한 지도다. 마케팅 설명이 아니라 현재 `api/main.py`, 등록 라우터, 프론트엔드 페이지와 QA 코드를 대조한 결과를 적는다.
 
@@ -24,7 +24,8 @@
 | `/`, `/app` | 공개 리다이렉트 | 대표 홈 주소 통일 | 307 → `/landing` | 활성 |
 | `/landing` | 로그인 | 개인의 이번 주·이번 달·누적 훈련량, 주간 목표, 최근 기록 3개, 다음 추천 세션을 먼저 보여주는 대표 홈. 전체 기능은 `홈`·`기록과 훈련`·`코칭과 함께`·`탐색과 도움` 사이드바로 분리하고 주요 기능 화면에서도 같은 메뉴를 유지 | `/auth/me`, `/api/dashboard/summary`, `/weekly`, `/history`, `/training-advisor`, 페이지 조회 로그 | 활성 |
 | `/login`, `/register` | 공개 | 로컬 로그인·가입, Google/Kakao OAuth, 비회원 체험 | `/auth/login`, `/auth/register`, `/auth/demo` | 활성 |
-| `/tutorial` | 공개 | 실제 화면 기반 개인 훈련·성장 데이터·코치·클럽·정보 기능 설명과 목적별 바로가기 | 정적 콘텐츠, `frontend/static/tutorial/*` | 활성 |
+| `/tutorial` | 공개 | 5개 목적별 사용 가이드와 빠른 기능 찾기를 제공하는 짧은 허브 | 정적 콘텐츠, `tutorial.html` | 활성 |
+| `/tutorial/{personal|record|data|coach|help}` | 공개 | 개인 훈련, 기록·AI 스크린샷, 성장 데이터, 코치·클럽, 정보·도움을 각각 실제 화면·순서·주의사항으로 분리 안내. 공통 서비스 사이드바와 상세 가이드 탭을 함께 유지 | `tutorial_*.html`, `frontend/static/tutorial/*`, `tutorial-guide.css/js`, `service-nav.js` | 활성 |
 | `/privacy`, `/terms` | 공개 | 현재 데이터 처리와 이용 조건 | 정적 문서 | 활성 |
 | `/plan` | 공개 조회, 저장은 로그인 | 목적·풀 길이·레벨·사이클·드릴/대시 플랜, 대회 준비, 교정 포인트 추천, 직접 구성, 템플릿·즐겨찾기·공유 | `/api/plans`, `/api/training-log/from-plan` | 활성 |
 | `/drill` | 공개 | 자유형·배영·평영·접영별 드릴, 검색, 목적·난이도 필터, 25m/50m 적용 세트·개인 기록 기준 출발 사이클 예시 | 정적 큐레이션·클라이언트 필터 | 활성 |
