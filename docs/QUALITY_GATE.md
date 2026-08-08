@@ -117,6 +117,8 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 
 2026-08-08에는 Apple Fitness 수영 스크린샷 AI 확인 등록의 배포 전 검증을 추가했다. 핵심 115/115와 Alembic 단일 head, Playwright 106개 수집, 훈련 일지 인라인 JavaScript 구문 검사가 통과했다. 모의 Apple 예시의 multipart `/preview`는 1,125m·영법 5종을 `needs_confirmation`으로 반환했고, Gemini 3.1 Flash-Lite 실제 멀티모달 호출은 일반 훈련 플랜 화면을 완료 운동이 아닌 것으로 구조화 판정했다. 파일 서명·연도 경고·거리/랩/칼로리 일관성·고객별 토큰·확정 트랜잭션·원본 비저장을 자동 검사하며, P21 완료와 Notion 반영은 운영 Apple Fitness 원본으로 추출→사용자 확인→일지·세트·월간 리포트→중복 거부까지 확인한 뒤 판정한다.
 
+같은 날 공개 사용 가이드를 짧은 `/tutorial` 허브와 개인 훈련·기록/스크린샷·성장 데이터·코치/클럽·정보/도움 5개 상세 경로로 분리했다. 기록 가이드에는 사용자 확인 전 미저장, 원본 이미지 비저장, 별도 사용자 과금 없음과 무료 AI 사용량 제한, 워치 직접 연동 미지원 경계를 표시했다. 로컬 핵심 115/115, Playwright 107개 수집과 [GitHub Actions `31244897257`](https://github.com/JinHyunjun/swimtech/actions/runs/31244897257)을 통과했으며, 운영 6개 경로의 200 응답과 데스크톱·390px 모바일 공통 사이드바·현재 가이드 탭·메뉴 열기/ESC 닫기·가로 넘침 0·페이지 JavaScript 오류 0건을 확인해 P22를 완료했다. 이 검증은 안내 화면의 공개 품질에 대한 판정이며, P21의 실제 Apple Fitness 원본 확정 등록 운영 검증은 별도로 남아 있다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
