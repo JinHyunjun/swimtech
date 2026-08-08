@@ -194,10 +194,11 @@ Vercel은 clean URL과 rewrite를 사용한다.
 ### 운동 스크린샷 → 사용자 확인 → 훈련 일지
 
 ```text
-브라우저 사진 선택기 (이미지 1장)
-        │  PNG/JPEG/WEBP/HEIC/HEIF · 최대 8MB · 파일 서명 검사
+브라우저 사진 선택기 (이미지 최대 5장)
+        │  브라우저 큐에서 한 장씩 순차 처리
+        │  PNG/JPEG/WEBP/HEIC/HEIF · 장당 최대 8MB · 파일 서명 검사
         ▼
-POST /api/training-log/screenshot/preview
+POST /api/training-log/screenshot/preview (사진마다 1회)
         │  이미지 바이트는 Gemini 요청 동안만 메모리에 존재
         ▼
 Gemini 구조화 추출 ── 날짜·거리·시간·풀·페이스·심박·랩·영법별 거리
@@ -205,10 +206,10 @@ Gemini 구조화 추출 ── 날짜·거리·시간·풀·페이스·심박·�
         ├── 서버 범위 검사·거리 합계·랩×풀 길이 경고
         └── 고객별 20분 확인 토큰 (이미지 SHA-256, 구조화 값만 보유)
                               │
-                  사용자 확인·수정: “이 운동이 맞나요?”
+                  사진별 사용자 확인·수정: “이 운동이 맞나요?”
                               │
                               ▼
-POST /api/training-log/screenshot/confirm
+POST /api/training-log/screenshot/confirm (확인한 운동마다 1회)
         ├── 의미 기반 중복 지문 → wearable_workouts
         ├── 총거리·시간 → training_logs
         └── 영법별 완료 거리 → training_log_sets
@@ -216,7 +217,7 @@ POST /api/training-log/screenshot/confirm
                               └── 대시보드·월간 리포트·내 데이터
 ```
 
-미리보기는 어떠한 일지도 만들지 않는다. 확인 토큰은 로그인 customer ID에 묶이고 20분 후 만료되며, 이미지 속 텍스트는 명령이 아닌 데이터로 취급해 프롬프트 주입을 무시한다. 연도가 보이지 않는 Apple Fitness 화면은 가장 가까운 과거 연도를 임시 제안하되 경고를 표시하고 날짜 입력을 사용자에게 맡긴다. 같은 사용자·공급자·날짜·시작 시각·거리·시간·풀 길이 조합은 중복 저장하지 않는다. 1차 지원 공급자는 Apple Fitness이고 Samsung Health는 같은 공급자 모델로 확장할 수 있다.
+브라우저의 다중 선택은 기존 단일 이미지 API를 병렬 호출하지 않고 순차 호출한다. 따라서 원본을 서버 배치로 묶어 보관하지 않으며 사진별 20분 확인 토큰·검토·중복 판정을 그대로 유지한다. 미리보기는 어떠한 일지도 만들지 않는다. 확인 토큰은 로그인 customer ID에 묶이고 20분 후 만료되며, 이미지 속 텍스트는 명령이 아닌 데이터로 취급해 프롬프트 주입을 무시한다. 연도가 보이지 않는 Apple Fitness 화면은 가장 가까운 과거 연도를 임시 제안하되 경고를 표시하고 날짜 입력을 사용자에게 맡긴다. 같은 사용자·공급자·날짜·시작 시각·거리·시간·풀 길이 조합은 중복 저장하지 않는다. 1차 지원 공급자는 Apple Fitness이고 Samsung Health는 같은 공급자 모델로 확장할 수 있다.
 
 ### 훈련 기록 → 내 수영 데이터
 

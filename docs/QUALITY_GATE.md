@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 107개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 33개 화면 검증, Postman의 대표 API 요청 20개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 115개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 33개 화면 검증, Postman의 대표 API 요청 20개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -40,7 +40,8 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 준비도·주간 어드바이저 | 체크인 저장·복원, 낮은 준비도에서 회복 우선 추천, 관리자 7일 지표 | `qa_runner.py` 18a, `/admin` UI 기대값 |
 | 훈련 플랜 | 풀 길이, 사이클, 드릴·대시 필터, 품질 검증, 템플릿, 즐겨찾기, 공유, 일지 전송 | `plan.html` 계약 테스트, Playwright plan 섹션 |
 | 헬스 데이터 가져오기 비활성 경계 | 훈련 일지 버튼의 `disabled`·`aria-disabled`·`준비 중` 문구, 클릭 이벤트 미연결, 워치 직접 동기화·파일 가져오기를 제공 기능으로 오인할 문구 없음 | 훈련 일지 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]` |
-| 운동 스크린샷 AI 확인 등록 | 인증 필수, PNG/JPEG/WEBP/HEIC/HEIF 파일 서명·8MB 제한, Gemini 구조화 출력, 프롬프트 주입 무시, 원본 이미지 비저장, 20분 고객별 확인 토큰, 연도·거리 합계·랩×풀 경고, 사용자 수정 전 일지 미생성, 의미 기반 중복 방지, 일지·영법 세트·월간 영법 분포·관리자 30일 등록 건수 연동 | `TestWorkoutScreenshotImport`, 스크린샷 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]`·`["/admin"]`, Playwright `test_training_log_screenshot_import_review_flow`, 운영 API·Postman 확인 토큰 경계 |
+| 운동 스크린샷 AI 확인 등록 | 인증 필수, 최대 5장 다중 선택과 단일 API 순차 처리, PNG/JPEG/WEBP/HEIC/HEIF 장당 파일 서명·8MB 제한, 사진별 상태·사용자 검토·20분 고객별 확인 토큰, Gemini 구조화 출력, 프롬프트 주입 무시, 원본 이미지 비저장, 연도·거리 합계·랩×풀 경고, 사용자 수정 전 일지 미생성, 의미 기반 중복 방지, 일지·영법 세트·월간 영법 분포·관리자 30일 등록 건수 연동 | `TestWorkoutScreenshotImport`, 스크린샷 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]`·`["/admin"]`, Playwright `test_training_log_screenshot_import_review_flow`, 운영 API·Postman 확인 토큰 경계 |
+| 데스크톱·모바일 레이아웃 | 역할별 33개 화면의 문서 가로 넘침, 화면 밖 요소, 긴 문구가 48px 미만 한 글자 폭으로 눌리는 현상, 390px 전환 후 공통 메뉴 상태, 훈련 저장 알림의 화면 경계·본문 폭·액션 줄바꿈 | `check_responsive_layout`, `test_training_log_report_toast_mobile_layout`, 역할별 UI QA 스크린샷 |
 | 월간 리포트 | 훈련 일지와 같은 사용자 기준, 평균 거리, 플랜·세트 수행률, 사이클 포함률, 목표 달성률, 공유 링크, 비동기 인증 완료 전 월 이동 시 유효한 연·월 유지 | `qa_runner.py` 17, `report.py` 계약 테스트, UI 비동기 안정화 검사 |
 | 뱃지·챌린지 | 실제 일지 기반 진행률, 랭킹, 참가·탈퇴, 다음 뱃지, 목표 단계 | Playwright challenge/badge, `badge.py` 계약 테스트 |
 | 커뮤니티·알림 | 게시글·댓글·좋아요·북마크·신고, 태그·멘션, 이미지 제한, 읽음 처리 | `test_api_unit.py`, Playwright community, `qa_runner.py` 관리자 피드백 |

@@ -240,7 +240,7 @@ PAGE_EXPECTATIONS = {
         "wait_for_any_text": ["아직 해석할 훈련 기록이 없어요", "기록 습관과 데이터 깊이", "내 수영 데이터를 불러오지 못했습니다."],
     },
     "/training-log": {
-        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop", "#btn-open-screenshot", "#screenshot-modal-backdrop", "#screenshot-file-input", "#screenshot-analyze-btn", "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']"],
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop", "#btn-open-screenshot", "#screenshot-modal-backdrop", "#screenshot-file-input[multiple]", "#screenshot-batch-list", "#screenshot-review-progress", "#screenshot-analyze-btn", "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']"],
         "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록", "워치 데이터 가져오기 (준비 중)"],
     },
     "/workout": {
@@ -656,6 +656,107 @@ def check_service_navigation(page, path):
     return errors
 
 
+def check_responsive_layout(page, path):
+    """데스크톱·모바일에서 화면 밖 요소와 한 글자 폭으로 눌린 긴 문구를 찾는다."""
+    errors = []
+    original_viewport = page.viewport_size
+
+    def inspect_viewport(label):
+        return page.evaluate(
+            """label => {
+              const viewportWidth = document.documentElement.clientWidth;
+              const ignored = element => Boolean(
+                element.closest('[aria-hidden="true"], [hidden], .global-service-nav-backdrop') ||
+                element.closest('.service-sidebar:not(.open)') ||
+                element.matches('script, style, link, meta, path, br')
+              );
+              const insideHorizontalScroller = element => {
+                for (let current = element.parentElement; current; current = current.parentElement) {
+                  const currentStyle = getComputedStyle(current);
+                  if (['auto', 'scroll'].includes(currentStyle.overflowX) && current.scrollWidth > current.clientWidth + 1) return true;
+                }
+                return false;
+              };
+              const visible = element => {
+                const style = getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                return !ignored(element) && style.display !== 'none' && style.visibility !== 'hidden' &&
+                  Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
+              };
+              const selector = element => {
+                if (element.id) return `#${element.id}`;
+                const classes = [...element.classList].slice(0, 2).join('.');
+                return `${element.tagName.toLowerCase()}${classes ? `.${classes}` : ''}`;
+              };
+              const outside = [];
+              const squeezed = [];
+              for (const element of document.body.querySelectorAll('*')) {
+                if (!visible(element)) continue;
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                const scrollOwner = ['auto', 'scroll'].includes(style.overflowX);
+                if (!scrollOwner && !insideHorizontalScroller(element) && (rect.left < -2 || rect.right > viewportWidth + 2)) {
+                  if (!element.closest('.global-service-nav')) {
+                    outside.push({selector: selector(element), left: Math.round(rect.left), right: Math.round(rect.right)});
+                  }
+                }
+                const ownText = [...element.childNodes]
+                  .filter(node => node.nodeType === Node.TEXT_NODE)
+                  .map(node => node.textContent.trim()).join(' ').trim();
+                const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.4 || 20;
+                if (ownText.length >= 8 && rect.width < 48 && rect.height > lineHeight * 3 && style.writingMode === 'horizontal-tb') {
+                  squeezed.push({selector: selector(element), width: Math.round(rect.width), text: ownText.slice(0, 60)});
+                }
+              }
+              return {
+                label,
+                documentOverflow: Math.max(0, document.documentElement.scrollWidth - viewportWidth),
+                outside: outside.slice(0, 12),
+                squeezed: squeezed.slice(0, 12),
+              };
+            }""",
+            label,
+        )
+
+    try:
+        desktop = inspect_viewport("desktop")
+        if desktop["documentOverflow"] > 1 or desktop["outside"] or desktop["squeezed"]:
+            errors.append({"type": "responsive_layout_desktop", **desktop})
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.wait_for_timeout(300)
+        mobile = inspect_viewport("mobile-390")
+        if mobile["documentOverflow"] > 1 or mobile["outside"] or mobile["squeezed"]:
+            errors.append({"type": "responsive_layout_mobile", **mobile})
+
+        if path.split("?", 1)[0] == "/training-log":
+            page.evaluate("showReportToast('2026-08-08', false, 1)")
+            toast = page.locator("#report-toast")
+            message = page.locator("#report-toast .report-toast-message")
+            toast_box = toast.bounding_box()
+            message_box = message.bounding_box()
+            if (
+                not toast_box or not message_box
+                or toast_box["x"] < -1
+                or toast_box["x"] + toast_box["width"] > 391
+                or message_box["width"] < 200
+                or message_box["height"] > 100
+            ):
+                errors.append({
+                    "type": "training_log_mobile_toast_layout",
+                    "toast": toast_box,
+                    "message": message_box,
+                })
+            toast.evaluate("element => element.remove()")
+    except Exception as error:
+        errors.append({"type": "responsive_layout_check_failed", "error": str(error)[:200]})
+    finally:
+        if original_viewport:
+            page.set_viewport_size(original_viewport)
+            page.wait_for_timeout(150)
+    return errors
+
+
 def check_information_guide_interactions(page, path):
     """정보·도움 화면의 필터와 선택 결과가 실제 DOM 상태를 바꾸는지 읽기 전용으로 확인한다."""
     actions, errors = [], []
@@ -970,6 +1071,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
 
     expectation_errors = check_page_expectations(page, path)
     expectation_errors.extend(check_service_navigation(page, path))
+    expectation_errors.extend(check_responsive_layout(page, path))
     expectation_errors.extend(check_home_link_targets(page))
     if path in {"/drill", "/injury", "/equipment", "/faq"}:
         guide_actions, guide_errors = check_information_guide_interactions(page, path)

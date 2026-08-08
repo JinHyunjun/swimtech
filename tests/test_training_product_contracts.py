@@ -1128,7 +1128,7 @@ def test_quality_gate_documentation_is_kept_current():
     assert "목적별 사용 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
     assert "PostgreSQL · Neon · Alembic" in readme
-    assert "Playwright E2E 정의 107개" in quality_doc
+    assert "Playwright E2E 정의 108개" in quality_doc
     assert "유일한 필수 품질 게이트" in quality_doc
     assert "QA_STUDENT_USERNAME" in quality_doc
     for required in [
@@ -1171,12 +1171,27 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     report = (ROOT / "api" / "routers" / "report.py").read_text(encoding="utf-8")
     admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
     admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    faq_page = (ROOT / "frontend" / "faq.html").read_text(encoding="utf-8")
+    videos_page = (ROOT / "frontend" / "videos.html").read_text(encoding="utf-8")
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     crawler = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
     qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
 
     assert 'id="btn-open-screenshot"' in page
     assert 'id="screenshot-modal-backdrop"' in page
+    assert 'id="screenshot-file-input"' in page and " multiple>" in page
+    assert "MAX_SCREENSHOT_BATCH = 5" in page
+    assert 'id="screenshot-batch-list"' in page
+    assert "for (let order = 0; order < targets.length; order += 1)" in page
+    assert "원본 이미지를 저장하지 않으며" in page
+    assert "저장 후 다음 운동 확인" in page
+    assert 'class="report-toast-message"' in page
+    assert "word-break: keep-all" in page
+    assert "def check_responsive_layout" in crawler
+    assert "check_responsive_layout(page, path)" in crawler
+    assert "insideHorizontalScroller" in crawler
+    assert "grid-template-columns: minmax(0,1fr)" in faq_page
+    assert "grid-template-columns: minmax(0,1fr)" in videos_page
     assert "실제로 한 운동이 맞나요" in page
     assert "확인하고 일지에 저장" in page
     assert "원본 이미지를 저장하지" in page

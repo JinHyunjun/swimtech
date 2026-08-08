@@ -1012,10 +1012,40 @@ def test_training_log_screenshot_import_review_flow(page: Page):
     expect(page.locator("#screenshot-file-input")).to_have_attribute(
         "accept", "image/png,image/jpeg,image/webp,image/heic,image/heif"
     )
+    expect(page.locator("#screenshot-file-input")).to_have_attribute("multiple", "")
     expect(page.locator(".screenshot-privacy")).to_contain_text("원본 이미지를 저장하지")
     expect(page.locator("#screenshot-analyze-btn")).to_be_disabled()
+    tiny_png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+        "0000000d4944415408d763f8cfc0f01f00050001ff89993d1d0000000049454e44ae426082"
+    )
+    page.locator("#screenshot-file-input").set_input_files([
+        {"name": "apple-swim-1.png", "mimeType": "image/png", "buffer": tiny_png},
+        {"name": "apple-swim-2.png", "mimeType": "image/png", "buffer": tiny_png},
+    ])
+    expect(page.locator("#screenshot-batch-list .screenshot-batch-item")).to_have_count(2)
+    expect(page.locator("#screenshot-file-label")).to_contain_text("2장 선택됨")
+    expect(page.locator("#screenshot-analyze-btn")).to_contain_text("2장 순서대로 분석")
+    expect(page.locator("#screenshot-analyze-btn")).to_be_enabled()
     shot(page, "15_training_log_screenshot_import")
     page.locator("#screenshot-pick-cancel").click()
+
+
+def test_training_log_report_toast_mobile_layout(page: Page):
+    """저장 안내가 모바일에서 한 글자 폭으로 눌리거나 화면 밖으로 나가지 않는다."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    goto(page, "/training-log")
+    page.wait_for_timeout(800)
+    page.evaluate("showReportToast('2026-08-08', false, 123)")
+    toast = page.locator("#report-toast")
+    message = page.locator("#report-toast .report-toast-message")
+    expect(toast).to_be_visible()
+    toast_box = toast.bounding_box()
+    message_box = message.bounding_box()
+    assert toast_box and toast_box["x"] >= 0 and toast_box["x"] + toast_box["width"] <= 390
+    assert message_box and message_box["width"] >= 200 and message_box["height"] < 100
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+    shot(page, "15_training_log_report_toast_mobile")
 
 
 def test_training_log_api_requires_login(browser, browser_context_args):
