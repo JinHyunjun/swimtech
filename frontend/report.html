@@ -15,9 +15,9 @@
 <style>
 .rp-page { max-width: 1060px; margin: 0 auto; padding: 24px 16px 80px; }
 /* ── 2-column layout ── */
-.rp-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+.rp-layout { display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 20px; align-items: start; }
 .rp-sidebar { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
-.rp-main { display: flex; flex-direction: column; gap: 0; }
+.rp-main { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow-x: hidden; }
 @media (max-width: 860px) { .rp-layout { grid-template-columns: 1fr; } .rp-sidebar { position: static; } }
 
 .rp-topbar {
