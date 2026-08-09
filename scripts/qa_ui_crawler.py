@@ -81,6 +81,8 @@ PAGES = [
     ("/tutorial/data", "가이드 · 성장 데이터"),
     ("/tutorial/coach", "가이드 · 코치·클럽"),
     ("/tutorial/help", "가이드 · 정보·도움"),
+    ("/privacy", "개인정보처리방침"),
+    ("/terms", "이용약관"),
     ("/onboarding", "맞춤 훈련 설정"),
     ("/onboarding?mode=edit", "맞춤 훈련 설정 수정"),
     ("/dashboard", "대시보드"),
@@ -120,6 +122,10 @@ SERVICE_NAV_PATHS = {
     "/community", "/challenge", "/equipment", "/feedback", "/chat", "/videos",
     "/profile", "/injury", "/coach", "/clubs", "/tutorial",
     "/tutorial/personal", "/tutorial/record", "/tutorial/data", "/tutorial/coach", "/tutorial/help",
+}
+
+APP_HEADER_PATHS = SERVICE_NAV_PATHS | {
+    "/landing", "/admin", "/privacy", "/terms", "/onboarding",
 }
 
 # 되돌릴 수 없는 동작 — 클릭하지 않고 "존재 확인"만 한다
@@ -722,6 +728,126 @@ def check_service_navigation(page, path):
     return errors
 
 
+def check_global_app_header(page, path):
+    """공통 홈·프로필·로그아웃·테마 헤더의 인증 상태, 순서와 반응형 배치를 검증한다."""
+    route = path.split("?", 1)[0].rstrip("/") or "/"
+    if route not in APP_HEADER_PATHS:
+        return []
+
+    errors = []
+    header = page.locator("#global-app-header")
+    try:
+        header.wait_for(state="visible", timeout=7000)
+    except Exception:
+        return [{"type": "missing_global_app_header", "path": route}]
+
+    try:
+        if header.count() != 1:
+            errors.append({"type": "global_app_header_count", "actual": header.count(), "expected": 1})
+        home = header.locator(".global-app-home")
+        if home.get_attribute("href") != "/landing":
+            errors.append({"type": "global_app_header_home_target", "href": home.get_attribute("href")})
+        if header.locator("#theme-toggle-btn").count() != 1 or not header.locator("#theme-toggle-btn").is_visible():
+            errors.append({"type": "global_app_header_theme_missing"})
+
+        profile = header.locator("#global-app-profile")
+        logout = header.locator("#global-app-logout")
+        login = header.locator("#global-app-login")
+        profile.wait_for(state="visible", timeout=7000)
+        if profile.get_attribute("href") != "/profile" or not logout.is_visible() or login.is_visible():
+            errors.append({
+                "type": "global_app_header_authenticated_actions",
+                "profileHref": profile.get_attribute("href"),
+                "profileVisible": profile.is_visible(),
+                "logoutVisible": logout.is_visible(),
+                "loginVisible": login.is_visible(),
+            })
+
+        action_order = page.evaluate(
+            """() => [...document.querySelectorAll('#global-app-header .global-app-header-actions > :not([hidden])')]
+              .map(element => element.id).filter(Boolean)"""
+        )
+        if action_order != ["global-app-profile", "global-app-logout", "theme-toggle-btn"]:
+            errors.append({"type": "global_app_header_action_order", "actual": action_order})
+
+        expected_menu = (
+            "#menu-toggle" if route == "/landing"
+            else "#admin-menu-toggle" if route == "/admin"
+            else "#global-service-nav-toggle" if route in SERVICE_NAV_PATHS
+            else None
+        )
+        if expected_menu and not page.locator(f"#global-app-header .global-app-header-left > {expected_menu}").count():
+            errors.append({"type": "global_app_header_menu_placement", "selector": expected_menu})
+        if route == "/chat" and not page.locator("#global-app-header .global-app-header-left > #sidebar-toggle-btn").count():
+            errors.append({"type": "global_app_header_chat_history_missing"})
+        if route == "/community":
+            try:
+                page.locator("#global-app-header .global-app-header-actions #notif-bell").wait_for(state="visible", timeout=7000)
+            except Exception:
+                errors.append({"type": "global_app_header_notification_missing"})
+
+        duplicate_legacy = page.locator(
+            ".header:not(#global-app-header):visible, body > .home-header:visible, body > .navbar:visible, "
+            ".club-header > a[href='/landing']:visible, .profile-topbar > a[href='/landing']:visible"
+        ).count()
+        if duplicate_legacy:
+            errors.append({"type": "global_app_header_legacy_home_visible", "count": duplicate_legacy})
+
+        desktop = page.evaluate(
+            """() => {
+              const header = document.getElementById('global-app-header').getBoundingClientRect();
+              const leftGroup = document.querySelector('#global-app-header .global-app-header-left').getBoundingClientRect();
+              const actionGroup = document.querySelector('#global-app-header .global-app-header-actions').getBoundingClientRect();
+              const children = [...document.querySelectorAll('#global-app-header .global-app-home, #global-app-header .global-app-header-actions > :not([hidden])')]
+                .filter(element => getComputedStyle(element).display !== 'none')
+                .map(element => { const rect = element.getBoundingClientRect(); return {id:element.id || element.className, left:rect.left, right:rect.right}; });
+              const overlaps = children.some((item, index) => index > 0 && item.left < children[index - 1].right - 1);
+              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, overlaps:overlaps || leftGroup.right > actionGroup.left + 1};
+            }"""
+        )
+        if desktop["left"] < -1 or desktop["right"] > desktop["viewport"] + 1 or desktop["overlaps"]:
+            errors.append({"type": "global_app_header_desktop_layout", **desktop})
+    except Exception as error:
+        errors.append({"type": "global_app_header_unreadable", "error": str(error)[:200]})
+
+    original_viewport = page.viewport_size
+    try:
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.wait_for_timeout(250)
+        mobile = page.evaluate(
+            """() => {
+              const header = document.getElementById('global-app-header').getBoundingClientRect();
+              const leftGroup = document.querySelector('#global-app-header .global-app-header-left').getBoundingClientRect();
+              const actionGroup = document.querySelector('#global-app-header .global-app-header-actions').getBoundingClientRect();
+              const visible = [...document.querySelectorAll('#global-app-header .global-app-home, #global-app-header .global-app-header-actions > :not([hidden])')]
+                .filter(element => { const style=getComputedStyle(element); const rect=element.getBoundingClientRect(); return style.display !== 'none' && rect.width > 0; })
+                .map(element => { const rect=element.getBoundingClientRect(); return {id:element.id || 'home', left:rect.left, right:rect.right}; });
+              const overlaps = visible.some((item, index) => index > 0 && item.left < visible[index - 1].right - 1);
+              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, overlaps:overlaps || leftGroup.right > actionGroup.left + 1, visible};
+            }"""
+        )
+        if mobile["left"] < -1 or mobile["right"] > mobile["viewport"] + 1 or mobile["overlaps"]:
+            errors.append({"type": "global_app_header_mobile_layout", **mobile})
+    except Exception as error:
+        errors.append({"type": "global_app_header_mobile_unreadable", "error": str(error)[:200]})
+    finally:
+        if original_viewport:
+            page.set_viewport_size(original_viewport)
+            page.wait_for_timeout(150)
+
+    if route == "/dashboard":
+        try:
+            original_theme = page.locator("html").get_attribute("data-theme") or "dark"
+            page.locator("#theme-toggle-btn").click()
+            changed_theme = page.locator("html").get_attribute("data-theme")
+            if changed_theme == original_theme:
+                errors.append({"type": "global_app_header_theme_toggle_failed"})
+            page.locator("#theme-toggle-btn").click()
+        except Exception as error:
+            errors.append({"type": "global_app_header_theme_toggle_unreadable", "error": str(error)[:160]})
+    return errors
+
+
 def check_responsive_layout(page, path):
     """데스크톱·모바일에서 화면 밖 요소와 한 글자 폭으로 눌린 긴 문구를 찾는다."""
     errors = []
@@ -1141,6 +1267,7 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
     page.screenshot(path=str(SHOT_DIR / f"{slug(path)}_00_load.png"))
 
     expectation_errors = check_page_expectations(page, path)
+    expectation_errors.extend(check_global_app_header(page, path))
     expectation_errors.extend(check_service_navigation(page, path))
     expectation_errors.extend(check_responsive_layout(page, path))
     expectation_errors.extend(check_home_link_targets(page))

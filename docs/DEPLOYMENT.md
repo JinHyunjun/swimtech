@@ -50,7 +50,7 @@ Vercel 프로젝트의 Root Directory는 `frontend`이며 배포 라우팅은 �
 1. Git 연결 브랜치가 `main`인지 확인
 2. Root Directory가 `frontend`인지 확인
 3. clean URL과 rewrite 적용 확인
-4. `/manifest.json`, `/sw.js`, `/static/style.css` 200 확인
+4. `/manifest.json`, `/sw.js`, `/static/style.css`, `/static/icons/favicon.svg` 200과 SVG `Content-Type: image/svg+xml` 확인
 5. `/api/health`가 same-origin rewrite로 200인지 확인
 6. 일반 로그인과 `/auth/demo` 후 주소가 `/landing`인지 확인
 7. `/`와 `/app`이 본문을 rewrite하지 않고 `/landing`으로 리다이렉트되는지 확인

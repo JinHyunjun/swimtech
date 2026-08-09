@@ -318,15 +318,16 @@ body { overflow-x:hidden; }
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-const homeHeader = document.querySelector('.home-header');
 const sidebar = $('service-sidebar');
 const menuToggle = $('menu-toggle');
 const sidebarBackdrop = $('sidebar-backdrop');
 
 function syncHeaderOffset() {
+  const homeHeader = document.querySelector('.global-app-header') || document.querySelector('.home-header');
   document.documentElement.style.setProperty('--home-header-height', `${Math.ceil(homeHeader.getBoundingClientRect().height)}px`);
 }
 syncHeaderOffset();
+window.addEventListener('swimmate:app-header-ready', syncHeaderOffset);
 
 function setSidebar(open) {
   sidebar.classList.toggle('open', open);

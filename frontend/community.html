@@ -555,7 +555,8 @@ let mentionStart  = -1;
 
 function renderHeader() {
   document.getElementById('write-btn').style.display = 'block';
-  document.getElementById('header-right').innerHTML = `
+  const commonActions = document.querySelector('#global-app-header .global-app-header-actions');
+  const notificationHtml = `
     <div class="notif-wrap">
       <button class="btn-notif" id="notif-bell" onclick="toggleNotifDropdown()" title="알림"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-bell"/></svg>
         <span class="notif-badge" id="notif-badge"></span>
@@ -569,18 +570,25 @@ function renderHeader() {
           <div class="notif-empty">알림이 없습니다.</div>
         </div>
       </div>
-    </div>
-    <span style="font-size: var(--fs-caption);color:var(--muted);margin:0 10px;">${esc(meInfo.nickname || meInfo.username)}</span>
-    <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>
-  `;
+    </div>`;
+  if (commonActions) {
+    commonActions.querySelector('.notif-wrap')?.remove();
+    commonActions.insertAdjacentHTML('afterbegin', notificationHtml);
+  } else {
+    document.getElementById('header-right').innerHTML = `${notificationHtml}
+      <span style="font-size: var(--fs-caption);color:var(--muted);margin:0 10px;">${esc(meInfo.nickname || meInfo.username)}</span>
+      <button onclick="logout()" style="background:none;border:0.5px solid var(--border);color:#90c4d4;border-radius: var(--radius-sm);padding:4px 12px;font-size: var(--fs-caption);cursor:pointer;">로그아웃</button>`;
+  }
   fetchNotifCount();
   setInterval(fetchNotifCount, 30000);
 }
 
 function renderHeaderLoggedOut() {
-  document.getElementById('header-right').innerHTML = `
-    <a href="/login" style="background:#00b4d8;color:#fff;border:none;border-radius: var(--radius-sm);padding:5px 14px;font-size: var(--fs-caption);font-weight:600;text-decoration:none;">로그인</a>
-  `;
+  if (!document.getElementById('global-app-header')) {
+    document.getElementById('header-right').innerHTML = `
+      <a href="/login" style="background:#00b4d8;color:#fff;border:none;border-radius: var(--radius-sm);padding:5px 14px;font-size: var(--fs-caption);font-weight:600;text-decoration:none;">로그인</a>
+    `;
+  }
 }
 
 async function logout() {

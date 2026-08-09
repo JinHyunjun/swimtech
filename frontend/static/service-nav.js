@@ -127,7 +127,8 @@
   }
 
   function placeToggle(button) {
-    var target = document.querySelector('.header .header-left') ||
+    var target = document.querySelector('.global-app-header-left') ||
+      document.querySelector('.header .header-left') ||
       document.querySelector('.club-header') ||
       document.querySelector('.workout-header') ||
       document.querySelector('.profile-topbar') ||
@@ -187,7 +188,7 @@
     brand.className = 'global-service-nav-brand';
     brand.href = '/landing';
     brand.setAttribute('aria-label', 'SwimMate 내 훈련 홈');
-    brand.innerHTML = '<img src="/static/icons/logo.svg" alt=""><span><strong>SwimMate</strong><small>내 수영 훈련 도우미</small></span>';
+    brand.innerHTML = '<img src="/static/icons/favicon.svg" alt=""><span><strong>SwimMate</strong><small>내 수영 훈련 도우미</small></span>';
     var close = document.createElement('button');
     close.type = 'button';
     close.id = 'global-service-nav-close';

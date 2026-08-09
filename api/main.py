@@ -665,7 +665,8 @@ def serve_icon(filename: str):
     path = os.path.join(FRONTEND_DIR, "static", "icons", safe)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Icon not found")
-    return FileResponse(path, media_type="image/png")
+    media_type = "image/svg+xml" if safe.lower().endswith(".svg") else "image/png"
+    return FileResponse(path, media_type=media_type)
 
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")

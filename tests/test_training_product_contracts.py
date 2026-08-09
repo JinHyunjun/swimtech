@@ -251,19 +251,22 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     root_style = (ROOT / "frontend" / "style.css").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
 
+    service_nav_paths_static = static_theme.split("var SERVICE_NAV_PATHS = [", 1)[1].split("];", 1)[0]
+    service_nav_paths_root = root_theme.split("var SERVICE_NAV_PATHS = [", 1)[1].split("];", 1)[0]
+
     for route in (
         "/dashboard", "/training-log", "/plan", "/workout", "/report", "/my-data",
         "/badges", "/chat", "/coach", "/clubs", "/challenge", "/community",
         "/pool", "/drill", "/injury", "/equipment", "/videos", "/glossary",
         "/faq", "/tutorial", "/profile", "/feedback", "/changelog",
     ):
-        assert f"'{route}'" in static_theme
-        assert f"'{route}'" in root_theme
+        assert f"'{route}'" in service_nav_paths_static
+        assert f"'{route}'" in service_nav_paths_root
         assert f"href: '{route}'" in service_nav
 
     for excluded_route in ("'/landing'", "'/login'", "'/register'", "'/admin'", "'/onboarding'", "'/privacy'", "'/terms'"):
-        assert excluded_route not in static_theme
-        assert excluded_route not in root_theme
+        assert excluded_route not in service_nav_paths_static
+        assert excluded_route not in service_nav_paths_root
 
     for marker in (
         "global-service-nav", "global-service-nav-toggle", "global-service-nav-backdrop",
@@ -284,6 +287,58 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     assert "service_navigation_mobile_open_failed" in ui_qa
     assert "service_navigation_mobile_escape_close_failed" in ui_qa
     assert ":not(.global-service-nav-link):not(.service-nav-link)" in ui_qa
+
+
+def test_service_pages_use_one_authenticated_global_header_and_swimming_favicon():
+    static_theme = (ROOT / "frontend" / "static" / "theme.js").read_text(encoding="utf-8")
+    root_theme = (ROOT / "frontend" / "theme.js").read_text(encoding="utf-8")
+    static_style = (ROOT / "frontend" / "static" / "style.css").read_text(encoding="utf-8")
+    root_style = (ROOT / "frontend" / "style.css").read_text(encoding="utf-8")
+    service_nav = (ROOT / "frontend" / "static" / "service-nav.js").read_text(encoding="utf-8")
+    community = (ROOT / "frontend" / "community.html").read_text(encoding="utf-8")
+    manifest = (ROOT / "frontend" / "manifest.json").read_text(encoding="utf-8")
+    favicon = (ROOT / "frontend" / "static" / "icons" / "favicon.svg").read_text(encoding="utf-8")
+    api_main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    for theme in (static_theme, root_theme):
+        header_paths = theme.split("var APP_HEADER_PATHS = [", 1)[1].split("];", 1)[0]
+        for route in ("/landing", "/dashboard", "/plan", "/training-log", "/report", "/profile", "/admin", "/privacy", "/terms", "/onboarding"):
+            assert f"'{route}'" in header_paths
+        for route in ("/login", "/register", "/nickname"):
+            assert f"'{route}'" not in header_paths
+        for marker in (
+            "global-app-header", "global-app-home", "href=\"/landing\"",
+            "global-app-profile", "href=\"/profile\"", "global-app-logout",
+            "theme-toggle-btn", "loadHeaderSession", "fetch('/auth/me'",
+            "fetch('/auth/logout'", "swimmate:app-header-ready",
+            "/static/icons/favicon.svg",
+        ):
+            assert marker in theme
+
+    assert static_style == root_style
+    for marker in (
+        ".global-app-header", ".global-app-header-actions", ".global-app-action[hidden]",
+        "body.global-app-header-enabled .header", "@media (max-width: 700px)",
+        "inset: var(--global-app-header-height, 70px) auto 0 0",
+    ):
+        assert marker in static_style
+
+    assert "favicon.svg" in manifest
+    assert "<circle" in favicon and "<path" in favicon and "#48cae4" in favicon
+    assert "image/svg+xml" in api_main
+    assert "favicon.svg" in service_nav
+    assert "document.querySelector('.global-app-header-left')" in service_nav
+    assert "document.getElementById('sidebar-toggle-btn')" in static_theme
+    assert "#global-app-header .global-app-header-actions" in community
+    assert "commonActions.insertAdjacentHTML('afterbegin', notificationHtml)" in community
+    assert "APP_HEADER_PATHS" in ui_qa
+    assert "def check_global_app_header(page, path):" in ui_qa
+    assert "check_global_app_header(page, path)" in ui_qa
+    assert "global_app_header_action_order" in ui_qa
+    assert "global_app_header_mobile_layout" in ui_qa
+    assert "global_app_header_chat_history_missing" in ui_qa
+    assert "global_app_header_notification_missing" in ui_qa
 
 
 def test_render_deploy_hook_is_triggered_for_backend_changes():
