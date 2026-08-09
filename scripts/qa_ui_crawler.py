@@ -626,6 +626,9 @@ def check_service_navigation(page, path):
     route = path.split("?", 1)[0].rstrip("/") or "/"
     if route not in SERVICE_NAV_PATHS:
         return []
+    # 목적별 가이드 상세 화면은 공통 서비스 메뉴에서 하나의
+    # `/tutorial` 항목으로 묶이고, 상세 구분은 가이드 내부 탭이 담당한다.
+    expected_active_route = "/tutorial" if route.startswith("/tutorial/") else route
 
     errors = []
     sidebar = page.locator("#global-service-nav")
@@ -659,10 +662,10 @@ def check_service_navigation(page, path):
     try:
         if active.count() != 1:
             errors.append({"type": "service_navigation_active_count", "actual": active.count(), "expected": 1})
-        elif active.first.get_attribute("data-route") != route:
+        elif active.first.get_attribute("data-route") != expected_active_route:
             errors.append({
                 "type": "service_navigation_wrong_active_route",
-                "expected": route,
+                "expected": expected_active_route,
                 "actual": active.first.get_attribute("data-route"),
             })
     except Exception as error:

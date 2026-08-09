@@ -741,6 +741,7 @@ def test_feature_tutorial_is_split_by_purpose_and_qa_mapped():
     assert "AI 스크린샷에서 확인한 영법별 거리" in guides["data"]
     assert "영상 영법 분석은 제공하지 않음" in guides["help"]
     assert "tutorialDetail" in (ROOT / "frontend" / "static" / "service-nav.js").read_text(encoding="utf-8")
+    assert 'expected_active_route = "/tutorial" if route.startswith("/tutorial/") else route' in ui_qa
     assert '("/tutorial", "기능 가이드")' in ui_qa
     assert '"/tutorial": {' in ui_qa
 
