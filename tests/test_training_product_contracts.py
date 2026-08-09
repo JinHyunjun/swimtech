@@ -879,6 +879,27 @@ def test_admin_header_does_not_link_to_member_dashboard():
     assert "← 대시보드" not in admin_page
 
 
+def test_admin_navigation_uses_non_overlapping_responsive_sidebar():
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    quality = (ROOT / "docs" / "QUALITY_GATE.md").read_text(encoding="utf-8")
+
+    assert 'class="admin-shell"' in admin_page
+    assert 'id="admin-sidebar"' in admin_page
+    assert 'id="admin-menu-toggle"' in admin_page
+    assert 'id="admin-nav-backdrop"' in admin_page
+    assert '<nav class="admin-tabs" role="tablist"' in admin_page
+    assert admin_page.count('role="tab"') == 7
+    assert "grid-template-columns: 248px minmax(0, 1fr)" in admin_page
+    assert "flex: 0 0 auto" in admin_page
+    assert "@media (max-width: 900px)" in admin_page
+    assert "setAdminNavOpen" in admin_page
+    assert "activateAdminTab" in admin_page
+    assert "관리자 모바일 드로어 7개 메뉴 비겹침" in qa_ui
+    assert "admin_sidebar_mobile_layout" in qa_ui
+    assert "관리자 전용 사이드 메뉴" in quality
+
+
 def test_plan_p6_coach_code_ai_class_operations_are_connected():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     coach_api = (ROOT / "api" / "routers" / "coach.py").read_text(encoding="utf-8")

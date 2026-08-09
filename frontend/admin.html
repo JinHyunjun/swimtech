@@ -10,10 +10,112 @@
 <link rel="stylesheet" href="/static/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
+body {
+  overflow-x: hidden;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 20px 14px;
+  overflow-y: auto;
+  background: var(--surface2);
+  background: color-mix(in srgb, var(--surface2) 94%, var(--bg));
+  border-right: 0.5px solid var(--border);
+  box-sizing: border-box;
+}
+
+.admin-sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 6px 20px;
+}
+
+.admin-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-sidebar-brand img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+}
+
+.admin-sidebar-brand strong,
+.admin-sidebar-brand span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-sidebar-brand strong {
+  color: var(--text);
+  font-size: var(--fs-body-lg);
+}
+
+.admin-sidebar-brand span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+.admin-nav-heading {
+  margin: 4px 10px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.admin-nav-close,
+.admin-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin-nav-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: var(--radius-sm);
+  font-size: 22px;
+}
+
+.admin-nav-backdrop {
+  display: none;
+}
+
 .admin-page {
   padding: 24px;
   max-width: 1280px;
+  width: 100%;
+  min-width: 0;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .admin-topbar {
@@ -50,33 +152,67 @@
 
 /* 탭 */
 .admin-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 0.5px solid var(--border);
-  margin-bottom: 24px;
-  overflow-x: auto;
+  display: grid;
+  gap: 6px;
 }
 .admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  flex: 0 0 auto;
   background: none;
   border: none;
   color: var(--muted);
   font-size: var(--fs-body);
   font-weight: 600;
-  padding: 10px 18px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   position: relative;
-  white-space: nowrap;
-  transition: color .2s;
+  text-align: left;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  transition: color .2s, background-color .2s;
 }
-.admin-tab:hover { color: var(--text); }
-.admin-tab.active { color: var(--accent-primary); }
+.admin-tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.admin-tab.active { color: var(--accent-primary); background: rgba(0,180,216,.1); }
 .admin-tab.active::after {
   content: '';
   position: absolute;
-  left: 0; right: 0; bottom: -1px;
-  height: 2px;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
   background: var(--accent-primary);
   border-radius: var(--radius-pill);
+}
+.admin-tab-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 26px;
+  flex: 0 0 30px;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.admin-tab.active .admin-tab-index { color: var(--accent-primary); border-color: rgba(0,180,216,.45); }
+.admin-tab-label { min-width: 0; }
+.admin-sidebar-footer {
+  margin-top: auto;
+  padding: 18px 10px 4px;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.55;
+  word-break: keep-all;
 }
 
 .admin-section { display: none; }
@@ -91,6 +227,7 @@
   margin-bottom: 24px;
 }
 .summary-card {
+  min-width: 0;
   background: linear-gradient(var(--surface), var(--surface)) padding-box,
               linear-gradient(135deg, #00b4d8, var(--border)) border-box;
   border: 1px solid transparent;
@@ -102,6 +239,7 @@
 .summary-card .value.energy { color: var(--energy); }
 
 .panel {
+  min-width: 0;
   background: var(--surface2);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-lg);
@@ -333,9 +471,70 @@
 
 @media (max-width: 760px) {
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .summary-card { padding: 16px; }
+  .summary-card .label { word-break: keep-all; overflow-wrap: break-word; }
+  .summary-card .value { font-size: clamp(24px, 7vw, var(--fs-heading)); overflow-wrap: anywhere; }
   .health-grid { grid-template-columns: 1fr; }
   .chart-grid { grid-template-columns: 1fr; }
   .chart-wrap { height: 260px; }
+}
+
+@media (max-width: 900px) {
+  .admin-shell { display: block; }
+  .admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1001;
+    width: min(82vw, 300px);
+    height: 100dvh;
+    transform: translateX(-102%);
+    transition: transform .22s ease;
+    box-shadow: 18px 0 50px rgba(0,0,0,.35);
+  }
+  .admin-sidebar.open { transform: translateX(0); }
+  .admin-nav-close { display: inline-flex; }
+  .admin-nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: rgba(2, 12, 20, .7);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .admin-nav-backdrop.open { opacity: 1; pointer-events: auto; }
+  body.admin-nav-open { overflow: hidden; }
+  .admin-page { padding: 18px 16px 36px; }
+  .admin-menu-toggle {
+    display: inline-flex;
+    min-height: 42px;
+    gap: 7px;
+    padding: 8px 11px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-caption);
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .admin-topbar { margin-bottom: 20px; }
+  .admin-topbar-left { gap: 10px; min-width: 0; }
+  .admin-title { font-size: clamp(24px, 8vw, var(--fs-title)); }
+  .admin-badge { white-space: nowrap; }
+}
+
+@media (max-width: 430px) {
+  .admin-topbar-left { flex-wrap: wrap; }
+  .admin-menu-toggle { flex: 0 0 auto; }
+  .admin-title { flex: 0 0 auto; }
+  .admin-badge { max-width: 100%; }
+  .panel { padding: 16px; }
+  .search-input,
+  .search-category-select { min-width: 100%; width: 100%; }
+  .btn-mini { flex: 1 1 calc(50% - 4px); }
+  .pager { width: 100%; justify-content: center; }
+  .pager-info { min-width: 110px; }
 }
 </style>
     <script src="/static/theme.js"></script>
@@ -343,23 +542,40 @@
     <script src="/static/api.js"></script>
 </head>
 <body>
-<div class="admin-page">
+<div class="admin-shell">
+  <aside class="admin-sidebar" id="admin-sidebar" aria-label="관리자 메뉴">
+    <div class="admin-sidebar-top">
+      <div class="admin-sidebar-brand">
+        <img src="/static/icons/icon-192.svg" alt="">
+        <div>
+          <strong>SwimMate</strong>
+          <span>운영 관리 센터</span>
+        </div>
+      </div>
+      <button type="button" class="admin-nav-close" id="admin-nav-close" aria-label="관리자 메뉴 닫기">×</button>
+    </div>
+    <div class="admin-nav-heading">ADMIN MENU</div>
+    <nav class="admin-tabs" role="tablist" aria-label="관리자 기능" aria-orientation="vertical">
+      <button class="admin-tab active" id="admin-tab-dashboard" role="tab" aria-selected="true" aria-controls="tab-dashboard" data-tab="dashboard"><span class="admin-tab-index" aria-hidden="true">01</span><span class="admin-tab-label">대시보드</span></button>
+      <button class="admin-tab" id="admin-tab-users" role="tab" aria-selected="false" aria-controls="tab-users" data-tab="users"><span class="admin-tab-index" aria-hidden="true">02</span><span class="admin-tab-label">사용자 관리</span></button>
+      <button class="admin-tab" id="admin-tab-coaches" role="tab" aria-selected="false" aria-controls="tab-coaches" data-tab="coaches"><span class="admin-tab-index" aria-hidden="true">03</span><span class="admin-tab-label">코치 운영</span></button>
+      <button class="admin-tab" id="admin-tab-activity" role="tab" aria-selected="false" aria-controls="tab-activity" data-tab="activity"><span class="admin-tab-index" aria-hidden="true">04</span><span class="admin-tab-label">메뉴 사용 분석</span></button>
+      <button class="admin-tab" id="admin-tab-training-health" role="tab" aria-selected="false" aria-controls="tab-training-health" data-tab="training-health"><span class="admin-tab-index" aria-hidden="true">05</span><span class="admin-tab-label">훈련 운영</span></button>
+      <button class="admin-tab" id="admin-tab-logs" role="tab" aria-selected="false" aria-controls="tab-logs" data-tab="logs"><span class="admin-tab-index" aria-hidden="true">06</span><span class="admin-tab-label">운영 로그</span></button>
+      <button class="admin-tab" id="admin-tab-feedback" role="tab" aria-selected="false" aria-controls="tab-feedback" data-tab="feedback"><span class="admin-tab-index" aria-hidden="true">07</span><span class="admin-tab-label">피드백</span></button>
+    </nav>
+    <div class="admin-sidebar-footer">운영 데이터 조회와 서비스 상태 확인을 위한 슈퍼 관리자 전용 화면입니다.</div>
+  </aside>
+  <button type="button" class="admin-nav-backdrop" id="admin-nav-backdrop" aria-label="관리자 메뉴 닫기" tabindex="-1"></button>
+
+<main class="admin-page" id="admin-content">
 
   <div class="admin-topbar">
     <div class="admin-topbar-left">
+      <button type="button" class="admin-menu-toggle" id="admin-menu-toggle" aria-controls="admin-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span>운영 메뉴</span></button>
       <span class="admin-title">관리자</span>
       <span class="admin-badge">⚡ SUPER ADMIN</span>
     </div>
-  </div>
-
-  <div class="admin-tabs">
-    <button class="admin-tab active" data-tab="dashboard">대시보드</button>
-    <button class="admin-tab" data-tab="users">사용자 관리</button>
-    <button class="admin-tab" data-tab="coaches">코치 운영</button>
-    <button class="admin-tab" data-tab="activity">메뉴 사용 분석</button>
-    <button class="admin-tab" data-tab="training-health">훈련 운영</button>
-    <button class="admin-tab" data-tab="logs">운영 로그</button>
-    <button class="admin-tab" data-tab="feedback">피드백</button>
   </div>
 
   <!-- 1) 관리자 대시보드 -->
@@ -775,6 +991,7 @@
     </div>
   </section>
 
+</main>
 </div>
 
 <script>
@@ -908,14 +1125,72 @@ async function authedFetch(url) {
   return res.json();
 }
 
-// 탭 전환
-document.querySelectorAll('.admin-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+// 관리자 사이드 메뉴와 모바일 드로어
+const adminSidebar = document.getElementById('admin-sidebar');
+const adminNavBackdrop = document.getElementById('admin-nav-backdrop');
+const adminMenuToggle = document.getElementById('admin-menu-toggle');
+const adminNavClose = document.getElementById('admin-nav-close');
+const adminTabs = [...document.querySelectorAll('.admin-tab')];
+const adminMobileQuery = window.matchMedia('(max-width: 900px)');
+
+function setAdminNavOpen(open, restoreFocus = false) {
+  const shouldOpen = Boolean(open && adminMobileQuery.matches);
+  adminSidebar.classList.toggle('open', shouldOpen);
+  adminNavBackdrop.classList.toggle('open', shouldOpen);
+  adminMenuToggle.setAttribute('aria-expanded', String(shouldOpen));
+  document.body.classList.toggle('admin-nav-open', shouldOpen);
+  if (!shouldOpen && restoreFocus) adminMenuToggle.focus();
+}
+
+function activateAdminTab(btn, moveFocus = false) {
+  if (!btn) return;
+  adminTabs.forEach(tab => {
+    const active = tab === btn;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    const section = document.getElementById('tab-' + tab.dataset.tab);
+    if (section) {
+      section.classList.toggle('active', active);
+      section.setAttribute('aria-hidden', String(!active));
+    }
   });
+  if (moveFocus) btn.focus();
+  if (adminMobileQuery.matches) {
+    setAdminNavOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+adminTabs.forEach(btn => {
+  const section = document.getElementById('tab-' + btn.dataset.tab);
+  if (section) {
+    section.setAttribute('role', 'tabpanel');
+    section.setAttribute('aria-labelledby', btn.id);
+    section.setAttribute('aria-hidden', String(!btn.classList.contains('active')));
+  }
+  btn.tabIndex = btn.classList.contains('active') ? 0 : -1;
+  btn.addEventListener('click', () => activateAdminTab(btn));
+  btn.addEventListener('keydown', event => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const current = adminTabs.indexOf(btn);
+    const next = event.key === 'Home' ? 0
+      : event.key === 'End' ? adminTabs.length - 1
+      : event.key === 'ArrowDown' ? (current + 1) % adminTabs.length
+      : (current - 1 + adminTabs.length) % adminTabs.length;
+    activateAdminTab(adminTabs[next], true);
+  });
+});
+
+adminMenuToggle.addEventListener('click', () => setAdminNavOpen(true));
+adminNavClose.addEventListener('click', () => setAdminNavOpen(false, true));
+adminNavBackdrop.addEventListener('click', () => setAdminNavOpen(false, true));
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && adminSidebar.classList.contains('open')) setAdminNavOpen(false, true);
+});
+adminMobileQuery.addEventListener('change', event => {
+  if (!event.matches) setAdminNavOpen(false);
 });
 
 // 1) 대시보드

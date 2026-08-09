@@ -298,7 +298,7 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
+        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.
@@ -310,6 +310,66 @@ PAGE_EXPECTATIONS = {
 def check_admin_search_and_charts(page):
     """관리자 그래프 렌더링과 네 목록의 읽기 전용 카테고리 검색을 실제 응답으로 확인한다."""
     actions, errors = [], []
+    original_viewport = page.viewport_size
+    try:
+        sidebar_box = page.locator("#admin-sidebar").bounding_box()
+        content_box = page.locator("#admin-content").bounding_box()
+        if (
+            not sidebar_box or not content_box
+            or sidebar_box["width"] < 220
+            or content_box["x"] < sidebar_box["x"] + sidebar_box["width"] - 1
+        ):
+            errors.append({
+                "type": "admin_sidebar_desktop_layout",
+                "sidebar": sidebar_box,
+                "content": content_box,
+            })
+        else:
+            actions.append({"action": "관리자 데스크톱 고정 사이드 메뉴", "status": "ok"})
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.wait_for_timeout(250)
+        page.click("#admin-menu-toggle")
+        page.wait_for_timeout(300)
+        mobile_nav = page.evaluate(
+            """() => {
+              const sidebar = document.getElementById('admin-sidebar').getBoundingClientRect();
+              const items = [...document.querySelectorAll('.admin-tab')].map(button => {
+                const rect = button.getBoundingClientRect();
+                const label = button.querySelector('.admin-tab-label').getBoundingClientRect();
+                return {top:rect.top, bottom:rect.bottom, width:rect.width, labelLeft:label.left, labelRight:label.right};
+              });
+              const overlaps = items.some((item, index) => index > 0 && item.top < items[index - 1].bottom - 1);
+              const labelsOutside = items.some(item => item.labelLeft < sidebar.left || item.labelRight > sidebar.right);
+              return {
+                sidebar:{left:sidebar.left, right:sidebar.right, width:sidebar.width},
+                itemCount:items.length,
+                minItemWidth:Math.min(...items.map(item => item.width)),
+                overlaps,
+                labelsOutside,
+                documentOverflow:Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+              };
+            }"""
+        )
+        if (
+            mobile_nav["itemCount"] != 7
+            or mobile_nav["minItemWidth"] < 220
+            or mobile_nav["overlaps"]
+            or mobile_nav["labelsOutside"]
+            or mobile_nav["documentOverflow"] > 1
+        ):
+            errors.append({"type": "admin_sidebar_mobile_layout", **mobile_nav})
+        else:
+            actions.append({"action": "관리자 모바일 드로어 7개 메뉴 비겹침", "status": "ok"})
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(250)
+    except Exception as error:
+        errors.append({"type": "admin_sidebar_interaction_failed", "error": str(error)[:200]})
+    finally:
+        if original_viewport:
+            page.set_viewport_size(original_viewport)
+            page.wait_for_timeout(250)
+
     try:
         page.wait_for_function(
             "typeof Chart !== 'undefined' && Chart.getChart('d-traffic-chart') && Chart.getChart('d-provider-chart')",
@@ -668,6 +728,8 @@ def check_responsive_layout(page, path):
               const ignored = element => Boolean(
                 element.closest('[aria-hidden="true"], [hidden], .global-service-nav-backdrop') ||
                 element.closest('.service-sidebar:not(.open)') ||
+                (window.matchMedia('(max-width: 900px)').matches && element.closest('.admin-sidebar:not(.open)')) ||
+                element.closest('.admin-nav-backdrop:not(.open)') ||
                 // Kakao 지도는 패닝을 위해 #map 경계 밖에 타일 이미지를 배치한 뒤
                 // 지도 컨테이너에서 잘라낸다. 문서 overflow가 아닌 정상 렌더링이다.
                 element.closest('#map') ||
