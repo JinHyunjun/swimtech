@@ -232,7 +232,7 @@ PAGE_EXPECTATIONS = {
     },
     "/onboarding?mode=edit": {
         "selectors": ["#onboarding-form", "#onboarding-exit-link", "#next-btn"],
-        "texts": ["맞춤 훈련 설정을 수정해요", "프로필로 돌아가기"],
+        "texts": ["맞춤 훈련 설정을 수정해요", "프로필 수정"],
         "styles": [{"selector": ".step.active h2", "property": "color", "value": "rgb(237, 250, 255)"}],
     },
     "/dashboard": {
