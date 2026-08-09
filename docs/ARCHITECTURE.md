@@ -1,6 +1,6 @@
 # SwimMate 기술 구조
 
-> 코드 기준일: 2026-08-08
+> 코드 기준일: 2026-08-09
 
 ## 한눈에 보는 구조
 
@@ -40,7 +40,7 @@ SwimMate는 프레임워크 빌드 단계가 없는 다중 페이지 애플리�
 - 기능 가이드 캡처: `frontend/static/tutorial/*`
 - PWA: `frontend/manifest.json`, `frontend/sw.js`
 
-`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다. 공개 `/tutorial`은 API 상태에 의존하지 않는 짧은 가이드 허브이고, `/tutorial/{personal|record|data|coach|help}`는 실제 QA 캡처와 사용 순서를 목적별로 나눈 정적 상세 페이지다. 공통 CSS와 활성 카테고리 스크립트로 화면 밀도와 탐색 방식을 일치시키며, 기존 서비스 사이드바도 모든 상세 경로에서 유지한다. `/admin`은 일반 서비스 메뉴와 권한·목적이 달라 별도의 7개 항목 세로 내비게이션을 사용하고, 900px 이하에서는 오버레이 드로어로 전환한다.
+`api.js`는 쿠키를 포함한 요청, JSON 파싱, 401 로그인 이동과 오류 토스트를 공통 처리한다. `utils.js`는 HTML 이스케이프, 날짜·거리 형식, 인증 확인, 토스트, 탭과 외부 클릭 처리를 제공한다. 공개 `/tutorial`은 API 상태에 의존하지 않는 짧은 가이드 허브이고, `/tutorial/{personal|record|data|coach|help}`는 실제 QA 캡처와 사용 순서를 목적별로 나눈 정적 상세 페이지다. 공통 CSS와 활성 카테고리 스크립트로 화면 밀도와 탐색 방식을 일치시키며, 기존 서비스 사이드바도 모든 상세 경로에서 유지한다. `/admin`은 일반 서비스 메뉴와 권한·목적이 달라 별도의 8개 항목 세로 내비게이션을 사용하고, 900px 이하에서는 오버레이 드로어로 전환한다.
 
 대표 홈 `/landing`은 별도의 기능 카드 목록 대신 개인 훈련 요약을 우선 렌더링한다. `/auth/me`로 사용자·역할·온보딩 상태를 확인하고 `/api/dashboard/summary`, `/weekly`, `/history`, `/training-advisor`를 병렬 조회해 이번 주·월간·누적 훈련량, 최근 기록과 다음 세션을 표시한다. 모든 서비스 경로는 카테고리형 왼쪽 사이드바에 모으며 준비도 입력과 상세 차트는 `/dashboard`에 유지해 대표 홈의 정보 밀도를 낮춘다.
 
@@ -103,9 +103,9 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 ### 회원·인증
 
-- `customers`: 계정, 닉네임, 역할, 상태, 수준·목표·주간 목표·선호 풀, 온보딩 완료 시각, OAuth 식별자, 인증 세션 버전·비밀번호 변경 시각
+- `customers`: 계정, 닉네임, 역할, 상태, QA 전용 계정 표식, 수준·목표·주간 목표·선호 풀, 온보딩 완료 시각, OAuth 식별자, 인증 세션 버전·비밀번호 변경 시각
 - JWT access/refresh cookie: `swimtech_token`, `swimtech_refresh_token`
-- `user_activity_logs`: 페이지 조회, 메뉴, 액션, IP·브라우저
+- `user_activity_logs`: 페이지 조회, 메뉴, 액션, IP·브라우저. 조회 시 `customer_id`, 미인증 이벤트는 아이디를 통해 QA 계정 여부를 결합한다.
 
 액세스·갱신 토큰에는 `auth_version`이 들어가며 비밀번호 변경, 모든 기기 로그아웃과 탈퇴 뒤 DB 버전이 증가하면 이전 토큰은 즉시 거부된다. 쿠키 이름은 호환성을 위한 레거시 기술 식별자이며 사용자 표시 브랜드는 아니다.
 
@@ -319,7 +319,7 @@ swim_test_results ────────── 테스트 시도·영법/거리
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트 기록과 계정 세션 버전을 포함한 `20260723_07`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트 기록·계정 세션 버전과 QA 계정 분류를 포함한 `20260723_08`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

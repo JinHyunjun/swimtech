@@ -298,17 +298,17 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#f-body", "#u-page-size", "#l-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
+        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='qa-logs']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#q-body", "#q-account-count", "#q-events-30d", "#q-page-views-30d", "#q-account-list", "#f-body", "#u-page-size", "#l-page-size", "#q-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#q-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#q-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#q-search-by", "#q-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.
-        "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "피드백"],
+        "texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "QA 검증 로그", "피드백"],
     },
 }
 
 
 def check_admin_search_and_charts(page):
-    """관리자 그래프 렌더링과 네 목록의 읽기 전용 카테고리 검색을 실제 응답으로 확인한다."""
+    """관리자 그래프와 일반/QA 분리 로그를 포함한 다섯 목록 검색을 확인한다."""
     actions, errors = [], []
     original_viewport = page.viewport_size
     try:
@@ -352,7 +352,7 @@ def check_admin_search_and_charts(page):
             }"""
         )
         if (
-            mobile_nav["itemCount"] != 7
+            mobile_nav["itemCount"] != 8
             or mobile_nav["minItemWidth"] < 220
             or mobile_nav["overlaps"]
             or mobile_nav["labelsOutside"]
@@ -360,7 +360,7 @@ def check_admin_search_and_charts(page):
         ):
             errors.append({"type": "admin_sidebar_mobile_layout", **mobile_nav})
         else:
-            actions.append({"action": "관리자 모바일 드로어 7개 메뉴 비겹침", "status": "ok"})
+            actions.append({"action": "관리자 모바일 드로어 8개 메뉴 비겹침", "status": "ok"})
         page.keyboard.press("Escape")
         page.wait_for_timeout(250)
     except Exception as error:
@@ -397,14 +397,15 @@ def check_admin_search_and_charts(page):
 
     marker = "qa-admin-ui-no-match-7f3a"
     search_specs = [
-        ("users", "u", "username", "/api/admin/users"),
-        ("coaches", "c", "specialty", "/api/admin/coaches"),
-        ("logs", "l", "path", "/api/admin/logs"),
-        ("feedback", "f", "title", "/api/feedback"),
+        ("users", "users", "u", "username", "/api/admin/users", None),
+        ("coaches", "coaches", "c", "specialty", "/api/admin/coaches", None),
+        ("logs", "logs", "l", "path", "/api/admin/logs", "regular"),
+        ("qaLogs", "qa-logs", "q", "path", "/api/admin/logs", "qa"),
+        ("feedback", "feedback", "f", "title", "/api/feedback", None),
     ]
-    for list_name, prefix, category, api_path in search_specs:
+    for list_name, tab_name, prefix, category, api_path, expected_scope in search_specs:
         try:
-            page.click(f".admin-tab[data-tab='{list_name}']")
+            page.click(f".admin-tab[data-tab='{tab_name}']")
             page.wait_for_timeout(150)
             page.select_option(f"#{prefix}-search-by", category)
             page.fill(f"#{prefix}-search", marker)
@@ -420,12 +421,14 @@ def check_admin_search_and_charts(page):
                 or payload.get("search_by") != category
                 or payload.get("q") != marker
                 or payload.get("total") != 0
+                or (expected_scope and payload.get("account_scope") != expected_scope)
             ):
                 errors.append({
                     "type": "admin_category_search_contract",
                     "list": list_name,
                     "status": response.status,
                     "search_by": payload.get("search_by"),
+                    "account_scope": payload.get("account_scope"),
                     "total": payload.get("total"),
                 })
             else:

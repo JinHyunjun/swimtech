@@ -125,6 +125,40 @@ class CoachVerificationBody(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class QAAccountFlagBody(BaseModel):
+    usernames: list[str] = Field(..., min_length=1, max_length=10)
+    is_qa_account: bool = True
+
+
+def _normalize_account_scope(value):
+    return value if value in ("regular", "qa", "all") else "regular"
+
+
+def _log_scope_filter(account_scope, alias="l"):
+    """Return a server-owned SQL fragment that separates QA and regular activity.
+
+    Successful authenticated activity is matched by customer_id. Registration and
+    failed-login events do not yet have a customer_id, so the immutable log username
+    is used as a fallback only for those rows.
+    """
+    scope = _normalize_account_scope(account_scope)
+    if scope == "all":
+        return ""
+    qa_match = f"""EXISTS (
+        SELECT 1 FROM customers qa
+        WHERE COALESCE(qa.is_qa_account, FALSE) = TRUE
+          AND (
+              qa.id = {alias}.customer_id
+              OR (
+                  {alias}.customer_id IS NULL
+                  AND {alias}.username IS NOT NULL
+                  AND LOWER(qa.username) = LOWER({alias}.username)
+              )
+          )
+    )"""
+    return qa_match if scope == "qa" else f"NOT {qa_match}"
+
+
 def _require_admin(swimtech_token: str):
     """role='admin' 우선 확인, 없으면 ADMIN_ID 폴백(과도기 호환)."""
     if not swimtech_token:
@@ -951,6 +985,7 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
 def get_logs(
     swimtech_token: str = Cookie(default=None),
     event_type: str = None,
+    account_scope: str = "regular",
     q: str = None,
     search_by: str = "all",
     page: int = 1,
@@ -965,21 +1000,25 @@ def get_logs(
     page_size = _normalize_page_size(page_size, 50)
     offset = max(0, (page - 1) * page_size)
 
+    account_scope = _normalize_account_scope(account_scope)
     conditions = []
     params = []
+    scope_filter = _log_scope_filter(account_scope)
+    if scope_filter:
+        conditions.append(scope_filter)
     if event_type:
-        conditions.append("event_type = %s")
+        conditions.append("l.event_type = %s")
         params.append(event_type)
     field_map = {
         "all": (
-            "COALESCE(username, '')", "COALESCE(page, '')", "COALESCE(path, '')",
-            "COALESCE(action, '')", "COALESCE(method, '')", "COALESCE(ip_address, '')",
+            "COALESCE(l.username, '')", "COALESCE(l.page, '')", "COALESCE(l.path, '')",
+            "COALESCE(l.action, '')", "COALESCE(l.method, '')", "COALESCE(l.ip_address, '')",
         ),
-        "username": ("COALESCE(username, '')",),
-        "path": ("COALESCE(page, '')", "COALESCE(path, '')"),
-        "action": ("COALESCE(action, '')",),
-        "method": ("COALESCE(method, '')",),
-        "ip": ("COALESCE(ip_address, '')",),
+        "username": ("COALESCE(l.username, '')",),
+        "path": ("COALESCE(l.page, '')", "COALESCE(l.path, '')"),
+        "action": ("COALESCE(l.action, '')",),
+        "method": ("COALESCE(l.method, '')",),
+        "ip": ("COALESCE(l.ip_address, '')",),
     }
     search_clause, search_params, search_by, q = _build_search_filter(q, search_by, field_map)
     if search_clause:
@@ -987,25 +1026,111 @@ def get_logs(
         params.extend(search_params)
     where = _where_clause(conditions)
     cur.execute(f"""
-        SELECT id, username, event_type, page, action, method, path,
-               ip_address, created_at, metadata
-        FROM user_activity_logs
+        SELECT l.id, l.username, l.event_type, l.page, l.action, l.method, l.path,
+               l.ip_address, l.created_at, l.metadata,
+               {_log_scope_filter("qa")} AS is_qa_account
+        FROM user_activity_logs l
         {where}
-        ORDER BY created_at DESC LIMIT %s OFFSET %s
+        ORDER BY l.created_at DESC LIMIT %s OFFSET %s
     """, (*params, page_size, offset))
 
     logs = [{
         "id": r[0], "username": r[1], "event_type": r[2], "page": r[3],
         "action": r[4], "method": r[5], "path": r[6], "ip_address": r[7],
-        "created_at": str(r[8]), "metadata": r[9],
+        "created_at": str(r[8]), "metadata": r[9], "is_qa_account": bool(r[10]),
     } for r in cur.fetchall()]
 
-    cur.execute(f"SELECT COUNT(*) FROM user_activity_logs {where}", tuple(params))
+    cur.execute(f"SELECT COUNT(*) FROM user_activity_logs l {where}", tuple(params))
     total = cur.fetchone()[0]
+
+    summary_scope_filter = _log_scope_filter(account_scope)
+    summary_where = _where_clause([summary_scope_filter] if summary_scope_filter else [])
+    cur.execute(f"""
+        SELECT COUNT(*) FILTER (WHERE l.created_at >= NOW() - INTERVAL '30 days'),
+               COUNT(*) FILTER (
+                   WHERE l.created_at >= NOW() - INTERVAL '30 days'
+                     AND l.event_type = 'page_view'
+               ),
+               COUNT(DISTINCT COALESCE(l.customer_id::text, 'username:' || LOWER(l.username)))
+                   FILTER (WHERE l.created_at >= NOW() - INTERVAL '30 days'),
+               MAX(l.created_at)
+        FROM user_activity_logs l
+        {summary_where}
+    """)
+    summary_row = cur.fetchone()
+    cur.execute("""
+        SELECT username FROM customers
+        WHERE COALESCE(is_qa_account, FALSE) = TRUE
+        ORDER BY username
+    """)
+    qa_account_usernames = [r[0] for r in cur.fetchall()]
 
     cur.close()
     conn.close()
     return {
         "logs": logs, "total": total, "page": page, "page_size": page_size,
-        "event_type": event_type or "", "q": q, "search_by": search_by,
+        "event_type": event_type or "", "account_scope": account_scope,
+        "q": q, "search_by": search_by,
+        "scope_summary": {
+            "events_30d": _safe_int(summary_row[0]),
+            "page_views_30d": _safe_int(summary_row[1]),
+            "active_accounts_30d": _safe_int(summary_row[2]),
+            "last_activity_at": str(summary_row[3]) if summary_row[3] else None,
+            "qa_account_count": len(qa_account_usernames),
+            "qa_account_usernames": qa_account_usernames,
+        },
+    }
+
+
+@router.put("/qa-accounts")
+def set_qa_accounts(
+    body: QAAccountFlagBody,
+    swimtech_token: str = Cookie(default=None),
+):
+    """Mark permanent automation accounts so their historic and future logs separate."""
+    reviewer = _require_admin(swimtech_token)
+    usernames = list(dict.fromkeys(
+        str(username or "").strip()[:100]
+        for username in body.usernames
+        if str(username or "").strip()
+    ))
+    if not usernames:
+        raise HTTPException(400, "QA 계정 아이디를 입력해주세요.")
+
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            UPDATE customers
+            SET is_qa_account = %s
+            WHERE username = ANY(%s)
+            RETURNING id, username
+            """,
+            (body.is_qa_account, usernames),
+        )
+        updated = [{"id": row[0], "username": row[1]} for row in cur.fetchall()]
+        updated_names = {item["username"] for item in updated}
+        missing = [username for username in usernames if username not in updated_names]
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+    log_activity(
+        username=reviewer,
+        event_type="admin_qa_account_update",
+        action="qa_account_flag_update",
+        method="PUT",
+        path="/api/admin/qa-accounts",
+        metadata={
+            "updated_count": len(updated),
+            "missing_count": len(missing),
+            "is_qa_account": body.is_qa_account,
+        },
+    )
+    return {
+        "updated": updated,
+        "missing": missing,
+        "is_qa_account": body.is_qa_account,
     }

@@ -700,6 +700,67 @@
           ]
         },
         {
+          "name": "Admin Regular Operation Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/logs?account_scope=regular&page=1&page_size=20",
+            "description": "일반 사용자 운영 로그가 QA 전용 계정 활동을 제외하는지 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('일반 사용자 운영 로그 200', () => pm.response.to.have.status(200));",
+                  "pm.test('일반 로그에서 QA 활동 제외', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.account_scope).to.eql('regular');",
+                  "  pm.expect(body.logs.every(item => item.is_qa_account === false)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin QA Validation Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/logs?account_scope=qa&page=1&page_size=20",
+            "description": "QA 검증용 운영 로그와 QA 계정 집계를 별도 범위로 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('QA 검증 로그 200', () => pm.response.to.have.status(200));",
+                  "pm.test('QA 로그만 반환하고 집계 제공', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.account_scope).to.eql('qa');",
+                  "  pm.expect(body.logs.every(item => item.is_qa_account === true)).to.eql(true);",
+                  "  pm.expect(body.scope_summary).to.include.all.keys('events_30d', 'page_views_30d', 'active_accounts_30d', 'qa_account_count');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Admin Logout",
           "request": {
             "method": "POST",

@@ -33,6 +33,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     account_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_07_account_security.py"
     ).read_text(encoding="utf-8")
+    qa_account_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_08_qa_account_classification.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -66,11 +69,15 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'revision: str = "20260723_07"' in account_revision
     assert 'down_revision: Union[str, None] = "20260723_06"' in account_revision
     assert "auth_version" in account_revision and "password_changed_at" in account_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_07"' in main
+    assert 'revision: str = "20260723_08"' in qa_account_revision
+    assert 'down_revision: Union[str, None] = "20260723_07"' in qa_account_revision
+    assert "is_qa_account" in qa_account_revision
+    assert "ix_customers_qa_account_true" in qa_account_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_08"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_07"' in (
+    assert 'health.get("schema_revision") == "20260723_08"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -890,13 +897,13 @@ def test_admin_navigation_uses_non_overlapping_responsive_sidebar():
     assert 'id="admin-menu-toggle"' in admin_page
     assert 'id="admin-nav-backdrop"' in admin_page
     assert '<nav class="admin-tabs" role="tablist"' in admin_page
-    assert admin_page.count('role="tab"') == 7
+    assert admin_page.count('role="tab"') == 8
     assert "grid-template-columns: 248px minmax(0, 1fr)" in admin_page
     assert "flex: 0 0 auto" in admin_page
     assert "@media (max-width: 900px)" in admin_page
     assert "setAdminNavOpen" in admin_page
     assert "activateAdminTab" in admin_page
-    assert "관리자 모바일 드로어 7개 메뉴 비겹침" in qa_ui
+    assert "관리자 모바일 드로어 8개 메뉴 비겹침" in qa_ui
     assert "admin_sidebar_mobile_layout" in qa_ui
     assert "관리자 전용 사이드 메뉴" in quality
 
@@ -988,6 +995,7 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "event_type = %s" in admin_api
     assert 'id="u-page-size"' in admin_page
     assert 'id="l-page-size"' in admin_page
+    assert 'id="q-page-size"' in admin_page
     assert 'id="f-page-size"' in admin_page
     assert 'data-type="page_view"' in admin_page
     assert "페이지 조회" in admin_page
@@ -997,6 +1005,7 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "pager-action" in admin_page
     assert 'id="u-page-numbers"' in admin_page
     assert 'id="l-page-numbers"' in admin_page
+    assert 'id="q-page-numbers"' in admin_page
     assert 'id="f-page-numbers"' in admin_page
     assert 'data-target="first"' in admin_page
     assert 'data-target="last"' in admin_page
@@ -1006,14 +1015,49 @@ def test_admin_lists_support_page_size_and_page_view_filter():
     assert "event_type=page_view" in qa_api
     assert "#u-page-size" in qa_ui
     assert "#l-page-size" in qa_ui
+    assert "#q-page-size" in qa_ui
     assert "#f-page-size" in qa_ui
     assert "#u-page-numbers" in qa_ui
     assert "#l-page-numbers" in qa_ui
+    assert "#q-page-numbers" in qa_ui
     assert "#f-page-numbers" in qa_ui
     admin_expectation = qa_ui.split('"/admin": {', 1)[1].split("    },", 1)[0]
-    assert '"texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "피드백"]' in admin_expectation
+    assert '"texts": ["SUPER ADMIN", "코치 운영", "훈련 운영", "QA 검증 로그", "피드백"]' in admin_expectation
     assert "7일 준비도 체크인" not in admin_expectation
     assert "페이지 조회" not in admin_expectation
+
+
+def test_admin_regular_and_qa_operation_logs_are_separated():
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert 'account_scope: str = "regular"' in admin_api
+    assert 'value in ("regular", "qa", "all")' in admin_api
+    assert "qa.id = {alias}.customer_id" in admin_api
+    assert "LOWER(qa.username) = LOWER({alias}.username)" in admin_api
+    assert '@router.put("/qa-accounts")' in admin_api
+    assert "is_qa_account" in admin_api
+    assert 'data-tab="qa-logs"' in admin_page
+    assert 'id="tab-qa-logs"' in admin_page
+    assert "일반 사용자 운영 로그" in admin_page
+    assert "QA 자동 검증 전용 운영 로그" in admin_page
+    assert "account_scope: 'regular'" in admin_page
+    assert "account_scope: 'qa'" in admin_page
+    assert "loadQALogs" in admin_page
+    assert "/api/admin/qa-accounts" in qa_api
+    assert "qa_log_split_ok" in qa_api
+    assert '"qaLogs", "qa-logs", "q", "path", "/api/admin/logs", "qa"' in qa_ui
+
+    import sys
+    sys.path.insert(0, str(ROOT / "api"))
+    from routers.admin import _log_scope_filter, _normalize_account_scope
+
+    assert _normalize_account_scope("unknown") == "regular"
+    assert _log_scope_filter("all") == ""
+    assert _log_scope_filter("qa").startswith("EXISTS")
+    assert _log_scope_filter("regular").startswith("NOT EXISTS")
 
 
 def test_admin_category_search_and_traffic_charts_are_fully_mapped():
@@ -1143,7 +1187,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 116개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 117개" in quality_doc
     assert "51개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "33개 화면 검증" in quality_doc

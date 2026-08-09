@@ -67,6 +67,7 @@ def test_postman_requests_use_base_url_and_cover_required_boundaries(monkeypatch
         ("GET", "{{base_url}}/api/account/insights"),
         ("GET", "{{base_url}}/api/admin/dashboard"),
         ("GET", "{{base_url}}/api/admin/users"),
+        ("GET", "{{base_url}}/api/admin/logs"),
         ("POST", "{{base_url}}/auth/logout"),
     }.issubset(method_urls)
 
@@ -110,4 +111,4 @@ def test_postman_smoke_is_mapped_to_unified_quality_gate_and_documentation():
     assert '--env-var "qa_password=' not in workflow
     assert "POSTMAN_API_KEY: 사용하지 않음" in postman_readme
     assert "Postman API 스모크" in quality_gate
-    assert "Postman 20개 요청" in deployment
+    assert "Postman 22개 요청" in deployment

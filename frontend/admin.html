@@ -562,7 +562,8 @@ body {
       <button class="admin-tab" id="admin-tab-activity" role="tab" aria-selected="false" aria-controls="tab-activity" data-tab="activity"><span class="admin-tab-index" aria-hidden="true">04</span><span class="admin-tab-label">메뉴 사용 분석</span></button>
       <button class="admin-tab" id="admin-tab-training-health" role="tab" aria-selected="false" aria-controls="tab-training-health" data-tab="training-health"><span class="admin-tab-index" aria-hidden="true">05</span><span class="admin-tab-label">훈련 운영</span></button>
       <button class="admin-tab" id="admin-tab-logs" role="tab" aria-selected="false" aria-controls="tab-logs" data-tab="logs"><span class="admin-tab-index" aria-hidden="true">06</span><span class="admin-tab-label">운영 로그</span></button>
-      <button class="admin-tab" id="admin-tab-feedback" role="tab" aria-selected="false" aria-controls="tab-feedback" data-tab="feedback"><span class="admin-tab-index" aria-hidden="true">07</span><span class="admin-tab-label">피드백</span></button>
+      <button class="admin-tab" id="admin-tab-qa-logs" role="tab" aria-selected="false" aria-controls="tab-qa-logs" data-tab="qa-logs"><span class="admin-tab-index" aria-hidden="true">07</span><span class="admin-tab-label">QA 검증 로그</span></button>
+      <button class="admin-tab" id="admin-tab-feedback" role="tab" aria-selected="false" aria-controls="tab-feedback" data-tab="feedback"><span class="admin-tab-index" aria-hidden="true">08</span><span class="admin-tab-label">피드백</span></button>
     </nav>
     <div class="admin-sidebar-footer">운영 데이터 조회와 서비스 상태 확인을 위한 슈퍼 관리자 전용 화면입니다.</div>
   </aside>
@@ -895,6 +896,12 @@ body {
   <!-- 5) 운영 로그 -->
   <section class="admin-section" id="tab-logs">
     <div class="panel">
+      <div class="panel-heading-row">
+        <div>
+          <div class="panel-title">일반 사용자 운영 로그</div>
+          <div class="chart-caption" style="margin-bottom:0;">자동 검증용 QA 계정의 활동은 제외하고 실제 사용자·비회원 활동만 표시합니다.</div>
+        </div>
+      </div>
       <div class="log-filter" id="log-filter">
         <button class="log-filter-btn active" data-type="">전체</button>
         <button class="log-filter-btn" data-type="login_success">로그인 성공</button>
@@ -942,7 +949,64 @@ body {
     </div>
   </section>
 
-  <!-- 6) 피드백 -->
+  <!-- 6) QA 검증 로그 -->
+  <section class="admin-section" id="tab-qa-logs">
+    <div class="summary-cards">
+      <div class="summary-card"><div class="label">등록된 QA 계정</div><div class="value" id="q-account-count">—</div></div>
+      <div class="summary-card"><div class="label">30일 QA 이벤트</div><div class="value" id="q-events-30d">—</div></div>
+      <div class="summary-card"><div class="label">30일 QA 페이지 조회</div><div class="value energy" id="q-page-views-30d">—</div></div>
+      <div class="summary-card"><div class="label">최근 QA 활동</div><div class="value" id="q-last-activity" style="font-size:var(--fs-body);font-style:normal;">—</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-heading-row">
+        <div>
+          <div class="panel-title">QA 자동 검증 전용 운영 로그</div>
+          <div class="chart-caption" style="margin-bottom:0;">GitHub Actions의 전용 QA 계정으로 발생한 로그인·페이지 조회·기능 검증 이력만 표시합니다.</div>
+        </div>
+      </div>
+      <div class="chart-caption" id="q-account-list">QA 계정 정보를 불러오는 중...</div>
+      <div class="log-filter" id="qa-log-filter">
+        <button class="log-filter-btn active" data-type="">전체</button>
+        <button class="log-filter-btn" data-type="login_success">로그인 성공</button>
+        <button class="log-filter-btn" data-type="login_fail">로그인 실패</button>
+        <button class="log-filter-btn" data-type="register">회원가입</button>
+        <button class="log-filter-btn" data-type="logout">로그아웃</button>
+        <button class="log-filter-btn" data-type="page_view">페이지 조회</button>
+      </div>
+      <div class="search-row">
+        <select class="search-category-select" id="q-search-by" aria-label="QA 검증 로그 검색 항목">
+          <option value="all">전체 항목</option><option value="username">아이디</option><option value="path">페이지·경로</option>
+          <option value="action">동작</option><option value="method">HTTP 방식</option><option value="ip">IP</option>
+        </select>
+        <input type="text" class="search-input" id="q-search" placeholder="QA 아이디, 경로, 동작, IP로 검증 로그 검색">
+        <button class="btn-mini list-search-btn" data-list="qaLogs">검색</button>
+        <button class="btn-mini secondary list-search-reset" data-list="qaLogs">초기화</button>
+      </div>
+      <div class="table-controls">
+        <label class="page-size-control">표시 개수
+          <select class="page-size-select" id="q-page-size" data-list="qaLogs">
+            <option value="20">20개</option><option value="50" selected>50개</option><option value="100">100개</option>
+          </select>
+        </label>
+        <div class="pager">
+          <button class="pager-btn pager-action" id="q-first" data-list="qaLogs" data-target="first">처음</button>
+          <button class="pager-btn pager-action" id="q-prev" data-list="qaLogs" data-dir="-1">이전</button>
+          <span class="pager-pages" id="q-page-numbers"></span>
+          <span class="pager-info" id="q-page-info">—</span>
+          <button class="pager-btn pager-action" id="q-next" data-list="qaLogs" data-dir="1">다음</button>
+          <button class="pager-btn pager-action" id="q-last" data-list="qaLogs" data-target="last">끝</button>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>시간</th><th>이벤트</th><th>QA 아이디</th><th>경로</th><th>IP</th></tr></thead>
+          <tbody id="q-body"><tr><td colspan="5" class="loading-state">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7) 피드백 -->
   <section class="admin-section" id="tab-feedback">
     <div class="panel">
       <div class="log-filter" id="feedback-filter">
@@ -1004,10 +1068,11 @@ const listState = {
   users: { page: 1, pageSize: 20, q: '', searchBy: 'all', totalPages: 1 },
   coaches: { page: 1, pageSize: 20, status: 'all', q: '', searchBy: 'all', totalPages: 1 },
   logs: { page: 1, pageSize: 50, eventType: '', q: '', searchBy: 'all', totalPages: 1 },
+  qaLogs: { page: 1, pageSize: 50, eventType: '', q: '', searchBy: 'all', totalPages: 1 },
   feedback: { page: 1, pageSize: 50, feedbackType: '', q: '', searchBy: 'all', totalPages: 1 },
 };
-const prefixList = { u: 'users', c: 'coaches', l: 'logs', f: 'feedback' };
-const listPrefix = { users: 'u', coaches: 'c', logs: 'l', feedback: 'f' };
+const prefixList = { u: 'users', c: 'coaches', l: 'logs', q: 'qaLogs', f: 'feedback' };
+const listPrefix = { users: 'u', coaches: 'c', logs: 'l', qaLogs: 'q', feedback: 'f' };
 const adminCharts = {};
 
 function fmtDate(s) {
@@ -1110,6 +1175,7 @@ function reloadList(list) {
   if (list === 'users') return loadUsers();
   if (list === 'coaches') return loadCoaches();
   if (list === 'logs') return loadLogs();
+  if (list === 'qaLogs') return loadQALogs();
   if (list === 'feedback') return loadFeedback();
 }
 
@@ -1406,6 +1472,7 @@ async function loadLogs(eventType = listState.logs.eventType) {
   try {
     const query = buildQuery({
       event_type: listState.logs.eventType,
+      account_scope: 'regular',
       q: listState.logs.q,
       search_by: listState.logs.searchBy,
       page: listState.logs.page,
@@ -1438,7 +1505,56 @@ document.querySelectorAll('#log-filter .log-filter-btn').forEach(btn => {
   });
 });
 
-// 5) 피드백
+// 6) QA 검증 전용 운영 로그
+async function loadQALogs(eventType = listState.qaLogs.eventType) {
+  listState.qaLogs.eventType = eventType || '';
+  const body = document.getElementById('q-body');
+  body.innerHTML = '<tr><td colspan="5" class="loading-state">불러오는 중...</td></tr>';
+  try {
+    const query = buildQuery({
+      event_type: listState.qaLogs.eventType,
+      account_scope: 'qa',
+      q: listState.qaLogs.q,
+      search_by: listState.qaLogs.searchBy,
+      page: listState.qaLogs.page,
+      page_size: listState.qaLogs.pageSize,
+    });
+    const data = await authedFetch('/api/admin/logs?' + query);
+    const summary = data.scope_summary || {};
+    document.getElementById('q-account-count').textContent = fmtNumber(summary.qa_account_count);
+    document.getElementById('q-events-30d').textContent = fmtNumber(summary.events_30d);
+    document.getElementById('q-page-views-30d').textContent = fmtNumber(summary.page_views_30d);
+    document.getElementById('q-last-activity').textContent = fmtDate(summary.last_activity_at);
+    const usernames = summary.qa_account_usernames || [];
+    document.getElementById('q-account-list').textContent = usernames.length
+      ? `분류 계정: ${usernames.map(username => '@' + username).join(' · ')}`
+      : '등록된 QA 계정이 없습니다. 다음 자동 QA 실행에서 전용 계정이 등록됩니다.';
+    updatePager('q', data.total, data.page || listState.qaLogs.page, data.page_size || listState.qaLogs.pageSize);
+    if (!data.logs.length) {
+      body.innerHTML = '<tr><td colspan="5" class="empty-state">QA 검증 로그가 없습니다.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.logs.map(l => `
+      <tr>
+        <td>${fmtDate(l.created_at)}</td>
+        <td><span class="pill ${l.event_type === 'login_fail' ? 'fail' : 'success'}">${EVENT_LABEL[l.event_type] || l.event_type}</span></td>
+        <td>${escapeHtml(l.username || '-')}</td>
+        <td>${escapeHtml(l.path || l.page || '-')}</td>
+        <td>${escapeHtml(l.ip_address || '-')}</td>
+      </tr>
+    `).join('');
+  } catch (e) { console.error(e); }
+}
+document.querySelectorAll('#qa-log-filter .log-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#qa-log-filter .log-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    listState.qaLogs.page = 1;
+    loadQALogs(btn.dataset.type);
+  });
+});
+
+// 7) 피드백
 function escapeHtml(s) {
   if (!s) return '';
   return String(s)
@@ -1562,6 +1678,7 @@ loadCoaches();
 loadActivity();
 loadTrainingHealth();
 loadLogs();
+loadQALogs();
 loadFeedback();
 </script>
 </body>

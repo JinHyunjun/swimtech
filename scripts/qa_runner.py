@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_07",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_08",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -1069,6 +1069,12 @@ def main():
         f"{badges_res.status_code}, total={badges_json.get('total_count')}, next={len(badges_json.get('next_badges', []))}")
 
     if admin_sess:
+        qa_account_mark = admin_sess.put(
+            f"{BASE}/api/admin/qa-accounts",
+            json={"usernames": [uname, student_username], "is_qa_account": True},
+            timeout=60,
+        )
+        qa_account_mark_json = jget(qa_account_mark)
         admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard?days=30", timeout=60)
         admin_users = admin_sess.get(f"{BASE}/api/admin/users?page_size=100", timeout=60)
         admin_users_page2 = admin_sess.get(f"{BASE}/api/admin/users?page=2&page_size=20", timeout=60)
@@ -1076,9 +1082,11 @@ def main():
         admin_coaches = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=60)
         admin_coaches_page2 = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page=2&page_size=20", timeout=60)
         admin_health = admin_sess.get(f"{BASE}/api/admin/training-health", timeout=60)
-        admin_logs = admin_sess.get(f"{BASE}/api/admin/logs", timeout=60)
-        admin_page_view_logs = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page_size=100", timeout=60)
-        admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?event_type=page_view&page=2&page_size=20", timeout=60)
+        admin_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular", timeout=60)
+        admin_page_view_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular&event_type=page_view&page_size=100", timeout=60)
+        admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular&event_type=page_view&page=2&page_size=20", timeout=60)
+        admin_qa_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=qa&page_size=100", timeout=60)
+        admin_qa_page_views = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=qa&event_type=page_view&page_size=20", timeout=60)
         admin_feedback = admin_sess.get(f"{BASE}/api/feedback?page_size=20", timeout=60)
         admin_feedback_page2 = admin_sess.get(f"{BASE}/api/feedback?page=2&page_size=20", timeout=60)
         search_marker = "qa-admin-search-no-match-7f3a"
@@ -1111,6 +1119,8 @@ def main():
         health_summary = health_json.get("summary") or {}
         logs_json = jget(admin_page_view_logs)
         logs_page2_json = jget(admin_page_view_logs_page2)
+        qa_logs_json = jget(admin_qa_logs)
+        qa_page_views_json = jget(admin_qa_page_views)
         feedback_json = jget(admin_feedback)
         feedback_page2_json = jget(admin_feedback_page2)
         feedback_items = feedback_json.get("items") or []
@@ -1166,6 +1176,28 @@ def main():
             and admin_feedback_page2.status_code == 200
             and feedback_page2_json.get("page") == 2
         )
+        marked_usernames = {
+            item.get("username") for item in qa_account_mark_json.get("updated", [])
+        }
+        qa_log_split_ok = (
+            qa_account_mark.status_code == 200
+            and {uname, student_username}.issubset(marked_usernames)
+            and not qa_account_mark_json.get("missing")
+            and admin_logs.status_code == 200
+            and jget(admin_logs).get("account_scope") == "regular"
+            and all(not item.get("is_qa_account") for item in jget(admin_logs).get("logs", []))
+            and admin_qa_logs.status_code == 200
+            and qa_logs_json.get("account_scope") == "qa"
+            and qa_logs_json.get("total", 0) > 0
+            and all(item.get("is_qa_account") for item in qa_logs_json.get("logs", []))
+            and (qa_logs_json.get("scope_summary") or {}).get("qa_account_count", 0) >= 2
+            and admin_qa_page_views.status_code == 200
+            and qa_page_views_json.get("event_type") == "page_view"
+            and all(
+                item.get("is_qa_account") and item.get("event_type") == "page_view"
+                for item in qa_page_views_json.get("logs", [])
+            )
+        )
         admin_ok = (
             admin_dashboard.status_code == 200
             and admin_users.status_code == 200
@@ -1178,6 +1210,7 @@ def main():
             and feedback_author_ok
             and admin_chart_ok
             and admin_search_ok
+            and qa_log_split_ok
             and "logs_30d" in health_summary
             and "plan_completions_30d" in health_summary
             and "readiness_checkins_7d" in health_summary
@@ -1198,6 +1231,7 @@ def main():
             f"dashboard {admin_dashboard.status_code}, activity {admin_activity.status_code}, "
             f"coaches {admin_coaches.status_code}/total={coaches_json.get('total')}/page2={coaches_page2_json.get('page')}, "
             f"training-health {admin_health.status_code}, logs {admin_logs.status_code}, "
+            f"qa-log-split={qa_log_split_ok}/qa_total={qa_logs_json.get('total')}/qa_views={qa_page_views_json.get('total')}, "
             f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "
             f"feedback {admin_feedback.status_code}/author={feedback_author_ok}/page_size={feedback_json.get('page_size')}/page2={feedback_page2_json.get('page')}, "
