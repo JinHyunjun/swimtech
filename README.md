@@ -305,7 +305,7 @@ SwimMate는 “화면을 보여주는 곳”, “데이터를 처리하는 서�
 
 로그인 검사는 코드에 계정을 저장하지 않고 GitHub Actions Secrets의 일반·학생·관리자 전용 QA 계정으로 수행합니다. 필수 계정이 누락되면 해당 검사를 생략하지 않고 전체 품질 게이트가 실패합니다. 구체적인 판정 기준은 [품질 검증 게이트](./docs/QUALITY_GATE.md)에서 관리합니다.
 
-현재 소스 기준 핵심 117개가 로컬에서 통과했습니다. 직전 전체 운영 기준인 GitHub Actions [`31293555082`](https://github.com/JinHyunjun/swimtech/actions/runs/31293555082)에서는 핵심 116개, GitHub Secrets 기반 운영 API 51개, 관리자 포함 브라우저 33개 화면, Postman 요청 20개가 성공했으며, 새 일반/QA 로그 분리의 22개 Postman 정의는 배포 후 전체 게이트에서 최종 판정합니다.
+현재 소스 기준 핵심 117개가 로컬과 GitHub Actions [`31295297430`](https://github.com/JinHyunjun/swimtech/actions/runs/31295297430)에서 통과했습니다. 같은 수동 품질 게이트에서 GitHub Secrets 기반 운영 API 51개, 관리자 포함 브라우저 33개 화면, Postman 요청 22개도 모두 성공했으며, 운영 일반 로그와 QA 검증 로그의 계정 범위가 상호 배타적인지 함께 확인했습니다.
 
 ## 디렉터리 구성
 
