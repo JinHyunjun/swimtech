@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 117개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 33개 화면 검증, Postman의 대표 API 요청 22개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 118개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면 검증, Postman의 대표 API 요청 22개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -127,10 +127,12 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 
 같은 날 전용 자동 QA 계정을 Alembic `20260723_08`의 명시적 DB 표식으로 관리하고 일반 운영 로그와 QA 검증 로그를 서버 조회 단계에서 분리했다. 운영 API QA가 GitHub Secrets의 일반·학생 계정을 표식한 뒤 일반 로그의 모든 행은 `is_qa_account=false`, QA 로그는 모두 `true`인지 확인하며, 가입·로그인 실패처럼 고객 ID가 없는 과거 이벤트도 아이디 보조 결합으로 재분류한다. 관리자 UI는 8번째 QA 검증 로그에서 계정·30일 이벤트·페이지 조회·최근 활동과 독립 검색·필터·페이지 이동을 제공한다. [GitHub Actions `31295297430`](https://github.com/JinHyunjun/swimtech/actions/runs/31295297430)에서 핵심 117개, 운영 API 51개, 관리자 포함 브라우저 33개 화면, Postman 22개 요청이 모두 성공했고, 운영 QA 로그 7,115건·페이지 조회 6,638건 분리, 모바일 8개 메뉴와 두 로그 검색·레이아웃 오류 0건을 확인해 P25를 완료했다.
 
+같은 날 수영 선수·물결 SVG를 브라우저 탭과 PWA의 공통 사이트 아이콘으로 적용하고, 서비스·온보딩·관리자·개인정보·약관 화면의 상단 구조를 한 개의 공통 헤더로 통합했다. 왼쪽 홈은 항상 `/landing`, 로그인 후 오른쪽은 `/profile`·로그아웃·테마 순서이며 공개 화면은 로그인 폴백을 사용한다. 기존 페이지별 홈·중복 브랜드·개별 로그아웃은 숨기되 알림·채팅 기록·풀사이드 화면 유지 같은 페이지 고유 도구는 공통 헤더 또는 보조 도구막대에 보존했다. [GitHub Actions `31298212335`](https://github.com/JinHyunjun/swimtech/actions/runs/31298212335)에서 핵심 118개, 운영 API 51/51, 일반·데모·관리자 포함 브라우저 35개 화면의 페이지·콘솔·PC/390px 레이아웃 오류 0건, Postman 22개 요청·37개 assertion 실패 0건을 확인해 P26을 완료했다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
-- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 20개 대표 API 요청과 assertion 결과
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 22개 대표 API 요청과 assertion 결과
