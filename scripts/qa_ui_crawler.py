@@ -1522,7 +1522,13 @@ def main():
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=not args.headed)
-        context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
+        # 서비스 워커가 API 요청을 먼저 가로채면 Playwright route fixture와
+        # 응답 오류 수집이 무력화된다. 운영 QA에서는 네트워크를 직접 관찰한다.
+        context = browser.new_context(
+            ignore_https_errors=True,
+            viewport={"width": 1280, "height": 900},
+            service_workers="block",
+        )
         check_public_demo_entry(context)
         check_public_promotion_pages(context)
         login_page = context.new_page()
@@ -1556,7 +1562,11 @@ def main():
 
         if do_admin:
             print("\n[관리자] /admin 검사 중... (탭/필터 전환만 — 읽기 전용)")
-            admin_context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
+            admin_context = browser.new_context(
+                ignore_https_errors=True,
+                viewport={"width": 1280, "height": 900},
+                service_workers="block",
+            )
             admin_page = admin_context.new_page()
             try:
                 login(admin_page, ADMIN_ID, ADMIN_PW)

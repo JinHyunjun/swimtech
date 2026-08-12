@@ -1398,6 +1398,7 @@ def test_promotion_result_cards_and_club_campaigns_are_privacy_scoped_and_qa_map
     assert "def json_fixture(payload)" in qa_ui
     assert "def fulfill(route, _request=None)" in qa_ui
     assert "lambda route, body=json.dumps" not in qa_ui
+    assert 'service_workers="block"' in qa_ui
     assert "makeCanvas().toDataURL('image/png')" in qa_ui
     assert '"/result/qa-ui-contract"' in qa_ui and '"/club/qa-ui-contract"' in qa_ui
     assert '@limiter.limit("60/minute")' in api
