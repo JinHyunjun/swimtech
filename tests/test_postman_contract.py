@@ -45,6 +45,9 @@ def test_postman_collection_has_representative_ordered_flows():
     assert user_flow.index("Monthly Report Reflects Same Log") < user_flow.index(
         "Delete Smoke Training Log"
     )
+    assert user_flow.index("Create Privacy-safe Monthly Result Card") < user_flow.index(
+        "Revoke Monthly Result Card"
+    )
     assert user_flow.index("Delete Smoke Training Log") < user_flow.index("User Logout")
 
 
@@ -64,6 +67,9 @@ def test_postman_requests_use_base_url_and_cover_required_boundaries(monkeypatch
         ("POST", "{{base_url}}/api/training-log/screenshot/confirm"),
         ("DELETE", "{{base_url}}/api/training-log/{{training_log_id}}"),
         ("GET", "{{base_url}}/api/report/monthly"),
+        ("POST", "{{base_url}}/api/promotion/result-shares/monthly"),
+        ("GET", "{{base_url}}/api/promotion/public/results/{{result_share_token}}"),
+        ("DELETE", "{{base_url}}/api/promotion/result-shares/{{result_share_token}}"),
         ("GET", "{{base_url}}/api/account/insights"),
         ("GET", "{{base_url}}/api/admin/dashboard"),
         ("GET", "{{base_url}}/api/admin/users"),
@@ -79,6 +85,7 @@ def test_postman_requests_use_base_url_and_cover_required_boundaries(monkeypatch
     for method, raw_url in method_urls:
         path = raw_url.removeprefix("{{base_url}}")
         path = path.replace("{{training_log_id}}", "{log_id}")
+        path = path.replace("{{result_share_token}}", "{token}")
         assert path in openapi_paths, f"Postman path is not registered: {path}"
         assert method.lower() in openapi_paths[path], f"Postman method is not registered: {method} {path}"
 
@@ -111,4 +118,4 @@ def test_postman_smoke_is_mapped_to_unified_quality_gate_and_documentation():
     assert '--env-var "qa_password=' not in workflow
     assert "POSTMAN_API_KEY: 사용하지 않음" in postman_readme
     assert "Postman API 스모크" in quality_gate
-    assert "Postman 22개 요청" in deployment
+    assert "Postman 25개 요청" in deployment

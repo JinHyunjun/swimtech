@@ -840,6 +840,13 @@ body {
     </div>
 
     <div class="summary-cards">
+      <div class="summary-card"><div class="label">30일 결과 카드 생성</div><div class="value" id="h-result-shares">—</div></div>
+      <div class="summary-card"><div class="label">30일 생성 카드 조회</div><div class="value" id="h-result-share-views">—</div></div>
+      <div class="summary-card"><div class="label">공개 클럽 홍보 페이지</div><div class="value" id="h-public-campaigns">—</div></div>
+      <div class="summary-card"><div class="label">클럽 홍보 누적 조회</div><div class="value energy" id="h-campaign-views">—</div></div>
+    </div>
+
+    <div class="summary-cards">
       <div class="summary-card">
         <div class="label">활성 클럽</div>
         <div class="value" id="h-active-clubs">—</div>
@@ -1418,6 +1425,10 @@ async function loadTrainingHealth() {
     document.getElementById('h-test-users').textContent = fmtNumber(s.test_users_30d);
     document.getElementById('h-personal-bests').textContent = fmtNumber(s.personal_bests_30d);
     document.getElementById('h-screenshot-imports').textContent = `${fmtNumber(s.screenshot_imports_30d)}건 · ${fmtNumber(s.screenshot_import_users_30d)}명`;
+    document.getElementById('h-result-shares').textContent = `${fmtNumber(s.result_shares_30d)}건`;
+    document.getElementById('h-result-share-views').textContent = `${fmtNumber(s.result_share_views_30d)}회`;
+    document.getElementById('h-public-campaigns').textContent = `${fmtNumber(s.public_club_campaigns)}개`;
+    document.getElementById('h-campaign-views').textContent = `${fmtNumber(s.club_campaign_views)}회`;
     document.getElementById('h-active-clubs').textContent = fmtNumber(s.active_clubs);
     document.getElementById('h-active-classes').textContent = fmtNumber(s.active_classes);
     document.getElementById('h-class-sessions').textContent = fmtNumber(s.class_sessions_30d);

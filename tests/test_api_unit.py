@@ -785,3 +785,55 @@ class TestWorkoutScreenshotImport:
         raw_params = connection.cursor_instance.queries[0][1]
         assert '"original_image_stored": false' in raw_params[-1]
         assert "image_bytes" not in raw_params[-1]
+
+
+class TestPromotionSharing:
+    def test_monthly_snapshot_whitelists_only_aggregate_fields(self):
+        from routers.promotion import _result_snapshot
+
+        snapshot = _result_snapshot({
+            "year": 2026,
+            "month": 8,
+            "total_distance": 4200,
+            "total_count": 3,
+            "avg_distance": 1400,
+            "total_time": 120,
+            "growth_rate": 25,
+            "streak": 2,
+            "by_stroke": {"freestyle": 3200, "other": 1000},
+            "plan_performance": {"completed_sessions": 2, "goal_achievement_rate": 84},
+            "benchmark_performance": {"attempts": 1, "personal_bests": 1},
+            "location": "never public",
+            "memo": "never public",
+            "average_heart_rate": 150,
+        })
+
+        assert snapshot["total_distance"] == 4200
+        assert snapshot["by_stroke"]["freestyle"] == 3200
+        assert snapshot["benchmark_performance"]["personal_bests"] == 1
+        assert "location" not in snapshot
+        assert "memo" not in snapshot
+        assert "average_heart_rate" not in snapshot
+
+    def test_promotion_requests_enforce_bounds(self):
+        from pydantic import ValidationError
+        from routers.promotion import ClubCampaignConsentRequest, ClubCampaignRequest, MonthlyResultShareRequest
+
+        assert MonthlyResultShareRequest(year=2026, month=8).show_nickname is False
+        assert ClubCampaignConsentRequest().include_my_distance is False
+        try:
+            MonthlyResultShareRequest(year=2026, month=13)
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError("month 13 must be rejected")
+
+        try:
+            ClubCampaignRequest(
+                headline="QA", target_distance=999,
+                start_date="2026-08-01", end_date="2026-08-31",
+            )
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError("campaign target below 1km must be rejected")

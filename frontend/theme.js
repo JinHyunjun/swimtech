@@ -23,7 +23,8 @@
   }
 
   function isServicePage() {
-    return APP_HEADER_PATHS.indexOf(currentPath()) !== -1;
+    var path = currentPath();
+    return APP_HEADER_PATHS.indexOf(path) !== -1 || path.indexOf('/result/') === 0 || path.indexOf('/club/') === 0;
   }
 
   function ensureSiteIcons() {
@@ -73,6 +74,8 @@
   }
 
   function headerContextLabel() {
+    if (currentPath().indexOf('/result/') === 0) return '훈련 결과 카드';
+    if (currentPath().indexOf('/club/') === 0) return '클럽 공개 초대';
     var labels = {
       '/landing': '내 훈련 홈', '/dashboard': '상세 훈련 대시보드', '/my-data': '내 수영 데이터',
       '/plan': '훈련 플랜', '/training-log': '훈련 일지', '/training_log': '훈련 일지',

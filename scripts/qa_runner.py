@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_08",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_09",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -732,12 +732,41 @@ def main():
         and bool(from_plan_set_save) and from_plan_set_save.status_code == 200
         and to_int(benchmark_perf.get("attempts")) >= 2
         and to_int(benchmark_perf.get("personal_bests")) >= 2
-        and bool(report.get("share_token"))
     )
     rec(17, "월간 리포트↔훈련 일지 데이터 연동", report_ok,
         f"{r.status_code}, total={report.get('total_distance')}, count={report.get('total_count')}, "
         f"avg={report.get('avg_distance')}, goal={perf.get('goal_distance')}, plan_sessions={perf.get('completed_sessions')}, "
         f"tests={benchmark_perf.get('attempts')}/pb={benchmark_perf.get('personal_bests')}")
+
+    result_share = sess.post(f"{BASE}/api/promotion/result-shares/monthly", json={
+        "year": year, "month": month, "show_nickname": False,
+    }, timeout=60)
+    result_share_json = jget(result_share)
+    result_token = result_share_json.get("token")
+    public_result = requests.get(
+        f"{BASE}/api/promotion/public/results/{result_token}", timeout=60,
+    ) if result_token else None
+    my_result_shares = sess.get(f"{BASE}/api/promotion/result-shares/mine", timeout=60)
+    revoke_result = sess.delete(
+        f"{BASE}/api/promotion/result-shares/{result_token}", timeout=60,
+    ) if result_token else None
+    revoked_public = requests.get(
+        f"{BASE}/api/promotion/public/results/{result_token}", timeout=60,
+    ) if result_token else None
+    public_result_json = jget(public_result)
+    result_share_ok = (
+        result_share.status_code == 200 and bool(result_token)
+        and public_result is not None and public_result.status_code == 200
+        and public_result_json.get("display_name") is None
+        and to_int((public_result_json.get("result") or {}).get("total_distance")) >= baseline_distance + expected_added_distance
+        and "location" not in json.dumps(public_result_json, ensure_ascii=False).lower()
+        and my_result_shares.status_code == 200
+        and revoke_result is not None and revoke_result.status_code == 200
+        and revoked_public is not None and revoked_public.status_code == 410
+    )
+    rec("17b", "개인정보 선택형 월간 결과 카드 생성·공개·폐기", result_share_ok,
+        f"create {result_share.status_code}, public {status_code(public_result)}, "
+        f"mine {my_result_shares.status_code}, revoke {status_code(revoke_result)}, after {status_code(revoked_public)}")
 
     my_data_res = sess.get(f"{BASE}/api/account/insights", timeout=60)
     my_data = jget(my_data_res)
@@ -907,6 +936,7 @@ def main():
     forbidden_create = None
     forbidden_staff = None
     class_id = None
+    invite_code = None
     student_member = None
     if club_id:
         class_res = sess.post(f"{BASE}/api/clubs/{club_id}/classes", json={
@@ -1043,6 +1073,55 @@ def main():
         and student_analytics is not None and student_analytics.status_code == 403
         and "코치 코드" in str(analytics_json.get("privacy_note") or "")
     )
+    campaign_save = public_campaign = campaign_qr = forbidden_campaign = campaign_consent = None
+    if club_id and class_id:
+        campaign_consent = student_sess.put(
+            f"{BASE}/api/promotion/clubs/{club_id}/campaign/consent",
+            json={"include_my_distance": True}, timeout=60,
+        )
+        campaign_save = sess.put(f"{BASE}/api/promotion/clubs/{club_id}/campaign", json={
+            "headline": "QA 수영 클럽 공개 체험",
+            "class_id": class_id,
+            "target_distance": 100000,
+            "start_date": time.strftime("%Y-%m-%d"),
+            "end_date": time.strftime("%Y-%m-%d", time.localtime(time.time() + 30 * 86400)),
+            "is_public": True,
+            "show_member_count": True,
+        }, timeout=60)
+        campaign_token = (jget(campaign_save).get("campaign") or {}).get("public_token")
+        if campaign_token:
+            public_campaign = requests.get(
+                f"{BASE}/api/promotion/public/clubs/{campaign_token}", timeout=60,
+            )
+            campaign_qr = requests.get(
+                f"{BASE}/api/promotion/public/clubs/{campaign_token}/qr.svg", timeout=60,
+            )
+        forbidden_campaign = student_sess.put(f"{BASE}/api/promotion/clubs/{club_id}/campaign", json={
+            "headline": "권한 없는 공개 변경",
+            "class_id": class_id,
+            "target_distance": 100000,
+            "start_date": time.strftime("%Y-%m-%d"),
+            "end_date": time.strftime("%Y-%m-%d", time.localtime(time.time() + 30 * 86400)),
+            "is_public": True,
+            "show_member_count": True,
+        }, timeout=60)
+    public_campaign_json = jget(public_campaign)
+    campaign_ok = (
+        campaign_save is not None and campaign_save.status_code == 200
+        and campaign_consent is not None and campaign_consent.status_code == 200
+        and public_campaign is not None and public_campaign.status_code == 200
+        and (public_campaign_json.get("class") or {}).get("invite_code") == invite_code
+        and (public_campaign_json.get("campaign") or {}).get("target_distance") == 100000
+        and "members" not in public_campaign_json
+        and "직접 동의한 회원" in str(public_campaign_json.get("privacy") or "")
+        and campaign_qr is not None and campaign_qr.status_code == 200
+        and "image/svg+xml" in campaign_qr.headers.get("Content-Type", "")
+        and forbidden_campaign is not None and forbidden_campaign.status_code == 403
+    )
+    rec("18j", "클럽 공개 소개·공동 목표·반 초대 QR·권한 경계", campaign_ok,
+        f"consent {status_code(campaign_consent)}, save {status_code(campaign_save)}, public {status_code(public_campaign)}, "
+        f"qr {status_code(campaign_qr)}, student {status_code(forbidden_campaign)}")
+
     if club_id:
         cleanup_club = sess.delete(f"{BASE}/api/clubs/{club_id}", timeout=60)
     analytics_ok = analytics_ok and cleanup_club is not None and cleanup_club.status_code == 200
@@ -1225,6 +1304,10 @@ def main():
             and "personal_bests_30d" in health_summary
             and "screenshot_imports_30d" in health_summary
             and "screenshot_import_users_30d" in health_summary
+            and "result_shares_30d" in health_summary
+            and "result_share_views_30d" in health_summary
+            and "public_club_campaigns" in health_summary
+            and "club_campaign_views" in health_summary
             and isinstance(health_json.get("watchlist"), list)
         )
         rec("18b", "관리자 훈련 운영 API", admin_ok,
@@ -1241,7 +1324,8 @@ def main():
             f"clubs={health_summary.get('active_clubs')}/classes={health_summary.get('active_classes')}/"
             f"attendance={health_summary.get('attendance_rate_30d')}%, "
             f"tests={health_summary.get('test_results_30d')}/pb={health_summary.get('personal_bests_30d')}, "
-            f"screenshots={health_summary.get('screenshot_imports_30d')}/users={health_summary.get('screenshot_import_users_30d')}")
+            f"screenshots={health_summary.get('screenshot_imports_30d')}/users={health_summary.get('screenshot_import_users_30d')}, "
+            f"shares={health_summary.get('result_shares_30d')}/campaigns={health_summary.get('public_club_campaigns')}")
 
     # ── 19. 모바일(정적이라 동일) — User-Agent만 모바일로 ─
     print("\n[19] 모바일 응답")

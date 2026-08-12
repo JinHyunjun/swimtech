@@ -287,6 +287,12 @@ def get_club(club_id: int, request: Request):
             "invite_code": row[6] if my_role in {"owner", "coach", "assistant"} else None,
             "status": row[7], "member_count": int(row[8] or 0),
         } for row in cur.fetchall()]
+        cur.execute(
+            "SELECT promotion_distance_opt_in FROM swim_club_members "
+            "WHERE club_id = %s AND customer_id = %s AND status = 'active'",
+            (club_id, customer_id),
+        )
+        consent_row = cur.fetchone()
         return {
             "club": {
                 "id": club[0], "name": club[1], "description": club[2],
@@ -294,6 +300,7 @@ def get_club(club_id: int, request: Request):
                 "invite_code": club[4] if my_role in {"owner", "coach"} else None,
                 "status": club[5], "created_at": str(club[6]),
                 "my_role": my_role, "can_manage": my_role in {"owner", "coach"},
+                "my_promotion_distance_opt_in": bool(consent_row and consent_row[0]),
             },
             "members": members,
             "classes": classes,

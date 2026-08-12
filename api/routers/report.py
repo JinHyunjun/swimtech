@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import base64
-import json
 import logging
 import os
 from datetime import date
@@ -335,24 +333,6 @@ def _calc_monthly_stats(customer_id: int, year: int, month: int) -> dict:
         "benchmark_performance": benchmark_performance,
     }
 
-def _make_share_token(username: str, year: int, month: int, customer_id: int | None = None) -> str:
-    payload = {"u": username, "y": year, "m": month}
-    if customer_id:
-        payload["c"] = customer_id
-    payload = json.dumps(payload, separators=(",", ":"))
-    return base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-
-
-def _parse_share_token(token: str) -> Optional[dict]:
-    try:
-        pad = 4 - len(token) % 4
-        if pad != 4:
-            token += "=" * pad
-        return json.loads(base64.urlsafe_b64decode(token).decode())
-    except Exception:
-        return None
-
-
 @router.get("/heatmap")
 def get_training_heatmap(request: Request, days: int = Query(365, le=730)):
     """최근 N일간의 일자별 훈련 거리 — 깃허브 커밋 그래프 스타일 히트맵용."""
@@ -415,9 +395,7 @@ def get_monthly_report(
     if not (1 <= month <= 12):
         raise HTTPException(400, "month는 1-12 사이여야 합니다")
     try:
-        stats = _calc_monthly_stats(customer_id, year, month)
-        stats["share_token"] = _make_share_token(payload.get("sub"), year, month, customer_id)
-        return stats
+        return _calc_monthly_stats(customer_id, year, month)
     except HTTPException:
         raise
     except Exception:
@@ -427,13 +405,4 @@ def get_monthly_report(
 
 @router.get("/share/{token}")
 def get_shared_report(token: str):
-    parsed = _parse_share_token(token)
-    if not parsed or not all(k in parsed for k in ("u", "y", "m")):
-        raise HTTPException(400, "유효하지 않은 공유 토큰입니다")
-    try:
-        customer_id = int(parsed["c"]) if parsed.get("c") else _lookup_customer_id(parsed["u"])
-        if not customer_id:
-            return _empty_monthly_stats(int(parsed["y"]), int(parsed["m"]))
-        return _calc_monthly_stats(customer_id, int(parsed["y"]), int(parsed["m"]))
-    except Exception as e:
-        raise HTTPException(500, f"리포트 조회 오류: {e}")
+    raise HTTPException(410, "기존 월간 리포트 공유 링크는 종료되었습니다. 새 결과 카드를 만들어 주세요.")

@@ -73,7 +73,8 @@ Vercel은 clean URL과 rewrite를 사용한다.
 | `/api/training-log/import` | `health_import.py` | 건강 앱 내보내기 파일 미리보기·확정 코드. 현재 공개 UI는 비활성 |
 | `/api/training-log/screenshot` | `workout_screenshot.py` | 사용자 선택 운동 이미지의 Gemini 구조화 추출, 일관성 경고, 고객별 확인 토큰, 확인 후 일지·영법 세트 저장. 원본 이미지 비저장 |
 | `/api/benchmarks` | `benchmarks.py` | 테스트 세트 저장·조회·삭제, 영법·거리·코스별 PB 판정 |
-| `/api/report` | `report.py` | 월간 집계, 히트맵, 공유 리포트 |
+| `/api/report` | `report.py` | 월간 집계, 히트맵 |
+| `/api/promotion` | `promotion.py` | 취소 가능한 월간 결과 카드 스냅샷, 공개 결과 조회, 클럽 공동 목표·초대 캠페인과 QR |
 | `/api/plans` | `plans.py` | 커스텀 플랜, 즐겨찾기, 공유 |
 | `/api/badges` | `badge.py` | 단계형 뱃지 계산 |
 | `/api/challenge` | `challenge.py` | 챌린지와 참가·랭킹 |
@@ -121,8 +122,9 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `plan_completions`: 플랜 세션과 실제 일지의 연결
 - `wearable_workouts`: 건강 앱 파일 또는 확인된 운동 스크린샷의 공급자·중복 지문·구조화 값과 변환 일지 ID. 스크린샷은 AI 초안·사용자 확정값·이미지 SHA-256만 보관하고 원본 이미지 바이트는 저장하지 않음
 - `user_badges`, `challenges`, `challenge_participants`: 성취·참여
+- `promotion_result_shares`: 공개 허용 월간 합계 JSON 스냅샷, 선택 닉네임, 불투명 토큰, 만료·종료·조회 수
 
-`training_logs.customer_id`가 대시보드, 개인 데이터 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 리포트는 토큰의 customer ID를 우선 사용하고 레거시 토큰은 username으로 보완한다.
+`training_logs.customer_id`가 대시보드, 개인 데이터 대시보드, 월간 리포트, 뱃지와 챌린지 집계의 중심이다. 월간 결과 카드는 생성 시점에 허용된 집계만 `promotion_result_shares.snapshot`에 복사하며 원본 일지, 위치, 심박, 메모와 스크린샷을 공개 토큰으로 다시 조회하지 않는다.
 
 `GET /api/account/insights`는 인증된 customer ID만 사용해 기존 데이터를 읽기 전용으로 집계한다. 전체 기간과 최근·직전 90일, 고정 12개월 추이, 영법·풀 길이, 구조화 세트·플랜·사이클 기록률과 코스별 PB를 한 응답으로 제공하며 다른 사용자의 행을 섞지 않는다. JSON 내보내기는 원본 백업·이동용이고 이 API는 화면 해석용이다.
 
@@ -158,12 +160,15 @@ Vercel은 clean URL과 rewrite를 사용한다.
 - `swim_class_attendance`: 일정별 학생 출석 상태·메모·확인자
 - `swim_class_notices`: 클럽 전체 또는 특정 반 공지
 - `swim_class_notice_reads`: 사용자별 공지 읽음 시각
+- `club_promotion_campaigns`: 클럽별 공개 공동 거리 목표, 기간, 선택 반, 불투명 공개 토큰, 공개·회원 수 표시 설정과 조회 수
 
 학생의 반 코드 참여는 클럽과 반 멤버십을 한 트랜잭션에서 활성화한다. 클럽 권한과 반 권한을 분리해 등록 코치가 특정 반만 관리할 수 있고, 모든 쓰기 API가 현재 사용자 멤버십·등록 코치 여부·담당 코치 무결성을 다시 확인한다.
 
 일정·출석 쓰기는 클럽 소유자·코치 또는 해당 반 코치에게만 허용한다. 학생의 출석 조회는 본인 행으로 제한하고, 공지는 클럽·반 멤버십 범위에 맞는 대상만 조회·읽음 처리할 수 있다. 공지 게시 트랜잭션은 대상 회원의 기존 `notifications` 알림도 함께 만든다.
 
 반 수행 분석 API는 같은 관리 권한을 다시 확인한 뒤 현재 활성 학생과 지난 일정만 집계한다. 출석·지각·결석만 확인된 출석률의 분모로 사용하고 사유 결석은 제외하며, 전체 학생·일정 조합 중 출석 상태가 입력된 비율은 별도의 기록 완료율로 반환한다. 학생별 개인 훈련 횟수·거리는 현재 관리자가 등록 코치이고 해당 학생과 `coach_students.status='active'` 관계까지 있을 때만 조회한다. 따라서 반 운영 권한만으로 개인 일지 통계가 공개되지 않는다.
+
+클럽 공개 캠페인 쓰기는 클럽 소유자·코치에게만 허용한다. `swim_club_members.promotion_distance_opt_in`은 기본 `false`이며 각 회원이 직접 켠 경우에만 기간 내 일지 거리를 SQL에서 익명 합산한다. 공개 응답은 회원 식별자·개별 거리·일지 행을 반환하지 않는다. 반을 선택한 캠페인만 해당 반 참여 코드와 QR을 공개하며, 운영자가 비공개로 전환하면 같은 토큰은 즉시 404가 된다.
 
 ## 주요 데이터 흐름
 
@@ -321,7 +326,7 @@ swim_test_results ────────── 테스트 시도·영법/거리
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 배포 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트 기록·계정 세션 버전과 QA 계정 분류를 포함한 `20260723_08`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 소스 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트·계정 세션 버전·QA 계정 분류와 홍보용 결과/클럽 캠페인을 포함한 `20260723_09`이다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

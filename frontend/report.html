@@ -120,8 +120,21 @@
 
 /* ── 공유 버튼 ── */
 .share-bar {
-  display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap;
+  display: grid; gap: 14px; margin-top: 24px; padding: 20px;
+  border: 0.5px solid rgba(72,202,228,.28); border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0,180,216,.08), rgba(72,202,228,.03));
 }
+.share-heading { display:flex; align-items:start; justify-content:space-between; gap:16px; }
+.share-heading h3 { margin:0 0 5px; color:var(--text); font-size:var(--fs-body-lg); }
+.share-heading p,.share-privacy { margin:0; color:var(--muted); font-size:var(--fs-caption); line-height:1.6; }
+.share-options { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.share-options label { color:var(--text); font-size:var(--fs-body); }
+.share-ready { display:none; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:0.5px solid var(--border); }
+.share-ready.visible { display:flex; }
+.share-history { display:grid; gap:8px; }
+.share-history-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:rgba(0,0,0,.1); }
+.share-history-row span { color:var(--muted); font-size:var(--fs-caption); }
+.share-history-row .share-history-actions { display:flex; gap:7px; flex-wrap:wrap; }
 .share-btn {
   padding: 10px 20px; border: none; border-radius: var(--radius-sm);
   font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
@@ -139,7 +152,6 @@
 .rp-empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 .rp-empty-text { font-size: var(--fs-body); }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -300,11 +312,20 @@
       </div>
     </div>
 
-    <!-- 공유 버튼 -->
-    <div class="share-bar">
-      <button class="share-btn save"  id="btn-save"  onclick="saveImage()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-save"/></svg> 이미지로 저장</button>
-      <button class="share-btn kakao" id="btn-kakao" onclick="shareKakao()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-chat"/></svg> 카카오톡 공유</button>
-      <button class="share-btn link"  id="btn-link"  onclick="copyLink()"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-link"/></svg> 링크 복사</button>
+    <!-- 개인정보 선택형 결과 카드 공유 -->
+    <div class="share-bar" id="result-share-panel">
+      <div class="share-heading"><div><h3>🏊 월간 결과 카드</h3><p>현재 월의 합계를 홍보용 이미지와 폐기 가능한 공개 링크로 만듭니다.</p></div></div>
+      <div class="share-options">
+        <label><input type="checkbox" id="share-nickname"> 카드에 내 닉네임 표시</label>
+        <button class="share-btn save" id="btn-create-share" type="button" onclick="createResultShare()">결과 카드 만들기</button>
+      </div>
+      <p class="share-privacy">🔒 위치·심박·메모·원본 스크린샷은 포함되지 않습니다. 닉네임도 직접 선택한 경우에만 공개됩니다.</p>
+      <div class="share-ready" id="share-ready">
+        <a class="share-btn save" id="btn-open-share" target="_blank" rel="noopener" style="text-decoration:none">카드 열기·PNG 저장</a>
+        <button class="share-btn link" id="btn-link" type="button" onclick="copyLink()">링크 복사</button>
+        <button class="share-btn link" id="btn-revoke-share" type="button" onclick="revokeShare()">공유 종료</button>
+      </div>
+      <div class="share-history" id="share-history" aria-live="polite"></div>
     </div>
       </div><!-- /.rp-main -->
     </div><!-- /.rp-layout -->
@@ -319,6 +340,8 @@ let curYear = initialMonth.getFullYear();
 let curMonth = initialMonth.getMonth() + 1;
 let strokeChart, weeklyChart;
 let shareToken = "";
+let shareUrl = "";
+let currentReportData = null;
 
 (async () => {
   try {
@@ -326,6 +349,7 @@ let shareToken = "";
     if (!res.ok) { window.location.href = '/login'; return; }
   } catch { window.location.href = '/login'; return; }
   await loadReport();
+  await loadMyResultShares();
   loadYearHeatmap();
 })();
 
@@ -338,7 +362,7 @@ function shiftMonth(delta) {
   curMonth += delta;
   if (curMonth < 1)  { curMonth = 12; curYear--; }
   if (curMonth > 12) { curMonth = 1;  curYear++; }
-  loadReport();
+  loadReport().then(loadMyResultShares);
 }
 
 async function loadReport() {
@@ -348,7 +372,8 @@ async function loadReport() {
     const res = await fetch(url, { credentials: 'include' });
     if (!res.ok) { showEmpty(); return; }
     const d = await res.json();
-    shareToken = d.share_token || "";
+    currentReportData = d;
+    resetSharePanel();
     render(d);
   } catch { showEmpty(); }
 }
@@ -577,26 +602,82 @@ function renderWeeklyChart(weekly) {
   });
 }
 
-function getShareUrl() {
-  return shareToken ? `${location.origin}/report/share/${shareToken}` : location.href;
+function resetSharePanel() {
+  shareToken = '';
+  shareUrl = '';
+  const ready = document.getElementById('share-ready');
+  if (ready) ready.classList.remove('visible');
 }
 
-function shareKakao() {
-  const url = getShareUrl();
-  const kakaoKey = '';
-  if (kakaoKey && window.Kakao) {
-    Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: `${curYear}년 ${curMonth}월 수영 리포트`,
-        description: `총 거리 ${document.getElementById('stat-distance').textContent}m 달성!`,
-        imageUrl: `${location.origin}/static/icons/icon-192.png`,
-        link: { mobileWebUrl: url, webUrl: url },
-      },
-    });
-  } else {
-    copyLink();
+async function createResultShare() {
+  if (!currentReportData || Number(currentReportData.total_count || 0) < 1) {
+    alert('공유할 월간 훈련 기록이 없습니다.');
+    return;
   }
+  const button = document.getElementById('btn-create-share');
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = '카드 생성 중...';
+  try {
+    const response = await fetch('/api/promotion/result-shares/monthly', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year: curYear,
+        month: curMonth,
+        show_nickname: document.getElementById('share-nickname').checked,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || '결과 카드를 만들지 못했습니다.');
+    shareToken = data.token;
+    shareUrl = new URL(data.public_url, location.origin).href;
+    document.getElementById('btn-open-share').href = shareUrl;
+    document.getElementById('share-ready').classList.add('visible');
+    await loadMyResultShares();
+    button.textContent = '새 카드 다시 만들기';
+  } catch (error) {
+    alert(error.message);
+    button.textContent = original;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function revokeShare(token = shareToken) {
+  if (!token || !confirm('이 결과 카드의 공개 링크를 종료할까요?')) return;
+  const response = await fetch(`/api/promotion/result-shares/${encodeURIComponent(token)}`, {
+    method: 'DELETE', credentials: 'include',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    alert(data.detail || '공유를 종료하지 못했습니다.');
+    return;
+  }
+  if (token === shareToken) resetSharePanel();
+  document.getElementById('btn-create-share').textContent = '결과 카드 만들기';
+  await loadMyResultShares();
+  alert('공유 링크를 종료했습니다.');
+}
+
+async function loadMyResultShares() {
+  const holder = document.getElementById('share-history');
+  if (!holder) return;
+  try {
+    const response = await fetch('/api/promotion/result-shares/mine', { credentials: 'include' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const items = (data.items || []).filter(item => Number(item.year) === curYear && Number(item.month) === curMonth).slice(0, 5);
+    holder.innerHTML = items.length ? items.map(item => {
+      const active = item.status === 'active';
+      const url = new URL(item.public_url, location.origin).href;
+      return `<div class="share-history-row"><span>${item.year}년 ${item.month}월 · ${active ? '공개 중' : '공유 종료'} · 조회 ${Number(item.view_count || 0)}회</span><div class="share-history-actions">${active ? `<a class="mini" href="${url}" target="_blank" rel="noopener">열기</a><button class="mini" type="button" onclick="navigator.clipboard.writeText('${url}')">복사</button><button class="mini" type="button" onclick="revokeShare('${item.token}')">종료</button>` : ''}</div></div>`;
+    }).join('') : '<p class="share-privacy">이 달에 만든 결과 카드가 없습니다.</p>';
+  } catch { holder.innerHTML = ''; }
+}
+
+function getShareUrl() {
+  return shareUrl || location.href;
 }
 
 async function copyLink() {
@@ -609,28 +690,6 @@ async function copyLink() {
   } catch { alert('링크: ' + getShareUrl()); }
 }
 
-async function saveImage() {
-  if (typeof html2canvas === 'undefined') { alert('이미지 저장 기능을 사용할 수 없습니다.'); return; }
-  const btn = document.getElementById('btn-save');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '⏳ 생성 중...';
-  btn.disabled = true;
-  try {
-    const target = document.querySelector('.rp-page');
-    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#06121c';
-    const canvas = await html2canvas(target, {
-      backgroundColor: bgColor, scale: 2, useCORS: true, logging: false,
-    });
-    const link = document.createElement('a');
-    link.download = `수영리포트_${curYear}년${curMonth}월.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  } catch { alert('이미지 저장 중 오류가 발생했습니다.'); }
-  finally {
-    btn.innerHTML = orig;
-    btn.disabled = false;
-  }
-}
 </script>
 <script src="/static/theme.js"></script>
     <script src="/static/utils.js"></script>

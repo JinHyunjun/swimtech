@@ -651,7 +651,9 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
                to_regclass('public.swim_class_attendance'),
                to_regclass('public.swim_class_notices'),
                to_regclass('public.swim_test_results'),
-               to_regclass('public.wearable_workouts')
+               to_regclass('public.wearable_workouts'),
+               to_regclass('public.promotion_result_shares'),
+               to_regclass('public.club_promotion_campaigns')
     """)
     (
         has_training_logs,
@@ -666,6 +668,8 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         has_class_notices,
         has_test_results,
         has_wearable_workouts,
+        has_result_shares,
+        has_club_campaigns,
     ) = [
         bool(x) for x in cur.fetchone()
     ]
@@ -698,6 +702,10 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         "personal_bests_30d": 0,
         "screenshot_imports_30d": 0,
         "screenshot_import_users_30d": 0,
+        "result_shares_30d": 0,
+        "result_share_views_30d": 0,
+        "public_club_campaigns": 0,
+        "club_campaign_views": 0,
     }
     pool_distribution = []
     stroke_distribution = []
@@ -808,6 +816,25 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
         row = cur.fetchone()
         summary["screenshot_imports_30d"] = _safe_int(row[0])
         summary["screenshot_import_users_30d"] = _safe_int(row[1])
+
+    if has_result_shares:
+        cur.execute("""
+            SELECT COUNT(*), COALESCE(SUM(view_count), 0)
+            FROM promotion_result_shares
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+        """)
+        row = cur.fetchone()
+        summary["result_shares_30d"] = _safe_int(row[0])
+        summary["result_share_views_30d"] = _safe_int(row[1])
+
+    if has_club_campaigns:
+        cur.execute("""
+            SELECT COUNT(*) FILTER (WHERE is_public IS TRUE), COALESCE(SUM(view_count), 0)
+            FROM club_promotion_campaigns
+        """)
+        row = cur.fetchone()
+        summary["public_club_campaigns"] = _safe_int(row[0])
+        summary["club_campaign_views"] = _safe_int(row[1])
 
     if has_custom_plans:
         cur.execute("""
@@ -930,6 +957,8 @@ def get_training_health(swimtech_token: str = Cookie(default=None)):
             "swim_class_attendance": has_class_attendance,
             "swim_class_notices": has_class_notices,
             "swim_test_results": has_test_results,
+            "promotion_result_shares": has_result_shares,
+            "club_promotion_campaigns": has_club_campaigns,
         },
         "summary": summary,
         "pool_distribution": pool_distribution,

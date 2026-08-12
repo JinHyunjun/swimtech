@@ -74,6 +74,11 @@
       "type": "string"
     },
     {
+      "key": "result_share_token",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "baseline_total_distance",
       "value": "0",
       "type": "string"
@@ -431,6 +436,75 @@
               }
             }
           ]
+        },
+        {
+          "name": "Create Privacy-safe Monthly Result Card",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": {{year}},\n  \"month\": {{month}},\n  \"show_nickname\": false\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": "{{base_url}}/api/promotion/result-shares/monthly"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('결과 카드 생성 200', () => pm.response.to.have.status(200));",
+                "if (pm.response.code === 200) {",
+                "  const body = pm.response.json();",
+                "  pm.expect(body.show_nickname).to.eql(false);",
+                "  pm.expect(body.privacy).to.include('위치');",
+                "  pm.collectionVariables.set('result_share_token', body.token);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Public Result Card Hides Identity",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/api/promotion/public/results/{{result_share_token}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('공개 카드 집계·익명 경계', () => {",
+                "  pm.response.to.have.status(200);",
+                "  const body = pm.response.json();",
+                "  pm.expect(body.display_name).to.eql(null);",
+                "  pm.expect(body.result).to.have.property('total_distance');",
+                "  pm.expect(JSON.stringify(body)).to.not.include('heart_rate');",
+                "});"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Revoke Monthly Result Card",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": "{{base_url}}/api/promotion/result-shares/{{result_share_token}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('결과 카드 공유 종료 200', () => pm.response.to.have.status(200));",
+                "if (pm.response.code === 200) pm.collectionVariables.unset('result_share_token');"
+              ]
+            }
+          }]
         },
         {
           "name": "My Data Uses Authenticated Scope",

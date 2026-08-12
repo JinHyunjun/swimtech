@@ -15,12 +15,12 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
-from routers import customers, auth, account, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, benchmarks, report, challenge, feedback, coach, coach_ai, clubs, club_operations, pool, chat, admin, health_import, workout_screenshot, jira
+from routers import customers, auth, account, dashboard, sheets, badge, changelog, plans, community, notifications, training_log, benchmarks, report, challenge, feedback, coach, coach_ai, clubs, club_operations, promotion, pool, chat, admin, health_import, workout_screenshot, jira
 from activity_log import log_activity, resolve_menu_name
 from routers.auth import verify_token, decode_token
 
 logging.basicConfig(level=logging.INFO)
-EXPECTED_SCHEMA_REVISION = "20260723_08"
+EXPECTED_SCHEMA_REVISION = "20260723_09"
 
 
 def upgrade_database_schema() -> None:
@@ -316,6 +316,7 @@ app.include_router(coach.router,          prefix="/api/coach",           tags=["
 app.include_router(coach_ai.router,       prefix="/api/coach",           tags=["코치 AI 강습 운영"])
 app.include_router(clubs.router,          prefix="/api/clubs",           tags=["클럽·반"])
 app.include_router(club_operations.router, prefix="/api/clubs",          tags=["클럽 일정·출석·공지"])
+app.include_router(promotion.router,      prefix="/api/promotion",       tags=["결과 공유·클럽 홍보"])
 app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
 app.include_router(jira.router,           prefix="/api/jira",            tags=["Jira 연동"])
@@ -576,6 +577,12 @@ def report_page(request: Request):
     if redir: return redir
     return _serve("report.html")
 
+
+@app.get("/result/{token}")
+def result_card_page(token: str):
+    """Public, revocable monthly result card."""
+    return _serve("result_card.html")
+
 # 수영 챌린지 (로그인 필요)
 @app.get("/challenge")
 def challenge_page(request: Request):
@@ -620,6 +627,12 @@ def clubs_page(request: Request):
     redir = _auth_redirect(request)
     if redir: return redir
     return _serve("clubs.html")
+
+
+@app.get("/club/{token}")
+def club_public_page(token: str):
+    """Public club campaign and class invitation page."""
+    return _serve("club_public.html")
 
 # 수영 영상 큐레이션 (로그인 필요)
 @app.get("/videos")

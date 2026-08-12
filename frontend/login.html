@@ -265,6 +265,15 @@
 </div>
 
 <script>
+function safeNextPath() {
+  const value = new URLSearchParams(location.search).get('next') || '';
+  if (!value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return '';
+  try {
+    const parsed = new URL(value, location.origin);
+    return parsed.origin === location.origin ? `${parsed.pathname}${parsed.search}${parsed.hash}` : '';
+  } catch { return ''; }
+}
+
 async function doLogin() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
@@ -290,7 +299,7 @@ async function doLogin() {
 
     if (res.ok) {
       const loginData = await res.json();
-      window.location.href = loginData.redirect || (loginData.is_admin ? '/admin' : '/landing');
+      window.location.href = loginData.is_admin ? '/admin' : (safeNextPath() || loginData.redirect || '/landing');
     } else {
       const data = await res.json();
       showError(data.detail || '로그인에 실패했습니다.');
@@ -320,7 +329,7 @@ async function startDemo() {
       showError(data.detail || '체험 모드를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
-    window.location.href = data.redirect || '/landing';
+    window.location.href = safeNextPath() || data.redirect || '/landing';
   } catch (e) {
     showError('서버에 연결할 수 없습니다.');
   } finally {

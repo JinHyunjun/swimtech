@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>클럽 초대 | SwimMate</title>
+  <meta name="description" content="SwimMate 수영 클럽의 공동 목표와 반 초대를 확인하세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="수영 클럽 초대 | SwimMate">
+  <meta property="og:description" content="함께 달성하는 수영 목표와 반 참여 안내">
+  <meta property="og:image" content="https://swimtech.vercel.app/static/icons/icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/theme.js" defer></script>
+  <style>
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow-wrap:anywhere}.public-shell{width:min(980px,calc(100% - 32px));margin:0 auto;padding:36px 0 70px}.hero{position:relative;overflow:hidden;padding:clamp(28px,6vw,64px);border:1px solid rgba(72,202,228,.28);border-radius:30px;background:radial-gradient(circle at 85% 10%,rgba(72,202,228,.22),transparent 34%),linear-gradient(145deg,var(--surface),var(--bg));box-shadow:0 24px 70px rgba(0,0,0,.25)}.eyebrow{color:var(--cyan);font-size:13px;font-weight:900;letter-spacing:.09em}.hero h1{max-width:760px;margin:10px 0 14px;font-size:clamp(32px,7vw,64px);line-height:1.04;font-style:italic}.club-name{font-size:18px;font-weight:800}.club-desc{max-width:680px;color:var(--muted);line-height:1.7}.progress-card{margin-top:34px;padding:22px;border:1px solid var(--border);border-radius:20px;background:rgba(0,0,0,.14)}.progress-head{display:flex;align-items:end;justify-content:space-between;gap:12px}.progress-head strong{font-size:clamp(28px,6vw,48px);color:var(--cyan);font-style:italic}.progress-track{height:14px;margin-top:16px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:inherit}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.stat{padding:16px;border:1px solid var(--border);border-radius:15px;background:var(--surface)}.stat strong{display:block;color:var(--cyan);font-size:24px}.stat span{color:var(--muted);font-size:12px}.join{display:grid;grid-template-columns:1fr 230px;gap:18px;margin-top:22px}.join-card{padding:24px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}.join-card h2{margin:0 0 8px}.class-meta{color:var(--muted);line-height:1.65}.code{display:inline-block;margin:18px 0;padding:12px 16px;border:1px solid var(--cyan);border-radius:12px;color:var(--cyan);font:900 24px ui-monospace,monospace;letter-spacing:.08em}.qr{display:flex;align-items:center;justify-content:center;padding:18px;background:#fff}.qr img{display:block;width:100%;height:auto}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#03202b}.privacy{margin-top:18px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;color:var(--muted);line-height:1.6}.error{padding:48px;text-align:center;border:1px solid var(--border);border-radius:22px;background:var(--surface)}
+    @media(max-width:680px){.public-shell{width:min(100% - 20px,980px);padding-top:20px}.hero{border-radius:22px}.stats{grid-template-columns:1fr 1fr}.join{grid-template-columns:1fr}.qr{max-width:230px}.actions .btn{flex:1 1 100%}}
+  </style>
+</head>
+<body>
+<main class="public-shell" id="public-shell">
+  <section class="hero">
+    <div class="eyebrow">SWIMMATE CLUB INVITATION</div>
+    <h1 id="headline">클럽 정보를 불러오는 중입니다</h1>
+    <div class="club-name" id="club-name"></div><p class="club-desc" id="description"></p>
+    <div class="progress-card">
+      <div class="progress-head"><div><div class="eyebrow">공동 훈련 목표</div><strong id="distance">—</strong></div><b id="rate">—</b></div>
+      <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+      <div class="stats"><div class="stat"><strong id="target">—</strong><span>목표 거리</span></div><div class="stat"><strong id="members">—</strong><span>함께하는 인원</span></div><div class="stat"><strong id="period">—</strong><span>캠페인 기간</span></div></div>
+    </div>
+  </section>
+  <section class="join" id="join" hidden>
+    <div class="join-card"><div class="eyebrow">CLASS INVITATION</div><h2 id="class-name"></h2><div class="class-meta" id="class-meta"></div><code class="code" id="code"></code><div class="actions"><a class="btn primary" id="join-link" href="/login">로그인하고 반 참여</a><button class="btn" id="copy-code" type="button">초대 코드 복사</button><button class="btn" id="copy-link" type="button">페이지 링크 복사</button></div></div>
+    <div class="join-card qr"><img id="qr" alt="클럽 초대 QR 코드"></div>
+  </section>
+  <div class="privacy" id="privacy">직접 동의한 회원의 거리만 익명 합산하며 이름과 개인 훈련 상세는 공개하지 않습니다.</div>
+</main>
+<script>
+  'use strict';
+  const token=new URLSearchParams(location.search).get('token')||location.pathname.split('/').filter(Boolean).pop();
+  const fmt=n=>Number(n||0).toLocaleString('ko-KR');
+  function shortDate(value){return String(value||'').replace(/^\d{4}-/,'').replace('-','.');}
+  async function load(){try{const res=await fetch(`/api/promotion/public/clubs/${encodeURIComponent(token)}`);if(!res.ok)throw new Error('공개 중인 클럽 초대를 찾을 수 없습니다.');const data=await res.json(),c=data.campaign,club=data.club;document.title=`${club.name} 초대 | SwimMate`;document.getElementById('headline').textContent=c.headline;document.getElementById('club-name').textContent=club.name;document.getElementById('description').textContent=club.description||`${club.default_pool_length}m 풀을 기준으로 함께 훈련하는 SwimMate 클럽입니다.`;document.getElementById('distance').textContent=`${fmt(c.total_distance)}m`;document.getElementById('rate').textContent=`${fmt(c.progress_rate)}% 달성`;document.getElementById('progress').style.width=`${Math.min(100,Number(c.progress_rate||0))}%`;document.getElementById('target').textContent=`${fmt(c.target_distance)}m`;document.getElementById('members').textContent=c.member_count==null?'비공개':`${fmt(c.member_count)}명`;document.getElementById('period').textContent=`${shortDate(c.start_date)}–${shortDate(c.end_date)}`;document.getElementById('privacy').textContent=data.privacy;if(data.class){const item=data.class;document.getElementById('join').hidden=false;document.getElementById('class-name').textContent=item.name;document.getElementById('class-meta').textContent=`${item.level} · ${item.pool_length}m 풀${item.goal?` · ${item.goal}`:''}`;document.getElementById('code').textContent=item.invite_code;document.getElementById('qr').src=`/api/promotion/public/clubs/${encodeURIComponent(token)}/qr.svg`;document.getElementById('join-link').href=`/login?next=${encodeURIComponent('/clubs?invite='+item.invite_code)}`;document.getElementById('copy-code').onclick=async event=>{await navigator.clipboard.writeText(item.invite_code);event.currentTarget.textContent='코드 복사 완료';};}document.getElementById('copy-link').onclick=async event=>{await navigator.clipboard.writeText(location.href);event.currentTarget.textContent='링크 복사 완료';};}catch(error){document.getElementById('public-shell').innerHTML=`<div class="error"><h1>${error.message}</h1><p>링크가 정확한지 확인하거나 클럽 운영자에게 새 초대를 요청해 주세요.</p><a class="btn primary" href="/landing">SwimMate 둘러보기</a></div>`;}}
+  load();
+</script>
+</body>
+</html>

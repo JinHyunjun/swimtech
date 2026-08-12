@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-09
+> 기준일: 2026-08-12
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 118개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 51개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면 검증, Postman의 대표 API 요청 22개로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 121개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 25개·40개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -30,7 +30,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·공식 출처, 수영복 5개 브랜드 공식표 cm/inch 전환·입력 단위 전환 시 값 보존·반대 단위 즉시 환산·cm 내부 정규화·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
 | 목적별 사용 가이드 | 랜딩 진입, 허브와 개인·기록/스크린샷·성장·코치/클럽·정보/도움 5개 상세 경로 공개 200, 공통 서비스 사이드바·현재 가이드 카테고리 표시, 화면 캡처·대체 텍스트, 내부 CTA, 모바일 단일 열, AI 사용자 확인·원본 비저장·무료 사용량 제한·워치 직접 연동 비활성 경계 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS`의 `/tutorial*`, `PAGES`, `SERVICE_NAV_PATHS`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `check_home_link_targets`, `auth.py` 계약 테스트 |
-| 실행 가능한 Postman API 문서 | OpenAPI 탐색과 대표 스모크 분리, Vercel/Render/로컬 환경, 쿠키 로그인, 비로그인 401, 일지 생성·리포트 반영·삭제, 관리자 읽기·로그아웃, 비밀값 미저장 | `tests/postman/`, `tests/test_postman_contract.py`, `.github/workflows/qa.yml` |
+| 실행 가능한 Postman API 문서 | OpenAPI 탐색과 대표 스모크 분리, Vercel/Render/로컬 환경, 쿠키 로그인, 비로그인 401, 일지 생성·리포트 반영·익명 결과 카드 공개/종료·삭제, 관리자 읽기·로그아웃, 비밀값 미저장 | `tests/postman/`, `tests/test_postman_contract.py`, `.github/workflows/qa.yml` |
 | 개인화 온보딩 | 인증 경계, 저장·재조회, 로그인 분기, `/auth/me` 일치, 추천 풀·수준·목표 반영, 플랜 기본값, 체험 계정 변경 차단 | `qa_runner.py` A1·6a, `PAGE_EXPECTATIONS["/onboarding"]`, Alembic 리비전 계약 |
 | 프로필·계정 보안 | 현재 설정 표시·수정 진입, 현재 비밀번호 재확인, 데이터 내보내기 민감정보 제외, 비밀번호 변경·전체 로그아웃·탈퇴 뒤 이전 토큰 거부, 데모 변경 차단 | `qa_runner.py` 6d·6e, `PAGE_EXPECTATIONS["/profile"]`, Alembic `20260723_07` |
 | 내 수영 데이터 대시보드 | 비로그인 401, 본인 데이터 범위, 데모·기록 있음·빈 상태, 기준/추가 기록에 따른 누적 변화, 최근 90일·고정 12개월, 영법·풀 분포, 구조화 세트·플랜·사이클, 테스트 시도·PB | `qa_runner.py` 17c, `PAGE_EXPECTATIONS["/my-data"]`, 개인 데이터 인사이트 단위·계약 테스트 |
@@ -43,13 +43,15 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 헬스 데이터 가져오기 비활성 경계 | 훈련 일지 버튼의 `disabled`·`aria-disabled`·`준비 중` 문구, 클릭 이벤트 미연결, 워치 직접 동기화·파일 가져오기를 제공 기능으로 오인할 문구 없음 | 훈련 일지 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]` |
 | 운동 스크린샷 AI 확인 등록 | 인증 필수, 최대 5장 다중 선택과 단일 API 순차 처리, PNG/JPEG/WEBP/HEIC/HEIF 장당 파일 서명·8MB 제한, 사진별 상태·사용자 검토·20분 고객별 확인 토큰, Gemini 구조화 출력, 프롬프트 주입 무시, 원본 이미지 비저장, 연도·거리 합계·랩×풀 경고, 사용자 수정 전 일지 미생성, 의미 기반 중복 방지, 일지·영법 세트·월간 영법 분포·관리자 30일 등록 건수 연동 | `TestWorkoutScreenshotImport`, 스크린샷 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]`·`["/admin"]`, Playwright `test_training_log_screenshot_import_review_flow`, 운영 API·Postman 확인 토큰 경계 |
 | 데스크톱·모바일 레이아웃 | 역할별 35개 화면의 문서 가로 넘침, 화면 밖 요소, 긴 문구가 48px 미만 한 글자 폭으로 눌리는 현상, 390px 전환 후 공통 메뉴·헤더 상태, 훈련 저장 알림의 화면 경계·본문 폭·액션 줄바꿈 | `check_responsive_layout`, `check_global_app_header`, `test_training_log_report_toast_mobile_layout`, 역할별 UI QA 스크린샷 |
-| 월간 리포트 | 훈련 일지와 같은 사용자 기준, 평균 거리, 플랜·세트 수행률, 사이클 포함률, 목표 달성률, 공유 링크, 비동기 인증 완료 전 월 이동 시 유효한 연·월 유지 | `qa_runner.py` 17, `report.py` 계약 테스트, UI 비동기 안정화 검사 |
+| 월간 리포트 | 훈련 일지와 같은 사용자 기준, 평균 거리, 플랜·세트 수행률, 사이클 포함률, 목표 달성률, 비동기 인증 완료 전 월 이동 시 유효한 연·월 유지 | `qa_runner.py` 17, `report.py` 계약 테스트, UI 비동기 안정화 검사 |
+| 홍보용 월간 결과 카드 | 인증 생성·본인 이력/종료, 월간 기록 없음 거부, 불투명 토큰, 닉네임 기본 비공개, 공개 허용 합계 화이트리스트, 위치·심박·메모·원본 스크린샷 미포함, 180일 만료, 종료 후 410, 1080×1350 PNG·Web Share, 데스크톱·390px 가로 넘침 없음, 공개 조회 제한 | `qa_runner.py` 17b, `check_public_promotion_pages`, Postman 결과 카드 3개 요청, `promotion.py` 단위·계약 테스트, Alembic `20260723_09` |
 | 뱃지·챌린지 | 실제 일지 기반 진행률, 랭킹, 참가·탈퇴, 다음 뱃지, 목표 단계 | Playwright challenge/badge, `badge.py` 계약 테스트 |
 | 커뮤니티·알림 | 게시글·댓글·좋아요·북마크·신고, 태그·멘션, 이미지 제한, 읽음 처리 | `test_api_unit.py`, Playwright community, `qa_runner.py` 관리자 피드백 |
 | 코치 코드·수강생 관계 | 코치 코드 즉시 발급, 학생 직접 연동·교체·해제, 코치의 접근 권한 제한 | `qa_runner.py` 18d~18f, `qa_ui_crawler.py` 사전 연동 |
 | 클럽·반·범위별 역할 | 등록 코치의 생성 권한, 반 코드 참여, 클럽·반 멤버십 동시 저장, 정원, 범위별 역할, 비등록 코치 승격 거부, 담당 코치 무결성, 테스트 클럽 정리 | `qa_runner.py` 18g, `PAGE_EXPECTATIONS["/clubs"]`, Alembic `20260723_04` 계약 |
 | 반 일정·출석·공지 | 운영자/반 코치 일정 생성, 학생 명단 출석 저장, 학생 본인 출석 제한, 클럽/반 공지 범위, 알림·읽음, 비권한 쓰기 403, 테스트 데이터 정리, 관리자 집계 | `qa_runner.py` 18h·18b, `PAGE_EXPECTATIONS["/clubs"]`, Alembic `20260723_05` 계약 |
 | 코치용 반 수행·출석 분석 | 현재 학생·지난 일정 집계, 출석률/기록 완료율 분리, 학생별 신호, 코치 코드 비연동 개인훈련 비공개, 학생 조회 403, 테스트 데이터 정리 | `qa_runner.py` 18i, `club_operations.py`·`clubs.html` 계약 테스트 |
+| 클럽·동호회 홍보 캠페인 | 클럽 owner/coach만 저장·중지, 기간·목표 검증, 같은 클럽 반만 선택, 회원별 거리 합산 기본 미동의·본인 변경, 동의 거리만 익명 합산, 선택 회원 수만 노출, 개인 회원/일지 미노출, 반 코드·QR·로그인 후 참여 경로, 학생의 캠페인 쓰기 403, 공개 조회 제한, cascade 정리 | `qa_runner.py` 18j, `check_public_promotion_pages`, `clubs.html`·`promotion.py` 계약 테스트, Alembic `20260723_09` |
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
 | 슈퍼 관리자 | 관리자 로그인·권한, 관리자 전용 사이드 메뉴, 모바일 드로어 8개 항목 비겹침·ESC 닫기·가로 넘침 0, 다섯 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 일반/QA 운영 로그 상호 배제, 7/30/90일 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
@@ -129,10 +131,12 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 
 같은 날 수영 선수·물결 SVG를 브라우저 탭과 PWA의 공통 사이트 아이콘으로 적용하고, 서비스·온보딩·관리자·개인정보·약관 화면의 상단 구조를 한 개의 공통 헤더로 통합했다. 왼쪽 홈은 항상 `/landing`, 로그인 후 오른쪽은 `/profile`·로그아웃·테마 순서이며 공개 화면은 로그인 폴백을 사용한다. 기존 페이지별 홈·중복 브랜드·개별 로그아웃은 숨기되 알림·채팅 기록·풀사이드 화면 유지 같은 페이지 고유 도구는 공통 헤더 또는 보조 도구막대에 보존했다. [GitHub Actions `31298212335`](https://github.com/JinHyunjun/swimtech/actions/runs/31298212335)에서 핵심 118개, 운영 API 51/51, 일반·데모·관리자 포함 브라우저 35개 화면의 페이지·콘솔·PC/390px 레이아웃 오류 0건, Postman 22개 요청·37개 assertion 실패 0건을 확인해 P26을 완료했다.
 
+2026-08-12에는 홍보용 월간 결과 카드와 클럽·동호회 공개 캠페인을 추가했다. 결과 공유는 원본 월간 응답 대신 공개 허용 집계만 별도 스냅샷으로 저장하고 닉네임 기본 비공개·위치/심박/메모/원본 이미지 제외·180일 만료·즉시 종료를 적용한다. 클럽 캠페인은 owner/coach만 공동 목표와 초대 반을 공개하며, 회원별 익명 거리 합산 동의는 기본 `false`이고 본인이 직접 켠 거리만 합산한다. 로컬 핵심 121/121, Alembic `20260723_09` 오프라인 DDL, JavaScript 구문, Postman 25개 요청 계약을 통과했다. 운영 API 2개 흐름, fixture 기반 공개 결과/클럽 데스크톱·390px UI와 관리자 지표를 추가했으며 P27 완료와 Notion 반영은 배포 후 전체 품질 게이트 성공 뒤 판정한다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
-- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 22개 대표 API 요청과 assertion 결과
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 25개 대표 API 요청과 assertion 결과

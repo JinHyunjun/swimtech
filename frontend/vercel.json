@@ -11,6 +11,8 @@
     { "source": "/share/:path*", "destination": "/landing", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/result/:token",      "destination": "/result_card?token=:token" },
+    { "source": "/club/:token",        "destination": "/club_public?token=:token" },
     { "source": "/tutorial/personal", "destination": "/tutorial_personal" },
     { "source": "/tutorial/record",   "destination": "/tutorial_record" },
     { "source": "/tutorial/data",     "destination": "/tutorial_data" },

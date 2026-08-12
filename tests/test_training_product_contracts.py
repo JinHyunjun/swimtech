@@ -36,6 +36,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     qa_account_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_08_qa_account_classification.py"
     ).read_text(encoding="utf-8")
+    promotion_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_09_promotion_shares_club_campaigns.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -73,11 +76,16 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'down_revision: Union[str, None] = "20260723_07"' in qa_account_revision
     assert "is_qa_account" in qa_account_revision
     assert "ix_customers_qa_account_true" in qa_account_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_08"' in main
+    assert 'revision: str = "20260723_09"' in promotion_revision
+    assert 'down_revision: Union[str, None] = "20260723_08"' in promotion_revision
+    assert '"promotion_result_shares"' in promotion_revision
+    assert '"club_promotion_campaigns"' in promotion_revision
+    assert '"promotion_distance_opt_in"' in promotion_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_09"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_08"' in (
+    assert 'health.get("schema_revision") == "20260723_09"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -661,7 +669,8 @@ def test_portfolio_demo_mode_contract():
     assert "startDemo" in login_page
     assert "/auth/demo" in login_page
     assert "loginData.redirect" in login_page
-    assert "(loginData.is_admin ? '/admin' : '/landing')" in login_page
+    assert "loginData.is_admin ? '/admin'" in login_page
+    assert "safeNextPath() || loginData.redirect || '/landing'" in login_page
     assert "onboarding_done" not in login_page
     assert '@router.get("/onboarding")' in auth_api
     assert '@router.put("/onboarding")' in auth_api
@@ -819,7 +828,8 @@ def test_landing_url_and_editable_onboarding_are_qa_mapped():
     api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
 
-    assert 'window.location.href = loginData.redirect' in login
+    assert "window.location.href = loginData.is_admin ? '/admin'" in login
+    assert "safeNextPath() || loginData.redirect || '/landing'" in login
     assert '"redirect": "/admin" if is_admin else "/landing"' in auth_api
     assert auth_api.count('"redirect": "/landing"') >= 2
     assert auth_api.count('else "/landing"') >= 2
@@ -1242,10 +1252,10 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 118개" in quality_doc
-    assert "51개 API 시나리오" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 121개" in quality_doc
+    assert "53개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
-    assert "35개 화면 검증" in quality_doc
+    assert "역할별 35개 화면" in quality_doc
     assert "내 수영 데이터 대시보드" in quality_doc
     assert "목적별 사용 가이드" in quality_doc
     assert "DB 스키마 변경" in quality_doc
@@ -1284,6 +1294,10 @@ def test_quality_gate_documentation_is_kept_current():
     assert "영상 업로드 기반 영법 분석" in terms
     assert "현재 공개 서비스에서 제공하지 않습니다" in terms
     assert "건강 앱 내보내기 파일 가져오기는 현재 비활성 상태" in terms
+    assert "월간 결과 카드 스냅샷·공개 토큰" in privacy
+    assert "생성일부터 180일" in privacy
+    assert "거리 합산은 회원별 기본 미동의" in privacy
+    assert "공개 링크를 다른 서비스에 게시하면" in terms
     assert "style=\"display:none\"" not in terms
 
 
@@ -1333,3 +1347,54 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     assert 'id="h-screenshot-imports"' in admin_page
     assert "screenshot_imports_30d" in qa_api
     assert "#h-screenshot-imports" in crawler
+
+
+def test_promotion_result_cards_and_club_campaigns_are_privacy_scoped_and_qa_mapped():
+    api = (ROOT / "api" / "routers" / "promotion.py").read_text(encoding="utf-8")
+    main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
+    report = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+    result_page = (ROOT / "frontend" / "result_card.html").read_text(encoding="utf-8")
+    clubs = (ROOT / "frontend" / "clubs.html").read_text(encoding="utf-8")
+    club_public = (ROOT / "frontend" / "club_public.html").read_text(encoding="utf-8")
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    vercel = (ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8")
+
+    assert "include_router(promotion.router" in main
+    assert '@router.post("/result-shares/monthly")' in api
+    assert '@router.get("/public/results/{token}")' in api
+    assert '@router.delete("/result-shares/{token}")' in api
+    assert '"location"' not in api.split("def _result_snapshot", 1)[1].split("@router.post", 1)[0]
+    assert "show_nickname: bool = False" in api
+    assert "promotion_result_shares" in api and "club_promotion_campaigns" in api
+    assert '@router.put("/clubs/{club_id}/campaign")' in api
+    assert '@router.get("/public/clubs/{token}")' in api
+    assert '@router.get("/public/clubs/{token}/qr.svg")' in api
+    assert '@router.put("/clubs/{club_id}/campaign/consent")' in api
+    assert "promotion_distance_opt_in IS TRUE" in api
+    assert '_club_role(cur, club_id, customer_id, {"owner", "coach"})' in api
+    assert 'id="result-share-panel"' in report
+    assert 'id="share-nickname"' in report
+    assert "/api/promotion/result-shares/monthly" in report
+    assert "navigator.canShare" in result_page and "share-canvas" in result_page
+    assert "위치 · 심박 · 메모" in result_page
+    assert "renderPromotionPanel" in clubs
+    assert "renderPromotionConsent" in clubs
+    assert "/api/promotion/clubs/${clubId}/campaign" in clubs
+    assert "직접 동의한 회원의 거리만 익명 합산" in api
+    assert "login?next=" in club_public
+    assert '"source": "/result/:token"' in vercel
+    assert '"source": "/club/:token"' in vercel
+    for key in ("result_shares_30d", "result_share_views_30d", "public_club_campaigns", "club_campaign_views"):
+        assert f'"{key}"' in admin_api
+        assert key in qa_api
+    for selector in ("h-result-shares", "h-result-share-views", "h-public-campaigns", "h-campaign-views"):
+        assert f'id="{selector}"' in admin_page
+        assert f"#{selector}" in qa_ui
+    assert 'rec("17b"' in qa_api and 'rec("18j"' in qa_api
+    assert "def check_public_promotion_pages" in qa_ui
+    assert "makeCanvas().toDataURL('image/png')" in qa_ui
+    assert '"/result/qa-ui-contract"' in qa_ui and '"/club/qa-ui-contract"' in qa_ui
+    assert '@limiter.limit("60/minute")' in api

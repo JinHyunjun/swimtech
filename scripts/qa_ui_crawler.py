@@ -255,7 +255,7 @@ PAGE_EXPECTATIONS = {
         "wait_for_any_text": ["실행할 훈련을 선택해주세요", "저장된 세트가 없습니다", "훈련을 불러오지 못했습니다", "세트 완료"],
     },
     "/report": {
-        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs"],
+        "selectors": ["#stat-distance", "#stat-count", "#stat-avg", "#plan-performance", "#plan-goal-rate", "#plan-set-rate", "#plan-set-fill", "#benchmark-performance", "#benchmark-attempts", "#benchmark-pbs", "#result-share-panel", "#share-nickname", "#btn-create-share", "#share-ready"],
         "texts": ["평균 거리 (m)", "플랜 수행률", "테스트 세트·개인 최고기록"],
     },
     "/chat": {
@@ -304,7 +304,7 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='qa-logs']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#q-body", "#q-account-count", "#q-events-30d", "#q-page-views-30d", "#q-account-list", "#f-body", "#u-page-size", "#l-page-size", "#q-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#q-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#q-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#q-search-by", "#q-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
+        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='qa-logs']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-result-shares", "#h-result-share-views", "#h-public-campaigns", "#h-campaign-views", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#q-body", "#q-account-count", "#q-events-30d", "#q-page-views-30d", "#q-account-list", "#f-body", "#u-page-size", "#l-page-size", "#q-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#q-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#q-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#q-search-by", "#q-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.
@@ -1129,6 +1129,103 @@ def check_public_demo_entry(context):
     print(f"[Portfolio demo entry] /login {mark}")
 
 
+def check_public_promotion_pages(context):
+    """Render the two public promotion pages with deterministic API fixtures.
+
+    The production UI is exercised without leaving a permanent public QA share or
+    club behind. Authenticated API scenarios separately verify real DB writes,
+    permissions, revocation and cleanup.
+    """
+    result_payload = {
+        "result": {
+            "year": 2026, "month": 8, "total_distance": 12800,
+            "total_count": 8, "avg_distance": 1600, "growth_rate": 12.5,
+            "by_stroke": {"freestyle": 8000, "backstroke": 2400, "breaststroke": 2400},
+            "benchmark_performance": {"personal_bests": 2},
+        },
+        "display_name": None,
+        "privacy": "훈련 위치·심박·메모·원본 스크린샷은 포함되지 않습니다.",
+    }
+    club_payload = {
+        "club": {"name": "SwimMate QA Club", "description": "함께 꾸준히 수영하는 클럽", "default_pool_length": 25},
+        "campaign": {
+            "headline": "이번 달 함께 100km를 완주해요", "target_distance": 100000,
+            "total_distance": 62500, "progress_rate": 63, "start_date": "2026-08-01",
+            "end_date": "2026-08-31", "member_count": 12,
+        },
+        "class": {"name": "저녁 마스터즈", "level": "중급", "goal": "체력 향상", "pool_length": 25, "invite_code": "LANE-QATEST"},
+        "privacy": "직접 동의한 회원의 거리만 익명 합산하며 이름과 개인 훈련 상세는 공개하지 않습니다.",
+    }
+    cases = [
+        ("/result/qa-ui-contract", "공개 결과 카드", result_payload,
+         ["#result-card", "#distance", "#download", "#share", "#copy"],
+         ["12,800", "수영 훈련 기록", "원본 스크린샷은 포함되지 않습니다"]),
+        ("/club/qa-ui-contract", "공개 클럽 초대", club_payload,
+         ["#public-shell", "#headline", "#progress", "#join", "#code", "#qr", "#join-link"],
+         ["SwimMate QA Club", "62,500m", "LANE-QATEST", "직접 동의한 회원"]),
+    ]
+    for path, label, fixture, selectors, texts in cases:
+        page = context.new_page()
+        entry = {"page": path, "label": label, "actions": [], "page_errors": []}
+        try:
+            if path.startswith("/result/"):
+                page.route(
+                    "**/api/promotion/public/results/qa-ui-contract",
+                    lambda route, body=json.dumps(fixture, ensure_ascii=False): route.fulfill(
+                        status=200, content_type="application/json; charset=utf-8", body=body
+                    ),
+                )
+            else:
+                page.route(
+                    "**/api/promotion/public/clubs/qa-ui-contract",
+                    lambda route, body=json.dumps(fixture, ensure_ascii=False): route.fulfill(
+                        status=200, content_type="application/json; charset=utf-8", body=body
+                    ),
+                )
+                page.route(
+                    "**/api/promotion/public/clubs/qa-ui-contract/qr.svg",
+                    lambda route: route.fulfill(
+                        status=200, content_type="image/svg+xml",
+                        body='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#08b9d6"/></svg>',
+                    ),
+                )
+            page.goto(f"{BASE}{path}", wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_function("document.body.innerText.includes('12,800') || document.body.innerText.includes('62,500m')", timeout=10000)
+            body_text = page.locator("body").inner_text()
+            missing = [selector for selector in selectors if page.locator(selector).count() != 1 or not page.locator(selector).is_visible()]
+            missing_text = [text for text in texts if text not in body_text]
+            if missing or missing_text:
+                entry["page_errors"].append({"phase": "expectations", "missing": missing, "missing_text": missing_text})
+            elif path.startswith("/result/"):
+                if not page.evaluate("makeCanvas().toDataURL('image/png').startsWith('data:image/png')"):
+                    entry["page_errors"].append({"phase": "png", "error": "결과 카드 PNG canvas 생성 실패"})
+                else:
+                    entry["actions"].append({"action": "익명 결과 카드 렌더·PNG 생성", "status": "ok"})
+            else:
+                href = page.locator("#join-link").get_attribute("href") or ""
+                if "next=%2Fclubs%3Finvite%3DLANE-QATEST" not in href:
+                    entry["page_errors"].append({"phase": "invite", "error": f"로그인 후 초대 경로 불일치: {href}"})
+                else:
+                    entry["actions"].append({"action": "클럽 목표·초대 코드·QR 렌더", "status": "ok"})
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.wait_for_timeout(250)
+            overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+            if overflow > 1:
+                entry["page_errors"].append({"phase": "mobile_layout", "error": f"가로 넘침 {overflow}px"})
+            else:
+                entry["actions"].append({"action": "390px 모바일 가로 넘침 없음", "status": "ok"})
+        except Exception as error:
+            entry["page_errors"].append({"phase": "load", "error": str(error)[:240]})
+        finally:
+            try:
+                page.close()
+            except Exception:
+                pass
+        RESULTS.append(entry)
+        mark = "FAIL" if entry["page_errors"] else "PASS"
+        print(f"[{label}] {path} {mark}")
+
+
 def provision_coach_relationship():
     """QA 코치와 보조 학생을 연결하고 실패 시 전체 품질 게이트를 중단한다."""
     if requests is None:
@@ -1418,6 +1515,7 @@ def main():
         browser = pw.chromium.launch(headless=not args.headed)
         context = browser.new_context(ignore_https_errors=True, viewport={"width": 1280, "height": 900})
         check_public_demo_entry(context)
+        check_public_promotion_pages(context)
         login_page = context.new_page()
 
         try:

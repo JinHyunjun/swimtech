@@ -40,3 +40,4 @@ notion-client==2.2.1
 # Security
 slowapi==0.1.9
 email-validator==2.1.0
+qrcode==7.4.2
