@@ -1164,6 +1164,19 @@ def check_public_promotion_pages(context):
          ["#public-shell", "#headline", "#progress", "#join", "#code", "#qr", "#join-link"],
          ["SwimMate QA Club", "62,500m", "LANE-QATEST", "직접 동의한 회원"]),
     ]
+
+    def json_fixture(payload):
+        body = json.dumps(payload, ensure_ascii=False)
+
+        def fulfill(route, _request=None):
+            route.fulfill(
+                status=200,
+                content_type="application/json; charset=utf-8",
+                body=body,
+            )
+
+        return fulfill
+
     for path, label, fixture, selectors, texts in cases:
         page = context.new_page()
         entry = {"page": path, "label": label, "actions": [], "page_errors": []}
@@ -1171,16 +1184,12 @@ def check_public_promotion_pages(context):
             if path.startswith("/result/"):
                 page.route(
                     "**/api/promotion/public/results/qa-ui-contract",
-                    lambda route, body=json.dumps(fixture, ensure_ascii=False): route.fulfill(
-                        status=200, content_type="application/json; charset=utf-8", body=body
-                    ),
+                    json_fixture(fixture),
                 )
             else:
                 page.route(
                     "**/api/promotion/public/clubs/qa-ui-contract",
-                    lambda route, body=json.dumps(fixture, ensure_ascii=False): route.fulfill(
-                        status=200, content_type="application/json; charset=utf-8", body=body
-                    ),
+                    json_fixture(fixture),
                 )
                 page.route(
                     "**/api/promotion/public/clubs/qa-ui-contract/qr.svg",
