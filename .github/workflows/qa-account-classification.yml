@@ -1,0 +1,63 @@
+name: QA Account Classification
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read-only audit, QA classification, or rollback to regular
+        required: true
+        default: audit
+        type: choice
+        options:
+          - audit
+          - apply
+          - clear
+      usernames:
+        description: Comma-separated usernames; required only for apply/clear
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swimmate-qa-account-classification
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    name: Audit explicit QA classifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      QA_BASE_URL: https://swimtech.vercel.app
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+      QA_ACCOUNT_MODE: ${{ inputs.mode }}
+      QA_ACCOUNT_USERNAMES: ${{ inputs.usernames }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install audit dependency
+        run: python -m pip install requests
+
+      - name: Audit or update QA account classifications
+        shell: bash
+        run: >-
+          python scripts/qa_account_audit.py
+          --mode "$QA_ACCOUNT_MODE"
+          --usernames "$QA_ACCOUNT_USERNAMES"
+
+      - name: Upload sanitized classification audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-account-classification-${{ github.run_id }}
+          path: qa_account_audit.json
+          if-no-files-found: warn
+          retention-days: 14

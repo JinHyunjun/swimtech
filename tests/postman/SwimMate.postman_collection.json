@@ -751,7 +751,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/users?search_by=username&q={{qa_username}}&page=1&page_size=20",
+            "url": "{{base_url}}/api/admin/users?account_scope=qa&search_by=username&q={{qa_username}}&page=1&page_size=20",
             "description": "슈퍼 관리자 화면의 아이디 카테고리 검색과 20개 단위 페이지네이션 API를 확인합니다."
           },
           "event": [
@@ -764,10 +764,68 @@
                   "pm.test('페이지 응답은 객체', () => pm.expect(pm.response.json()).to.be.an('object'));",
                   "pm.test('아이디 카테고리 검색 반영', () => {",
                   "  const body = pm.response.json();",
+                  "  pm.expect(body.account_scope).to.eql('qa');",
                   "  pm.expect(body.search_by).to.eql('username');",
                   "  pm.expect(body.q).to.eql(pm.variables.get('qa_username'));",
-                  "  pm.expect(body.users.some(user => user.username === pm.variables.get('qa_username'))).to.eql(true);",
+                  "  pm.expect(body.users.some(user => user.username === pm.variables.get('qa_username') && user.is_qa_account === true)).to.eql(true);",
+                  "  pm.expect(body.users.every(user => user.qa_evidence && typeof user.activity_count === 'number')).to.eql(true);",
                   "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin QA Account Candidates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/users?account_scope=candidate&page=1&page_size=20",
+            "description": "아직 확정되지 않은 QA 후보가 근거와 함께 별도 분류되는지 확인합니다. 이 요청은 계정을 자동 변경하지 않습니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('QA 계정 후보 조회 200', () => pm.response.to.have.status(200));",
+                  "pm.test('미확정 후보와 판정 근거 제공', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.account_scope).to.eql('candidate');",
+                  "  pm.expect(body.users.every(user => user.is_qa_account === false && user.qa_evidence.is_candidate === true)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin QA Automation Page Marker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-SwimMate-QA-Run",
+                "value": "1"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/track?page=/tutorial/help",
+            "description": "자동 브라우저의 로그인 전 페이지 조회도 QA 운영 로그로 분류할 수 있도록 분석 전용 표식을 확인합니다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('QA 자동화 페이지 표식 200', () => pm.response.to.have.status(200));",
+                  "pm.test('페이지 조회 기록 완료', () => pm.expect(pm.response.json().status).to.eql('ok'));"
                 ]
               }
             }
@@ -827,6 +885,7 @@
                   "  const body = pm.response.json();",
                   "  pm.expect(body.account_scope).to.eql('qa');",
                   "  pm.expect(body.logs.every(item => item.is_qa_account === true)).to.eql(true);",
+                  "  pm.expect(body.logs.some(item => item.metadata && item.metadata.qa_automation === true)).to.eql(true);",
                   "  pm.expect(body.scope_summary).to.include.all.keys('events_30d', 'page_views_30d', 'active_accounts_30d', 'qa_account_count');",
                   "});"
                 ]

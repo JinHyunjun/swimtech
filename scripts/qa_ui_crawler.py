@@ -304,7 +304,7 @@ PAGE_EXPECTATIONS = {
         "texts": ["내 클럽·반", "반 코드로 참여", "반 운영 한눈에 보기", "GROUP OPERATIONS"],
     },
     "/admin": {
-        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='qa-logs']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-result-shares", "#h-result-share-views", "#h-public-campaigns", "#h-campaign-views", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#q-body", "#q-account-count", "#q-events-30d", "#q-page-views-30d", "#q-account-list", "#f-body", "#u-page-size", "#l-page-size", "#q-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#q-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#q-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#q-search-by", "#q-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
+        "selectors": [".admin-badge", "#admin-sidebar", "#admin-menu-toggle", "#admin-nav-backdrop", ".admin-tab-index", "[data-tab='coaches']", "[data-tab='training-health']", "[data-tab='qa-logs']", "[data-tab='feedback']", "#tab-coaches", "#c-body", "#c-page-size", "#c-page-numbers", "#c-registered", "#c-pending", "#c-documents", "#tab-training-health", "#h-log-count", "#h-readiness-checkins", "#h-readiness-score", "#h-test-results", "#h-test-users", "#h-personal-bests", "#h-screenshot-imports", "#h-result-shares", "#h-result-share-views", "#h-public-campaigns", "#h-campaign-views", "#h-active-clubs", "#h-active-classes", "#h-class-sessions", "#h-attendance-rate", "#h-active-notices", "#h-recent-body", "#q-body", "#q-account-count", "#q-events-30d", "#q-page-views-30d", "#q-account-list", "#f-body", "#u-account-scope", "#u-page-size", "#l-page-size", "#q-page-size", "#f-page-size", "#u-page-numbers", "#l-page-numbers", "#q-page-numbers", "#f-page-numbers", "#u-last", "#l-last", "#q-last", "#f-last", "#d-chart-days", "#d-page-views", "#d-visitors", "#d-active-users", "#d-traffic-chart", "#d-provider-chart", "#u-search-by", "#u-search", "#c-search-by", "#c-search", "#l-search-by", "#l-search", "#q-search-by", "#q-search", "#f-search-by", "#f-search", ".list-search-btn", ".list-search-reset"],
         # inner_text() excludes inactive tab panels and pagers hidden for a
         # single-page result. Their controls are therefore verified by stable
         # selectors above; only always-visible navigation copy belongs here.
@@ -400,6 +400,32 @@ def check_admin_search_and_charts(page):
             })
     except Exception as error:
         errors.append({"type": "admin_chart_render_failed", "error": str(error)[:200]})
+
+    try:
+        page.click(".admin-tab[data-tab='users']")
+        with page.expect_response(
+            lambda response: "/api/admin/users" in response.url and "account_scope=candidate" in response.url,
+            timeout=12000,
+        ) as candidate_response_info:
+            page.select_option("#u-account-scope", "candidate")
+        candidate_response = candidate_response_info.value
+        candidate_payload = candidate_response.json()
+        candidate_users = candidate_payload.get("users") or []
+        if (
+            candidate_response.status != 200
+            or candidate_payload.get("account_scope") != "candidate"
+            or any(user.get("is_qa_account") or not (user.get("qa_evidence") or {}).get("is_candidate") for user in candidate_users)
+        ):
+            errors.append({"type": "admin_qa_candidate_filter_contract"})
+        else:
+            actions.append({"action": f"관리자 미분류 QA 후보 {candidate_payload.get('total', 0)}개 조회", "status": "ok"})
+        with page.expect_response(
+            lambda response: "/api/admin/users" in response.url and "account_scope=all" in response.url,
+            timeout=12000,
+        ):
+            page.select_option("#u-account-scope", "all")
+    except Exception as error:
+        errors.append({"type": "admin_qa_candidate_filter_failed", "error": str(error)[:200]})
 
     marker = "qa-admin-ui-no-match-7f3a"
     search_specs = [
@@ -1131,6 +1157,16 @@ def check_public_demo_entry(context):
     print(f"[Portfolio demo entry] /login {mark}")
 
 
+def install_qa_tracking_marker(context):
+    """Mark only analytics requests so third-party assets keep normal headers."""
+    def add_marker(route):
+        headers = dict(route.request.headers)
+        headers["x-swimmate-qa-run"] = "1"
+        route.continue_(headers=headers)
+
+    context.route("**/api/admin/track**", add_marker)
+
+
 def check_public_promotion_pages(context):
     """Render the two public promotion pages with deterministic API fixtures.
 
@@ -1531,6 +1567,7 @@ def main():
             viewport={"width": 1280, "height": 900},
             service_workers="block",
         )
+        install_qa_tracking_marker(context)
         check_public_demo_entry(context)
         check_public_promotion_pages(context)
         login_page = context.new_page()
@@ -1569,6 +1606,7 @@ def main():
                 viewport={"width": 1280, "height": 900},
                 service_workers="block",
             )
+            install_qa_tracking_marker(admin_context)
             admin_page = admin_context.new_page()
             try:
                 login(admin_page, ADMIN_ID, ADMIN_PW)

@@ -110,7 +110,7 @@ Vercel은 clean URL과 rewrite를 사용한다.
 
 - `customers`: 계정, 닉네임, 역할, 상태, QA 전용 계정 표식, 수준·목표·주간 목표·선호 풀, 온보딩 완료 시각, OAuth 식별자, 인증 세션 버전·비밀번호 변경 시각
 - JWT access/refresh cookie: `swimtech_token`, `swimtech_refresh_token`
-- `user_activity_logs`: 페이지 조회, 메뉴, 액션, IP·브라우저. 조회 시 `customer_id`, 미인증 이벤트는 아이디를 통해 QA 계정 여부를 결합한다.
+- `user_activity_logs`: 페이지 조회, 메뉴, 액션, IP·브라우저. 조회 시 확정 계정의 `customer_id`, 미인증 아이디, 자동화 전용 metadata를 우선 결합한다. 표식 도입 전 익명 로그는 같은 IP뿐 아니라 같은 브라우저와 전후 15분의 확정 QA 활동이 모두 있을 때만 QA 세션으로 분류한다.
 
 액세스·갱신 토큰에는 `auth_version`이 들어가며 비밀번호 변경, 모든 기기 로그아웃과 탈퇴 뒤 DB 버전이 증가하면 이전 토큰은 즉시 거부된다. 쿠키 이름은 호환성을 위한 레거시 기술 식별자이며 사용자 표시 브랜드는 아니다.
 
@@ -328,7 +328,7 @@ swim_test_results ────────── 테스트 시도·영법/거리
 
 ## DB 스키마 버전 관리
 
-- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 소스 head는 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트·계정 세션 버전·QA 계정 분류와 홍보용 결과/클럽 캠페인을 포함한 `20260723_09`이다.
+- `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 소스 head `20260723_10`은 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트·계정 세션 버전·QA 계정 분류·홍보용 결과/클럽 캠페인과 익명 QA 세션 결합 인덱스를 포함한다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
 - `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.

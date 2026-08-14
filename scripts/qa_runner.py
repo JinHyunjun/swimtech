@@ -99,7 +99,7 @@ def main():
         rec(
             0,
             "백엔드 health + DB migration revision (콜드스타트 깨우기)",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_09",
+            r.status_code == 200 and health.get("schema_revision") == "20260723_10",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
@@ -1154,8 +1154,16 @@ def main():
             timeout=60,
         )
         qa_account_mark_json = jget(qa_account_mark)
+        qa_marker_track = requests.post(
+            f"{BASE}/api/admin/track",
+            params={"page": "/tutorial/help"},
+            headers={"X-SwimMate-QA-Run": "1"},
+            timeout=60,
+        )
         admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard?days=30", timeout=60)
         admin_users = admin_sess.get(f"{BASE}/api/admin/users?page_size=100", timeout=60)
+        admin_qa_users = admin_sess.get(f"{BASE}/api/admin/users?account_scope=qa&page_size=100", timeout=60)
+        admin_qa_candidates = admin_sess.get(f"{BASE}/api/admin/users?account_scope=candidate&page_size=100", timeout=60)
         admin_users_page2 = admin_sess.get(f"{BASE}/api/admin/users?page=2&page_size=20", timeout=60)
         admin_activity = admin_sess.get(f"{BASE}/api/admin/activity", timeout=60)
         admin_coaches = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=60)
@@ -1166,6 +1174,14 @@ def main():
         admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular&event_type=page_view&page=2&page_size=20", timeout=60)
         admin_qa_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=qa&page_size=100", timeout=60)
         admin_qa_page_views = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=qa&event_type=page_view&page_size=20", timeout=60)
+        admin_qa_marker_logs = admin_sess.get(
+            f"{BASE}/api/admin/logs",
+            params={
+                "account_scope": "qa", "event_type": "page_view", "search_by": "path",
+                "q": "/tutorial/help", "page": 1, "page_size": 100,
+            },
+            timeout=60,
+        )
         admin_feedback = admin_sess.get(f"{BASE}/api/feedback?page_size=20", timeout=60)
         admin_feedback_page2 = admin_sess.get(f"{BASE}/api/feedback?page=2&page_size=20", timeout=60)
         search_marker = "qa-admin-search-no-match-7f3a"
@@ -1191,6 +1207,8 @@ def main():
         )
         dashboard_json = jget(admin_dashboard)
         users_json = jget(admin_users)
+        qa_users_json = jget(admin_qa_users)
+        qa_candidates_json = jget(admin_qa_candidates)
         users_page2_json = jget(admin_users_page2)
         coaches_json = jget(admin_coaches)
         coaches_page2_json = jget(admin_coaches_page2)
@@ -1200,6 +1218,7 @@ def main():
         logs_page2_json = jget(admin_page_view_logs_page2)
         qa_logs_json = jget(admin_qa_logs)
         qa_page_views_json = jget(admin_qa_page_views)
+        qa_marker_logs_json = jget(admin_qa_marker_logs)
         feedback_json = jget(admin_feedback)
         feedback_page2_json = jget(admin_feedback_page2)
         feedback_items = feedback_json.get("items") or []
@@ -1275,6 +1294,22 @@ def main():
             and all(
                 item.get("is_qa_account") and item.get("event_type") == "page_view"
                 for item in qa_page_views_json.get("logs", [])
+            )
+            and qa_marker_track.status_code == 200
+            and admin_qa_marker_logs.status_code == 200
+            and any(
+                (item.get("metadata") or {}).get("qa_automation") is True
+                for item in qa_marker_logs_json.get("logs", [])
+            )
+            and admin_qa_users.status_code == 200
+            and qa_users_json.get("account_scope") == "qa"
+            and all(item.get("is_qa_account") for item in qa_users_json.get("users", []))
+            and all("qa_evidence" in item for item in qa_users_json.get("users", []))
+            and admin_qa_candidates.status_code == 200
+            and qa_candidates_json.get("account_scope") == "candidate"
+            and all(
+                not item.get("is_qa_account") and (item.get("qa_evidence") or {}).get("is_candidate")
+                for item in qa_candidates_json.get("users", [])
             )
         )
         admin_ok = (

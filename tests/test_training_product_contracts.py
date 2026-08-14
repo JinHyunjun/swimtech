@@ -39,6 +39,9 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     promotion_revision = (
         ROOT / "api" / "alembic" / "versions" / "20260723_09_promotion_shares_club_campaigns.py"
     ).read_text(encoding="utf-8")
+    qa_session_revision = (
+        ROOT / "api" / "alembic" / "versions" / "20260723_10_qa_activity_session_index.py"
+    ).read_text(encoding="utf-8")
 
     assert "alembic -c alembic.ini upgrade head && uvicorn" in render
     assert "python -m alembic -c api/alembic.ini heads" in workflow
@@ -81,11 +84,14 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert '"promotion_result_shares"' in promotion_revision
     assert '"club_promotion_campaigns"' in promotion_revision
     assert '"promotion_distance_opt_in"' in promotion_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_09"' in main
+    assert 'revision: str = "20260723_10"' in qa_session_revision
+    assert 'down_revision: Union[str, None] = "20260723_09"' in qa_session_revision
+    assert "ix_activity_qa_session_anchor" in qa_session_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260723_10"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_09"' in (
+    assert 'health.get("schema_revision") == "20260723_10"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -1112,11 +1118,20 @@ def test_admin_regular_and_qa_operation_logs_are_separated():
     admin_page = (ROOT / "frontend" / "admin.html").read_text(encoding="utf-8")
     qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    qa_audit = (ROOT / "scripts" / "qa_account_audit.py").read_text(encoding="utf-8")
+    qa_workflow = (ROOT / ".github" / "workflows" / "qa-account-classification.yml").read_text(encoding="utf-8")
 
     assert 'account_scope: str = "regular"' in admin_api
     assert 'value in ("regular", "qa", "all")' in admin_api
     assert "qa.id = {alias}.customer_id" in admin_api
     assert "LOWER(qa.username) = LOWER({alias}.username)" in admin_api
+    assert "metadata ->> 'qa_automation'" in admin_api
+    assert "qa_anchor.ip_address = {alias}.ip_address" in admin_api
+    assert "qa_anchor.user_agent = {alias}.user_agent" in admin_api
+    assert "INTERVAL '15 minutes'" in admin_api
+    assert 'request.headers.get(QA_AUTOMATION_HEADER' in admin_api
+    assert "_qa_candidate_evidence" in admin_api
+    assert 'account_scope: str = "all"' in admin_api
     assert '@router.put("/qa-accounts")' in admin_api
     assert "is_qa_account" in admin_api
     assert 'data-tab="qa-logs"' in admin_page
@@ -1126,18 +1141,35 @@ def test_admin_regular_and_qa_operation_logs_are_separated():
     assert "account_scope: 'regular'" in admin_page
     assert "account_scope: 'qa'" in admin_page
     assert "loadQALogs" in admin_page
+    assert 'id="u-account-scope"' in admin_page
+    assert 'value="candidate"' in admin_page
+    assert "setQAAccount" in admin_page
+    assert "qa_evidence" in admin_page
     assert "/api/admin/qa-accounts" in qa_api
     assert "qa_log_split_ok" in qa_api
     assert '"qaLogs", "qa-logs", "q", "path", "/api/admin/logs", "qa"' in qa_ui
+    assert 'context.route("**/api/admin/track**", add_marker)' in qa_ui
+    assert 'headers["x-swimmate-qa-run"] = "1"' in qa_ui
+    assert "classification_policy" in qa_audit
+    assert "candidate_accounts" in qa_audit
+    assert "QA Account Classification" in qa_workflow
 
     import sys
     sys.path.insert(0, str(ROOT / "api"))
-    from routers.admin import _log_scope_filter, _normalize_account_scope
+    from routers.admin import _log_scope_filter, _normalize_account_scope, _qa_candidate_evidence
 
     assert _normalize_account_scope("unknown") == "regular"
     assert _log_scope_filter("all") == ""
-    assert _log_scope_filter("qa").startswith("EXISTS")
-    assert _log_scope_filter("regular").startswith("NOT EXISTS")
+    assert _log_scope_filter("qa").startswith("(")
+    assert _log_scope_filter("regular").startswith("NOT (")
+    evidence = _qa_candidate_evidence({
+        "username": "qa_test_01", "email": "qa_test_01@example.com",
+        "name": "테스트", "nickname": "", "activity_count": 30,
+        "training_log_count": 0, "is_qa_account": False,
+    })
+    assert evidence["is_candidate"] is True
+    assert evidence["confidence"] == "high"
+    assert evidence["score"] >= 75
 
 
 def test_admin_category_search_and_traffic_charts_are_fully_mapped():

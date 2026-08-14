@@ -122,12 +122,17 @@ jobs:
       - name: Run authenticated API scenarios
         run: python scripts/qa_runner.py
 
+      - name: Audit QA account classifications
+        run: python scripts/qa_account_audit.py --mode audit
+
       - name: Upload API QA report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: production-api-report
-          path: qa_report.json
+          path: |
+            qa_report.json
+            qa_account_audit.json
           if-no-files-found: warn
           retention-days: 14
 

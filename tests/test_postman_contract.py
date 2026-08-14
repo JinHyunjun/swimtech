@@ -118,4 +118,4 @@ def test_postman_smoke_is_mapped_to_unified_quality_gate_and_documentation():
     assert '--env-var "qa_password=' not in workflow
     assert "POSTMAN_API_KEY: 사용하지 않음" in postman_readme
     assert "Postman API 스모크" in quality_gate
-    assert "Postman 25개 요청" in deployment
+    assert "Postman 27개 요청" in deployment

@@ -17,7 +17,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 122개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 25개·40개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 122개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -54,7 +54,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 클럽·동호회 홍보 캠페인 | 클럽 owner/coach만 저장·중지, 기간·목표 검증, 같은 클럽 반만 선택, 회원별 거리 합산 기본 미동의·본인 변경, 동의 거리만 익명 합산, 선택 회원 수만 노출, 개인 회원/일지 미노출, 반 코드·QR·로그인 후 참여 경로, 학생의 캠페인 쓰기 403, 공개 조회 제한, cascade 정리 | `qa_runner.py` 18j, `check_public_promotion_pages`, `clubs.html`·`promotion.py` 계약 테스트, Alembic `20260723_09` |
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
-| 슈퍼 관리자 | 관리자 로그인·권한, 관리자 전용 사이드 메뉴, 모바일 드로어 8개 항목 비겹침·ESC 닫기·가로 넘침 0, 다섯 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 일반/QA 운영 로그 상호 배제, 7/30/90일 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
+| 슈퍼 관리자 | 관리자 로그인·권한, 관리자 전용 사이드 메뉴, 모바일 드로어 8개 항목 비겹침·ESC 닫기·가로 넘침 0, 다섯 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 사용자 전체/일반/확정 QA/후보 필터와 근거, 일반/QA 운영 로그 상호 배제, 7/30/90일 실제 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `qa_account_audit.py`, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
 | DB 스키마 변경 | Alembic 순차 리비전, 단일 head, Render/FastAPI 시작 전 upgrade, health 리비전 일치 | `api/alembic/`, `alembic heads`, `qa_runner.py` health |
 | AI·외부 연동 | Gemini rate limit, 모델 폴백 순서, 구조화 출력 검증, 답변 생성 실패 안내, OAuth·Kakao·Notion 키 없음 상태 | 관련 라우터 계약 테스트, 운영 smoke |
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
@@ -97,7 +97,7 @@ QA는 비로그인 401, 잘못된 비밀번호 401, 정상 로그인, 보안 쿠
 
 Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collection과 환경 템플릿에는 아이디·비밀번호를 저장하지 않고 GitHub Secrets로 실행 중 `/tmp`에 만든 임시 환경 파일에만 주입한 뒤 항상 삭제한다. 로컬 Collection 파일을 실행하므로 `POSTMAN_API_KEY`는 필요하지 않으며 실행 결과를 Postman Cloud로 전송하지 않는다.
 
-운영 API QA는 일반·학생 전용 계정을 관리자 전용 `/api/admin/qa-accounts`로 등록한다. 계정 표식은 테스트가 끝난 뒤에도 유지해 과거와 다음 실행의 활동을 같은 기준으로 분류하며, 비밀번호나 시크릿 값은 DB 표식 요청·로그·리포트에 포함하지 않는다. 일반 운영 로그는 `account_scope=regular`, QA 검증 로그는 `account_scope=qa`를 명시하고 두 응답의 `is_qa_account` 값이 상호 배타적인지 검사한다.
+운영 API QA는 일반·학생 전용 계정을 관리자 전용 `/api/admin/qa-accounts`로 등록한다. 계정 표식은 테스트가 끝난 뒤에도 유지해 과거와 다음 실행의 활동을 같은 기준으로 분류하며, 비밀번호나 시크릿 값은 DB 표식 요청·로그·리포트에 포함하지 않는다. 브라우저 QA는 페이지 조회 요청에만 분석 표식을 추가하고, 기존 익명 로그는 동일 IP만이 아니라 동일 브라우저와 전후 15분 안의 확정 QA 활동까지 만족해야 QA 세션으로 결합한다. 일반 운영 로그는 `account_scope=regular`, QA 검증 로그는 `account_scope=qa`를 명시하고 두 응답의 `is_qa_account` 값이 상호 배타적인지 검사한다. 전수 감사 결과는 변경용 아이디만 남기고 이메일·이름·닉네임·IP를 제외한 최소정보 `qa_account_audit.json`으로 보관하며 후보는 자동 지정하지 않는다.
 
 ## 최근 운영 검증
 
@@ -141,4 +141,5 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
-- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 25개 대표 API 요청과 assertion 결과
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 27개 대표 API 요청과 assertion 결과
+- GitHub Actions `QA Account Classification` artifact: 확정·후보 아이디와 최소정보 활동 근거, 명시적 변경 결과

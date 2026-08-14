@@ -4,6 +4,7 @@ role='admin' 컬럼 기반 권한 체계.
 대시보드 / 사용자 관리 / 메뉴 사용 분석 / 훈련 운영 / 운영 로그.
 """
 import os
+import re
 from fastapi import APIRouter, Request, HTTPException, Cookie
 from pydantic import BaseModel, Field
 from routers.auth import decode_token
@@ -126,12 +127,68 @@ class CoachVerificationBody(BaseModel):
 
 
 class QAAccountFlagBody(BaseModel):
-    usernames: list[str] = Field(..., min_length=1, max_length=10)
+    usernames: list[str] = Field(..., min_length=1, max_length=100)
     is_qa_account: bool = True
+
+
+QA_AUTOMATION_HEADER = "x-swimmate-qa-run"
+_QA_IDENTIFIER_RE = re.compile(
+    r"(?:^|[_-])(?:qa(?:bot|test|user|student|coach|runner|\d*)?|e2e|playwright|selenium|autotest|test(?:user|student|coach|runner|\d*)?)(?:$|[_-])",
+    re.IGNORECASE,
+)
+_QA_SQL_IDENTIFIER_PATTERN = (
+    r"(^|[_-])(qa(bot|test|user|student|coach|runner|[0-9]*)?|e2e|playwright|selenium|autotest|"
+    r"test(user|student|coach|runner|[0-9]*)?)($|[_-])"
+)
 
 
 def _normalize_account_scope(value):
     return value if value in ("regular", "qa", "all") else "regular"
+
+
+def _normalize_user_account_scope(value):
+    return value if value in ("all", "regular", "qa", "candidate") else "all"
+
+
+def _qa_candidate_filter(alias="c"):
+    """Return a review-only heuristic; it never changes an account automatically."""
+    return f"""(
+        LOWER(COALESCE({alias}.username, '')) ~ '{_QA_SQL_IDENTIFIER_PATTERN}'
+        OR (
+            LOWER(SPLIT_PART(COALESCE({alias}.email, ''), '@', 1)) ~ '{_QA_SQL_IDENTIFIER_PATTERN}'
+            AND (
+                LOWER(COALESCE({alias}.name, '')) IN ('qa', 'qa bot', 'test', 'test user', '테스트', '자동 검증')
+                OR LOWER(COALESCE({alias}.nickname, '')) IN ('qa', 'qa bot', 'test', 'test user', '테스트', '자동 검증')
+            )
+        )
+    )"""
+
+
+def _qa_candidate_evidence(user):
+    """Explain why an account should be reviewed without silently classifying it."""
+    if bool(user.get("is_qa_account")):
+        return {"is_candidate": False, "confidence": "confirmed", "score": 100, "reasons": ["관리자 확정 QA 계정"]}
+
+    reasons = []
+    score = 0
+    username = str(user.get("username") or "").strip()
+    email_local = str(user.get("email") or "").partition("@")[0].strip()
+    display_values = [str(user.get("name") or "").strip().lower(), str(user.get("nickname") or "").strip().lower()]
+    if _QA_IDENTIFIER_RE.search(username):
+        score += 60
+        reasons.append("아이디가 자동 검증 명명 규칙과 일치")
+    if _QA_IDENTIFIER_RE.search(email_local):
+        score += 30
+        reasons.append("이메일 식별자가 자동 검증 명명 규칙과 일치")
+    if any(value in {"qa", "qa bot", "test", "test user", "테스트", "자동 검증"} for value in display_values):
+        score += 25
+        reasons.append("표시 이름이 QA·테스트 용도를 나타냄")
+    if _safe_int(user.get("activity_count")) >= 20 and _safe_int(user.get("training_log_count")) == 0:
+        score += 10
+        reasons.append("반복 접속 이력은 있으나 훈련 기록이 없음")
+
+    confidence = "high" if score >= 75 else "medium" if score >= 50 else "low"
+    return {"is_candidate": score >= 50, "confidence": confidence, "score": score, "reasons": reasons}
 
 
 def _log_scope_filter(account_scope, alias="l"):
@@ -144,17 +201,37 @@ def _log_scope_filter(account_scope, alias="l"):
     scope = _normalize_account_scope(account_scope)
     if scope == "all":
         return ""
-    qa_match = f"""EXISTS (
-        SELECT 1 FROM customers qa
-        WHERE COALESCE(qa.is_qa_account, FALSE) = TRUE
-          AND (
-              qa.id = {alias}.customer_id
-              OR (
-                  {alias}.customer_id IS NULL
-                  AND {alias}.username IS NOT NULL
-                  AND LOWER(qa.username) = LOWER({alias}.username)
+    qa_match = f"""(
+        EXISTS (
+            SELECT 1 FROM customers qa
+            WHERE COALESCE(qa.is_qa_account, FALSE) = TRUE
+              AND (
+                  qa.id = {alias}.customer_id
+                  OR (
+                      {alias}.customer_id IS NULL
+                      AND {alias}.username IS NOT NULL
+                      AND LOWER(qa.username) = LOWER({alias}.username)
+                  )
               )
-          )
+        )
+        OR COALESCE({alias}.metadata ->> 'qa_automation', 'false') = 'true'
+        OR (
+            {alias}.customer_id IS NULL
+            AND {alias}.username IS NULL
+            AND NULLIF({alias}.ip_address, '') IS NOT NULL
+            AND NULLIF({alias}.user_agent, '') IS NOT NULL
+            AND EXISTS (
+                SELECT 1
+                FROM user_activity_logs qa_anchor
+                JOIN customers qa ON qa.id = qa_anchor.customer_id
+                WHERE COALESCE(qa.is_qa_account, FALSE) = TRUE
+                  AND qa_anchor.ip_address = {alias}.ip_address
+                  AND qa_anchor.user_agent = {alias}.user_agent
+                  AND qa_anchor.created_at BETWEEN
+                      {alias}.created_at - INTERVAL '15 minutes'
+                      AND {alias}.created_at + INTERVAL '15 minutes'
+            )
+        )
     )"""
     return qa_match if scope == "qa" else f"NOT {qa_match}"
 
@@ -206,12 +283,14 @@ def track_page_view(request: Request, swimtech_token: str = Cookie(default=None)
             except Exception:
                 pass
 
+        qa_automation = request.headers.get(QA_AUTOMATION_HEADER, "").strip() == "1"
         log_activity(
             customer_id=customer_id, username=username,
             event_type="page_view", page=page, menu_name=menu,
             method="GET", path=page,
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
+            metadata={"qa_automation": True} if qa_automation else None,
         )
         return {"status": "ok"}
     except Exception:
@@ -226,18 +305,24 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
     conn = _get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) FROM customers WHERE COALESCE(status,'active') <> 'deleted'")
+    cur.execute("""
+        SELECT COUNT(*) FROM customers
+        WHERE COALESCE(status,'active') <> 'deleted'
+          AND COALESCE(is_qa_account, FALSE) = FALSE
+    """)
     total_users = cur.fetchone()[0]
 
     cur.execute("""
         SELECT COUNT(*) FROM customers
         WHERE created_at >= CURRENT_DATE AND COALESCE(status,'active') <> 'deleted'
+          AND COALESCE(is_qa_account, FALSE) = FALSE
     """)
     today_signups = cur.fetchone()[0]
 
     cur.execute("""
         SELECT COUNT(*) FROM customers
         WHERE created_at >= NOW() - INTERVAL '7 days' AND COALESCE(status,'active') <> 'deleted'
+          AND COALESCE(is_qa_account, FALSE) = FALSE
     """)
     week_signups = cur.fetchone()[0]
 
@@ -245,6 +330,7 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
         SELECT COALESCE(social_provider, 'local') AS provider, COUNT(*)
         FROM customers
         WHERE COALESCE(status,'active') <> 'deleted'
+          AND COALESCE(is_qa_account, FALSE) = FALSE
         GROUP BY provider
     """)
     by_provider = {row[0]: row[1] for row in cur.fetchall()}
@@ -254,6 +340,7 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
                created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at
         FROM customers
         WHERE COALESCE(status,'active') <> 'deleted'
+          AND COALESCE(is_qa_account, FALSE) = FALSE
         ORDER BY created_at DESC
         LIMIT 10
     """)
@@ -262,7 +349,7 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
         for r in cur.fetchall()
     ]
 
-    cur.execute("""
+    cur.execute(f"""
         WITH dates AS (
             SELECT generate_series(
                 CURRENT_DATE - ((%s - 1) * INTERVAL '1 day'),
@@ -283,14 +370,16 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
                    COUNT(DISTINCT customer_id) FILTER (
                        WHERE event_type = 'page_view' AND customer_id IS NOT NULL
                    ) AS active_users
-            FROM user_activity_logs
-            WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
-            GROUP BY created_at::date
+            FROM user_activity_logs l
+            WHERE l.created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+              AND {_log_scope_filter("regular", "l")}
+            GROUP BY l.created_at::date
         ), daily_signups AS (
             SELECT created_at::date AS day, COUNT(*) AS signups
             FROM customers
             WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
               AND COALESCE(status, 'active') <> 'deleted'
+              AND COALESCE(is_qa_account, FALSE) = FALSE
             GROUP BY created_at::date
         )
         SELECT dates.day,
@@ -311,7 +400,7 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
         "signups": _safe_int(r[4]),
     } for r in cur.fetchall()]
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT COUNT(*) FILTER (WHERE event_type = 'page_view'),
                COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN
                    CASE
@@ -324,8 +413,9 @@ def get_dashboard(days: int = 30, swimtech_token: str = Cookie(default=None)):
                COUNT(DISTINCT customer_id) FILTER (
                    WHERE event_type = 'page_view' AND customer_id IS NOT NULL
                )
-        FROM user_activity_logs
-        WHERE created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+        FROM user_activity_logs l
+        WHERE l.created_at >= CURRENT_DATE - ((%s - 1) * INTERVAL '1 day')
+          AND {_log_scope_filter("regular", "l")}
     """, (days,))
     traffic_row = cur.fetchone()
     traffic_summary = {
@@ -358,6 +448,7 @@ def list_users(
     swimtech_token: str = Cookie(default=None),
     q: str = None,
     search_by: str = "all",
+    account_scope: str = "all",
     page: int = 1,
     page_size: int = 20,
 ):
@@ -368,18 +459,19 @@ def list_users(
     page_size = _normalize_page_size(page_size, 20)
     offset = max(0, (page - 1) * page_size)
 
+    account_scope = _normalize_user_account_scope(account_scope)
     field_map = {
         "all": (
-            "id::text", "COALESCE(name, '')", "COALESCE(email, '')", "COALESCE(username, '')",
-            "COALESCE(nickname, '')", "COALESCE(social_provider, 'local')", "COALESCE(status, 'active')",
+            "c.id::text", "COALESCE(c.name, '')", "COALESCE(c.email, '')", "COALESCE(c.username, '')",
+            "COALESCE(c.nickname, '')", "COALESCE(c.social_provider, 'local')", "COALESCE(c.status, 'active')",
         ),
-        "id": ("id::text",),
-        "name": ("COALESCE(name, '')",),
-        "email": ("COALESCE(email, '')",),
-        "username": ("COALESCE(username, '')",),
-        "nickname": ("COALESCE(nickname, '')",),
-        "provider": ("COALESCE(social_provider, 'local')",),
-        "status": ("COALESCE(status, 'active')",),
+        "id": ("c.id::text",),
+        "name": ("COALESCE(c.name, '')",),
+        "email": ("COALESCE(c.email, '')",),
+        "username": ("COALESCE(c.username, '')",),
+        "nickname": ("COALESCE(c.nickname, '')",),
+        "provider": ("COALESCE(c.social_provider, 'local')",),
+        "status": ("COALESCE(c.status, 'active')",),
     }
     raw_q = _clean_search(q)
     localized_values = {
@@ -388,32 +480,65 @@ def list_users(
     }
     search_q = localized_values.get(search_by, {}).get(raw_q, raw_q)
     search_clause, search_params, search_by, _ = _build_search_filter(search_q, search_by, field_map)
-    where = _where_clause([search_clause] if search_clause else [])
+    conditions = []
+    if account_scope == "regular":
+        conditions.append("COALESCE(c.is_qa_account, FALSE) = FALSE")
+    elif account_scope == "qa":
+        conditions.append("COALESCE(c.is_qa_account, FALSE) = TRUE")
+    elif account_scope == "candidate":
+        conditions.extend(["COALESCE(c.is_qa_account, FALSE) = FALSE", _qa_candidate_filter("c")])
+    if search_clause:
+        conditions.append(search_clause)
+    where = _where_clause(conditions)
     cur.execute(f"""
-        SELECT id, name, email, username, nickname,
-               COALESCE(social_provider,'local'),
-               created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
-               last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
-               COALESCE(status,'active')
-        FROM customers
+        SELECT c.id, c.name, c.email, c.username, c.nickname,
+               COALESCE(c.social_provider,'local'),
+               c.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS created_at,
+               c.last_login_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' AS last_login_at,
+               COALESCE(c.status,'active'), COALESCE(c.is_qa_account, FALSE),
+               COALESCE(activity.activity_count, 0), activity.last_activity_at,
+               COALESCE(training.training_log_count, 0)
+        FROM customers c
+        LEFT JOIN LATERAL (
+            SELECT COUNT(*) AS activity_count, MAX(al.created_at) AS last_activity_at
+            FROM user_activity_logs al
+            WHERE al.customer_id = c.id
+               OR (
+                   al.customer_id IS NULL
+                   AND al.username IS NOT NULL
+                   AND LOWER(al.username) = LOWER(c.username)
+               )
+        ) activity ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT COUNT(*) AS training_log_count
+            FROM training_logs tl
+            WHERE tl.customer_id = c.id
+        ) training ON TRUE
         {where}
-        ORDER BY created_at DESC
+        ORDER BY c.created_at DESC
         LIMIT %s OFFSET %s
     """, (*search_params, page_size, offset))
 
-    users = [{
-        "id": r[0], "name": r[1], "email": r[2], "username": r[3], "nickname": r[4],
-        "provider": r[5], "created_at": str(r[6]),
-        "last_login_at": str(r[7]) if r[7] else None, "status": r[8],
-    } for r in cur.fetchall()]
+    users = []
+    for row in cur.fetchall():
+        user = {
+            "id": row[0], "name": row[1], "email": row[2], "username": row[3], "nickname": row[4],
+            "provider": row[5], "created_at": str(row[6]),
+            "last_login_at": str(row[7]) if row[7] else None, "status": row[8],
+            "is_qa_account": bool(row[9]), "activity_count": _safe_int(row[10]),
+            "last_activity_at": str(row[11]) if row[11] else None,
+            "training_log_count": _safe_int(row[12]),
+        }
+        user["qa_evidence"] = _qa_candidate_evidence(user)
+        users.append(user)
 
-    cur.execute(f"SELECT COUNT(*) FROM customers {where}", tuple(search_params))
+    cur.execute(f"SELECT COUNT(*) FROM customers c {where}", tuple(search_params))
     total = cur.fetchone()[0]
     cur.close()
     conn.close()
     return {
         "users": users, "total": total, "page": page, "page_size": page_size,
-        "q": raw_q, "search_by": search_by,
+        "q": raw_q, "search_by": search_by, "account_scope": account_scope,
     }
 
 
@@ -425,29 +550,32 @@ def get_activity(swimtech_token: str = Cookie(default=None)):
     conn = _get_db()
     cur = conn.cursor()
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT menu_name, COUNT(*) AS cnt
-        FROM user_activity_logs
-        WHERE event_type = 'page_view' AND menu_name IS NOT NULL
-              AND created_at >= CURRENT_DATE
+        FROM user_activity_logs l
+        WHERE l.event_type = 'page_view' AND l.menu_name IS NOT NULL
+              AND l.created_at >= CURRENT_DATE
+              AND {_log_scope_filter("regular", "l")}
         GROUP BY menu_name ORDER BY cnt DESC LIMIT 10
     """)
     today_top_menus = [{"menu": r[0], "count": r[1]} for r in cur.fetchall()]
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT menu_name, COUNT(*) AS cnt
-        FROM user_activity_logs
-        WHERE event_type = 'page_view' AND menu_name IS NOT NULL
-              AND created_at >= NOW() - INTERVAL '7 days'
+        FROM user_activity_logs l
+        WHERE l.event_type = 'page_view' AND l.menu_name IS NOT NULL
+              AND l.created_at >= NOW() - INTERVAL '7 days'
+              AND {_log_scope_filter("regular", "l")}
         GROUP BY menu_name ORDER BY cnt DESC LIMIT 20
     """)
     week_menu_clicks = [{"menu": r[0], "count": r[1]} for r in cur.fetchall()]
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT event_type, COUNT(*) AS cnt
-        FROM user_activity_logs
-        WHERE created_at >= NOW() - INTERVAL '7 days'
-              AND event_type IN ('training_log_create','plan_share')
+        FROM user_activity_logs l
+        WHERE l.created_at >= NOW() - INTERVAL '7 days'
+              AND l.event_type IN ('training_log_create','plan_share')
+              AND {_log_scope_filter("regular", "l")}
         GROUP BY event_type
     """)
     counts = {r[0]: r[1] for r in cur.fetchall()}

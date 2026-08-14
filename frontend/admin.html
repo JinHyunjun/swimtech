@@ -285,6 +285,9 @@ body {
 .pill.google { background: rgba(255,255,255,.10); color: var(--text); }
 .pill.active   { background: rgba(74,222,128,.12); color: var(--status-success); }
 .pill.deleted  { background: rgba(248,113,113,.12); color: var(--status-danger); }
+.pill.qa       { background: rgba(167,139,250,.14); color: #c4b5fd; }
+.pill.regular  { background: rgba(72,202,228,.12); color: var(--cyan); }
+.pill.candidate { background: rgba(251,191,36,.14); color: #fbbf24; }
 .pill.success  { background: rgba(74,222,128,.12); color: var(--status-success); }
 .pill.fail     { background: rgba(248,113,113,.12); color: var(--status-danger); }
 .pill.pending  { background: rgba(251,191,36,.12); color: #fbbf24; }
@@ -294,6 +297,10 @@ body {
 .verify-btn { border:.5px solid var(--border); border-radius:var(--radius-sm); padding:5px 9px; background:var(--bg); color:var(--text); cursor:pointer; font-size:var(--fs-caption); }
 .verify-btn.approve { border-color:rgba(74,222,128,.45); color:var(--status-success); }
 .verify-btn.reject { border-color:rgba(248,113,113,.45); color:var(--status-danger); }
+.qa-classify-btn { border:.5px solid var(--border); border-radius:var(--radius-sm); padding:5px 9px; background:var(--bg); color:var(--text); cursor:pointer; font-size:var(--fs-caption); }
+.qa-classify-btn.mark { border-color:rgba(167,139,250,.5); color:#c4b5fd; }
+.qa-classify-btn.clear { border-color:rgba(72,202,228,.45); color:var(--cyan); }
+.qa-evidence { max-width:260px; white-space:normal; color:var(--muted); font-size:11px; line-height:1.45; }
 
 .search-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .search-input {
@@ -652,7 +659,17 @@ body {
   <!-- 2) 사용자 관리 -->
   <section class="admin-section" id="tab-users">
     <div class="panel">
+      <div class="panel-heading-row">
+        <div>
+          <div class="panel-title">사용자·QA 계정 분류</div>
+          <div class="chart-caption" style="margin-bottom:14px;">아이디·이메일 표식과 활동 근거로 후보를 찾되 자동 변경하지 않습니다. 관리자가 확인한 계정만 QA로 확정됩니다.</div>
+        </div>
+      </div>
       <div class="search-row">
+        <select class="search-category-select" id="u-account-scope" aria-label="사용자 계정 분류">
+          <option value="all">전체 계정</option><option value="regular">일반 계정</option>
+          <option value="qa">확정 QA 계정</option><option value="candidate">미분류 QA 후보</option>
+        </select>
         <select class="search-category-select" id="u-search-by" aria-label="사용자 검색 항목">
           <option value="all">전체 항목</option><option value="id">회원 ID</option><option value="name">이름</option>
           <option value="email">이메일</option><option value="username">아이디</option><option value="nickname">닉네임</option>
@@ -684,11 +701,12 @@ body {
           <thead>
             <tr>
               <th>ID</th><th>이름</th><th>이메일</th><th>아이디</th><th>닉네임</th>
-              <th>가입 방식</th><th>가입일</th><th>마지막 로그인</th><th>상태</th>
+              <th>가입 방식</th><th>가입일</th><th>마지막 로그인</th><th>최근 활동</th>
+              <th>활동/훈련</th><th>계정 분류</th><th>분류 근거</th><th>관리</th><th>상태</th>
             </tr>
           </thead>
           <tbody id="u-body">
-            <tr><td colspan="9" class="loading-state">불러오는 중...</td></tr>
+            <tr><td colspan="14" class="loading-state">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1072,7 +1090,7 @@ const EVENT_LABEL = {
 };
 const PROVIDER_LABEL = { local: '일반', kakao: '카카오', google: '구글' };
 const listState = {
-  users: { page: 1, pageSize: 20, q: '', searchBy: 'all', totalPages: 1 },
+  users: { page: 1, pageSize: 20, q: '', searchBy: 'all', accountScope: 'all', totalPages: 1 },
   coaches: { page: 1, pageSize: 20, status: 'all', q: '', searchBy: 'all', totalPages: 1 },
   logs: { page: 1, pageSize: 50, eventType: '', q: '', searchBy: 'all', totalPages: 1 },
   qaLogs: { page: 1, pageSize: 50, eventType: '', q: '', searchBy: 'all', totalPages: 1 },
@@ -1302,11 +1320,12 @@ async function loadDashboard(days = Number(document.getElementById('d-chart-days
 async function loadUsers(q = listState.users.q) {
   listState.users.q = q || '';
   const body = document.getElementById('u-body');
-  body.innerHTML = '<tr><td colspan="9" class="loading-state">불러오는 중...</td></tr>';
+  body.innerHTML = '<tr><td colspan="14" class="loading-state">불러오는 중...</td></tr>';
   try {
     const query = buildQuery({
       q: listState.users.q,
       search_by: listState.users.searchBy,
+      account_scope: listState.users.accountScope,
       page: listState.users.page,
       page_size: listState.users.pageSize,
     });
@@ -1314,10 +1333,22 @@ async function loadUsers(q = listState.users.q) {
     const data = await authedFetch(url);
     updatePager('u', data.total, data.page || listState.users.page, data.page_size || listState.users.pageSize);
     if (!data.users.length) {
-      body.innerHTML = '<tr><td colspan="9" class="empty-state">결과가 없습니다.</td></tr>';
+      body.innerHTML = '<tr><td colspan="14" class="empty-state">결과가 없습니다.</td></tr>';
       return;
     }
-    body.innerHTML = data.users.map(u => `
+    body.innerHTML = data.users.map(u => {
+      const evidence = u.qa_evidence || {};
+      const candidate = !u.is_qa_account && evidence.is_candidate;
+      const classification = u.is_qa_account
+        ? '<span class="pill qa">확정 QA</span>'
+        : candidate
+          ? '<span class="pill candidate">QA 후보</span>'
+          : '<span class="pill regular">일반</span>';
+      const evidenceText = (evidence.reasons || []).join(' · ') || 'QA 근거 없음';
+      const action = u.username
+        ? `<button class="qa-classify-btn ${u.is_qa_account ? 'clear' : 'mark'}" data-qa-username="${escapeHtml(u.username)}" data-qa-value="${u.is_qa_account ? 'false' : 'true'}">${u.is_qa_account ? '일반으로 변경' : 'QA로 분류'}</button>`
+        : '-';
+      return `
       <tr>
         <td>${u.id}</td>
         <td>${escapeHtml(u.name || '-')}</td>
@@ -1327,11 +1358,43 @@ async function loadUsers(q = listState.users.q) {
         <td><span class="pill ${u.provider}">${PROVIDER_LABEL[u.provider] || u.provider}</span></td>
         <td>${fmtDate(u.created_at)}</td>
         <td>${fmtDate(u.last_login_at)}</td>
+        <td>${fmtDate(u.last_activity_at)}</td>
+        <td>${fmtNumber(u.activity_count)} / ${fmtNumber(u.training_log_count)}</td>
+        <td>${classification}</td>
+        <td><div class="qa-evidence">${escapeHtml(evidenceText)}</div></td>
+        <td>${action}</td>
         <td><span class="pill ${u.status === 'deleted' ? 'deleted' : 'active'}">${u.status === 'deleted' ? '탈퇴' : '활성'}</span></td>
       </tr>
-    `).join('');
+    `}).join('');
   } catch (e) { console.error(e); }
 }
+
+document.getElementById('u-account-scope').addEventListener('change', event => {
+  listState.users.accountScope = event.target.value;
+  listState.users.page = 1;
+  loadUsers();
+});
+
+async function setQAAccount(username, isQAAccount) {
+  const nextLabel = isQAAccount ? 'QA 계정' : '일반 계정';
+  if (!confirm(`@${username} 계정을 ${nextLabel}으로 분류할까요? 과거 운영 로그도 같은 기준으로 다시 표시됩니다.`)) return;
+  try {
+    const response = await fetch('/api/admin/qa-accounts', {
+      method: 'PUT', credentials: 'include', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({usernames:[username], is_qa_account:isQAAccount}),
+    });
+    if (!response.ok) throw new Error((await response.json()).detail || '계정 분류를 변경하지 못했습니다.');
+    await Promise.all([loadUsers(), loadLogs(), loadQALogs()]);
+  } catch (error) {
+    alert(error.message || '계정 분류를 변경하지 못했습니다.');
+  }
+}
+
+document.getElementById('u-body').addEventListener('click', event => {
+  const button = event.target.closest('.qa-classify-btn');
+  if (!button) return;
+  setQAAccount(button.dataset.qaUsername, button.dataset.qaValue === 'true');
+});
 
 // 3) 코치 운영 및 선택 자격 인증
 const COACH_STATUS_LABEL = { unverified:'등록 완료', pending:'인증 검토 대기', verified:'본인 확인', rejected:'인증 반려' };
