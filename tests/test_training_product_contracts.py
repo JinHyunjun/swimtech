@@ -687,6 +687,21 @@ def test_portfolio_demo_mode_contract():
     assert "포트폴리오 비회원 체험 모드" in checklist
 
 
+def test_login_form_submits_with_enter_key():
+    login_page = (ROOT / "frontend" / "login.html").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert '<form id="login-form" novalidate>' in login_page
+    assert 'id="username" name="username"' in login_page
+    assert 'id="password" name="password"' in login_page
+    assert 'id="login-btn" type="submit"' in login_page
+    assert "document.getElementById('login-form').addEventListener('submit'" in login_page
+    assert "event.preventDefault();" in login_page
+    assert "if (btn.disabled) return;" in login_page
+    assert "onkeydown=" not in login_page
+    assert 'page.keyboard.press("Enter")' in ui_qa
+
+
 def test_personal_data_export_and_account_security_are_qa_mapped():
     main = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
     auth_api = (ROOT / "api" / "routers" / "auth.py").read_text(encoding="utf-8")
@@ -1252,7 +1267,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 121개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 122개" in quality_doc
     assert "53개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "역할별 35개 화면" in quality_doc

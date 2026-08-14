@@ -503,7 +503,9 @@ def login(page, username=None, password=None):
     page.goto(f"{BASE}/login", wait_until="domcontentloaded", timeout=30000)
     page.fill("#username", username)
     page.fill("#password", password)
-    page.click("#login-btn")
+    # 실제 사용 흐름처럼 비밀번호 입력 후 Enter로 폼을 제출한다. 이 경로가
+    # 실패하면 일반·학생·관리자 브라우저 QA가 모두 로그인 단계에서 중단된다.
+    page.keyboard.press("Enter")
     try:
         page.wait_for_load_state("networkidle", timeout=15000)
     except PWTimeout:

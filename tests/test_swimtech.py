@@ -192,7 +192,7 @@ def test_login_success(browser, browser_context_args):
         goto(page, "/login")
         page.fill("#username", TEST_USER)
         page.fill("#password", TEST_PASS)
-        page.click("#login-btn")
+        page.keyboard.press("Enter")
         page.wait_for_url(re.compile(r"/landing(?:\?.*)?$"), timeout=10_000)
         page.wait_for_load_state("networkidle")
         shot(page, "02_login_success")

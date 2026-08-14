@@ -23,7 +23,7 @@
 | --- | --- | --- | --- | --- |
 | `/`, `/app` | 공개 리다이렉트 | 대표 홈 주소 통일 | 307 → `/landing` | 활성 |
 | `/landing` | 로그인 | 개인의 이번 주·이번 달·누적 훈련량, 주간 목표, 최근 기록 3개, 다음 추천 세션을 먼저 보여주는 대표 홈. 전체 기능은 `홈`·`기록과 훈련`·`코칭과 함께`·`탐색과 도움` 사이드바로 분리하고 주요 기능 화면에서도 같은 메뉴를 유지 | `/auth/me`, `/api/dashboard/summary`, `/weekly`, `/history`, `/training-advisor`, 페이지 조회 로그 | 활성 |
-| `/login`, `/register` | 공개 | 로컬 로그인·가입, Google/Kakao OAuth, 비회원 체험 | `/auth/login`, `/auth/register`, `/auth/demo` | 활성 |
+| `/login`, `/register` | 공개 | 로컬 로그인·가입, 아이디·비밀번호 입력 후 Enter 또는 버튼으로 동일한 폼 제출, Google/Kakao OAuth, 비회원 체험 | `/auth/login`, `/auth/register`, `/auth/demo` | 활성 |
 | `/tutorial` | 공개 | 5개 목적별 사용 가이드와 빠른 기능 찾기를 제공하는 짧은 허브 | 정적 콘텐츠, `tutorial.html` | 활성 |
 | `/tutorial/{personal|record|data|coach|help}` | 공개 | 개인 훈련, 기록·AI 스크린샷, 성장 데이터, 코치·클럽, 정보·도움을 각각 실제 화면·순서·주의사항으로 분리 안내. 공통 서비스 사이드바와 상세 가이드 탭을 함께 유지 | `tutorial_*.html`, `frontend/static/tutorial/*`, `tutorial-guide.css/js`, `service-nav.js` | 활성 |
 | `/privacy`, `/terms` | 공개 | 현재 데이터 처리와 이용 조건 | 정적 문서 | 활성 |
