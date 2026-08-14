@@ -265,7 +265,11 @@ def _require_admin(swimtech_token: str):
 
 
 @router.post("/track")
-def track_page_view(request: Request, swimtech_token: str = Cookie(default=None)):
+def track_page_view(
+    request: Request,
+    swimtech_token: str = Cookie(default=None),
+    swimmate_qa_run: str = Cookie(default=None),
+):
     """프론트(theme.js)에서 호출하는 페이지뷰 추적. 인증 불필요(비로그인 방문도 기록 가능)."""
     try:
         page = request.query_params.get("page")
@@ -283,7 +287,10 @@ def track_page_view(request: Request, swimtech_token: str = Cookie(default=None)
             except Exception:
                 pass
 
-        qa_automation = request.headers.get(QA_AUTOMATION_HEADER, "").strip() == "1"
+        qa_automation = (
+            swimmate_qa_run == "1"
+            or request.headers.get(QA_AUTOMATION_HEADER, "").strip() == "1"
+        )
         log_activity(
             customer_id=customer_id, username=username,
             event_type="page_view", page=page, menu_name=menu,

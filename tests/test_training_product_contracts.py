@@ -1130,6 +1130,7 @@ def test_admin_regular_and_qa_operation_logs_are_separated():
     assert "qa_anchor.user_agent = {alias}.user_agent" in admin_api
     assert "INTERVAL '15 minutes'" in admin_api
     assert 'request.headers.get(QA_AUTOMATION_HEADER' in admin_api
+    assert 'swimmate_qa_run: str = Cookie(default=None)' in admin_api
     assert "_qa_candidate_evidence" in admin_api
     assert 'account_scope: str = "all"' in admin_api
     assert '@router.put("/qa-accounts")' in admin_api
@@ -1148,8 +1149,8 @@ def test_admin_regular_and_qa_operation_logs_are_separated():
     assert "/api/admin/qa-accounts" in qa_api
     assert "qa_log_split_ok" in qa_api
     assert '"qaLogs", "qa-logs", "q", "path", "/api/admin/logs", "qa"' in qa_ui
-    assert 'context.route("**/api/admin/track**", add_marker)' in qa_ui
-    assert 'headers["x-swimmate-qa-run"] = "1"' in qa_ui
+    assert '"name": "swimmate_qa_run"' in qa_ui
+    assert "context.add_cookies" in qa_ui
     assert "classification_policy" in qa_audit
     assert "candidate_accounts" in qa_audit
     assert "QA Account Classification" in qa_workflow

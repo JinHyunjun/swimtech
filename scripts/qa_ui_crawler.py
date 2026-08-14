@@ -1158,13 +1158,13 @@ def check_public_demo_entry(context):
 
 
 def install_qa_tracking_marker(context):
-    """Mark only analytics requests so third-party assets keep normal headers."""
-    def add_marker(route):
-        headers = dict(route.request.headers)
-        headers["x-swimmate-qa-run"] = "1"
-        route.continue_(headers=headers)
-
-    context.route("**/api/admin/track**", add_marker)
+    """Mark QA analytics without rewriting request headers or auth cookies."""
+    context.add_cookies([{
+        "name": "swimmate_qa_run",
+        "value": "1",
+        "url": BASE,
+        "sameSite": "Lax",
+    }])
 
 
 def check_public_promotion_pages(context):
