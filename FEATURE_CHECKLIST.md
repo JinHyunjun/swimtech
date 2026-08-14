@@ -581,7 +581,7 @@
 
 ---
 
-## P28 — 진행 중
+## P28 — 완료
 
 - [x] 로그인 Enter 제출 개선
   - 아이디·비밀번호·로그인 버튼을 시맨틱 `<form>`으로 묶고 Enter와 버튼 클릭을 하나의 `submit` 이벤트로 통일.
@@ -590,9 +590,10 @@
 - [x] QA·문서 매핑
   - 계약 테스트에서 폼·submit 버튼·이벤트·인라인 핸들러 제거를 확인하고, 역할별 운영 UI QA의 실제 로그인 동작을 버튼 클릭에서 Enter 제출로 교체.
   - 기능 지도·기술 구조·품질 게이트와 README의 현재 핵심 테스트 수를 122개로 갱신.
-- [ ] 배포 후 운영 검증과 Notion 반영
-  - Vercel 로그인 화면에서 Enter 한 번으로 `/auth/login` 단일 요청과 역할별 이동을 확인하고 전체 GitHub Actions 품질 게이트를 통과한 뒤 완료 처리.
-  - 100% 정상 작동이 확인되면 Notion 공개 릴리즈 노트와 서비스 설명서에 반영.
+- [x] 배포 후 운영 검증과 Notion 반영
+  - Vercel `/login`에서 새 `<form>`·`submit` 이벤트 반영을 확인하고, 역할별 운영 UI QA의 모든 로그인을 Enter로 수행해 일반 사용자 `/landing`·관리자 `/admin` 이동을 검증.
+  - GitHub Actions [`31761582639`](https://github.com/JinHyunjun/swimtech/actions/runs/31761582639)에서 핵심 122개, 운영 API 53개, 브라우저 37개, Postman 25개 요청·40개 assertion을 모두 통과.
+  - 100% 정상 작동 확인 후 Notion 공개 릴리즈 노트와 서비스 설명서에 원인·수정 구조·QA 증적을 반영.
 
 ---
 
