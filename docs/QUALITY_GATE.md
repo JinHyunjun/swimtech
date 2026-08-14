@@ -135,6 +135,8 @@ Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collecti
 
 2026-08-14에는 로그인 입력 영역이 실제 폼이 아니고 비밀번호 칸의 인라인 `keydown`에만 의존해 아이디 칸·비밀번호 관리자·일부 브라우저에서 Enter 제출이 보장되지 않던 문제를 수정했다. 아이디·비밀번호·submit 버튼을 시맨틱 `<form>`으로 묶고 한 개의 `submit` 이벤트에서 기존 `/auth/login`과 역할별 이동을 호출하며, 진행 중 버튼 상태로 중복 요청을 차단한다. 로컬 Playwright에서 Enter 한 번→POST 한 번→`/landing`을 확인하고 [GitHub Actions `31761582639`](https://github.com/JinHyunjun/swimtech/actions/runs/31761582639)에서 핵심 122개, 운영 API 53개, Enter로 로그인한 브라우저 37개, Postman 25개 요청·40개 assertion을 모두 통과해 P28을 완료했다.
 
+같은 날 QA 계정 운영 감사를 추가해 사용자 목록을 전체·일반·확정 QA·미분류 후보로 나누고, 최근 활동·이벤트·훈련 일지 수와 후보 근거를 관리자에게 제공했다. 자동 후보는 계정을 바꾸지 않으며 읽기 전용 감사 `31764005635`에서 근거가 명확한 `test12`, `test`만 확인한 뒤 명시적 적용 `31764065398`로 기존 2개를 포함한 확정 QA 4개·후보 0개·누락 0개로 정리했다. 익명 자동화 페이지 조회는 IP 하나만으로 분류하지 않고 확정 QA 활동과 같은 IP·브라우저·전후 15분 조건 또는 전용 자동화 표식이 있을 때만 QA 세션으로 결합한다. 브라우저 표식이 인증 요청 헤더를 덮어쓰던 QA 회귀도 분석 쿠키 방식으로 교정했다. [GitHub Actions `31765805117`](https://github.com/JinHyunjun/swimtech/actions/runs/31765805117)에서 핵심 122개, 운영 API 53개, 브라우저 37개 화면·문제 0건, Postman 27개 요청·44개 assertion 실패 0건과 최종 게이트를 모두 통과해 P29를 완료했다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
