@@ -294,6 +294,10 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     assert "body.global-service-nav-enabled" in static_style
     assert "body.global-service-nav-open" in static_style
     assert "@media (max-width: 900px)" in static_style
+    assert "공통 레이아웃 안전망" in static_style
+    assert ":where(main, section, article, aside, nav, header, footer, .app)" in static_style
+    assert "overflow-wrap: anywhere" in static_style
+    assert "word-break: keep-all" in static_style
     assert static_style == root_style
     assert "SERVICE_NAV_PATHS" in ui_qa
     assert "def check_service_navigation(page, path):" in ui_qa
@@ -460,6 +464,11 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "const initialMonth = new Date();" in report_page
     assert "let curYear = initialMonth.getFullYear();" in report_page
     assert "let curMonth = initialMonth.getMonth() + 1;" in report_page
+    assert "max-width: 1540px" in report_page
+    assert "grid-template-columns: minmax(340px, 380px) minmax(0,1fr)" in report_page
+    assert "@media (max-width: 1180px)" in report_page
+    assert ".stat-value" in report_page and "white-space: nowrap" in report_page
+    assert "grid-template-columns: auto minmax(118px, 1fr) minmax(92px, auto)" in report_page
 
 
 def test_training_logs_persist_structured_set_execution_data():
@@ -1373,6 +1382,12 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     assert "word-break: keep-all" in page
     assert "def check_responsive_layout" in crawler
     assert "check_responsive_layout(page, path)" in crawler
+    for viewport_label in ("ultrawide-2560", "wide-1440", "desktop-1280", "laptop-1024", "tablet-768", "mobile-390"):
+        assert viewport_label in crawler
+    assert "compactWrap" in crawler
+    assert "reportLayout" in crawler
+    assert "wrappedValues" in crawler
+    assert "overlaps" in crawler
     assert "insideHorizontalScroller" in crawler
     assert "element.closest('#map')" in crawler
     assert "grid-template-columns: minmax(0,1fr)" in faq_page

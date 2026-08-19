@@ -877,7 +877,7 @@ def check_global_app_header(page, path):
 
 
 def check_responsive_layout(page, path):
-    """데스크톱·모바일에서 화면 밖 요소와 한 글자 폭으로 눌린 긴 문구를 찾는다."""
+    """와이드·노트북·태블릿·모바일에서 overflow, 겹침, 비정상 줄바꿈을 찾는다."""
     errors = []
     original_viewport = page.viewport_size
 
@@ -913,8 +913,27 @@ def check_responsive_layout(page, path):
                 const classes = [...element.classList].slice(0, 2).join('.');
                 return `${element.tagName.toLowerCase()}${classes ? `.${classes}` : ''}`;
               };
+              const ownTextNodes = element => [...element.childNodes]
+                .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+              const textLineCount = element => {
+                const lines = new Set();
+                for (const node of ownTextNodes(element)) {
+                  const range = document.createRange();
+                  range.selectNodeContents(node);
+                  for (const rect of range.getClientRects()) {
+                    if (rect.width > .5 && rect.height > .5) lines.add(Math.round(rect.top));
+                  }
+                }
+                return lines.size;
+              };
+              const intersects = (a, b) => (
+                Math.min(a.right, b.right) - Math.max(a.left, b.left) > 2 &&
+                Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2
+              );
               const outside = [];
               const squeezed = [];
+              const compactWrap = [];
+              const overlaps = [];
               for (const element of document.body.querySelectorAll('*')) {
                 if (!visible(element)) continue;
                 const rect = element.getBoundingClientRect();
@@ -925,36 +944,102 @@ def check_responsive_layout(page, path):
                     outside.push({selector: selector(element), left: Math.round(rect.left), right: Math.round(rect.right)});
                   }
                 }
-                const ownText = [...element.childNodes]
-                  .filter(node => node.nodeType === Node.TEXT_NODE)
-                  .map(node => node.textContent.trim()).join(' ').trim();
+                const ownText = ownTextNodes(element).map(node => node.textContent.trim()).join(' ').trim();
                 const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.4 || 20;
-                if (ownText.length >= 8 && rect.width < 48 && rect.height > lineHeight * 3 && style.writingMode === 'horizontal-tb') {
-                  squeezed.push({selector: selector(element), width: Math.round(rect.width), text: ownText.slice(0, 60)});
+                const lineCount = ownText ? textLineCount(element) : 0;
+                if (
+                  ownText.length >= 8 && style.writingMode === 'horizontal-tb' &&
+                  ((rect.width < 48 && rect.height > lineHeight * 3) || (lineCount >= 4 && ownText.length / lineCount < 3.5))
+                ) {
+                  squeezed.push({selector: selector(element), width: Math.round(rect.width), lines: lineCount, text: ownText.slice(0, 60)});
+                }
+                const compactMetric = /(?:^|[-_])(value|number|count|rate|distance|time|streak|score|total)(?:$|[-_])/i
+                  .test(`${element.id} ${element.className || ''}`);
+                if (compactMetric && ownText.length > 0 && ownText.length <= 14 && lineCount > 1) {
+                  compactWrap.push({selector: selector(element), lines: lineCount, text: ownText.slice(0, 40)});
+                }
+
+                if (['flex', 'grid', 'inline-flex', 'inline-grid'].includes(style.display) && !element.closest('canvas, #map')) {
+                  const children = [...element.children].filter(child => {
+                    if (!visible(child)) return false;
+                    const childStyle = getComputedStyle(child);
+                    return !['absolute', 'fixed'].includes(childStyle.position) && !child.matches('script, style');
+                  });
+                  for (let index = 0; index < children.length; index += 1) {
+                    const first = children[index].getBoundingClientRect();
+                    for (let next = index + 1; next < children.length; next += 1) {
+                      const second = children[next].getBoundingClientRect();
+                      if (intersects(first, second)) {
+                        overlaps.push({parent: selector(element), first: selector(children[index]), second: selector(children[next])});
+                      }
+                    }
+                  }
                 }
               }
+              const reportLayout = location.pathname === '/report' ? (() => {
+                const layout = document.querySelector('.rp-layout');
+                const sidebar = document.querySelector('.rp-sidebar');
+                const compactSelectors = ['.stat-value', '.growth-rate', '.growth-streak-num', '.plan-performance-value'];
+                const wrappedValues = compactSelectors.flatMap(rule => [...document.querySelectorAll(rule)]
+                  .filter(visible)
+                  .map(element => ({selector: selector(element), lines: textLineCount(element), text: element.textContent.trim()}))
+                  .filter(item => item.lines > 1));
+                const streakLabel = document.querySelector('.growth-streak-lbl');
+                return {
+                  columns: layout ? getComputedStyle(layout).gridTemplateColumns.split(' ').length : 0,
+                  sidebarWidth: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0,
+                  wrappedValues,
+                  streakLabelLines: streakLabel ? textLineCount(streakLabel) : 0,
+                };
+              })() : null;
               return {
                 label,
                 documentOverflow: Math.max(0, document.documentElement.scrollWidth - viewportWidth),
                 outside: outside.slice(0, 12),
                 squeezed: squeezed.slice(0, 12),
+                compactWrap: compactWrap.slice(0, 12),
+                overlaps: overlaps.slice(0, 12),
+                reportLayout,
               };
             }""",
             label,
         )
 
     try:
-        desktop = inspect_viewport("desktop")
-        if desktop["documentOverflow"] > 1 or desktop["outside"] or desktop["squeezed"]:
-            errors.append({"type": "responsive_layout_desktop", **desktop})
-
-        page.set_viewport_size({"width": 390, "height": 844})
-        page.wait_for_timeout(300)
-        mobile = inspect_viewport("mobile-390")
-        if mobile["documentOverflow"] > 1 or mobile["outside"] or mobile["squeezed"]:
-            errors.append({"type": "responsive_layout_mobile", **mobile})
+        viewports = [
+            ("ultrawide-2560", 2560, 1400),
+            ("wide-1440", 1440, 1000),
+            ("desktop-1280", 1280, 900),
+            ("laptop-1024", 1024, 768),
+            ("tablet-768", 768, 1024),
+            ("mobile-390", 390, 844),
+        ]
+        for label, width, height in viewports:
+            page.set_viewport_size({"width": width, "height": height})
+            page.wait_for_timeout(120)
+            result = inspect_viewport(label)
+            has_layout_error = any([
+                result["documentOverflow"] > 1,
+                result["outside"],
+                result["squeezed"],
+                result["compactWrap"],
+                result["overlaps"],
+            ])
+            report_layout = result.get("reportLayout")
+            if report_layout:
+                expected_columns = 2 if width > 1180 else 1
+                has_layout_error = has_layout_error or any([
+                    report_layout["columns"] != expected_columns,
+                    expected_columns == 2 and report_layout["sidebarWidth"] < 330,
+                    report_layout["wrappedValues"],
+                    report_layout["streakLabelLines"] > 2,
+                ])
+            if has_layout_error:
+                errors.append({"type": "responsive_layout", **result})
 
         if path.split("?", 1)[0] == "/training-log":
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.wait_for_timeout(120)
             page.evaluate("showReportToast('2026-08-08', false, 1)")
             toast = page.locator("#report-toast")
             message = page.locator("#report-toast .report-toast-message")

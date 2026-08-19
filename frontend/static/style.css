@@ -726,6 +726,32 @@ body { padding-bottom: env(safe-area-inset-bottom); }
   .st-stagger > *, .st-lift, .st-fill { animation: none !important; transition: none !important; }
 }
 
+/* ── 공통 레이아웃 안전망 ──
+   좁은 그리드·flex 자식이 콘텐츠의 기본 최소 폭 때문에 부모를 밀어내거나,
+   한국어 문구가 한 글자씩 세로로 눌리는 현상을 모든 기능 화면에서 방지한다. */
+:where(main, section, article, aside, nav, header, footer, .app) { min-width: 0; max-width: 100%; }
+:where(h1, h2, h3, h4, h5, h6, p, li, dt, dd, figcaption) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+:where(h1, h2, h3, h4, h5, h6, button, [role="button"], label, summary) {
+  word-break: keep-all;
+}
+:where([class$="-value"], [class$="-number"], [class$="-count"], [class$="-rate"], [class$="-distance"], [class$="-time"]) {
+  font-variant-numeric: tabular-nums;
+}
+:where(.card, [class$="-card"], [class$="-panel"], [class$="-section"], [class$="-grid"], [class$="-row"]) {
+  min-width: 0;
+}
+
+@supports (text-wrap: balance) {
+  :where(h1, h2, h3) { text-wrap: balance; }
+}
+
+@supports (text-wrap: pretty) {
+  :where(p, li, figcaption) { text-wrap: pretty; }
+}
+
 /* ════════════════════════════════════════════════════════════
    공통 서비스 사이드바 — 랜딩 외 주요 기능 페이지
    ════════════════════════════════════════════════════════════ */
