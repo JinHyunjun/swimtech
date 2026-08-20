@@ -713,7 +713,7 @@ def check_service_navigation(page, path):
             errors.append({"type": "service_navigation_body_layout_missing"})
         if page.locator("#global-service-nav-toggle").count() != 1:
             errors.append({"type": "service_navigation_toggle_missing"})
-        if page.viewport_size and page.viewport_size["width"] > 900:
+        if page.viewport_size and page.viewport_size["width"] > 1100:
             position = sidebar.evaluate("element => getComputedStyle(element).position")
             if position != "fixed" or not sidebar.is_visible():
                 errors.append({"type": "service_navigation_not_persistent_desktop", "position": position})
@@ -821,20 +821,63 @@ def check_global_app_header(page, path):
         if duplicate_legacy:
             errors.append({"type": "global_app_header_legacy_home_visible", "count": duplicate_legacy})
 
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(80)
         desktop = page.evaluate(
             """() => {
-              const header = document.getElementById('global-app-header').getBoundingClientRect();
+              const headerElement = document.getElementById('global-app-header');
+              const header = headerElement.getBoundingClientRect();
               const leftGroup = document.querySelector('#global-app-header .global-app-header-left').getBoundingClientRect();
               const actionGroup = document.querySelector('#global-app-header .global-app-header-actions').getBoundingClientRect();
               const children = [...document.querySelectorAll('#global-app-header .global-app-home, #global-app-header .global-app-header-actions > :not([hidden])')]
                 .filter(element => getComputedStyle(element).display !== 'none')
                 .map(element => { const rect = element.getBoundingClientRect(); return {id:element.id || element.className, left:rect.left, right:rect.right}; });
               const overlaps = children.some((item, index) => index > 0 && item.left < children[index - 1].right - 1);
-              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, overlaps:overlaps || leftGroup.right > actionGroup.left + 1};
+              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, position:getComputedStyle(headerElement).position, overlaps:overlaps || leftGroup.right > actionGroup.left + 1};
             }"""
         )
-        if desktop["left"] < -1 or desktop["right"] > desktop["viewport"] + 1 or desktop["overlaps"]:
+        if (
+            abs(desktop["left"]) > 1
+            or abs(desktop["right"] - desktop["viewport"]) > 1
+            or desktop["position"] not in ("static", "relative")
+            or desktop["overlaps"]
+        ):
             errors.append({"type": "global_app_header_desktop_layout", **desktop})
+
+        scroll_probe = page.evaluate(
+            """() => ({
+              available: Math.max(0, document.documentElement.scrollHeight - innerHeight),
+              headerBottom: document.getElementById('global-app-header').getBoundingClientRect().bottom
+            })"""
+        )
+        if scroll_probe["available"] >= 80:
+            page.evaluate("distance => window.scrollTo(0, distance)", min(180, scroll_probe["available"]))
+            page.wait_for_timeout(120)
+            scrolled = page.evaluate(
+                """() => {
+                  const header = document.getElementById('global-app-header').getBoundingClientRect();
+                  const nav = [
+                    document.getElementById('global-service-nav'),
+                    document.getElementById('service-sidebar'),
+                    document.querySelector('.admin-sidebar')
+                  ].filter(Boolean).find(element => {
+                    const style = getComputedStyle(element);
+                    const rect = element.getBoundingClientRect();
+                    return style.display !== 'none' && rect.width > 0 && rect.right > 0;
+                  });
+                  const navRect = nav ? nav.getBoundingClientRect() : null;
+                  return {scrollY, headerTop:header.top, headerBottom:header.bottom, navTop:navRect ? navRect.top : null};
+                }"""
+            )
+            expected_header_bottom = max(0, scroll_probe["headerBottom"] - scrolled["scrollY"])
+            if (
+                scrolled["scrollY"] < 20
+                or abs(max(0, scrolled["headerBottom"]) - expected_header_bottom) > 3
+                or (scrolled["navTop"] is not None and abs(scrolled["navTop"] - max(0, scrolled["headerBottom"])) > 3)
+            ):
+                errors.append({"type": "global_app_header_scroll_flow", **scroll_probe, **scrolled})
+            page.evaluate("window.scrollTo(0, 0)")
+            page.wait_for_timeout(80)
     except Exception as error:
         errors.append({"type": "global_app_header_unreadable", "error": str(error)[:200]})
 
@@ -844,17 +887,23 @@ def check_global_app_header(page, path):
         page.wait_for_timeout(250)
         mobile = page.evaluate(
             """() => {
-              const header = document.getElementById('global-app-header').getBoundingClientRect();
+              const headerElement = document.getElementById('global-app-header');
+              const header = headerElement.getBoundingClientRect();
               const leftGroup = document.querySelector('#global-app-header .global-app-header-left').getBoundingClientRect();
               const actionGroup = document.querySelector('#global-app-header .global-app-header-actions').getBoundingClientRect();
               const visible = [...document.querySelectorAll('#global-app-header .global-app-home, #global-app-header .global-app-header-actions > :not([hidden])')]
                 .filter(element => { const style=getComputedStyle(element); const rect=element.getBoundingClientRect(); return style.display !== 'none' && rect.width > 0; })
                 .map(element => { const rect=element.getBoundingClientRect(); return {id:element.id || 'home', left:rect.left, right:rect.right}; });
               const overlaps = visible.some((item, index) => index > 0 && item.left < visible[index - 1].right - 1);
-              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, overlaps:overlaps || leftGroup.right > actionGroup.left + 1, visible};
+              return {left:header.left, right:header.right, width:header.width, viewport:document.documentElement.clientWidth, position:getComputedStyle(headerElement).position, overlaps:overlaps || leftGroup.right > actionGroup.left + 1, visible};
             }"""
         )
-        if mobile["left"] < -1 or mobile["right"] > mobile["viewport"] + 1 or mobile["overlaps"]:
+        if (
+            abs(mobile["left"]) > 1
+            or abs(mobile["right"] - mobile["viewport"]) > 1
+            or mobile["position"] not in ("static", "relative")
+            or mobile["overlaps"]
+        ):
             errors.append({"type": "global_app_header_mobile_layout", **mobile})
     except Exception as error:
         errors.append({"type": "global_app_header_mobile_unreadable", "error": str(error)[:200]})
@@ -888,7 +937,7 @@ def check_responsive_layout(page, path):
               const ignored = element => Boolean(
                 element.closest('[aria-hidden="true"], [hidden], .global-service-nav-backdrop') ||
                 element.closest('.service-sidebar:not(.open)') ||
-                (window.matchMedia('(max-width: 900px)').matches && element.closest('.admin-sidebar:not(.open)')) ||
+                (window.matchMedia('(max-width: 1100px)').matches && element.closest('.admin-sidebar:not(.open)')) ||
                 element.closest('.admin-nav-backdrop:not(.open)') ||
                 // Kakao 지도는 패닝을 위해 #map 경계 밖에 타일 이미지를 배치한 뒤
                 // 지도 컨테이너에서 잘라낸다. 문서 overflow가 아닌 정상 렌더링이다.
@@ -992,6 +1041,43 @@ def check_responsive_layout(page, path):
                   streakLabelLines: streakLabel ? textLineCount(streakLabel) : 0,
                 };
               })() : null;
+              const shellLayout = (() => {
+                const headerElement = document.getElementById('global-app-header');
+                const header = headerElement ? headerElement.getBoundingClientRect() : null;
+                const desktopShell = viewportWidth > 1100;
+                const sideCandidates = [
+                  document.getElementById('global-service-nav'),
+                  document.getElementById('service-sidebar'),
+                  document.querySelector('.admin-sidebar')
+                ].filter(Boolean);
+                const sidebar = desktopShell ? sideCandidates.find(element => {
+                  const style = getComputedStyle(element);
+                  const rect = element.getBoundingClientRect();
+                  return style.display !== 'none' && rect.width > 0 && rect.right > 0;
+                }) : null;
+                const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
+                const workspaceLeft = sidebarRect ? Math.max(0, sidebarRect.right) : 0;
+                const frameElement = document.querySelector('.global-content-frame');
+                const frame = frameElement ? frameElement.getBoundingClientRect() : null;
+                const expectedFrameWidth = frame ? Math.min(1280, viewportWidth - workspaceLeft) : null;
+                const expectedCenter = workspaceLeft + (viewportWidth - workspaceLeft) / 2;
+                return {
+                  header: header ? {
+                    left: Math.round(header.left * 10) / 10,
+                    right: Math.round(header.right * 10) / 10,
+                    position: getComputedStyle(headerElement).position
+                  } : null,
+                  sidebarWidth: sidebarRect ? Math.round(sidebarRect.width * 10) / 10 : 0,
+                  workspaceLeft: Math.round(workspaceLeft * 10) / 10,
+                  frame: frame ? {
+                    left: Math.round(frame.left * 10) / 10,
+                    right: Math.round(frame.right * 10) / 10,
+                    width: Math.round(frame.width * 10) / 10,
+                    widthError: Math.round(Math.abs(frame.width - expectedFrameWidth) * 10) / 10,
+                    centerError: Math.round(Math.abs((frame.left + frame.right) / 2 - expectedCenter) * 10) / 10
+                  } : null
+                };
+              })();
               return {
                 label,
                 documentOverflow: Math.max(0, document.documentElement.scrollWidth - viewportWidth),
@@ -1000,6 +1086,7 @@ def check_responsive_layout(page, path):
                 compactWrap: compactWrap.slice(0, 12),
                 overlaps: overlaps.slice(0, 12),
                 reportLayout,
+                shellLayout,
               };
             }""",
             label,
@@ -1010,6 +1097,7 @@ def check_responsive_layout(page, path):
             ("ultrawide-2560", 2560, 1400),
             ("wide-1440", 1440, 1000),
             ("desktop-1280", 1280, 900),
+            ("navigation-breakpoint-1100", 1100, 900),
             ("laptop-1024", 1024, 768),
             ("tablet-768", 768, 1024),
             ("mobile-390", 390, 844),
@@ -1033,6 +1121,22 @@ def check_responsive_layout(page, path):
                     expected_columns == 2 and report_layout["sidebarWidth"] < 330,
                     report_layout["wrappedValues"],
                     report_layout["streakLabelLines"] > 2,
+                ])
+            shell_layout = result.get("shellLayout") or {}
+            shell_header = shell_layout.get("header")
+            shell_frame = shell_layout.get("frame")
+            if shell_header:
+                has_layout_error = has_layout_error or any([
+                    abs(shell_header["left"]) > 1,
+                    abs(shell_header["right"] - width) > 1,
+                    shell_header["position"] not in ("static", "relative"),
+                ])
+            if shell_frame:
+                has_layout_error = has_layout_error or any([
+                    shell_frame["widthError"] > 2,
+                    shell_frame["centerError"] > 2,
+                    shell_frame["left"] < shell_layout["workspaceLeft"] - 2,
+                    shell_frame["right"] > width + 2,
                 ])
             if has_layout_error:
                 errors.append({"type": "responsive_layout", **result})

@@ -246,7 +246,8 @@ def test_landing_is_a_personal_training_home_with_categorized_service_navigation
     ):
         assert endpoint in landing
 
-    assert "@media (max-width:900px)" in landing
+    assert "@media (max-width:1100px)" in landing
+    assert 'class="home-main-inner global-content-frame"' in landing
     assert "aria-expanded" in landing
     assert "syncHeaderOffset" in landing
     assert "sidebarBackdrop.setAttribute('aria-hidden', String(!open))" in landing
@@ -290,10 +291,12 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     ):
         assert marker in service_nav
 
-    assert "--global-service-nav-width: 268px" in static_style
+    assert "--global-service-nav-width: clamp(232px, 17vw, 268px)" in static_style
     assert "body.global-service-nav-enabled" in static_style
     assert "body.global-service-nav-open" in static_style
-    assert "@media (max-width: 900px)" in static_style
+    assert "@media (max-width: 1100px)" in static_style
+    assert "--global-content-max-width: 1280px" in static_style
+    assert "global-content-frame" in static_style
     assert "공통 레이아웃 안전망" in static_style
     assert ":where(main, section, article, aside, nav, header, footer, .app)" in static_style
     assert "overflow-wrap: anywhere" in static_style
@@ -338,9 +341,14 @@ def test_service_pages_use_one_authenticated_global_header_and_swimming_favicon(
     for marker in (
         ".global-app-header", ".global-app-header-actions", ".global-app-action[hidden]",
         "body.global-app-header-enabled .header", "@media (max-width: 700px)",
-        "inset: var(--global-app-header-height, 70px) auto 0 0",
+        "--global-app-header-visible-height", "position: relative", "max-width: none",
     ):
         assert marker in static_style
+
+    for theme in (static_theme, root_theme):
+        assert "syncHeaderMetrics" in theme
+        assert "--global-app-header-visible-height" in theme
+        assert "global-content-frame" in theme
 
     assert "favicon.svg" in manifest
     assert "<circle" in favicon and "<path" in favicon and "#48cae4" in favicon
@@ -464,7 +472,7 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "const initialMonth = new Date();" in report_page
     assert "let curYear = initialMonth.getFullYear();" in report_page
     assert "let curMonth = initialMonth.getMonth() + 1;" in report_page
-    assert "max-width: 1540px" in report_page
+    assert "max-width:var(--global-content-max-width,1280px)" in report_page
     assert "grid-template-columns: minmax(340px, 380px) minmax(0,1fr)" in report_page
     assert "@media (max-width: 1180px)" in report_page
     assert ".stat-value" in report_page and "white-space: nowrap" in report_page
@@ -993,9 +1001,9 @@ def test_admin_navigation_uses_non_overlapping_responsive_sidebar():
     assert 'id="admin-nav-backdrop"' in admin_page
     assert '<nav class="admin-tabs" role="tablist"' in admin_page
     assert admin_page.count('role="tab"') == 8
-    assert "grid-template-columns: 248px minmax(0, 1fr)" in admin_page
+    assert "grid-template-columns: var(--global-service-nav-width, 268px) minmax(0, 1fr)" in admin_page
     assert "flex: 0 0 auto" in admin_page
-    assert "@media (max-width: 900px)" in admin_page
+    assert "@media (max-width: 1100px)" in admin_page
     assert "setAdminNavOpen" in admin_page
     assert "activateAdminTab" in admin_page
     assert "관리자 모바일 드로어 8개 메뉴 비겹침" in qa_ui
@@ -1382,7 +1390,7 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     assert "word-break: keep-all" in page
     assert "def check_responsive_layout" in crawler
     assert "check_responsive_layout(page, path)" in crawler
-    for viewport_label in ("ultrawide-2560", "wide-1440", "desktop-1280", "laptop-1024", "tablet-768", "mobile-390"):
+    for viewport_label in ("ultrawide-2560", "wide-1440", "desktop-1280", "navigation-breakpoint-1100", "laptop-1024", "tablet-768", "mobile-390"):
         assert viewport_label in crawler
     assert "compactWrap" in crawler
     assert "reportLayout" in crawler

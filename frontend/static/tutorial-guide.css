@@ -1,5 +1,5 @@
 html { scroll-behavior:smooth; }
-.guide-page { max-width:1120px; margin:0 auto; padding:28px 18px 80px; }
+.guide-page { width:100%; max-width:var(--global-content-max-width,1280px); margin:0 auto; padding:28px 18px 80px; }
 .guide-hero {
   position:relative; overflow:hidden; padding:clamp(28px,5vw,54px);
   border:.5px solid rgba(72,202,228,.38); border-radius:var(--radius-lg);

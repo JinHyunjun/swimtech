@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-14
+> 기준일: 2026-08-20
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -25,8 +25,8 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | --- | --- | --- |
 | 새 공개 페이지·메뉴 | 200 응답, 보호 페이지 리다이렉트, 핵심 DOM, 모바일 레이아웃, 콘솔 오류 없음 | `tests/test_swimtech.py`, `PAGE_EXPECTATIONS`, `PAGES` |
 | 개인 훈련 대표 홈·사이드바 | `/landing` URL 유지, 본인 이번 주·월간·누적 요약과 최근 기록·어드바이저 API 매핑, 카테고리별 전체 서비스 링크, 데스크톱 고정 사이드바, 모바일 메뉴 열기·닫기·ESC·배경 스크롤 잠금, 일반·데모·관리자·온보딩 상태, 구 카드형 안내 문구 부재 | 랜딩 계약 테스트, `test_landing_load`, `PAGE_EXPECTATIONS["/landing"]`, 운영 데스크톱·390px 확인 |
-| 기능 페이지 공통 내비게이션 | 적용 대상 경로마다 25개 이상 서비스 링크, 현재 경로 1개만 활성화, `/landing` 대표 홈 링크, 데스크톱 268px 고정 배치, 모바일 드로어 열기·ESC 닫기·배경 스크롤 잠금, 공개 화면 비로그인 폴백, 가로 넘침 없음 | `service-nav.js`, 공통 내비게이션 계약·Playwright 참고 테스트, `check_service_navigation` |
-| 전 화면 공통 헤더·사이트 아이콘 | 서비스·온보딩·관리자·법적 안내에서 공통 헤더 1개, `/landing` 홈, 인증 후 `/profile`·로그아웃·테마 순서, 비로그인 로그인 폴백, 기존 페이지 홈 헤더 비노출, 메뉴 버튼의 공통 헤더 배치, 데스크톱·390px 경계와 상호 비겹침, 테마 왕복, 수영 선수·물결 SVG favicon과 올바른 MIME | 공통 헤더 계약 테스트, `check_global_app_header`, `APP_HEADER_PATHS`, `favicon.svg`, manifest·FastAPI MIME 계약 |
+| 기능 페이지 공통 내비게이션 | 적용 대상 경로마다 25개 이상 서비스 링크, 현재 경로 1개만 활성화, `/landing` 대표 홈 링크, 데스크톱 232~268px 유동 폭과 본문 비겹침, 1,100px 이하 드로어 열기·ESC 닫기·배경 스크롤 잠금, 공개 화면 비로그인 폴백, 가로 넘침 없음 | `service-nav.js`, 공통 내비게이션 계약·Playwright 참고 테스트, `check_service_navigation` |
+| 전 화면 공통 헤더·사이트 아이콘 | 서비스·온보딩·관리자·법적 안내에서 공통 헤더 1개, `/landing` 홈, 인증 후 `/profile`·로그아웃·테마 순서, 비로그인 로그인 폴백, 기존 페이지 홈 헤더 비노출, 메뉴 버튼의 공통 헤더 배치, 헤더가 문서와 함께 스크롤되고 사이드바 상단이 남은 헤더 높이를 추종, 전 해상도 전체 폭·상호 비겹침, 테마 왕복, 수영 선수·물결 SVG favicon과 올바른 MIME | 공통 헤더 계약 테스트, `check_global_app_header`, `APP_HEADER_PATHS`, `favicon.svg`, manifest·FastAPI MIME 계약 |
 | 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·공식 출처, 수영복 5개 브랜드 공식표 cm/inch 전환·입력 단위 전환 시 값 보존·반대 단위 즉시 환산·cm 내부 정규화·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
 | 목적별 사용 가이드 | 랜딩 진입, 허브와 개인·기록/스크린샷·성장·코치/클럽·정보/도움 5개 상세 경로 공개 200, 공통 서비스 사이드바·현재 가이드 카테고리 표시, 화면 캡처·대체 텍스트, 내부 CTA, 모바일 단일 열, AI 사용자 확인·원본 비저장·무료 사용량 제한·워치 직접 연동 비활성 경계 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS`의 `/tutorial*`, `PAGES`, `SERVICE_NAV_PATHS`, `frontend/static/tutorial/*` |
 | 로그인·대표 홈·비회원 체험 | 시맨틱 로그인 폼, 아이디·비밀번호 입력 후 Enter 제출, 버튼과 동일한 단일 요청·중복 방지, 쿠키 발급, 일반·데모 `/landing`과 관리자 `/admin` 목적지, `/`·`/app` 리다이렉트, 모든 홈 링크, 새로고침 유지, 로그아웃, 데모 계정 격리 | `qa_runner.py` A·2·6b·7, `qa_ui_crawler.py`의 Enter 로그인, `test_login_form_submits_with_enter_key`, `check_home_link_targets`, `auth.py` 계약 테스트 |
@@ -42,7 +42,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 훈련 플랜 | 풀 길이, 사이클, 드릴·대시 필터, 품질 검증, 템플릿, 즐겨찾기, 공유, 일지 전송 | `plan.html` 계약 테스트, Playwright plan 섹션 |
 | 헬스 데이터 가져오기 비활성 경계 | 훈련 일지 버튼의 `disabled`·`aria-disabled`·`준비 중` 문구, 클릭 이벤트 미연결, 워치 직접 동기화·파일 가져오기를 제공 기능으로 오인할 문구 없음 | 훈련 일지 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]` |
 | 운동 스크린샷 AI 확인 등록 | 인증 필수, 최대 5장 다중 선택과 단일 API 순차 처리, PNG/JPEG/WEBP/HEIC/HEIF 장당 파일 서명·8MB 제한, 사진별 상태·사용자 검토·20분 고객별 확인 토큰, Gemini 구조화 출력, 프롬프트 주입 무시, 원본 이미지 비저장, 연도·거리 합계·랩×풀 경고, 사용자 수정 전 일지 미생성, 의미 기반 중복 방지, 일지·영법 세트·월간 영법 분포·관리자 30일 등록 건수 연동 | `TestWorkoutScreenshotImport`, 스크린샷 계약 테스트, `PAGE_EXPECTATIONS["/training-log"]`·`["/admin"]`, Playwright `test_training_log_screenshot_import_review_flow`, 운영 API·Postman 확인 토큰 경계 |
-| 와이드·노트북·태블릿·모바일 레이아웃 | 역할별 35개 화면과 공개 fixture 2개 화면을 2,560·1,440·1,280·1,024·768·390px에서 검사. 문서 가로 넘침, 화면 밖 요소, flex/grid 자식 겹침, 긴 문구의 비정상 세로 압축, 숫자 지표 줄바꿈, 공통 메뉴·헤더 상태와 훈련 저장 알림의 화면 경계·본문 폭·액션 줄바꿈 | `check_responsive_layout`, `check_global_app_header`, 월간 리포트 열·숫자 전용 좌표 검사, `test_training_log_report_toast_mobile_layout`, 역할별 UI QA 스크린샷 |
+| 와이드·노트북·태블릿·모바일 레이아웃 | 역할별 35개 화면과 공개 fixture 2개 화면을 2,560·1,440·1,280·1,100·1,024·768·390px에서 검사. 문서 가로 넘침, 화면 밖 요소, flex/grid 자식 겹침, 긴 문구의 비정상 세로 압축, 숫자 지표 줄바꿈, 공통 메뉴·헤더 상태, 사이드바 제외 작업 영역의 최대 1,280px 프레임 폭·중앙 정렬과 훈련 저장 알림의 화면 경계·액션 줄바꿈 | `check_responsive_layout`, `check_global_app_header`, 월간 리포트 열·숫자 전용 좌표 검사, `test_training_log_report_toast_mobile_layout`, 역할별 UI QA 스크린샷 |
 | 월간 리포트 | 훈련 일지와 같은 사용자 기준, 평균 거리, 플랜·세트 수행률, 사이클 포함률, 목표 달성률, 비동기 인증 완료 전 월 이동 시 유효한 연·월 유지 | `qa_runner.py` 17, `report.py` 계약 테스트, UI 비동기 안정화 검사 |
 | 홍보용 월간 결과 카드 | 인증 생성·본인 이력/종료, 월간 기록 없음 거부, 불투명 토큰, 닉네임 기본 비공개, 공개 허용 합계 화이트리스트, 위치·심박·메모·원본 스크린샷 미포함, 180일 만료, 종료 후 410, 1080×1350 PNG·Web Share, 데스크톱·390px 가로 넘침 없음, 공개 조회 제한 | `qa_runner.py` 17b, `check_public_promotion_pages`, Postman 결과 카드 3개 요청, `promotion.py` 단위·계약 테스트, Alembic `20260723_09` |
 | 뱃지·챌린지 | 실제 일지 기반 진행률, 랭킹, 참가·탈퇴, 다음 뱃지, 목표 단계 | Playwright challenge/badge, `badge.py` 계약 테스트 |

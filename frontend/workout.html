@@ -15,7 +15,7 @@
 * { box-sizing: border-box; }
 body { min-height:100vh; overscroll-behavior:none; }
 button, input, select, textarea { font:inherit; }
-.workout-shell { min-height:100vh; display:flex; flex-direction:column; background:radial-gradient(circle at 50% -10%,rgba(0,180,216,.2),transparent 38%),var(--bg); }
+.workout-shell { min-height:calc(100dvh - var(--global-app-header-height,70px)); display:flex; flex-direction:column; background:radial-gradient(circle at 50% -10%,rgba(0,180,216,.2),transparent 38%),var(--bg); }
 .workout-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px max(14px,env(safe-area-inset-left)); border-bottom:.5px solid var(--border); background:rgba(6,18,28,.9); backdrop-filter:blur(14px); position:sticky; top:0; z-index:20; }
 .workout-brand { min-width:0; }
 .workout-brand strong { display:block; color:#f4fbff; font-size:var(--fs-body); }

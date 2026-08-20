@@ -17,6 +17,11 @@
     '/clubs', '/tutorial', '/tutorial/personal', '/tutorial/record',
     '/tutorial/data', '/tutorial/coach', '/tutorial/help'
   ];
+  var CONTENT_FRAME_SELECTOR = [
+    '.admin-page', '.badge-page', '.ch-page', '.coach-page', '.club-main',
+    '.comm-wrap', '.dash-page', '.data-page', '.drill-page', '.eq-page',
+    '.plan-page', '.rp-page', '.tl-page', '.vids-page', '.guide-page'
+  ].join(', ');
 
   function currentPath() {
     return window.location.pathname.replace(/\/+$/, '') || '/';
@@ -24,6 +29,12 @@
 
   function isServicePage() {
     return APP_HEADER_PATHS.indexOf(currentPath()) !== -1;
+  }
+
+  function markGlobalContentFrame() {
+    document.querySelectorAll(CONTENT_FRAME_SELECTOR).forEach(function (element) {
+      element.classList.add('global-content-frame');
+    });
   }
 
   // 브라우저 탭과 홈 화면에서 같은 수영 아이콘을 사용한다.
@@ -138,12 +149,20 @@
     var anchor = document.body.firstElementChild;
     document.body.insertBefore(header, anchor);
     document.body.classList.add('global-app-header-enabled');
+    markGlobalContentFrame();
     var headerLeft = header.querySelector('.global-app-header-left');
     var pageMenu = document.getElementById('menu-toggle') || document.getElementById('admin-menu-toggle');
     var contextualMenu = document.getElementById('sidebar-toggle-btn');
     if (pageMenu) headerLeft.insertBefore(pageMenu, header.querySelector('.global-app-home'));
     if (contextualMenu) headerLeft.insertBefore(contextualMenu, header.querySelector('.global-app-home'));
-    document.documentElement.style.setProperty('--global-app-header-height', Math.ceil(header.getBoundingClientRect().height) + 'px');
+    var syncHeaderMetrics = function () {
+      var rect = header.getBoundingClientRect();
+      var height = Math.ceil(rect.height);
+      var visibleHeight = Math.max(0, Math.min(height, Math.ceil(rect.bottom)));
+      document.documentElement.style.setProperty('--global-app-header-height', height + 'px');
+      document.documentElement.style.setProperty('--global-app-header-visible-height', visibleHeight + 'px');
+    };
+    syncHeaderMetrics();
 
     var themeButton = document.getElementById('theme-toggle-btn');
     themeButton.textContent = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? '🌙' : '☀️';
@@ -151,9 +170,8 @@
     document.getElementById('global-app-logout').addEventListener('click', logoutFromHeader);
 
     loadHeaderSession();
-    window.addEventListener('resize', function () {
-      document.documentElement.style.setProperty('--global-app-header-height', Math.ceil(header.getBoundingClientRect().height) + 'px');
-    });
+    window.addEventListener('resize', syncHeaderMetrics);
+    window.addEventListener('scroll', syncHeaderMetrics, { passive: true });
     window.dispatchEvent(new CustomEvent('swimmate:app-header-ready'));
   }
  

@@ -2,7 +2,7 @@
   'use strict';
 
   var NAV_ID = 'global-service-nav';
-  var MOBILE_QUERY = window.matchMedia('(max-width: 900px)');
+  var MOBILE_QUERY = window.matchMedia('(max-width: 1100px)');
   var PATH_ALIASES = {
     '/badge': '/badges',
     '/training_log': '/training-log'

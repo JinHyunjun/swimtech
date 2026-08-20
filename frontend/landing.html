@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="/static/style.css">
 <style>
 body { overflow-x:hidden; }
-.home-header { position:sticky; top:0; z-index:120; }
+.home-header { position:relative; top:auto; z-index:120; }
 .home-header .header-left { min-width:0; }
 .menu-toggle { display:none; align-items:center; justify-content:center; width:42px; height:42px; padding:0; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text); background:var(--surface); font-size:22px; cursor:pointer; }
 .brand-home { display:flex; align-items:center; gap:10px; min-width:0; color:inherit; text-decoration:none; }
@@ -25,8 +25,8 @@ body { overflow-x:hidden; }
 .header-profile { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 13px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--muted); background:var(--surface); text-decoration:none; font-size:var(--fs-caption); font-weight:700; }
 .header-logout { min-height:42px; padding:0 13px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--muted); background:transparent; font-size:var(--fs-caption); font-weight:700; cursor:pointer; }
 
-.home-shell { display:grid; grid-template-columns:270px minmax(0,1fr); width:min(1460px,100%); min-height:calc(100vh - var(--home-header-height,71px)); margin:0 auto; }
-.service-sidebar { position:sticky; top:var(--home-header-height,71px); align-self:start; height:calc(100vh - var(--home-header-height,71px)); overflow-y:auto; padding:18px 14px 24px; border-right:.5px solid var(--border); background:color-mix(in srgb,var(--bg) 92%,transparent); scrollbar-width:thin; }
+.home-shell { display:grid; grid-template-columns:var(--global-service-nav-width,268px) minmax(0,1fr); width:100%; min-height:calc(100dvh - var(--home-header-height,71px)); margin:0; }
+.service-sidebar { position:sticky; top:var(--global-app-header-visible-height,var(--home-header-height,71px)); align-self:start; height:calc(100dvh - var(--global-app-header-visible-height,var(--home-header-height,71px))); overflow-y:auto; padding:18px 14px 24px; border-right:.5px solid var(--border); background:color-mix(in srgb,var(--bg) 92%,transparent); scrollbar-width:thin; }
 .sidebar-user { display:flex; align-items:center; gap:11px; margin:0 2px 17px; padding:13px; border:.5px solid var(--border); border-radius:var(--radius-md); background:linear-gradient(135deg,rgba(0,180,216,.12),var(--surface)); }
 .sidebar-avatar { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; border-radius:50%; color:#03131d; background:linear-gradient(135deg,var(--cyan),var(--green)); font-weight:900; }
 .sidebar-user-copy { min-width:0; }
@@ -45,8 +45,9 @@ body { overflow-x:hidden; }
 .admin-nav { display:none; }
 .sidebar-footer { display:grid; gap:3px; margin-top:18px; padding-top:14px; border-top:.5px solid var(--border); }
 
-.sidebar-backdrop { position:fixed; inset:var(--home-header-height,71px) 0 0; z-index:105; display:none; background:rgba(0,8,14,.7); backdrop-filter:blur(2px); }
-.home-main { min-width:0; padding:28px clamp(18px,3vw,42px) 64px; }
+.sidebar-backdrop { position:fixed; inset:var(--global-app-header-visible-height,var(--home-header-height,71px)) 0 0; z-index:105; display:none; background:rgba(0,8,14,.7); backdrop-filter:blur(2px); }
+.home-main { min-width:0; padding:0; }
+.home-main-inner { max-width:var(--global-content-max-width,1280px); padding:28px clamp(18px,3vw,42px) 64px; }
 .welcome-row { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:20px; }
 .welcome-eyebrow { margin-bottom:6px; color:var(--cyan); font-size:var(--fs-caption); font-weight:800; }
 .welcome-title { margin:0; color:var(--text); font-size:clamp(26px,3.2vw,40px); font-style:italic; font-weight:900; letter-spacing:-.035em; }
@@ -115,14 +116,14 @@ body { overflow-x:hidden; }
   .training-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .dashboard-layout { grid-template-columns:1fr; }
 }
-@media (max-width:900px) {
+@media (max-width:1100px) {
   .menu-toggle { display:inline-flex; }
   .brand-copy small { display:none; }
   .home-shell { display:block; }
-  .service-sidebar { position:fixed; top:var(--home-header-height,71px); bottom:auto; left:0; z-index:110; align-self:auto; width:min(300px,86vw); height:calc(100vh - var(--home-header-height,71px)); border-right:.5px solid var(--border); box-shadow:18px 0 45px rgba(0,0,0,.34); transform:translateX(-105%); transition:transform .22s ease; }
+  .service-sidebar { position:fixed; top:var(--global-app-header-visible-height,var(--home-header-height,71px)); bottom:auto; left:0; z-index:110; align-self:auto; width:min(300px,86vw); height:calc(100dvh - var(--global-app-header-visible-height,var(--home-header-height,71px))); border-right:.5px solid var(--border); box-shadow:18px 0 45px rgba(0,0,0,.34); transform:translateX(-105%); transition:transform .22s ease; }
   .service-sidebar.open { transform:translateX(0); }
   .sidebar-backdrop.show { display:block; }
-  .home-main { padding-top:22px; }
+  .home-main-inner { padding-top:22px; }
 }
 @media (max-width:600px) {
   .home-header { min-height:58px; }
@@ -131,7 +132,7 @@ body { overflow-x:hidden; }
   .header-profile { width:42px; padding:0; font-size:0; }
   .header-profile::before { content:"👤"; font-size:17px; }
   .header-logout { display:none; }
-  .home-main { padding:18px 12px 48px; }
+  .home-main-inner { padding:18px 12px 48px; }
   .welcome-row { align-items:flex-start; flex-direction:column; gap:13px; }
   .primary-cta { width:100%; }
   .training-summary { gap:8px; }
@@ -229,6 +230,7 @@ body { overflow-x:hidden; }
     </aside>
 
     <main class="home-main" id="main-content">
+      <div class="home-main-inner global-content-frame">
       <section class="welcome-row" aria-labelledby="welcome-title">
         <div>
           <div class="welcome-eyebrow" id="today-label">오늘의 수영</div>
@@ -304,6 +306,7 @@ body { overflow-x:hidden; }
       <footer class="home-footer">
         <a href="/privacy">개인정보처리방침</a><a href="/terms">이용약관</a><a href="/changelog">릴리즈 노트</a><a href="/feedback">피드백</a>
       </footer>
+      </div>
     </main>
   </div>
 </div>
@@ -335,13 +338,13 @@ function setSidebar(open) {
   sidebarBackdrop.setAttribute('aria-hidden', String(!open));
   menuToggle.setAttribute('aria-expanded', String(open));
   menuToggle.setAttribute('aria-label', open ? '서비스 메뉴 닫기' : '서비스 메뉴 열기');
-  document.body.style.overflow = open && window.innerWidth <= 900 ? 'hidden' : '';
+  document.body.style.overflow = open && window.innerWidth <= 1100 ? 'hidden' : '';
 }
 menuToggle.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')));
 sidebarBackdrop.addEventListener('click', () => setSidebar(false));
 sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setSidebar(false)));
 document.addEventListener('keydown', event => { if (event.key === 'Escape') setSidebar(false); });
-window.addEventListener('resize', () => { syncHeaderOffset(); if (window.innerWidth > 900) setSidebar(false); });
+window.addEventListener('resize', () => { syncHeaderOffset(); if (window.innerWidth > 1100) setSidebar(false); });
 window.addEventListener('load', syncHeaderOffset);
 
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value == null ? '' : String(value); return el.innerHTML; }
