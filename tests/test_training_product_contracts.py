@@ -1390,6 +1390,8 @@ def test_ai_workout_screenshot_import_requires_review_and_keeps_original_image_e
     assert "word-break: keep-all" in page
     assert "def check_responsive_layout" in crawler
     assert "check_responsive_layout(page, path)" in crawler
+    assert "#global-app-header, #global-service-nav, #service-sidebar" in crawler
+    assert "wait_for(state=\"attached\", timeout=5000)" in crawler
     for viewport_label in ("ultrawide-2560", "wide-1440", "desktop-1280", "navigation-breakpoint-1100", "laptop-1024", "tablet-768", "mobile-390"):
         assert viewport_label in crawler
     assert "compactWrap" in crawler

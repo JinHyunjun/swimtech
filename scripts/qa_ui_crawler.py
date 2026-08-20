@@ -804,8 +804,13 @@ def check_global_app_header(page, path):
             else "#global-service-nav-toggle" if route in SERVICE_NAV_PATHS
             else None
         )
-        if expected_menu and not page.locator(f"#global-app-header .global-app-header-left > {expected_menu}").count():
-            errors.append({"type": "global_app_header_menu_placement", "selector": expected_menu})
+        if expected_menu:
+            try:
+                page.locator(
+                    f"#global-app-header .global-app-header-left > {expected_menu}"
+                ).wait_for(state="attached", timeout=5000)
+            except Exception:
+                errors.append({"type": "global_app_header_menu_placement", "selector": expected_menu})
         if route == "/chat" and not page.locator("#global-app-header .global-app-header-left > #sidebar-toggle-btn").count():
             errors.append({"type": "global_app_header_chat_history_missing"})
         if route == "/community":
@@ -1546,6 +1551,14 @@ def collect_candidates(page, selector=CLICKABLE_SELECTOR):
     for i, h in enumerate(handles[:MAX_ACTIONS_PER_PAGE]):
         try:
             if not h.is_visible():
+                continue
+            # 공통 헤더와 서비스 내비게이션은 전용 좌표·경로·드로어 검사에서
+            # 이미 검증한다. 페이지 이동 뒤 DOM이 재주입되는 이 요소들을 저장한
+            # nth 인덱스로 다시 클릭하면 다른 버튼(특히 로그아웃)을 누를 수 있으므로
+            # 일반 콘텐츠 상호작용 대상에서는 제외한다.
+            if selector == CLICKABLE_SELECTOR and h.evaluate(
+                "element => Boolean(element.closest('#global-app-header, #global-service-nav, #service-sidebar'))"
+            ):
                 continue
             text = (h.inner_text(timeout=1000) or "").strip().replace("\n", " ")[:60]
             el_id = h.get_attribute("id") or ""
