@@ -315,6 +315,9 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     assert "service_navigation_mobile_escape_close_failed" in ui_qa
     assert "service_navigation_search_result_hidden" in ui_qa
     assert "service_navigation_mobile_quick_nav_missing" in ui_qa
+    assert "page.wait_for_timeout(150)" in ui_qa
+    assert "def is_non_blocking_response(url):" in ui_qa
+    assert 'endswith("/api/admin/track")' in ui_qa
     assert ":not(.global-service-nav-link):not(.service-nav-link)" in ui_qa
 
 

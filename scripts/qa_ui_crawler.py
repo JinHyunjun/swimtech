@@ -138,6 +138,9 @@ DESTRUCTIVE_ID_PATTERN = re.compile(r"deleteBtn|withdraw|logout|ai-generate-btn|
 # 앱 코드와 무관한 서드파티/브라우저 노이즈는 에러로 치지 않음
 IGNORE_CONSOLE_PATTERNS = [re.compile(p, re.I) for p in [
     r"ResizeObserver loop",
+    # Chromium은 실패 응답마다 URL 없는 일반 메시지를 한 번 더 남긴다.
+    # 실제 실패 URL·상태는 아래 response 수집기가 별도로 판정한다.
+    r"Failed to load resource: the server responded with a status of \d+",
     r"kakao", r"daumcdn", r"kakaocdn",
     r"Download the React DevTools",
     r"X-Frame-Options",
@@ -503,6 +506,11 @@ def is_ignored_console(text):
     return any(p.search(text) for p in IGNORE_CONSOLE_PATTERNS)
 
 
+def is_non_blocking_response(url):
+    """화면 기능과 분리된 분석 전송은 전용 운영 API QA에서 판정한다."""
+    return url.split("?", 1)[0].rstrip("/").endswith("/api/admin/track")
+
+
 def ensure_user_account(username=None, password=None, email=None, name="QA봇"):
     username = username or USERNAME
     password = password or PASSWORD
@@ -749,6 +757,9 @@ def check_service_navigation(page, path):
         original_viewport = page.viewport_size
         try:
             page.set_viewport_size({"width": 390, "height": 844})
+            # matchMedia change 이벤트가 setOpen(false)로 aria-hidden·inert를
+            # 동기화한 뒤 초기 상태를 읽는다.
+            page.wait_for_timeout(150)
             toggle = page.locator("#global-service-nav-toggle")
             toggle.wait_for(state="visible", timeout=3000)
             if sidebar.get_attribute("aria-hidden") != "true":
@@ -1693,6 +1704,8 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
     def on_response(resp):
         try:
             if resp.status == 401 and "/auth/refresh" in resp.url:
+                return
+            if is_non_blocking_response(resp.url):
                 return
             if resp.status >= 400 and resp.url.startswith(BASE) and "/static/" not in resp.url:
                 network_errors.append({"url": resp.url, "status": resp.status})
