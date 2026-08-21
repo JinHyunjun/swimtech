@@ -25,28 +25,52 @@
 .drill-sub   { font-size: var(--fs-caption); color: var(--muted); margin-top: 2px; }
 
 .drill-principle {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(220px, .6fr);
-  gap: 14px;
   margin-bottom: 18px;
-  padding: 16px 18px;
   background: linear-gradient(135deg, rgba(0,180,216,.1), rgba(72,202,228,.04));
   border: 0.5px solid rgba(0,180,216,.28);
   border-radius: var(--radius-md);
+}
+.drill-principle > summary {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+}
+.drill-principle > summary::-webkit-details-marker { display: none; }
+.drill-principle > summary::after { content: '＋'; flex: 0 0 auto; color: var(--cyan); }
+.drill-principle[open] > summary::after { content: '−'; }
+.drill-principle-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, .6fr);
+  gap: 14px;
+  padding: 12px 16px 16px;
+  border-top: .5px solid rgba(0,180,216,.16);
 }
 .drill-principle strong { display: block; color: var(--text); font-size: var(--fs-body); margin-bottom: 5px; }
 .drill-principle p { color: var(--muted); font-size: var(--fs-caption); line-height: 1.65; margin: 0; }
 .principle-rule { display: flex; flex-direction: column; justify-content: center; gap: 4px; color: var(--cyan); font-size: var(--fs-caption); }
 
 .drill-tools {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
+  display: block;
+  padding: 12px;
   margin-bottom: 18px;
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-md);
 }
+.drill-filter-details { margin-top: 9px; border-top: .5px solid var(--border); }
+.drill-filter-details > summary { display:flex; min-height:42px; align-items:center; justify-content:space-between; gap:10px; padding:9px 2px 5px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; list-style:none; cursor:pointer; }
+.drill-filter-details > summary::-webkit-details-marker { display:none; }
+.drill-filter-details > summary::after { content:'＋'; color:var(--cyan); }
+.drill-filter-details[open] > summary::after { content:'−'; }
+.drill-filter-body { display:grid; gap:12px; padding:7px 0 2px; }
 .drill-tool-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .drill-tool-label { min-width: 76px; color: var(--muted); font-size: var(--fs-caption); font-weight: 700; }
 .drill-search {
@@ -210,6 +234,12 @@
   color: var(--text);
   font-weight: 500;
 }
+.drill-card-more { margin:-2px 0 12px; border-top:.5px solid var(--border); }
+.drill-card-more > summary { min-height:38px; padding:9px 1px 6px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; list-style:none; cursor:pointer; }
+.drill-card-more > summary::-webkit-details-marker { display:none; }
+.drill-card-more > summary::after { content:' ＋'; color:var(--cyan); }
+.drill-card-more[open] > summary::after { content:' −'; }
+.drill-card-more .drill-info-row { padding:4px 1px 2px; }
 
 .drill-effect {
   display: inline-flex;
@@ -261,8 +291,9 @@
 @media (max-width: 600px) {
   .drill-page { padding: 16px; }
   .drill-grid { grid-template-columns: 1fr; }
-  .drill-principle { grid-template-columns: 1fr; }
+  .drill-principle-body { grid-template-columns: 1fr; }
   .drill-tool-label { width: 100%; }
+  .drill-result-meta span:last-child { display:none; }
 }
 </style>
 </head>
@@ -285,41 +316,48 @@
       </div>
     </div>
 
-    <section class="drill-principle" aria-label="드릴 활용 원칙">
-      <div>
-        <strong>한 세션에는 교정 포인트 1~2개만</strong>
-        <p>드릴은 동작 자체를 끝내는 훈련이 아니라, 느낀 감각을 완전 영법으로 옮기는 연습입니다. 드릴 뒤에는 같은 거리를 편안한 완전 영법으로 연결하고 자세가 무너지면 반복 수를 줄이세요.</p>
+    <details class="drill-principle" aria-label="드릴 활용 원칙">
+      <summary>처음이라면 · 드릴 활용법 보기</summary>
+      <div class="drill-principle-body">
+        <div>
+          <strong>한 세션에는 교정 포인트 1~2개만</strong>
+          <p>드릴에서 느낀 감각은 같은 거리의 편안한 완전 영법으로 연결하세요. 자세가 무너지면 반복 수를 줄입니다.</p>
+        </div>
+        <div class="principle-rule">
+          <span>① 목적 확인 → ② 짧게 반복</span>
+          <span>③ 완전 영법 연결 → ④ 느낌 기록</span>
+        </div>
       </div>
-      <div class="principle-rule">
-        <span>① 목적 확인 → ② 짧게 반복</span>
-        <span>③ 완전 영법 연결 → ④ 느낌 기록</span>
-      </div>
-    </section>
+    </details>
 
     <section class="drill-tools" aria-label="드릴 검색 및 필터">
-      <input id="drill-search" class="drill-search" type="search" placeholder="드릴명, 목적, 방법 검색 (예: 호흡, 킥, 스컬링)" autocomplete="off">
-      <div class="drill-tool-row" id="focus-filters" role="group" aria-label="교정 목적">
-        <span class="drill-tool-label">교정 목적</span>
-        <button class="filter-chip active" type="button" data-focus="all">전체</button>
-        <button class="filter-chip" type="button" data-focus="catch">캐치·물감각</button>
-        <button class="filter-chip" type="button" data-focus="kick">킥·하체</button>
-        <button class="filter-chip" type="button" data-focus="breath">호흡</button>
-        <button class="filter-chip" type="button" data-focus="timing">타이밍·리듬</button>
-        <button class="filter-chip" type="button" data-focus="body">자세·균형</button>
-      </div>
-      <div class="drill-tool-row" id="level-filters" role="group" aria-label="난이도">
-        <span class="drill-tool-label">난이도</span>
-        <button class="filter-chip active" type="button" data-level="all">전체</button>
-        <button class="filter-chip" type="button" data-level="beginner">초급</button>
-        <button class="filter-chip" type="button" data-level="intermediate">중급</button>
-        <button class="filter-chip" type="button" data-level="advanced">고급</button>
-      </div>
-      <div class="drill-tool-row" id="pool-filters" role="group" aria-label="수영장 길이">
-        <span class="drill-tool-label">수영장</span>
-        <button class="filter-chip active" type="button" data-pool="25">25m</button>
-        <button class="filter-chip" type="button" data-pool="50">50m</button>
-        <span class="drill-sub">카드의 적용 예시와 출발 사이클 기준이 바뀝니다.</span>
-      </div>
+      <input id="drill-search" class="drill-search" type="search" placeholder="드릴명이나 교정 목적 검색" autocomplete="off">
+      <details class="drill-filter-details" id="drill-filter-details">
+        <summary>상세 필터 · 전체 목적 · 전체 난이도 · 25m</summary>
+        <div class="drill-filter-body">
+          <div class="drill-tool-row" id="focus-filters" role="group" aria-label="교정 목적">
+            <span class="drill-tool-label">교정 목적</span>
+            <button class="filter-chip active" type="button" data-focus="all">전체</button>
+            <button class="filter-chip" type="button" data-focus="catch">캐치·물감각</button>
+            <button class="filter-chip" type="button" data-focus="kick">킥·하체</button>
+            <button class="filter-chip" type="button" data-focus="breath">호흡</button>
+            <button class="filter-chip" type="button" data-focus="timing">타이밍·리듬</button>
+            <button class="filter-chip" type="button" data-focus="body">자세·균형</button>
+          </div>
+          <div class="drill-tool-row" id="level-filters" role="group" aria-label="난이도">
+            <span class="drill-tool-label">난이도</span>
+            <button class="filter-chip active" type="button" data-level="all">전체</button>
+            <button class="filter-chip" type="button" data-level="beginner">초급</button>
+            <button class="filter-chip" type="button" data-level="intermediate">중급</button>
+            <button class="filter-chip" type="button" data-level="advanced">고급</button>
+          </div>
+          <div class="drill-tool-row" id="pool-filters" role="group" aria-label="수영장 길이">
+            <span class="drill-tool-label">수영장</span>
+            <button class="filter-chip active" type="button" data-pool="25">25m</button>
+            <button class="filter-chip" type="button" data-pool="50">50m</button>
+          </div>
+        </div>
+      </details>
     </section>
 
     <div class="drill-result-meta" aria-live="polite">
@@ -921,6 +959,16 @@ function prepareDrillCards() {
   document.querySelectorAll('.drill-card').forEach(card => {
     card.dataset.level = drillLevel(card);
     card.dataset.focus = [...drillFocuses(card)].join(' ');
+    const info = card.querySelector('.drill-info');
+    const method = info ? [...info.querySelectorAll('.drill-info-row')].find(row => row.querySelector('strong')?.textContent.trim() === '방법') : null;
+    if (method) {
+      const more = document.createElement('details');
+      more.className = 'drill-card-more';
+      const summary = document.createElement('summary');
+      summary.textContent = '방법 보기';
+      more.append(summary, method);
+      info.after(more);
+    }
     const apply = document.createElement('div');
     apply.className = 'drill-apply';
     apply.innerHTML = `<strong>적용 예시</strong><br><span></span>`;
@@ -948,6 +996,12 @@ function filterDrills() {
   });
   document.getElementById('drill-count').textContent = `${visible}개`;
   document.getElementById('drill-empty').style.display = visible ? 'none' : 'block';
+  const labels = {
+    focus: { all:'전체 목적', catch:'캐치·물감각', kick:'킥·하체', breath:'호흡', timing:'타이밍·리듬', body:'자세·균형' },
+    level: { all:'전체 난이도', beginner:'초급', intermediate:'중급', advanced:'고급' }
+  };
+  const summary = document.querySelector('#drill-filter-details > summary');
+  if (summary) summary.textContent = `상세 필터 · ${labels.focus[drillState.focus]} · ${labels.level[drillState.level]} · ${drillState.pool}m`;
 }
 
 function bindFilterGroup(id, key, attribute) {

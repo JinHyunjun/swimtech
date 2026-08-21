@@ -128,6 +128,9 @@
   function installGlobalHeader() {
     if (!isServicePage() || document.getElementById('global-app-header')) return;
 
+    document.body.classList.add('swimmate-clarity-ui');
+    document.body.dataset.serviceRoute = currentPath().slice(1).replace(/\//g, '-') || 'home';
+
     var header = document.createElement('header');
     header.id = 'global-app-header';
     header.className = 'global-app-header';
@@ -135,7 +138,7 @@
     header.innerHTML =
       '<div class="global-app-header-left">' +
         '<a class="global-app-home" href="/landing" aria-label="SwimMate 내 훈련 홈으로 이동">' +
-          '<img src="/static/icons/favicon.svg" alt=""><span>SwimMate 홈</span>' +
+          '<img src="/static/icons/favicon.svg" alt=""><span>SwimMate</span>' +
         '</a>' +
         '<span class="global-app-context">' + headerContextLabel() + '</span>' +
       '</div>' +

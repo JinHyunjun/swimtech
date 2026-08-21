@@ -58,8 +58,14 @@
 .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .session-card { background: rgba(0,0,0,.12); border: 0.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
 .session-card:hover { transform: translateY(-3px); border-color: var(--accent-secondary); box-shadow: 0 12px 26px rgba(0,150,180,.16); }
-.session-day-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: rgba(0,180,216,.06); }
+.session-day-header { display: flex; min-height:58px; align-items: center; justify-content: space-between; gap:10px; padding: 10px 14px; background: rgba(0,180,216,.06); list-style:none; cursor:pointer; }
+.session-day-header::-webkit-details-marker { display:none; }
+.session-day-header::after { content:'＋'; flex:0 0 auto; color:var(--cyan); font-weight:900; }
+.session-card[open] .session-day-header { border-bottom: 0.5px solid var(--border); }
+.session-card[open] .session-day-header::after { content:'−'; }
+.session-day-copy { min-width:0; }
 .session-day { font-size: var(--fs-body); font-weight: 700; color: var(--blue); }
+.session-summary-meta { display:block; margin-top:3px; color:var(--muted); font-size:var(--fs-caption); font-weight:600; }
 .session-card.day-done { border-color: #4ade80; }
 .day-done-badge { font-size: var(--fs-caption); color: #4ade80; font-weight: 600; }
 .btn-day-complete {
@@ -341,6 +347,31 @@
   .plan-card-header { padding: 16px; }
   .form-section { padding: 16px; }
 }
+
+/* P32: 14개 기능을 목적 선택 1개와 네 가지 작업 방식으로 재구성한다. */
+.plan-choice-shell { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,.58fr); gap:12px; margin-bottom:16px; padding:16px; border:.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); }
+.plan-choice-main { min-width:0; }
+.plan-choice-label { margin-bottom:7px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; }
+.plan-mode-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+.plan-mode-btn { min-height:48px; padding:7px 9px; border:.5px solid var(--border); border-radius:11px; color:var(--muted); background:rgba(255,255,255,.02); font:inherit; font-size:var(--fs-caption); font-weight:800; cursor:pointer; }
+.plan-mode-btn:hover { border-color:var(--cyan); color:var(--text); }
+.plan-mode-btn.active { border-color:rgba(0,180,216,.45); color:var(--cyan); background:rgba(0,180,216,.12); box-shadow:inset 0 -2px 0 var(--blue); }
+.plan-purpose-field { display:flex; min-width:0; flex-direction:column; gap:7px; }
+.plan-purpose-field.hidden { display:none; }
+.plan-purpose-field label { color:var(--muted); font-size:var(--fs-caption); font-weight:800; }
+.plan-purpose-select { width:100%; min-height:48px; padding:0 12px; border:.5px solid var(--border); border-radius:11px; color:var(--text); background:var(--surface2); font:inherit; font-size:var(--fs-body); font-weight:800; outline:none; }
+.plan-purpose-select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,180,216,.08); }
+.plan-purpose-copy { min-height:20px; color:var(--muted); font-size:var(--fs-caption); line-height:1.45; }
+.tab-bar.plan-legacy-tabs { position:absolute !important; width:1px !important; height:1px !important; overflow:hidden !important; clip-path:inset(50%) !important; }
+.plan-context-details,.plan-tool-details { margin-bottom:12px; border:.5px solid var(--border); border-radius:var(--radius-md); background:rgba(255,255,255,.018); }
+.plan-context-details > summary,.plan-tool-details > summary { display:flex; min-height:44px; align-items:center; justify-content:space-between; padding:8px 13px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; list-style:none; cursor:pointer; }
+.plan-context-details > summary::-webkit-details-marker,.plan-tool-details > summary::-webkit-details-marker { display:none; }
+.plan-context-details > summary::after,.plan-tool-details > summary::after { content:'＋'; color:var(--cyan); }
+.plan-context-details[open] > summary::after,.plan-tool-details[open] > summary::after { content:'−'; }
+.plan-context-details .pool-length-control { margin:0; padding:0 13px 13px; }
+.plan-tool-details .pace-helper-panel { margin:0 12px 12px; }
+.plan-context-details .cycle-guide { margin:0 13px 13px; }
+@media(max-width:760px){.plan-choice-shell{grid-template-columns:1fr}.plan-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -358,19 +389,9 @@
     <div class="plan-topbar">
       <div class="plan-topbar-title">
         <div class="plan-title"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-plan"/></svg> 수영 훈련 플랜</div>
-        <div class="plan-sub">목적에 맞는 4주 플랜으로 체계적으로 성장하세요</div>
-        <div class="pool-length-control" aria-label="훈련 수영장 길이 선택">
-          <span class="pool-length-label">🏊 훈련 수영장</span>
-          <button type="button" class="pool-length-option" data-pool-length="25">25 m 풀</button>
-          <button type="button" class="pool-length-option" data-pool-length="50">50 m 풀</button>
-          <span class="pool-length-label" style="margin-left:8px;">⏱ 사이클 기준</span>
-          <button type="button" class="pool-length-option" data-cycle-level="입문">입문</button>
-          <button type="button" class="pool-length-option" data-cycle-level="초급">초급</button>
-          <button type="button" class="pool-length-option" data-cycle-level="중급">중급</button>
-          <button type="button" class="pool-length-option" data-cycle-level="고급">고급</button>
-        </div>
+        <div class="plan-sub">목표와 만드는 방식을 먼저 선택하세요.</div>
       </div>
-      <button class="btn-create-plan" id="open-modal-btn">🎲 내 플랜 만들기</button>
+      <button class="btn-create-plan" id="open-modal-btn">빠른 생성</button>
     </div>
 
     <!-- 플랜 현황 배너 -->
@@ -393,7 +414,47 @@
       </div>
     </div>
 
-    <div class="tab-bar" id="tab-bar">
+    <section class="plan-choice-shell" aria-labelledby="plan-choice-title">
+      <div class="plan-choice-main">
+        <div class="plan-choice-label" id="plan-choice-title">어떻게 만들까요?</div>
+        <div class="plan-mode-grid">
+          <button class="plan-mode-btn active" type="button" data-plan-mode="purpose">추천 플랜</button>
+          <button class="plan-mode-btn" type="button" data-plan-mode="random">빠른 생성</button>
+          <button class="plan-mode-btn" type="button" data-plan-mode="builder">직접 구성</button>
+          <button class="plan-mode-btn" type="button" data-plan-mode="myplan">내 플랜</button>
+        </div>
+      </div>
+      <div class="plan-purpose-field" id="plan-purpose-field">
+        <label for="plan-purpose-select">훈련 목표</label>
+        <select class="plan-purpose-select" id="plan-purpose-select">
+          <option value="speed">기록 단축</option><option value="health">건강하게 오래</option><option value="form">영법 교정</option>
+          <option value="hobby">취미·건강 유지</option><option value="diet">다이어트</option><option value="butterfly_master">접영 마스터</option>
+          <option value="masters">마스터즈</option><option value="fitness">체력 향상</option><option value="correction">교정 집중</option>
+          <option value="analysis">교정 포인트</option><option value="race">대회 준비</option>
+        </select>
+        <div class="plan-purpose-copy" id="plan-purpose-copy">속도와 효율을 함께 높이는 4주 플랜입니다.</div>
+      </div>
+    </section>
+
+    <details class="plan-context-details">
+      <summary id="plan-context-summary">훈련 기준 · 25m 풀 · 중급 사이클</summary>
+      <div class="pool-length-control" aria-label="훈련 수영장 길이 선택">
+        <span class="pool-length-label">훈련 수영장</span>
+        <button type="button" class="pool-length-option" data-pool-length="25">25 m 풀</button>
+        <button type="button" class="pool-length-option" data-pool-length="50">50 m 풀</button>
+        <span class="pool-length-label" style="margin-left:8px;">사이클 기준</span>
+        <button type="button" class="pool-length-option" data-cycle-level="입문">입문</button>
+        <button type="button" class="pool-length-option" data-cycle-level="초급">초급</button>
+        <button type="button" class="pool-length-option" data-cycle-level="중급">중급</button>
+        <button type="button" class="pool-length-option" data-cycle-level="고급">고급</button>
+      </div>
+      <div class="cycle-guide" id="cycle-guide">
+        <strong>⏱ 목적별 권장 사이클</strong>
+        <span>기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>
+      </div>
+    </details>
+
+    <div class="tab-bar plan-legacy-tabs" id="tab-bar" aria-hidden="true" inert>
       <button class="tab-btn active" data-tab="speed"><svg class="icon icon-md" aria-hidden="true"><use href="/static/icons.svg#icon-badges"/></svg> 기록 단축</button>
       <button class="tab-btn" data-tab="health">💪 건강하게 오래</button>
       <button class="tab-btn" data-tab="form">🎯 영법 교정</button>
@@ -409,11 +470,9 @@
       <button class="tab-btn" data-tab="builder">🛠 직접 구성</button>
       <button class="tab-btn" data-tab="myplan">✨ 내 플랜</button>
     </div>
-    <div class="cycle-guide" id="cycle-guide">
-      <strong>⏱ 목적별 권장 사이클</strong>
-      <span>기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>
-    </div>
-    <div class="pace-helper-panel" id="pace-helper-panel">
+    <details class="plan-tool-details">
+      <summary>25m·50m 페이스 변환</summary>
+      <div class="pace-helper-panel" id="pace-helper-panel">
       <div class="pace-helper-title">🔁 25m / 50m 페이스 변환 보조</div>
       <div class="pace-helper-grid">
         <div class="pace-helper-field">
@@ -440,7 +499,8 @@
         </div>
       </div>
       <div class="pace-helper-result" id="pace-helper-result"></div>
-    </div>
+      </div>
+    </details>
     <div class="feedback-loop-panel" id="feedback-loop-panel">
       <div class="feedback-loop-title">📈 최근 일지 기반 다음 플랜 추천</div>
       <div class="feedback-loop-body" id="feedback-loop-body"></div>
@@ -1854,11 +1914,11 @@ function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options =
          ${done ? '✅ 완료 (다시 기록)' : '🏁 이 훈련 완료, 일지에 남기기'}
        </button>`;
   return `
-  <div class="session-card${done ? ' day-done' : ''}" id="${dayId ? 'sess-' + dayId : ''}">
-    <div class="session-day-header">
-      <span class="session-day">${s.day}</span>
+  <details class="session-card${done ? ' day-done' : ''}" id="${dayId ? 'sess-' + dayId : ''}">
+    <summary class="session-day-header">
+      <span class="session-day-copy"><span class="session-day">${s.day}</span><span class="session-summary-meta">${s.total}${estimatedSessionSeconds ? ` · 약 ${formatMinutesText(estimatedSessionSeconds / 60)}` : ''}</span></span>
       ${done ? '<span class="day-done-badge">✅ 완료</span>' : ''}
-    </div>
+    </summary>
     <div class="session-body">
       <div class="session-part">
         <div class="part-label">🌊 웜업</div>
@@ -1876,7 +1936,7 @@ function renderSession(s, planKey, weekIndex, dayIndex, weekIntensity, options =
       <div class="coach-tip">💡 ${s.tip}</div>
       ${completionButton}
     </div>
-  </div>`;
+  </details>`;
 }
 
 function getPlanGoalLabel(planKey) {
@@ -2263,6 +2323,43 @@ function switchTab(tabName) {
   if (content) content.classList.add('active');
   if (tabName === 'myplan') loadMyPlans();
   if (tabName === 'builder') renderBuilderEditor();
+  syncPlanChoice(tabName);
+}
+
+const PLAN_PURPOSE_TABS = ['speed','health','form','hobby','diet','butterfly_master','masters','fitness','correction','analysis','race'];
+const PLAN_PURPOSE_COPY = {
+  speed:'속도와 효율을 함께 높이는 4주 플랜입니다.', health:'무리 없이 꾸준히 수영하는 습관을 만듭니다.',
+  form:'기본 자세와 물잡기를 반복해 안정시킵니다.', hobby:'즐겁게 체력과 감각을 유지합니다.',
+  diet:'지속 가능한 유산소 거리와 강도로 구성합니다.', butterfly_master:'접영 리듬과 추진을 단계별로 익힙니다.',
+  masters:'마스터즈 훈련과 기록 향상을 함께 준비합니다.', fitness:'지구력과 심폐 능력을 점진적으로 높입니다.',
+  correction:'한 가지 교정 목표에 집중해 반복합니다.', analysis:'개선할 동작을 골라 맞춤 세트를 만듭니다.',
+  race:'종목·기간·목표 기록에 맞춰 대회를 준비합니다.'
+};
+
+function syncPlanChoice(tabName) {
+  const purpose = PLAN_PURPOSE_TABS.includes(tabName);
+  const mode = purpose ? 'purpose' : tabName;
+  document.querySelectorAll('[data-plan-mode]').forEach(button => button.classList.toggle('active', button.dataset.planMode === mode));
+  const field = document.getElementById('plan-purpose-field');
+  if (field) field.classList.toggle('hidden', !purpose);
+  const select = document.getElementById('plan-purpose-select');
+  if (purpose && select) select.value = tabName;
+  const copy = document.getElementById('plan-purpose-copy');
+  if (purpose && copy) copy.textContent = PLAN_PURPOSE_COPY[tabName] || '';
+}
+
+function initPlanChoice() {
+  document.querySelectorAll('[data-plan-mode]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.dataset.planMode === 'purpose') {
+        switchTab(document.getElementById('plan-purpose-select').value || 'speed');
+      } else {
+        switchTab(button.dataset.planMode);
+      }
+    });
+  });
+  document.getElementById('plan-purpose-select')?.addEventListener('change', event => switchTab(event.target.value));
+  syncPlanChoice(document.querySelector('.tab-btn.active')?.dataset.tab || 'speed');
 }
 
 function initTabs() {
@@ -2286,6 +2383,8 @@ function syncPoolLengthControls() {
   });
   const builderContext = document.getElementById('builder-pool-context');
   if (builderContext) builderContext.textContent = `🏊 ${selectedPoolLength}m 풀 · ${selectedCycleLevel} 사이클`;
+  const planContext = document.getElementById('plan-context-summary');
+  if (planContext) planContext.textContent = `훈련 기준 · ${selectedPoolLength}m 풀 · ${selectedCycleLevel} 사이클`;
   const guide = document.getElementById('cycle-guide');
   if (guide) {
     guide.innerHTML = `<strong>⏱ 목적별 권장 사이클</strong><span>${selectedPoolLength}m 풀 · ${selectedCycleLevel} 기준으로 기술·교정은 폼을 유지할 여유를, 지구력·페이스는 일정한 출발 간격을, 스피드는 충분한 회복을 반영합니다.</span>`;
@@ -3619,6 +3718,7 @@ initPoolLengthControl();
 initPaceHelper();
 renderPresetPlans();
 initTabs();
+initPlanChoice();
 initChips();
 initP2PlanTools();
 renderPoolList('전체');

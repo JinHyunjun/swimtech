@@ -44,6 +44,30 @@ body { overflow-x:hidden; }
 .nav-new { margin-left:auto; padding:2px 6px; border-radius:999px; color:#07161f; background:var(--green); font-size:10px; font-weight:900; }
 .admin-nav { display:none; }
 .sidebar-footer { display:grid; gap:3px; margin-top:18px; padding-top:14px; border-top:.5px solid var(--border); }
+.landing-record-cta { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; margin-bottom:9px; border-radius:12px; color:#03202b; background:linear-gradient(135deg,var(--blue),var(--cyan)); text-decoration:none; font-size:var(--fs-caption); font-weight:900; }
+.landing-nav-search { display:flex; align-items:center; gap:7px; min-height:40px; margin-bottom:10px; padding:0 10px; border:.5px solid var(--border); border-radius:11px; color:var(--muted); background:var(--surface2); }
+.landing-nav-search:focus-within { border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,180,216,.08); }
+.landing-nav-search input { width:100%; border:0; outline:0; color:var(--text); background:transparent; font:inherit; font-size:var(--fs-caption); }
+.landing-nav-primary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-bottom:12px; }
+.landing-nav-primary .service-nav-link { min-height:52px; flex-direction:column; justify-content:center; gap:3px; padding:6px; border-color:rgba(148,163,184,.12); font-size:11px; }
+.landing-nav-primary .nav-icon { flex-basis:auto; height:auto; font-size:18px; line-height:1; }
+.nav-group { margin-top:6px; border:.5px solid transparent; border-radius:12px; }
+.nav-group[open] { border-color:rgba(148,163,184,.12); background:rgba(255,255,255,.018); }
+.nav-group-title { display:grid; grid-template-columns:24px minmax(0,1fr) 18px; align-items:center; gap:8px; min-height:42px; margin:0; padding:8px 10px; border-radius:11px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; letter-spacing:0; list-style:none; cursor:pointer; }
+.nav-group-title::-webkit-details-marker { display:none; }
+.nav-group-title:hover { color:var(--text); background:rgba(72,202,228,.06); }
+.nav-group .service-nav { padding:0 5px 6px; }
+.nav-group .service-nav-link { min-height:38px; padding-block:6px; }
+.nav-chevron { transition:transform .18s ease; text-align:center; }
+.nav-group[open] .nav-chevron { transform:rotate(180deg); }
+.nav-search-hidden { display:none !important; }
+.home-stat-details { margin:-4px 0 16px; border:.5px solid var(--border); border-radius:var(--radius-md); background:rgba(255,255,255,.018); }
+.home-stat-details > summary { display:flex; min-height:42px; align-items:center; justify-content:space-between; padding:8px 14px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; list-style:none; cursor:pointer; }
+.home-stat-details > summary::-webkit-details-marker { display:none; }
+.home-stat-details > summary::after { content:'＋'; color:var(--cyan); }
+.home-stat-details[open] > summary::after { content:'−'; }
+.home-stat-details .training-summary { margin:0; padding:0 12px 12px; }
+.home-mobile-nav { display:none; }
 
 .sidebar-backdrop { position:fixed; inset:var(--global-app-header-visible-height,var(--home-header-height,71px)) 0 0; z-index:105; display:none; background:rgba(0,8,14,.7); backdrop-filter:blur(2px); }
 .home-main { min-width:0; padding:0; }
@@ -61,7 +85,7 @@ body { overflow-x:hidden; }
 .setup-notice span,.demo-banner span { color:var(--muted); font-size:var(--fs-caption); line-height:1.55; }
 .setup-notice a { flex:0 0 auto; padding:8px 12px; border-radius:var(--radius-sm); color:#03131d; background:var(--cyan); text-decoration:none; font-size:var(--fs-caption); font-weight:800; }
 
-.training-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+.training-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
 .summary-card { position:relative; overflow:hidden; min-width:0; padding:18px; border:.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
 .summary-card::after { content:""; position:absolute; right:-24px; bottom:-34px; width:88px; height:88px; border-radius:50%; background:rgba(0,180,216,.07); }
 .summary-label { color:var(--muted); font-size:var(--fs-caption); font-weight:700; }
@@ -132,7 +156,7 @@ body { overflow-x:hidden; }
   .header-profile { width:42px; padding:0; font-size:0; }
   .header-profile::before { content:"👤"; font-size:17px; }
   .header-logout { display:none; }
-  .home-main-inner { padding:18px 12px 48px; }
+  .home-main-inner { padding:18px 12px 92px; }
   .welcome-row { align-items:flex-start; flex-direction:column; gap:13px; }
   .primary-cta { width:100%; }
   .training-summary { gap:8px; }
@@ -144,6 +168,10 @@ body { overflow-x:hidden; }
   .history-distance { font-size:var(--fs-body); }
   .setup-notice { align-items:stretch; flex-direction:column; }
   .setup-notice a { text-align:center; }
+  .home-mobile-nav { position:fixed; right:8px; bottom:max(8px,env(safe-area-inset-bottom)); left:8px; z-index:105; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); min-height:58px; padding:5px; border:.5px solid rgba(72,202,228,.26); border-radius:18px; background:color-mix(in srgb,var(--surface) 94%,transparent); box-shadow:0 14px 38px rgba(0,0,0,.38); backdrop-filter:blur(18px); }
+  .home-mobile-nav a,.home-mobile-nav button { display:flex; min-width:0; min-height:48px; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:3px; border:0; border-radius:13px; color:var(--muted); background:transparent; font:inherit; font-size:10px; font-weight:800; text-decoration:none; }
+  .home-mobile-nav .active { color:var(--cyan); background:rgba(0,180,216,.13); }
+  .home-mobile-nav span:first-child { font-size:18px; line-height:1; }
 }
 @media (prefers-reduced-motion:reduce) {
   .service-sidebar,.weekly-bar-fill,.service-nav-link,.primary-cta { transition:none; }
@@ -174,52 +202,52 @@ body { overflow-x:hidden; }
         <div class="sidebar-user-copy"><strong id="sidebar-name">내 훈련</strong><span id="sidebar-role">수영 훈련 회원</span></div>
       </div>
 
+      <a class="landing-record-cta" href="/training-log?quick=1"><span aria-hidden="true">＋</span> 오늘 훈련 기록</a>
+      <label class="landing-nav-search"><span aria-hidden="true">⌕</span><span class="sr-only">기능 찾기</span><input id="landing-nav-search" type="search" placeholder="기능 찾기" autocomplete="off"></label>
+
       <nav aria-label="SwimMate 서비스">
-        <section class="nav-group">
-          <h2 class="nav-group-title">홈</h2>
-          <div class="service-nav">
-            <a class="service-nav-link active" href="/landing" aria-current="page"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-dashboard"/></svg></span>내 훈련 홈</a>
-            <a class="service-nav-link" href="/dashboard"><span class="nav-icon">📊</span>상세 훈련 대시보드</a>
-          </div>
+        <section class="landing-nav-primary" aria-label="핵심 기능">
+          <a class="service-nav-link active" href="/landing" aria-current="page"><span class="nav-icon">⌂</span>오늘</a>
+          <a class="service-nav-link" href="/training-log"><span class="nav-icon">＋</span>기록</a>
+          <a class="service-nav-link" href="/plan"><span class="nav-icon">▦</span>플랜</a>
+          <a class="service-nav-link" href="/report"><span class="nav-icon">↗</span>성장</a>
         </section>
 
-        <section class="nav-group">
-          <h2 class="nav-group-title">기록과 훈련</h2>
+        <details class="nav-group">
+          <summary class="nav-group-title"><span aria-hidden="true">◫</span><span>내 훈련 분석</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
           <div class="service-nav">
-            <a class="service-nav-link" href="/training-log"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-training-log"/></svg></span>훈련 일지</a>
-            <a class="service-nav-link" href="/plan"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-plan"/></svg></span>훈련 플랜</a>
-            <a class="service-nav-link" href="/workout"><span class="nav-icon">⏱</span>풀사이드 훈련</a>
-            <a class="service-nav-link" href="/report"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-report"/></svg></span>월간 성장 리포트</a>
-            <a class="service-nav-link" href="/my-data"><span class="nav-icon">📈</span>내 수영 데이터</a>
-            <a class="service-nav-link" href="/badges"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-badges"/></svg></span>뱃지 여정</a>
+            <a class="service-nav-link" href="/dashboard"><span class="nav-icon">◫</span>훈련 분석</a>
+            <a class="service-nav-link" href="/my-data"><span class="nav-icon">↗</span>내 수영 데이터</a>
+            <a class="service-nav-link" href="/workout"><span class="nav-icon">◉</span>풀사이드 실행</a>
+            <a class="service-nav-link" href="/badges"><span class="nav-icon">◇</span>뱃지 여정</a>
+            <a class="service-nav-link" href="/challenge"><span class="nav-icon">⚡</span>수영 챌린지</a>
           </div>
-        </section>
+        </details>
 
-        <section class="nav-group">
-          <h2 class="nav-group-title">코칭과 함께</h2>
+        <details class="nav-group">
+          <summary class="nav-group-title"><span aria-hidden="true">◎</span><span>코치·커뮤니티</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
           <div class="service-nav">
-            <a class="service-nav-link" href="/chat"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-robot"/></svg></span>AI 수영 코치</a>
-            <a class="service-nav-link" href="/coach"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-coach"/></svg></span>코치 연동</a>
-            <a class="service-nav-link" href="/clubs"><span class="nav-icon">🏊</span>클럽·반</a>
-            <a class="service-nav-link" href="/challenge"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-challenge"/></svg></span>수영 챌린지</a>
-            <a class="service-nav-link" href="/community"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-community"/></svg></span>커뮤니티</a>
+            <a class="service-nav-link" href="/chat"><span class="nav-icon">✦</span>AI 수영 코치</a>
+            <a class="service-nav-link" href="/coach"><span class="nav-icon">◎</span>코치 연동</a>
+            <a class="service-nav-link" href="/clubs"><span class="nav-icon">≈</span>클럽·반</a>
+            <a class="service-nav-link" href="/community"><span class="nav-icon">□</span>커뮤니티</a>
           </div>
-        </section>
+        </details>
 
-        <section class="nav-group">
-          <h2 class="nav-group-title">탐색과 도움</h2>
+        <details class="nav-group">
+          <summary class="nav-group-title"><span aria-hidden="true">?</span><span>수영 정보·도구</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
           <div class="service-nav">
-            <a class="service-nav-link" href="/pool"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-pool"/></svg></span>수영장 찾기</a>
-            <a class="service-nav-link" href="/drill"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-drill"/></svg></span>드릴 가이드</a>
-            <a class="service-nav-link" href="/injury"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-injury"/></svg></span>부상 예방</a>
-            <a class="service-nav-link" href="/equipment"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-equipment"/></svg></span>장비 가이드</a>
-            <a class="service-nav-link" href="/equipment?tab=swimwear"><span class="nav-icon">🩱</span>수영복 구매 가이드</a>
-            <a class="service-nav-link" href="/videos"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-videos"/></svg></span>영상 큐레이션</a>
-            <a class="service-nav-link" href="/glossary"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-glossary"/></svg></span>수영 용어 사전</a>
-            <a class="service-nav-link" href="/faq"><span class="nav-icon"><svg class="icon"><use href="/static/icons.svg#icon-faq"/></svg></span>자주 묻는 질문</a>
-            <a class="service-nav-link" href="/tutorial" id="tutorial-guide-card"><span class="nav-icon">?</span>기능 가이드</a>
+            <a class="service-nav-link" href="/pool"><span class="nav-icon">⌖</span>수영장 찾기</a>
+            <a class="service-nav-link" href="/drill"><span class="nav-icon">≈</span>드릴 가이드</a>
+            <a class="service-nav-link" href="/injury"><span class="nav-icon">＋</span>부상 예방</a>
+            <a class="service-nav-link" href="/equipment"><span class="nav-icon">○</span>장비 가이드</a>
+            <a class="service-nav-link" href="/equipment?tab=swimwear"><span class="nav-icon">◇</span>수영복 구매·사이즈</a>
+            <a class="service-nav-link" href="/videos"><span class="nav-icon">▷</span>영상 라이브러리</a>
+            <a class="service-nav-link" href="/glossary"><span class="nav-icon">A</span>수영 용어</a>
+            <a class="service-nav-link" href="/faq"><span class="nav-icon">?</span>자주 묻는 질문</a>
+            <a class="service-nav-link" href="/tutorial" id="tutorial-guide-card"><span class="nav-icon">i</span>기능 안내</a>
           </div>
-        </section>
+        </details>
       </nav>
 
       <div class="sidebar-footer">
@@ -235,7 +263,7 @@ body { overflow-x:hidden; }
         <div>
           <div class="welcome-eyebrow" id="today-label">오늘의 수영</div>
           <h1 class="welcome-title" id="welcome-title">내 훈련 현황</h1>
-          <p class="welcome-subtitle">이번 주 훈련량과 다음 세션만 먼저 확인하세요. 다른 기능은 왼쪽 메뉴에 정리했습니다.</p>
+          <p class="welcome-subtitle">오늘 필요한 훈련만 빠르게 확인하세요.</p>
         </div>
         <a class="primary-cta" href="/training-log?quick=1">+ 오늘 훈련 기록</a>
       </section>
@@ -251,9 +279,14 @@ body { overflow-x:hidden; }
       <section class="training-summary" aria-label="개인 훈련량 요약">
         <article class="summary-card"><div class="summary-label">이번 주 거리</div><div class="summary-value" id="home-week-distance">—</div><div class="summary-unit">m</div></article>
         <article class="summary-card"><div class="summary-label">이번 주 훈련</div><div class="summary-value green" id="home-week-sessions">—</div><div class="summary-unit">회</div></article>
-        <article class="summary-card"><div class="summary-label">이번 달 거리</div><div class="summary-value energy" id="home-month-distance">—</div><div class="summary-unit">m</div></article>
-        <article class="summary-card"><div class="summary-label">누적 거리</div><div class="summary-value" id="home-total-distance">—</div><div class="summary-unit">m</div></article>
       </section>
+      <details class="home-stat-details">
+        <summary>이번 달·누적 통계 보기</summary>
+        <section class="training-summary" aria-label="누적 훈련량">
+          <article class="summary-card"><div class="summary-label">이번 달 거리</div><div class="summary-value energy" id="home-month-distance">—</div><div class="summary-unit">m</div></article>
+          <article class="summary-card"><div class="summary-label">누적 거리</div><div class="summary-value" id="home-total-distance">—</div><div class="summary-unit">m</div></article>
+        </section>
+      </details>
 
       <div class="dashboard-layout">
         <div class="dashboard-column">
@@ -269,7 +302,7 @@ body { overflow-x:hidden; }
 
           <section class="home-panel" aria-labelledby="recent-title">
             <div class="panel-head">
-              <div><div class="panel-kicker">Recent Training</div><h2 class="panel-title" id="recent-title">최근 훈련 기록</h2><p class="panel-desc">가장 최근 세 번의 수영만 간단히 보여줍니다.</p></div>
+              <div><div class="panel-kicker">Recent Training</div><h2 class="panel-title" id="recent-title">최근 훈련 기록</h2></div>
               <a class="panel-link" href="/training-log">전체 일지 →</a>
             </div>
             <div class="history-list" id="home-history"><div class="empty-state">훈련 기록을 불러오는 중...</div></div>
@@ -291,15 +324,6 @@ body { overflow-x:hidden; }
             <div class="advisor-actions" id="advisor-actions"><a class="advisor-action" href="/plan">추천 플랜 보기</a><a class="advisor-action" href="/dashboard">준비도 체크</a></div>
           </section>
 
-          <section class="home-panel" aria-labelledby="quick-title">
-            <div class="panel-head"><div><div class="panel-kicker">Quick Start</div><h2 class="panel-title" id="quick-title">바로 시작하기</h2></div></div>
-            <div class="quick-grid">
-              <a class="quick-link" href="/training-log?quick=1">📝 훈련 기록</a>
-              <a class="quick-link" href="/plan">🗂 플랜 선택</a>
-              <a class="quick-link" href="/workout">⏱ 풀사이드</a>
-              <a class="quick-link" href="/report">📊 월간 리포트</a>
-            </div>
-          </section>
         </div>
       </div>
 
@@ -310,6 +334,14 @@ body { overflow-x:hidden; }
     </main>
   </div>
 </div>
+
+<nav class="home-mobile-nav" aria-label="빠른 이동">
+  <a class="active" href="/landing" aria-current="page"><span aria-hidden="true">⌂</span><span>오늘</span></a>
+  <a href="/training-log"><span aria-hidden="true">＋</span><span>기록</span></a>
+  <a href="/plan"><span aria-hidden="true">▦</span><span>플랜</span></a>
+  <a href="/report"><span aria-hidden="true">↗</span><span>성장</span></a>
+  <button id="home-mobile-more" type="button"><span aria-hidden="true">•••</span><span>더보기</span></button>
+</nav>
 
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid #00b4d8;padding:12px 16px;align-items:center;gap:12px;z-index:9999;padding-bottom:max(12px,env(safe-area-inset-bottom));">
   <svg class="icon icon-xl" aria-hidden="true" style="flex-shrink:0;"><use href="/static/icons.svg#icon-pool"/></svg>
@@ -324,6 +356,8 @@ const $ = id => document.getElementById(id);
 const sidebar = $('service-sidebar');
 const menuToggle = $('menu-toggle');
 const sidebarBackdrop = $('sidebar-backdrop');
+const landingNavSearch = $('landing-nav-search');
+const homeMobileMore = $('home-mobile-more');
 
 function syncHeaderOffset() {
   const homeHeader = document.querySelector('.global-app-header') || document.querySelector('.home-header');
@@ -341,11 +375,24 @@ function setSidebar(open) {
   document.body.style.overflow = open && window.innerWidth <= 1100 ? 'hidden' : '';
 }
 menuToggle.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')));
+homeMobileMore.addEventListener('click', () => setSidebar(true));
 sidebarBackdrop.addEventListener('click', () => setSidebar(false));
 sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setSidebar(false)));
 document.addEventListener('keydown', event => { if (event.key === 'Escape') setSidebar(false); });
 window.addEventListener('resize', () => { syncHeaderOffset(); if (window.innerWidth > 1100) setSidebar(false); });
 window.addEventListener('load', syncHeaderOffset);
+
+landingNavSearch.addEventListener('input', () => {
+  const query = landingNavSearch.value.trim().toLocaleLowerCase('ko-KR');
+  sidebar.querySelectorAll('.service-nav-link').forEach(link => {
+    link.classList.toggle('nav-search-hidden', Boolean(query) && !link.textContent.toLocaleLowerCase('ko-KR').includes(query));
+  });
+  sidebar.querySelectorAll('details.nav-group').forEach(group => {
+    const hasMatch = Boolean(group.querySelector('.service-nav-link:not(.nav-search-hidden)'));
+    group.classList.toggle('nav-search-hidden', Boolean(query) && !hasMatch);
+    if (query && hasMatch) group.open = true;
+  });
+});
 
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value == null ? '' : String(value); return el.innerHTML; }
 function formatNumber(value) { return new Intl.NumberFormat('ko-KR').format(Number(value || 0)); }

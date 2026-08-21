@@ -213,8 +213,7 @@ def test_training_dashboard_is_visible_from_the_landing_page():
     icons = (ROOT / "frontend" / "static" / "icons.svg").read_text(encoding="utf-8")
 
     assert 'href="/dashboard"' in landing
-    assert "상세 훈련 대시보드" in landing
-    assert "#icon-dashboard" in landing
+    assert "훈련 분석" in landing
     assert 'id="icon-dashboard"' in icons
 
 
@@ -235,8 +234,14 @@ def test_landing_is_a_personal_training_home_with_categorized_service_navigation
     ):
         assert marker in landing
 
-    for heading in ("내 훈련 홈", "기록과 훈련", "코칭과 함께", "탐색과 도움"):
+    for heading in ("오늘 훈련 기록", "내 훈련 분석", "코치·커뮤니티", "수영 정보·도구"):
         assert heading in landing
+
+    for marker in (
+        'id="landing-nav-search"', 'class="landing-nav-primary"',
+        'class="home-stat-details"', 'class="home-mobile-nav"',
+    ):
+        assert marker in landing
 
     for endpoint in (
         "/api/dashboard/summary",
@@ -287,7 +292,8 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
         "global-service-nav", "global-service-nav-toggle", "global-service-nav-backdrop",
         "aria-current", "MOBILE_QUERY", "aria-expanded", "aria-hidden", "inert",
         "swimmate:service-nav-ready", "fetch('/auth/me'", "profile.is_demo",
-        "profile.is_admin", "textContent = displayName",
+        "profile.is_admin", "textContent = displayName", "global-service-nav-search",
+        "global-service-nav-primary", "global-mobile-nav", "global-mobile-nav-more",
     ):
         assert marker in service_nav
 
@@ -307,6 +313,8 @@ def test_feature_pages_keep_the_shared_service_navigation_visible():
     assert "check_service_navigation(page, path)" in ui_qa
     assert "service_navigation_mobile_open_failed" in ui_qa
     assert "service_navigation_mobile_escape_close_failed" in ui_qa
+    assert "service_navigation_search_result_hidden" in ui_qa
+    assert "service_navigation_mobile_quick_nav_missing" in ui_qa
     assert ":not(.global-service-nav-link):not(.service-nav-link)" in ui_qa
 
 
@@ -365,6 +373,35 @@ def test_service_pages_use_one_authenticated_global_header_and_swimming_favicon(
     assert "global_app_header_mobile_layout" in ui_qa
     assert "global_app_header_chat_history_missing" in ui_qa
     assert "global_app_header_notification_missing" in ui_qa
+
+
+def test_clarity_ui_keeps_primary_actions_visible_and_secondary_details_collapsed():
+    landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
+    dashboard = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    plan = (ROOT / "frontend" / "plan.html").read_text(encoding="utf-8")
+    training_log = (ROOT / "frontend" / "training_log.html").read_text(encoding="utf-8")
+    report = (ROOT / "frontend" / "report.html").read_text(encoding="utf-8")
+    drill = (ROOT / "frontend" / "drill.html").read_text(encoding="utf-8")
+    ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+
+    assert '<details class="home-stat-details">' in landing
+    assert '<details class="readiness-card"' in dashboard
+    assert '<details class="advisor-more">' in dashboard
+    assert 'data-plan-mode="purpose"' in plan and 'id="plan-purpose-select"' in plan
+    assert 'class="tab-bar plan-legacy-tabs"' in plan and " inert>" in plan
+    assert '<details class="session-card' in plan and "session-summary-meta" in plan
+    assert '<details class="plan-context-details">' in plan
+    assert '<details class="plan-tool-details">' in plan
+    assert '<details class="log-import-menu" id="log-import-menu">' in training_log
+    assert training_log.index('id="btn-open-modal"') < training_log.index('class="tl-layout"')
+    assert "grid-template-columns: minmax(0,1fr)" in report
+    assert '<details class="drill-principle"' in drill
+    assert 'id="drill-filter-details"' in drill
+    assert "drill-card-more" in drill
+    assert "def check_clarity_ui_interactions(page, path):" in ui_qa
+    assert "check_clarity_ui_interactions(page, path)" in ui_qa
+    assert "expected_summary_columns" in ui_qa and "expected_stat_columns" in ui_qa
+    assert "기록 추가가 모바일 첫 화면의 핵심 행동으로 보이지 않음" in ui_qa
 
 
 def test_render_deploy_hook_is_triggered_for_backend_changes():
@@ -444,7 +481,7 @@ def test_plan_p2_improvements_are_kept():
     assert 'id="btn-open-import"' in log and "validateImportFile" in log
     assert 'disabled aria-disabled="true"' in log
     assert 'data-feature-state="disabled"' in log
-    assert "워치 데이터 가져오기 (준비 중)" in log
+    assert "워치 데이터 (준비 중)" in log
     assert "if (_importBtn && !_importBtn.disabled)" in log
     assert "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']" in (
         ROOT / "scripts" / "qa_ui_crawler.py"
@@ -473,7 +510,7 @@ def test_monthly_report_uses_training_log_identity_and_average_distance():
     assert "let curYear = initialMonth.getFullYear();" in report_page
     assert "let curMonth = initialMonth.getMonth() + 1;" in report_page
     assert "max-width:var(--global-content-max-width,1280px)" in report_page
-    assert "grid-template-columns: minmax(340px, 380px) minmax(0,1fr)" in report_page
+    assert "grid-template-columns: minmax(0,1fr)" in report_page
     assert "@media (max-width: 1180px)" in report_page
     assert ".stat-value" in report_page and "white-space: nowrap" in report_page
     assert "grid-template-columns: auto minmax(118px, 1fr) minmax(92px, auto)" in report_page
@@ -767,6 +804,7 @@ def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
     page = (ROOT / "frontend" / "my-data.html").read_text(encoding="utf-8")
     landing = (ROOT / "frontend" / "landing.html").read_text(encoding="utf-8")
     dashboard = (ROOT / "frontend" / "dashboard.html").read_text(encoding="utf-8")
+    service_nav = (ROOT / "frontend" / "static" / "service-nav.js").read_text(encoding="utf-8")
     profile = (ROOT / "frontend" / "profile.html").read_text(encoding="utf-8")
     api_qa = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     ui_qa = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
@@ -790,7 +828,8 @@ def test_personal_swim_data_dashboard_is_connected_and_qa_mapped():
     assert "/api/account/insights" in page
     assert "JSON은 원본 보관·이동용" in page
     assert 'href="/my-data"' in landing
-    assert 'href="/my-data"' in dashboard
+    assert "href: '/my-data'" in service_nav
+    assert "quick-actions" not in dashboard
     assert 'id="my-data-dashboard-link" href="/my-data"' in profile
     assert "내 수영 데이터 장기 대시보드 연동" in api_qa
     assert '("/my-data", "내 수영 데이터")' in ui_qa
@@ -1317,7 +1356,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 122개" in quality_doc
+    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 123개" in quality_doc
     assert "53개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "역할별 35개 화면" in quality_doc

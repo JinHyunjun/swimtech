@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-20
+> 기준일: 2026-08-21
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -17,15 +17,16 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 122개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 123개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
 | 변경 유형 | 반드시 확인할 것 | 테스트·문서 연결 |
 | --- | --- | --- |
 | 새 공개 페이지·메뉴 | 200 응답, 보호 페이지 리다이렉트, 핵심 DOM, 모바일 레이아웃, 콘솔 오류 없음 | `tests/test_swimtech.py`, `PAGE_EXPECTATIONS`, `PAGES` |
-| 개인 훈련 대표 홈·사이드바 | `/landing` URL 유지, 본인 이번 주·월간·누적 요약과 최근 기록·어드바이저 API 매핑, 카테고리별 전체 서비스 링크, 데스크톱 고정 사이드바, 모바일 메뉴 열기·닫기·ESC·배경 스크롤 잠금, 일반·데모·관리자·온보딩 상태, 구 카드형 안내 문구 부재 | 랜딩 계약 테스트, `test_landing_load`, `PAGE_EXPECTATIONS["/landing"]`, 운영 데스크톱·390px 확인 |
-| 기능 페이지 공통 내비게이션 | 적용 대상 경로마다 25개 이상 서비스 링크, 현재 경로 1개만 활성화, `/landing` 대표 홈 링크, 데스크톱 232~268px 유동 폭과 본문 비겹침, 1,100px 이하 드로어 열기·ESC 닫기·배경 스크롤 잠금, 공개 화면 비로그인 폴백, 가로 넘침 없음 | `service-nav.js`, 공통 내비게이션 계약·Playwright 참고 테스트, `check_service_navigation` |
+| 개인 훈련 대표 홈·사이드바 | `/landing` URL 유지, 이번 주 핵심 지표·최근 기록·어드바이저 API 매핑, 월간·누적 보조 지표의 접힌 상세 영역, 네 개 핵심 메뉴·세 개 상세 그룹·서비스 검색·모바일 하단 빠른 메뉴, 일반·데모·관리자·온보딩 상태 | 랜딩 계약 테스트, `test_landing_load`, `PAGE_EXPECTATIONS["/landing"]`, `check_clarity_ui_interactions`, 운영 데스크톱·390px 확인 |
+| 기능 페이지 공통 내비게이션 | 항상 보이는 오늘·기록·플랜·성장 네 링크, 분석·코치/커뮤니티·정보/도구 세 상세 그룹, 전체 기능 검색, 현재 경로·상위 그룹 활성화, `/landing` 대표 홈, 모바일 하단 빠른 메뉴·더보기 드로어, 1,100px 이하 ESC·배경 스크롤 잠금, 가로 넘침 없음 | `service-nav.js`, 공통 내비게이션 계약·Playwright 참고 테스트, `check_service_navigation` |
+| 단계적 정보 공개 UI | 핵심 행동은 첫 화면에 유지, 보조 설정·추천 근거·고급 필터만 `details/summary`로 접기, 키보드 접근·선택 상태, 안전·의료·구매 면책 상시 노출, 플랜 세션 펼침·일지 상단 기록 추가·리포트 단일 읽기 흐름 | `test_clarity_ui_keeps_primary_actions_visible_and_secondary_details_collapsed`, `check_clarity_ui_interactions`, `check_responsive_layout` |
 | 전 화면 공통 헤더·사이트 아이콘 | 서비스·온보딩·관리자·법적 안내에서 공통 헤더 1개, `/landing` 홈, 인증 후 `/profile`·로그아웃·테마 순서, 비로그인 로그인 폴백, 기존 페이지 홈 헤더 비노출, 메뉴 버튼의 공통 헤더 배치, 헤더가 문서와 함께 스크롤되고 사이드바 상단이 남은 헤더 높이를 추종, 전 해상도 전체 폭·상호 비겹침, 테마 왕복, 수영 선수·물결 SVG favicon과 올바른 MIME | 공통 헤더 계약 테스트, `check_global_app_header`, `APP_HEADER_PATHS`, `favicon.svg`, manifest·FastAPI MIME 계약 |
 | 정보·도움 가이드 | 드릴 검색·목적/난이도 필터·25/50m 적용 예시, 부상 예방 상태 체크·공식 출처, 수영복 5개 브랜드 공식표 cm/inch 전환·입력 단위 전환 시 값 보존·반대 단위 즉시 환산·cm 내부 정규화·표 기준/현재 라벨/구매 예정 국가 구분·구매 비보장 확인·지역 불일치 라벨 환산 차단·모델별 소재·핏 면책·테크수트 차단 | `check_information_guide_interactions`, `PAGE_EXPECTATIONS`의 `/drill`·`/injury`·`/equipment`·`/faq`, 정보 가이드 계약 테스트 |
 | 목적별 사용 가이드 | 랜딩 진입, 허브와 개인·기록/스크린샷·성장·코치/클럽·정보/도움 5개 상세 경로 공개 200, 공통 서비스 사이드바·현재 가이드 카테고리 표시, 화면 캡처·대체 텍스트, 내부 CTA, 모바일 단일 열, AI 사용자 확인·원본 비저장·무료 사용량 제한·워치 직접 연동 비활성 경계 | 기능 가이드 계약 테스트, `PAGE_EXPECTATIONS`의 `/tutorial*`, `PAGES`, `SERVICE_NAV_PATHS`, `frontend/static/tutorial/*` |

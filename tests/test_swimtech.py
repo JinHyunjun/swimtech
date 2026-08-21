@@ -123,6 +123,7 @@ def test_landing_load(page: Page):
     expect(page.locator("#service-sidebar")).to_be_visible()
     expect(page.locator("#home-week-distance")).to_be_visible()
     expect(page.locator("#home-week-sessions")).to_be_visible()
+    page.locator(".home-stat-details > summary").click()
     expect(page.locator("#home-month-distance")).to_be_visible()
     expect(page.locator("#home-total-distance")).to_be_visible()
     expect(page.locator("#home-history")).to_be_visible()
@@ -133,7 +134,8 @@ def test_landing_load(page: Page):
     expect(page.locator(".service-nav-link[href='/training-log']")).to_be_visible()
     expect(page.locator(".service-nav-link[href='/plan']")).to_be_visible()
     expect(page.locator(".service-nav-link[href='/report']")).to_be_visible()
-    expect(page.locator(".service-nav-link[href='/dashboard']")).to_be_visible()
+    expect(page.locator(".service-nav-link[href='/dashboard']")).to_be_attached()
+    expect(page.locator("#landing-nav-search")).to_be_visible()
 
     shot(page, "01_landing")
 
@@ -143,13 +145,13 @@ def test_feature_pages_keep_service_navigation_and_mobile_drawer(page: Page):
     goto(page, "/dashboard")
     nav = page.locator("#global-service-nav")
     expect(nav).to_be_visible()
-    expect(page.locator(".global-service-nav-link[href='/dashboard']")).to_have_attribute("aria-current", "page")
-    assert page.locator(".global-service-nav-link").count() >= 25
+    expect(nav.locator(".global-service-nav-link[href='/dashboard']")).to_have_attribute("aria-current", "page")
+    assert nav.locator(".global-service-nav-link").count() >= 25
 
-    page.locator(".global-service-nav-link[href='/plan']").click()
+    nav.locator(".global-service-nav-link[href='/plan']").click()
     page.wait_for_url(re.compile(r"/plan(?:\?.*)?$"), timeout=10_000)
     expect(page.locator("#global-service-nav")).to_be_visible()
-    expect(page.locator(".global-service-nav-link[href='/plan']")).to_have_attribute("aria-current", "page")
+    expect(page.locator("#global-service-nav .global-service-nav-link[href='/plan']")).to_have_attribute("aria-current", "page")
 
     page.set_viewport_size({"width": 390, "height": 844})
     toggle = page.locator("#global-service-nav-toggle")
@@ -666,6 +668,7 @@ def test_plan_session_detail_visible(page: Page):
     page.wait_for_timeout(800)
 
     card = page.locator("#tab-speed .session-card").first
+    card.locator(".session-day-header").click()
     expect(card.locator(".session-total")).to_be_visible()
     expect(card.locator(".coach-tip")).to_be_visible()
     expect(card.locator(".mainset-items")).to_be_visible()
@@ -690,7 +693,7 @@ def test_plan_create_btn_visible(page: Page):
     page.wait_for_timeout(500)
 
     expect(page.locator("#open-modal-btn")).to_be_visible()
-    expect(page.locator('[data-tab="myplan"]')).to_be_visible()
+    expect(page.locator('[data-plan-mode="myplan"]')).to_be_visible()
 
     shot(page, "12_plan_create_btn")
 
@@ -716,7 +719,7 @@ def test_plan_builder_tab_load(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(800)
 
-    page.click('[data-tab="builder"]')
+    page.click('[data-plan-mode="builder"]')
     page.wait_for_timeout(600)
 
     expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
@@ -735,7 +738,7 @@ def test_plan_builder_add_item(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(800)
 
-    page.click('[data-tab="builder"]')
+    page.click('[data-plan-mode="builder"]')
     page.wait_for_timeout(600)
 
     # 첫 번째 풀 아이템 클릭 → 월요일에 추가
@@ -765,7 +768,7 @@ def test_plan_myplan_tab(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(800)
 
-    page.click('[data-tab="myplan"]')
+    page.click('[data-plan-mode="myplan"]')
     page.wait_for_timeout(1000)
 
     expect(page.locator("#tab-myplan")).to_have_class(re.compile(r"\bactive\b"))
@@ -802,9 +805,9 @@ def test_plan_random_tab(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(600)
 
-    expect(page.locator('[data-tab="random"]')).to_be_visible()
+    expect(page.locator('[data-plan-mode="random"]')).to_be_visible()
 
-    page.click('[data-tab="random"]')
+    page.click('[data-plan-mode="random"]')
     page.wait_for_timeout(400)
     expect(page.locator("#tab-random")).to_have_class(re.compile(r"\bactive\b"))
     expect(page.locator("#r-name")).to_be_visible()
@@ -817,9 +820,9 @@ def test_plan_builder_tab(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(600)
 
-    expect(page.locator('[data-tab="builder"]')).to_be_visible()
+    expect(page.locator('[data-plan-mode="builder"]')).to_be_visible()
 
-    page.click('[data-tab="builder"]')
+    page.click('[data-plan-mode="builder"]')
     page.wait_for_timeout(500)
 
     expect(page.locator("#tab-builder")).to_have_class(re.compile(r"\bactive\b"))
@@ -832,7 +835,7 @@ def test_plan_builder_search(page: Page):
     """직접 구성 탭 — #pool-search 검색창 존재 및 실시간 필터링 동작 확인."""
     goto(page, "/plan")
     page.wait_for_timeout(600)
-    page.click('[data-tab="builder"]')
+    page.click('[data-plan-mode="builder"]')
     page.wait_for_timeout(500)
 
     search = page.locator("#pool-search")
@@ -855,7 +858,7 @@ def test_plan_builder_drag(page: Page):
     """직접 구성 탭 — 풀 아이템 draggable 속성 및 고정 기타 카드 존재 확인."""
     goto(page, "/plan")
     page.wait_for_timeout(600)
-    page.click('[data-tab="builder"]')
+    page.click('[data-plan-mode="builder"]')
     page.wait_for_timeout(500)
 
     items = page.locator("#pool-list .pool-item")
@@ -1005,6 +1008,7 @@ def test_training_log_screenshot_import_review_flow(page: Page):
     goto(page, "/training-log")
     page.wait_for_timeout(1000)
 
+    page.locator("#log-import-menu > summary").click()
     trigger = page.locator("#btn-open-screenshot")
     expect(trigger).to_be_visible()
     trigger.click()
@@ -1376,6 +1380,7 @@ def test_equipment_landing_card(page: Page):
     goto(page, "/landing")
     page.wait_for_timeout(500)
 
+    page.locator(".nav-group").last.locator("summary").click()
     link = page.locator("a.service-nav-link[href='/equipment']")
     expect(link).to_be_visible()
     expect(page.locator("a.service-nav-link[href='/equipment?tab=swimwear']")).to_be_visible()
@@ -1717,7 +1722,7 @@ def test_plan_myplan_fav_share_buttons(page: Page):
     goto(page, "/plan")
     page.wait_for_timeout(600)
 
-    page.click('[data-tab="myplan"]')
+    page.click('[data-plan-mode="myplan"]')
     page.wait_for_timeout(1200)
 
     cards = page.locator(".myplan-card")

@@ -1005,3 +1005,189 @@ body.global-app-header-enabled .global-content-frame {
   .global-service-nav-backdrop,
   .global-service-nav-link { transition: none !important; }
 }
+/* ════════════════════════════════════════════════════════════
+   P32 clarity UI — 핵심 행동 우선, 보조 기능 점진적 공개
+   ════════════════════════════════════════════════════════════ */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+body.swimmate-clarity-ui {
+  --ux-content-reading-width: 70ch;
+  --ux-section-gap: clamp(16px, 2vw, 24px);
+}
+body.swimmate-clarity-ui :where(h1, h2, h3) { line-height: 1.24; letter-spacing: -.025em; }
+body.swimmate-clarity-ui :where(p, [class$="-desc"], [class$="-description"], [class$="-subtitle"]) {
+  max-width: var(--ux-content-reading-width);
+  line-height: 1.58;
+}
+body.swimmate-clarity-ui :where(button, a, summary) { -webkit-tap-highlight-color: transparent; }
+body.swimmate-clarity-ui :where(.card, [class$="-card"], [class$="-panel"], [class$="-section"]) {
+  scroll-margin-top: 18px;
+}
+
+/* 사이드바에는 먼저 써야 하는 네 가지 행동만 고정 노출한다. */
+.global-service-nav-user {
+  margin: 10px 12px 8px;
+  padding: 9px 10px;
+  border-color: rgba(72,202,228,.14);
+  background: rgba(0,180,216,.045);
+}
+.global-service-nav-avatar { width: 32px; height: 32px; font-size: 14px; }
+.global-service-nav-record {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0 12px 9px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color: #03202b;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.global-service-nav-search {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  margin: 0 12px 10px;
+  padding: 0 10px;
+  border: .5px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface2) 82%, transparent);
+  color: var(--muted);
+}
+.global-service-nav-search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,180,216,.08); }
+.global-service-nav-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+.global-service-nav-search input::placeholder { color: var(--muted); opacity: .86; }
+.global-service-nav-scroll { padding-top: 0; }
+.global-service-nav-primary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.global-service-nav-primary .global-service-nav-link {
+  min-height: 52px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px;
+  border-color: rgba(148,163,184,.12);
+  background: rgba(255,255,255,.018);
+  font-size: 11px;
+  text-align: center;
+}
+.global-service-nav-primary .global-service-nav-icon { width: auto; flex-basis: auto; font-size: 18px; line-height: 1; }
+.global-service-nav-group {
+  margin: 0 0 6px;
+  border: .5px solid transparent;
+  border-radius: 12px;
+}
+.global-service-nav-group.open { border-color: rgba(148,163,184,.12); background: rgba(255,255,255,.018); }
+.global-service-nav-group-title {
+  display: grid;
+  width: 100%;
+  min-height: 42px;
+  grid-template-columns: 24px minmax(0,1fr) 18px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.global-service-nav-group-title:hover { background: rgba(72,202,228,.06); color: var(--text); }
+.global-service-nav-group-icon { display: grid; place-items: center; color: var(--cyan); font-size: 15px; }
+.global-service-nav-chevron { transition: transform .18s ease; text-align: center; }
+.global-service-nav-group.open .global-service-nav-chevron { transform: rotate(180deg); }
+.global-service-nav-group .global-service-nav-links { display: none; padding: 0 5px 6px; }
+.global-service-nav-group.open .global-service-nav-links { display: grid; }
+.global-service-nav-group .global-service-nav-link { min-height: 38px; padding-block: 6px; font-size: 12px; }
+.global-service-nav-link.search-hidden,
+.global-service-nav-group.search-hidden { display: none !important; }
+.global-service-nav-empty {
+  display: none;
+  padding: 24px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.global-service-nav.search-empty .global-service-nav-empty { display: block; }
+.global-service-nav-footer { margin-top: 10px; }
+.global-service-nav-footer .global-service-nav-link { min-height: 38px; font-size: 12px; }
+
+/* 작은 화면은 다섯 개의 하단 목적지로 일상 동선을 끝내고 전체 메뉴는 더보기로 연다. */
+.global-mobile-nav { display: none; }
+@media (max-width: 700px) {
+  body.global-service-nav-enabled { padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important; }
+  .global-mobile-nav {
+    position: fixed;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    z-index: 9050;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0,1fr));
+    min-height: 58px;
+    padding: 5px;
+    border: .5px solid rgba(72,202,228,.26);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: 0 14px 38px rgba(0,0,0,.38);
+    backdrop-filter: blur(18px);
+  }
+  .global-mobile-nav .global-service-nav-link,
+  .global-mobile-nav-more {
+    display: flex;
+    min-width: 0;
+    min-height: 48px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 3px;
+    border: 0;
+    border-radius: 13px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-decoration: none;
+  }
+  .global-mobile-nav .global-service-nav-link.active { background: rgba(0,180,216,.13); color: var(--cyan); box-shadow: none; }
+  .global-mobile-nav .global-service-nav-icon,
+  .global-mobile-nav-more > span:first-child { width: auto; flex: 0 0 auto; font-size: 18px; line-height: 1; }
+  .global-service-nav { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-service-nav-chevron { transition: none; }
+}

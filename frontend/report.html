@@ -14,13 +14,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
 .rp-page { width:100%; max-width:var(--global-content-max-width,1280px); margin:0 auto; padding:24px 24px 80px; }
-/* ── 2-column layout ── */
-.rp-layout { display: grid; grid-template-columns: minmax(340px, 380px) minmax(0,1fr); gap: 24px; align-items: start; }
-.rp-sidebar { position: sticky; top: 16px; display: flex; min-width: 0; flex-direction: column; gap: 14px; }
+/* ── 한 방향으로 읽는 리포트: 월 요약 → 수행 → 차트 ── */
+.rp-layout { display: grid; grid-template-columns: minmax(0,1fr); gap: 18px; align-items: start; }
+.rp-sidebar { position: static; display: grid; min-width: 0; grid-template-columns:minmax(0,1fr) minmax(300px,.42fr); gap: 12px; }
 .rp-main { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow-x: hidden; }
 @media (max-width: 1180px) {
-  .rp-layout { grid-template-columns: 1fr; }
-  .rp-sidebar { position: static; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); align-items: stretch; }
+  .rp-sidebar { grid-template-columns: minmax(0, 1fr) minmax(280px, .6fr); align-items: stretch; }
   .growth-banner { height: 100%; margin-bottom: 0; }
 }
 
@@ -49,17 +48,17 @@
 
 /* ── 통계 카드 ── */
 .stat-grid {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 0;
 }
 .stat-card {
   background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md);
-  padding: 18px 14px; text-align: center;
+  padding: 14px 10px; text-align: left;
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 .stat-card:hover { transform: translateY(-4px); border-color: var(--accent-secondary); box-shadow: 0 14px 30px rgba(0,150,180,.18); }
-.stat-icon { font-size: var(--fs-heading); margin-bottom: 6px; color: var(--accent-secondary); }
+.stat-icon { font-size: var(--fs-body-lg); margin-bottom: 8px; color: var(--accent-secondary); }
 .stat-value {
-  font-size: clamp(26px, 2.4vw, 36px); font-style: italic; font-weight: 900;
+  font-size: clamp(24px, 2.2vw, 34px); font-style: italic; font-weight: 900;
   font-variant-numeric: tabular-nums; letter-spacing: -0.04em; color: var(--blue);
   line-height: 1.1; white-space: nowrap;
 }
@@ -164,12 +163,18 @@
   .rp-topbar { align-items: flex-start; gap: 10px; margin-bottom: 18px; }
   .rp-month-nav { width: 100%; margin-left: 0; justify-content: space-between; }
   .rp-month-label { flex: 1; }
-  .rp-sidebar { display: flex; }
+  .rp-sidebar { display: flex; flex-direction: column; }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .growth-banner { height: auto; }
   .plan-performance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chart-section { padding: 16px 14px; }
 }
+
+@media (max-width: 980px) {
+  .rp-sidebar { grid-template-columns:1fr; }
+  .stat-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+}
+@media (max-width: 760px) { .stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .stat-grid .stat-card:last-child { grid-column:span 2; } }
 
 @media (max-width: 420px) {
   .rp-page { padding-inline: 12px; }
@@ -240,7 +245,7 @@
             <div class="stat-value" id="stat-time">—</div>
             <div class="stat-label">총 시간 (분)</div>
           </div>
-          <div class="stat-card" style="grid-column:1/-1;">
+          <div class="stat-card">
             <div class="stat-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/static/icons.svg#icon-fire"/></svg></div>
             <div class="stat-value energy" id="stat-cal">—</div>
             <div class="stat-label">추정 칼로리 (kcal)</div>

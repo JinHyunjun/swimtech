@@ -16,7 +16,7 @@
 .tl-page { width:100%; max-width:var(--global-content-max-width,1280px); margin:0 auto; padding:24px 16px 80px; }
 
 .tl-topbar {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content:space-between; gap: 12px; margin-bottom: 24px;
 }
 .tl-back {
   background: none; border: 0.5px solid var(--border); color: var(--muted);
@@ -120,6 +120,7 @@
   padding: 8px 18px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .btn-add-log:hover { opacity: .85; }
+.tl-primary-action { flex-shrink:0; min-height:42px; padding-inline:20px; }
 .log-list-head-actions { display: flex; gap: 8px; }
 .btn-import-log {
   background: none; color: var(--blue); border: 0.5px solid var(--blue); border-radius: var(--radius-sm);
@@ -132,6 +133,15 @@
   cursor: not-allowed; background: transparent;
 }
 .btn-import-log:disabled:hover { background: transparent; }
+.log-import-menu { position:relative; }
+.log-import-menu > summary { list-style:none; }
+.log-import-menu > summary::-webkit-details-marker { display:none; }
+.log-import-menu > summary::after { content:'⌄'; margin-left:2px; font-size:11px; }
+.log-import-menu[open] > summary { background:rgba(0,180,216,.1); }
+.log-import-popover { position:absolute; top:calc(100% + 7px); right:0; z-index:20; display:grid; width:min(310px,calc(100vw - 28px)); gap:7px; padding:8px; border:.5px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:0 16px 42px rgba(0,0,0,.34); }
+.log-import-popover .btn-import-log { width:100%; justify-content:flex-start; border-color:transparent; color:var(--text); }
+.log-import-popover .btn-import-log:hover { border-color:var(--border); }
+.log-import-popover .btn-import-log:disabled { color:var(--muted); }
 
 .import-item {
   display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.04);
@@ -355,12 +365,16 @@ select.form-control option { background: var(--surface); }
   .header .logo { font-size: 21px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .tl-month-nav { display: flex !important; }
+  .tl-topbar { margin-bottom:16px; }
+  .tl-primary-action { min-height:40px; padding-inline:14px; }
   .benchmark-summary { grid-template-columns:1fr 1fr 1fr; }
   .benchmark-row { grid-template-columns:1fr auto; }
   .benchmark-row .benchmark-date { display:none; }
   .log-list-head { align-items:stretch; flex-direction:column; gap:10px; }
   .log-list-head-actions { width:100%; flex-wrap:wrap; }
-  #btn-open-screenshot, #btn-open-import { flex:1 1 100%; justify-content:center; }
+  .log-import-menu { flex:1 1 100%; }
+  .log-import-menu > summary { width:100%; justify-content:center; }
+  .log-import-popover { position:static; width:100%; margin-top:7px; box-shadow:none; }
   #btn-quick-log, #btn-open-modal { flex:1 1 0; justify-content:center; }
   .screenshot-strokes { grid-template-columns: repeat(2, 1fr); }
   .modal-backdrop { align-items: flex-end; padding: 8px; }
@@ -423,6 +437,7 @@ select.form-control option { background: var(--surface); }
   <!-- 상단 타이틀 -->
   <div class="tl-topbar">
     <h1 class="tl-title">훈련 일지</h1>
+    <button class="btn-add-log tl-primary-action" id="btn-open-modal">+ 기록 추가</button>
   </div>
 
   <div class="tl-layout">
@@ -511,15 +526,17 @@ select.form-control option { background: var(--surface); }
       <div class="log-list-head">
         <div class="log-list-title" id="log-list-title">기록 목록</div>
         <div class="log-list-head-actions">
-          <button class="btn-import-log" id="btn-open-screenshot" type="button">
-            📷 운동 스크린샷 등록
-          </button>
-          <button class="btn-import-log" id="btn-open-import" type="button" disabled aria-disabled="true"
-                  data-feature-state="disabled" title="현재 공개 서비스에서는 지원하지 않는 기능입니다.">
-            ⤓ 워치 데이터 가져오기 (준비 중)
-          </button>
+          <details class="log-import-menu" id="log-import-menu">
+            <summary class="btn-import-log">가져오기</summary>
+            <div class="log-import-popover">
+              <button class="btn-import-log" id="btn-open-screenshot" type="button">📷 운동 스크린샷</button>
+              <button class="btn-import-log" id="btn-open-import" type="button" disabled aria-disabled="true"
+                      data-feature-state="disabled" title="현재 공개 서비스에서는 지원하지 않는 기능입니다.">
+                ⤓ 워치 데이터 (준비 중)
+              </button>
+            </div>
+          </details>
           <button class="btn-import-log" id="btn-quick-log">↻ 최근 기록 복사</button>
-          <button class="btn-add-log" id="btn-open-modal">+ 기록 추가</button>
         </div>
       </div>
       <div id="log-list"></div>
@@ -1221,6 +1238,7 @@ function resetScreenshotModal() {
 
 function openScreenshotModal() {
   resetScreenshotModal();
+  document.getElementById('log-import-menu').open = false;
   document.getElementById('screenshot-modal-backdrop').classList.remove('hidden');
 }
 

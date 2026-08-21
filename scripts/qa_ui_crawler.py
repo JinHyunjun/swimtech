@@ -165,6 +165,10 @@ PAGE_EXPECTATIONS = {
         "selectors": [
             "#service-sidebar",
             "#menu-toggle",
+            "#landing-nav-search",
+            ".landing-nav-primary",
+            ".home-stat-details",
+            ".home-mobile-nav",
             ".service-nav-link[href='/landing'][aria-current='page']",
             ".service-nav-link[href='/dashboard']",
             ".service-nav-link[href='/training-log']",
@@ -181,14 +185,13 @@ PAGE_EXPECTATIONS = {
             "#tutorial-guide-card",
         ],
         "texts": [
-            "내 훈련 홈",
-            "기록과 훈련",
-            "코칭과 함께",
-            "탐색과 도움",
+            "내 훈련 분석",
+            "코치·커뮤니티",
+            "수영 정보·도구",
             "이번 주 거리",
             "이번 주 훈련",
             "최근 훈련 기록",
-            "바로 시작하기",
+            "오늘 훈련 기록",
         ],
         "wait_for_any_text": [
             "목표까지",
@@ -236,7 +239,7 @@ PAGE_EXPECTATIONS = {
         "styles": [{"selector": ".step.active h2", "property": "color", "value": "rgb(237, 250, 255)"}],
     },
     "/dashboard": {
-        "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness"],
+        "selectors": [".readiness-card", "#readiness-form", "#readiness-score", "#readiness-save", ".advisor-card", "#advisor-session", "#advisor-week", "#advisor-pool", "#advisor-readiness", ".advisor-more"],
         "texts": ["오늘의 훈련 준비도", "이번 주 훈련 추천"],
         "absent_texts": ["P3 Training Advisor"],
     },
@@ -246,8 +249,8 @@ PAGE_EXPECTATIONS = {
         "wait_for_any_text": ["아직 해석할 훈련 기록이 없어요", "기록 습관과 데이터 깊이", "내 수영 데이터를 불러오지 못했습니다."],
     },
     "/training-log": {
-        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop", "#btn-open-screenshot", "#screenshot-modal-backdrop", "#screenshot-file-input[multiple]", "#screenshot-batch-list", "#screenshot-review-progress", "#screenshot-analyze-btn", "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']"],
-        "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록", "워치 데이터 가져오기 (준비 중)"],
+        "selectors": ["#goal-section", "#stat-total", "#stat-avg", "#cal-body", "#btn-set-goal", "#f-set-summary", "#benchmark-section", "#btn-open-benchmark", "#benchmark-modal-backdrop", "#log-import-menu", "#btn-open-screenshot", "#screenshot-modal-backdrop", "#screenshot-file-input[multiple]", "#screenshot-batch-list", "#screenshot-review-progress", "#screenshot-analyze-btn", "#btn-open-import[disabled][aria-disabled='true'][data-feature-state='disabled']"],
+        "texts": ["이번 달 목표 거리", "테스트 세트·개인 최고기록", "가져오기"],
     },
     "/workout": {
         "selectors": ["#workout-progress", "#set-strip", "#current-set-card", "#timer-value", "#timer-toggle", "#rep-complete", "#execution-sheet", "#wake-lock-btn"],
@@ -267,12 +270,12 @@ PAGE_EXPECTATIONS = {
         "texts": ["맞춤 훈련 설정", "맞춤 훈련 설정 수정", "내 수영 데이터", "내 데이터 대시보드 보기", "내 데이터 내보내기", "로그인 세션 보안", "회원 탈퇴"],
     },
     "/plan": {
-        "selectors": ["[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
-        "texts": ["내 플랜", "직접 구성"],
+        "selectors": [".plan-choice-shell", "[data-plan-mode='purpose']", "[data-plan-mode='random']", "[data-plan-mode='builder']", "[data-plan-mode='myplan']", "#plan-purpose-select", ".plan-context-details", ".plan-tool-details", "[data-pool-length]", "[data-cycle-level]", "[data-type-filter]", "[data-tab='myplan']"],
+        "texts": ["어떻게 만들까요?", "추천 플랜", "내 플랜", "직접 구성"],
     },
     "/drill": {
-        "selectors": ["#drill-search", "#focus-filters", "#level-filters", "#pool-filters", "#drill-count", ".drill-apply", ".tab-btn[data-tab='freestyle']", ".tab-btn[data-tab='backstroke']"],
-        "texts": ["한 세션에는 교정 포인트 1~2개만", "출발 사이클", "25m", "50m"],
+        "selectors": ["#drill-search", ".drill-principle", "#drill-filter-details", "#focus-filters", "#level-filters", "#pool-filters", "#drill-count", ".drill-apply", ".drill-card-more", ".tab-btn[data-tab='freestyle']", ".tab-btn[data-tab='backstroke']"],
+        "texts": ["드릴 활용법 보기", "상세 필터", "25m"],
         "absent_texts": ["SwimMate 분석으로 확인할 것"],
     },
     "/injury": {
@@ -713,6 +716,12 @@ def check_service_navigation(page, path):
             errors.append({"type": "service_navigation_body_layout_missing"})
         if page.locator("#global-service-nav-toggle").count() != 1:
             errors.append({"type": "service_navigation_toggle_missing"})
+        if page.locator("#global-service-nav .global-service-nav-primary .global-service-nav-link").count() != 4:
+            errors.append({"type": "service_navigation_primary_count"})
+        if page.locator("#global-service-nav .global-service-nav-group").count() != 3:
+            errors.append({"type": "service_navigation_group_count"})
+        if page.locator("#global-service-nav .global-service-nav-search input").count() != 1:
+            errors.append({"type": "service_navigation_search_missing"})
         if page.viewport_size and page.viewport_size["width"] > 1100:
             position = sidebar.evaluate("element => getComputedStyle(element).position")
             if position != "fixed" or not sidebar.is_visible():
@@ -722,6 +731,18 @@ def check_service_navigation(page, path):
             errors.append({"type": "service_navigation_horizontal_overflow", "pixels": overflow})
     except Exception as error:
         errors.append({"type": "service_navigation_layout_unreadable", "error": str(error)[:160]})
+
+    # 접힌 보조 메뉴에서도 검색 한 번으로 원하는 기능을 찾을 수 있어야 한다.
+    try:
+        search = page.locator("#global-service-nav .global-service-nav-search input")
+        search.fill("수영복")
+        page.wait_for_timeout(100)
+        swimsuit = page.locator("#global-service-nav .global-service-nav-link[href='/equipment?tab=swimwear']")
+        if not swimsuit.is_visible() or not swimsuit.locator("xpath=ancestor::*[contains(@class,'global-service-nav-group')][1]").evaluate("element => element.classList.contains('open')"):
+            errors.append({"type": "service_navigation_search_result_hidden"})
+        search.fill("")
+    except Exception as error:
+        errors.append({"type": "service_navigation_search_failed", "error": str(error)[:160]})
 
     # 대표 화면에서 모바일 드로어의 열기·ESC 닫기·스크롤 잠금까지 실제로 동작시킨다.
     if route == "/dashboard":
@@ -745,6 +766,15 @@ def check_service_navigation(page, path):
             page.wait_for_timeout(250)
             if toggle.get_attribute("aria-expanded") != "false" or page.locator("body.global-service-nav-open").count():
                 errors.append({"type": "service_navigation_mobile_escape_close_failed"})
+            mobile_nav = page.locator("#global-mobile-nav")
+            if not mobile_nav.is_visible() or mobile_nav.locator(".global-service-nav-link").count() != 4:
+                errors.append({"type": "service_navigation_mobile_quick_nav_missing"})
+            else:
+                mobile_nav.locator(".global-mobile-nav-more").click()
+                page.wait_for_timeout(120)
+                if toggle.get_attribute("aria-expanded") != "true" or not sidebar.is_visible():
+                    errors.append({"type": "service_navigation_mobile_more_failed"})
+                page.keyboard.press("Escape")
             overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
             if overflow > 1:
                 errors.append({"type": "service_navigation_mobile_horizontal_overflow", "pixels": overflow})
@@ -1033,6 +1063,7 @@ def check_responsive_layout(page, path):
               const reportLayout = location.pathname === '/report' ? (() => {
                 const layout = document.querySelector('.rp-layout');
                 const sidebar = document.querySelector('.rp-sidebar');
+                const stats = document.querySelector('.stat-grid');
                 const compactSelectors = ['.stat-value', '.growth-rate', '.growth-streak-num', '.plan-performance-value'];
                 const wrappedValues = compactSelectors.flatMap(rule => [...document.querySelectorAll(rule)]
                   .filter(visible)
@@ -1041,6 +1072,8 @@ def check_responsive_layout(page, path):
                 const streakLabel = document.querySelector('.growth-streak-lbl');
                 return {
                   columns: layout ? getComputedStyle(layout).gridTemplateColumns.split(' ').length : 0,
+                  summaryColumns: sidebar ? getComputedStyle(sidebar).gridTemplateColumns.split(' ').length : 0,
+                  statColumns: stats ? getComputedStyle(stats).gridTemplateColumns.split(' ').length : 0,
                   sidebarWidth: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0,
                   wrappedValues,
                   streakLabelLines: streakLabel ? textLineCount(streakLabel) : 0,
@@ -1120,10 +1153,12 @@ def check_responsive_layout(page, path):
             ])
             report_layout = result.get("reportLayout")
             if report_layout:
-                expected_columns = 2 if width > 1180 else 1
+                expected_summary_columns = 2 if width > 980 else 1
+                expected_stat_columns = 2 if width <= 760 else 5
                 has_layout_error = has_layout_error or any([
-                    report_layout["columns"] != expected_columns,
-                    expected_columns == 2 and report_layout["sidebarWidth"] < 330,
+                    report_layout["columns"] != 1,
+                    report_layout["summaryColumns"] != expected_summary_columns,
+                    report_layout["statColumns"] != expected_stat_columns,
                     report_layout["wrappedValues"],
                     report_layout["streakLabelLines"] > 2,
                 ])
@@ -1181,6 +1216,7 @@ def check_information_guide_interactions(page, path):
     actions, errors = [], []
     try:
         if path == "/drill":
+            page.locator("#drill-filter-details > summary").click()
             page.fill("#drill-search", "호흡")
             page.click("#focus-filters [data-focus='breath']")
             page.click("#pool-filters [data-pool='50']")
@@ -1311,6 +1347,77 @@ def check_information_guide_interactions(page, path):
             page.fill("#search", "")
     except Exception as error:
         errors.append({"type": "information_guide_interaction_failed", "path": path, "error": str(error)[:200]})
+    return actions, errors
+
+
+def check_clarity_ui_interactions(page, path):
+    """핵심 행동 우선 UI의 접기·검색·모드 전환이 기존 기능을 숨기거나 끊지 않는지 확인한다."""
+    actions, errors = [], []
+    try:
+        if path == "/landing":
+            details = page.locator(".home-stat-details")
+            if details.get_attribute("open") is not None:
+                raise AssertionError("보조 누적 수치가 최초 진입부터 펼쳐져 있음")
+            details.locator("summary").click()
+            if not page.locator("#home-month-distance").is_visible() or not page.locator("#home-total-distance").is_visible():
+                raise AssertionError("누적 수치 펼치기 실패")
+            details.locator("summary").click()
+            search = page.locator("#landing-nav-search")
+            search.fill("수영복")
+            target = page.locator("#service-sidebar .service-nav-link[href='/equipment?tab=swimwear']")
+            if not target.is_visible():
+                raise AssertionError("랜딩 기능 검색 결과가 보이지 않음")
+            search.fill("")
+            actions.append({"action": "랜딩 보조 수치 접기·기능 검색", "status": "ok"})
+        elif path == "/dashboard":
+            readiness = page.locator(".readiness-card")
+            if readiness.get_attribute("open") is not None:
+                raise AssertionError("준비도 입력이 최초 진입부터 펼쳐져 있음")
+            readiness.locator("summary").click()
+            if not page.locator("#readiness-form").is_visible():
+                raise AssertionError("준비도 입력 펼치기 실패")
+            readiness.locator("summary").click()
+            page.locator(".advisor-more > summary").click()
+            if not page.locator("#advisor-pool").is_visible():
+                raise AssertionError("추천 기준 펼치기 실패")
+            page.locator(".advisor-more > summary").click()
+            actions.append({"action": "준비도·추천 기준 점진적 공개", "status": "ok"})
+        elif path == "/training-log":
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.evaluate("window.scrollTo(0, 0)")
+            primary_action = page.locator("#btn-open-modal")
+            primary_box = primary_action.bounding_box()
+            if not primary_action.is_visible() or not primary_box or primary_box["y"] > 260:
+                raise AssertionError("기록 추가가 모바일 첫 화면의 핵심 행동으로 보이지 않음")
+            menu = page.locator("#log-import-menu")
+            if menu.get_attribute("open") is not None:
+                raise AssertionError("가져오기 메뉴가 최초 진입부터 펼쳐져 있음")
+            menu.locator("summary").click()
+            if not page.locator("#btn-open-screenshot").is_visible() or not page.locator("#btn-open-import").is_disabled():
+                raise AssertionError("스크린샷·준비 중 기능 구분 실패")
+            page.locator("#btn-open-screenshot").click()
+            if not page.locator("#screenshot-modal-backdrop").is_visible():
+                raise AssertionError("스크린샷 등록 열기 실패")
+            page.locator("#screenshot-pick-cancel").click()
+            actions.append({"action": "훈련 일지 상단 기록 추가·가져오기 메뉴·스크린샷 등록", "status": "ok"})
+        elif path == "/plan":
+            page.locator("[data-plan-mode='builder']").click()
+            if not page.locator("#tab-builder").is_visible():
+                raise AssertionError("직접 구성 모드 전환 실패")
+            page.locator("[data-plan-mode='purpose']").click()
+            page.select_option("#plan-purpose-select", "health")
+            if not page.locator("#tab-health").is_visible() or page.locator("#plan-purpose-select").input_value() != "health":
+                raise AssertionError("추천 플랜 목적 전환 실패")
+            context = page.locator(".plan-context-details")
+            context.locator("summary").click()
+            page.locator("[data-pool-length='50']").click()
+            if "50m 풀" not in page.locator("#plan-context-summary").inner_text():
+                raise AssertionError("훈련 기준 요약 갱신 실패")
+            page.locator("[data-pool-length='25']").click()
+            context.locator("summary").click()
+            actions.append({"action": "플랜 방식·목적·훈련 기준 전환", "status": "ok"})
+    except Exception as error:
+        errors.append({"type": "clarity_ui_interaction_failed", "error": str(error)[:220]})
     return actions, errors
 
 
@@ -1617,6 +1724,10 @@ def crawl_page(page, path, label, selector=CLICKABLE_SELECTOR, username=None, pa
     expectation_errors.extend(check_service_navigation(page, path))
     expectation_errors.extend(check_responsive_layout(page, path))
     expectation_errors.extend(check_home_link_targets(page))
+    if path in {"/landing", "/dashboard", "/training-log", "/plan"}:
+        clarity_actions, clarity_errors = check_clarity_ui_interactions(page, path)
+        entry["actions"].extend(clarity_actions)
+        expectation_errors.extend(clarity_errors)
     if path in {"/drill", "/injury", "/equipment", "/faq"}:
         guide_actions, guide_errors = check_information_guide_interactions(page, path)
         entry["actions"].extend(guide_actions)

@@ -16,9 +16,6 @@
 .dash-subtitle { margin:4px 0 0; color:var(--muted); font-size:var(--fs-caption); }
 .demo-banner { display:none; align-items:flex-start; gap:10px; margin-bottom:16px; padding:13px 15px; border:.5px solid rgba(72,202,228,.35); border-radius:var(--radius-md); background:rgba(72,202,228,.10); color:var(--text); font-size:var(--fs-caption); line-height:1.55; }
 .demo-banner strong { color:var(--cyan); }
-.quick-actions { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
-.quick-action { padding:9px 14px; border-radius:var(--radius-sm); border:.5px solid var(--border); color:var(--text); background:var(--surface); text-decoration:none; font-size:var(--fs-caption); }
-.quick-action.primary { background:var(--blue); border-color:var(--blue); color:var(--bg); font-weight:700; }
 .weekly-card { background:linear-gradient(135deg,var(--surface2),var(--surface)); border:.5px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:20px; }
 .weekly-header,.weekly-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
 .weekly-title { color:var(--text); font-size:var(--fs-body); font-weight:700; }
@@ -31,8 +28,12 @@
 .weekly-msg.done { color:var(--green); font-weight:700; }
 .weekly-goal-btn,.weekly-goal-select { border:.5px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--muted); padding:5px 10px; font-size:var(--fs-caption); cursor:pointer; }
 .weekly-goal-select { display:none; border-color:var(--blue); color:var(--text); }
-.readiness-card { background:var(--surface2); border:.5px solid var(--border); border-radius:var(--radius-md); padding:20px; margin-bottom:20px; }
-.readiness-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.readiness-card { background:var(--surface2); border:.5px solid var(--border); border-radius:var(--radius-md); padding:0; margin-bottom:20px; }
+.readiness-head { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:66px; margin:0; padding:12px 14px; list-style:none; cursor:pointer; }
+.readiness-head::-webkit-details-marker { display:none; }
+.readiness-head::after { content:'＋'; flex:0 0 auto; color:var(--cyan); font-size:var(--fs-body-lg); }
+.readiness-card[open] .readiness-head::after { content:'−'; }
+.readiness-body { padding:0 14px 14px; border-top:.5px solid var(--border); }
 .readiness-title { margin:0; color:var(--text); font-size:var(--fs-body-lg); font-weight:800; }
 .readiness-desc { margin:5px 0 0; color:var(--muted); font-size:var(--fs-caption); line-height:1.5; }
 .readiness-score { flex:0 0 auto; min-width:92px; padding:9px 12px; border:.5px solid var(--border); border-radius:var(--radius-sm); color:var(--muted); text-align:center; font-size:var(--fs-caption); font-weight:800; }
@@ -58,6 +59,13 @@
 .advisor-metric { min-width:0; border:.5px solid rgba(255,255,255,.08); border-radius:var(--radius-sm); padding:12px; background:rgba(2,14,24,.24); }
 .advisor-metric span { display:block; color:var(--muted); font-size:var(--fs-caption); margin-bottom:5px; }
 .advisor-metric strong { display:block; color:var(--text); font-size:var(--fs-body); line-height:1.35; }
+.advisor-grid { grid-template-columns:1.5fr 1fr 1fr; }
+.advisor-more { position:relative; z-index:1; margin:-6px 0 14px; border-top:.5px solid rgba(255,255,255,.08); }
+.advisor-more > summary { min-height:40px; padding:8px 2px; color:var(--muted); font-size:var(--fs-caption); font-weight:800; list-style:none; cursor:pointer; }
+.advisor-more > summary::-webkit-details-marker { display:none; }
+.advisor-more > summary::after { content:' ＋'; color:var(--cyan); }
+.advisor-more[open] > summary::after { content:' −'; }
+.advisor-more-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding-bottom:4px; }
 .advisor-actions { position:relative; display:flex; flex-wrap:wrap; gap:8px; z-index:1; }
 .advisor-action { display:inline-flex; align-items:center; gap:6px; color:var(--bg); background:var(--blue); border:.5px solid var(--blue); border-radius:var(--radius-sm); padding:8px 12px; font-size:var(--fs-caption); font-weight:800; text-decoration:none; }
 .advisor-action.secondary { color:var(--text); background:rgba(255,255,255,.05); border-color:var(--border); }
@@ -111,27 +119,21 @@
       <div><strong>비회원 체험 모드</strong><br>샘플 훈련 일지와 리포트 데이터로 SwimMate의 흐름을 둘러보는 화면입니다.</div>
     </div>
     <div class="dash-topbar">
-      <div><div class="dash-title">내 훈련 현황</div><p class="dash-subtitle">기록을 쌓고, 이번 주 목표를 완성해 보세요.</p></div>
+      <div><div class="dash-title">훈련 분석</div><p class="dash-subtitle">이번 주 상태와 변화만 모아봤어요.</p></div>
     </div>
 
     <div class="dash-layout">
       <!-- ── 사이드바 ── -->
       <aside class="dash-sidebar">
-        <nav class="quick-actions" aria-label="빠른 작업">
-          <a class="quick-action primary" href="/training-log?quick=1">+ 훈련 기록하기</a>
-          <a class="quick-action" href="/plan">훈련 플랜 보기</a>
-          <a class="quick-action" href="/report">월간 리포트</a>
-          <a class="quick-action" href="/my-data">내 수영 데이터</a>
-        </nav>
-
-        <section class="readiness-card" aria-labelledby="readiness-title">
-          <div class="readiness-head">
+        <details class="readiness-card" aria-labelledby="readiness-title">
+          <summary class="readiness-head">
             <div>
               <h2 class="readiness-title" id="readiness-title">오늘의 훈련 준비도</h2>
-              <p class="readiness-desc">수면과 피로를 20초만 기록하면 아래 훈련 추천이 오늘 컨디션에 맞게 바뀝니다.</p>
+              <p class="readiness-desc">수면과 피로를 기록해 오늘 추천을 조정합니다.</p>
             </div>
             <div class="readiness-score" id="readiness-score" aria-live="polite">체크인 전</div>
-          </div>
+          </summary>
+          <div class="readiness-body">
           <form class="readiness-form" id="readiness-form">
             <label class="readiness-field">수면 상태
               <select id="readiness-sleep" name="sleep_quality">
@@ -161,7 +163,8 @@
             <button class="readiness-save" id="readiness-save" type="submit" form="readiness-form">체크인 저장</button>
           </div>
           <div class="readiness-meta" id="readiness-meta" aria-live="polite">저장하면 오늘의 추천 강도와 세션이 즉시 다시 계산됩니다.</div>
-        </section>
+          </div>
+        </details>
 
         <section class="mini-badge-row" aria-label="획득 뱃지">
           <span class="mini-badge-label">🏅 내 뱃지</span><div class="mini-badge-emojis" id="mini-badge-emojis"><span style="color:var(--muted);font-size:var(--fs-body);">불러오는 중...</span></div><a href="/badges" class="mini-badge-link">전체 보기 →</a>
@@ -197,10 +200,15 @@
           <div class="advisor-grid" aria-label="추천 훈련 요약">
             <div class="advisor-metric"><span>추천 세션</span><strong id="advisor-session">—</strong></div>
             <div class="advisor-metric"><span>이번 주 진행</span><strong id="advisor-week">—</strong></div>
-            <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
-            <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
             <div class="advisor-metric"><span>오늘 준비도</span><strong id="advisor-readiness">체크인 전</strong></div>
           </div>
+          <details class="advisor-more">
+            <summary>추천 기준 보기</summary>
+            <div class="advisor-more-grid">
+              <div class="advisor-metric"><span>선호 풀</span><strong id="advisor-pool">—</strong></div>
+              <div class="advisor-metric"><span>최근 훈련</span><strong id="advisor-last">—</strong></div>
+            </div>
+          </details>
           <div class="advisor-actions" id="advisor-actions">
             <a class="advisor-action" href="/plan">추천 플랜 고르기</a>
             <a class="advisor-action secondary" href="/training-log?quick=1">오늘 훈련 기록</a>
