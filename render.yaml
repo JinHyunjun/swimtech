@@ -8,7 +8,9 @@ services:
     rootDir: api                       # FastAPI 앱이 api/ 안에 있음
     buildCommand: pip install -r requirements.txt
     startCommand: alembic -c alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/health
+    # 실행 상태만 확인해 주기적 probe가 Neon compute를 깨우지 않도록 한다.
+    # DB·마이그레이션 readiness는 /api/health와 배포 후 QA에서 별도로 검증한다.
+    healthCheckPath: /api/ping
     autoDeploy: true
     envVars:
       # ── 필수 ───────────────────────────────

@@ -321,6 +321,15 @@ app.include_router(pool.router,           prefix="/api/pool",            tags=["
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
 app.include_router(jira.router,           prefix="/api/jira",            tags=["Jira 연동"])
 
+@app.get("/api/ping")
+def ping():
+    """프로세스 생존 확인용 경량 엔드포인트.
+
+    Render의 주기적 health check와 keep-warm 요청이 Neon compute를
+    깨우지 않도록 외부 서비스나 데이터베이스에 절대 연결하지 않는다.
+    """
+    return {"status": "ok"}
+
 @app.get("/api/health")
 def health():
     database_url = os.getenv("DATABASE_URL", "")

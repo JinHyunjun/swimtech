@@ -20,7 +20,8 @@
 
 - Frontend: `https://swimtech.vercel.app`
 - Backend: `https://swimtech-api.onrender.com`
-- Health: `https://swimtech-api.onrender.com/api/health`
+- Liveness: `https://swimtech-api.onrender.com/api/ping` (DB 조회 없음)
+- Readiness: `https://swimtech-api.onrender.com/api/health` (DB·스키마 확인)
 
 ## Vercel
 
@@ -66,7 +67,7 @@ plan: free
 rootDir: api
 buildCommand: pip install -r requirements.txt
 startCommand: alembic -c alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
-healthCheckPath: /api/health
+healthCheckPath: /api/ping
 autoDeploy: true
 ```
 
@@ -104,7 +105,7 @@ Render 서비스 이름은 기존 URL 호환을 위해 `swimtech-api`를 유지�
 Render 공식 문서 기준 Free Web Service는 15분 동안 인바운드 HTTP/WebSocket 트래픽이 없으면 중지되고 다음 요청에서 다시 시작한다. 로컬 파일시스템은 재시작·재배포 때 사라질 수 있으므로 사용자 데이터와 업로드 파일의 영속 저장소로 사용하지 않는다.
 
 - 공식 안내: <https://render.com/docs/free>
-- `.github/workflows/keep-warm.yml`은 14분 간격 health ping을 보내지만, GitHub Actions 지연이나 Render 정책을 가용성 보장으로 간주하면 안 된다.
+- `.github/workflows/keep-warm.yml`은 14분 간격으로 DB를 조회하지 않는 `/api/ping`을 호출한다. GitHub Actions 지연이나 Render 정책을 가용성 보장으로 간주하면 안 된다.
 - 데이터는 Neon에 저장한다.
 - 커뮤니티 이미지는 외부 영속 object storage가 설정된 경우에만 안정적으로 운영한다.
 
@@ -114,9 +115,10 @@ Render 공식 문서 기준 Free Web Service는 15분 동안 인바운드 HTTP/W
 2. pooled connection string을 `DATABASE_URL`로 등록한다.
 3. 기존 운영 스키마는 Alembic baseline `20260723_01`로 등록되었다. 현재 소스 head `20260723_10`까지 `02` 개인화 온보딩, `03` 세트 수행, `04` 클럽·반 역할, `05` 일정·출석·공지, `06` 테스트 세트/PB, `07` 계정 세션 버전, `08` QA 계정 분류, `09` 취소 가능한 결과 카드와 클럽 공개 캠페인, `10` 익명 QA 세션 결합 인덱스를 순차 적용한다.
 4. Render 시작 명령과 FastAPI lifespan이 모두 `alembic upgrade head`를 보장하며, 동시에 시작돼도 PostgreSQL advisory lock으로 직렬화한다.
-5. `/api/health`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
-6. 새 스키마 변경은 `api/alembic/versions/`에 순차 리비전으로 추가하고 `EXPECTED_SCHEMA_REVISION`과 운영 QA 기대값을 함께 갱신한다.
-7. 배포 전 `python -m alembic -c api/alembic.ini heads`가 단일 head인지 확인하고, 운영 API/UI 품질 게이트를 통과한 뒤 완료 처리한다.
+5. Render와 keep-warm은 `/api/ping`으로 프로세스만 확인해 Neon의 scale-to-zero를 방해하지 않는다.
+6. 배포 후 QA의 `/api/health`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
+7. 새 스키마 변경은 `api/alembic/versions/`에 순차 리비전으로 추가하고 `EXPECTED_SCHEMA_REVISION`과 운영 QA 기대값을 함께 갱신한다.
+8. 배포 전 `python -m alembic -c api/alembic.ini heads`가 단일 head인지 확인하고, 운영 API/UI 품질 게이트를 통과한 뒤 완료 처리한다.
 
 `db/init.sql`과 라우터의 일부 `IF NOT EXISTS` SQL은 Alembic 도입 이전 환경과의 호환용으로 남아 있다. 앞으로 추가되는 테이블·컬럼은 런타임 SQL이 아니라 Alembic 리비전을 기준으로 관리한다.
 
@@ -182,22 +184,23 @@ Postman 단계는 별도 Secret을 요구하지 않는다. 일반·관리자 QA 
 
 최소 smoke:
 
-1. `/api/health` 200
-2. 일반 계정 로그인, 로그아웃, refresh, 비회원 체험
-3. 훈련 일지 생성 → 통계 → 월간 리포트 같은 거리·횟수 반영 → 테스트 데이터 삭제
-4. 테스트 세트 두 건 저장 → 코스별 PB·단축 시간 → 월간 리포트 반영 → 잘못된 거리 거부 → 기록 삭제
-5. 온보딩 설정 저장 → `/auth/me` → 대시보드 추천의 풀·수준·목표 반영 → 기존 값 복원
-6. 준비도 저장 → 어드바이저 갱신 → 원래 상태 복원
-7. 플랜 생성·저장·일지 전송 → 리포트 플랜 수행률 반영
-8. 코치 코드 발급 → 학생 연동 → 권한 확인 → 연동 해제
-9. 등록 코치의 클럽·반 생성 → 학생 반 코드 참여 → 비권한 반 생성·비등록 코치 승격 거부 → 테스트 클럽 삭제
-10. 반 일정 생성 → 학생 출석 저장·본인 조회 제한 → 반 공지·읽음 → 비권한 일정/공지 403 → 테스트 클럽 삭제
-11. 코치 반 수행 분석 → 출석률·기록 완료율 → 개인훈련 비공개 → 학생 접근 403 → 테스트 클럽 삭제
-12. 월간 익명 결과 카드 생성 → 공개 필드·PNG 화면 → 작성자 종료 → 공개 410
-13. 클럽 공동 목표·반 초대 공개 → 합산 거리·QR → 학생 쓰기 403 → 테스트 클럽 삭제
-14. 코치 강습 문서 생성·수정·선택 배포와 템플릿 폴백
-15. Jira 설정 환경에서 과제 생성·완료·웹훅
-16. 관리자 20/50/100 페이지 크기, 번호 페이지 이동, 페이지 조회 로그, 피드백 작성자와 클럽·반·테스트 세트·홍보 기능 운영 지표
+1. `/api/ping` 200 및 DB 비의존 liveness 응답
+2. `/api/health` 200 및 운영 DB migration revision 일치
+3. 일반 계정 로그인, 로그아웃, refresh, 비회원 체험
+4. 훈련 일지 생성 → 통계 → 월간 리포트 같은 거리·횟수 반영 → 테스트 데이터 삭제
+5. 테스트 세트 두 건 저장 → 코스별 PB·단축 시간 → 월간 리포트 반영 → 잘못된 거리 거부 → 기록 삭제
+6. 온보딩 설정 저장 → `/auth/me` → 대시보드 추천의 풀·수준·목표 반영 → 기존 값 복원
+7. 준비도 저장 → 어드바이저 갱신 → 원래 상태 복원
+8. 플랜 생성·저장·일지 전송 → 리포트 플랜 수행률 반영
+9. 코치 코드 발급 → 학생 연동 → 권한 확인 → 연동 해제
+10. 등록 코치의 클럽·반 생성 → 학생 반 코드 참여 → 비권한 반 생성·비등록 코치 승격 거부 → 테스트 클럽 삭제
+11. 반 일정 생성 → 학생 출석 저장·본인 조회 제한 → 반 공지·읽음 → 비권한 일정/공지 403 → 테스트 클럽 삭제
+12. 코치 반 수행 분석 → 출석률·기록 완료율 → 개인훈련 비공개 → 학생 접근 403 → 테스트 클럽 삭제
+13. 월간 익명 결과 카드 생성 → 공개 필드·PNG 화면 → 작성자 종료 → 공개 410
+14. 클럽 공동 목표·반 초대 공개 → 합산 거리·QR → 학생 쓰기 403 → 테스트 클럽 삭제
+15. 코치 강습 문서 생성·수정·선택 배포와 템플릿 폴백
+16. Jira 설정 환경에서 과제 생성·완료·웹훅
+17. 관리자 20/50/100 페이지 크기, 번호 페이지 이동, 페이지 조회 로그, 피드백 작성자와 클럽·반·테스트 세트·홍보 기능 운영 지표
 17. 브라우저 콘솔 오류, 실패 API, 모바일 레이아웃과 fixture 기반 공개 결과/클럽 2개 화면
 18. `/meta`, `/upload`, `/viewer`가 영상 분석을 노출하지 않는지 확인
 19. Postman 27개 요청으로 공개·비로그인, 로그인 사용자의 스크린샷 확인 토큰 경계, 일반 사용자 일지→통계·리포트·익명 결과 카드 생성/조회/종료·내 데이터→삭제, 관리자 방문 그래프·QA 후보·자동화 페이지 표식·일반/QA 운영 로그 분리·로그아웃 경계 재확인

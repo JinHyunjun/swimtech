@@ -333,7 +333,8 @@ swim_test_results ────────── 테스트 시도·영법/거리
 - `api/alembic/versions/`가 배포 스키마 변경의 단일 이력이다. 기존 운영 DB의 baseline은 `20260723_01`, 현재 소스 head `20260723_10`은 개인화 온보딩·세트 수행·클럽·반 역할·일정·출석·공지·테스트 세트·계정 세션 버전·QA 계정 분류·홍보용 결과/클럽 캠페인과 익명 QA 세션 결합 인덱스를 포함한다.
 - Render는 Uvicorn보다 먼저 `alembic upgrade head`를 실행한다. 기존 Render 시작 명령이 남은 환경도 FastAPI lifespan에서 같은 명령을 실행하므로 migration 누락 상태로 요청을 받지 않는다.
 - Alembic 환경은 PostgreSQL advisory transaction lock을 획득해 중복 배포의 동시 migration을 직렬화한다.
-- `/api/health`는 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503으로 배포 health check를 실패시킨다.
+- `/api/ping`은 DB를 조회하지 않는 프로세스 liveness 전용 경로이며 Render의 주기적 health check와 keep-warm이 사용한다.
+- `/api/health`는 배포 후 readiness 검증에서 `alembic_version`을 코드의 `EXPECTED_SCHEMA_REVISION`과 비교한다. 불일치하면 503을 반환한다.
 - GitHub Actions 핵심 게이트는 `alembic heads`를 실행해 분기된 migration head를 방지한다.
 - `db/init.sql`과 일부 라우터의 `IF NOT EXISTS`는 도입 이전 스키마 호환용이다. 신규 변경은 Alembic 리비전에만 추가한다.
 

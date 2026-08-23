@@ -94,16 +94,25 @@ def main():
     # ── 0. 배포/기본 접속 확인 ──────────────────────────
     print("[0] 배포/기본 접속")
     try:
-        r = requests.get(f"{BASE}/api/health", timeout=90)  # 콜드스타트 대비 90s
+        ping_response = requests.get(f"{BASE}/api/ping", timeout=90)  # 콜드스타트 대비 90s
+        ping = jget(ping_response)
+        rec(
+            "0a",
+            "백엔드 liveness (DB 미조회)",
+            ping_response.status_code == 200 and ping.get("status") == "ok",
+            f"{ping_response.status_code}, status={ping.get('status')}",
+        )
+
+        r = requests.get(f"{BASE}/api/health", timeout=60)
         health = jget(r)
         rec(
             0,
-            "백엔드 health + DB migration revision (콜드스타트 깨우기)",
+            "백엔드 readiness + DB migration revision",
             r.status_code == 200 and health.get("schema_revision") == "20260723_10",
             f"{r.status_code}, revision={health.get('schema_revision')}",
         )
     except Exception as e:
-        rec(0, "백엔드 health", False, str(e)[:60])
+        rec(0, "백엔드 liveness/readiness", False, str(e)[:60])
 
     admin_sess = None
 
