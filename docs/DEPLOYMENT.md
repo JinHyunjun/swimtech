@@ -21,7 +21,8 @@
 - Frontend: `https://swimtech.vercel.app`
 - Backend: `https://swimtech-api.onrender.com`
 - Liveness: `https://swimtech-api.onrender.com/api/ping` (DB 조회 없음)
-- Readiness: `https://swimtech-api.onrender.com/api/health` (DB·스키마 확인)
+- Legacy liveness: `https://swimtech-api.onrender.com/api/health` (DB 조회 없음)
+- Readiness: `https://swimtech-api.onrender.com/api/ready` (DB·스키마 확인)
 
 ## Vercel
 
@@ -52,7 +53,7 @@ Vercel 프로젝트의 Root Directory는 `frontend`이며 배포 라우팅은 �
 2. Root Directory가 `frontend`인지 확인
 3. clean URL과 rewrite 적용 확인
 4. `/manifest.json`, `/sw.js`, `/static/style.css`, `/static/icons/favicon.svg` 200과 SVG `Content-Type: image/svg+xml` 확인
-5. `/api/health`가 same-origin rewrite로 200인지 확인
+5. `/api/ping`과 `/api/ready`가 same-origin rewrite로 200인지 확인
 6. 일반 로그인과 `/auth/demo` 후 주소가 `/landing`인지 확인
 7. `/`와 `/app`이 본문을 rewrite하지 않고 `/landing`으로 리다이렉트되는지 확인
 
@@ -116,7 +117,7 @@ Render 공식 문서 기준 Free Web Service는 15분 동안 인바운드 HTTP/W
 3. 기존 운영 스키마는 Alembic baseline `20260723_01`로 등록되었다. 현재 소스 head `20260723_10`까지 `02` 개인화 온보딩, `03` 세트 수행, `04` 클럽·반 역할, `05` 일정·출석·공지, `06` 테스트 세트/PB, `07` 계정 세션 버전, `08` QA 계정 분류, `09` 취소 가능한 결과 카드와 클럽 공개 캠페인, `10` 익명 QA 세션 결합 인덱스를 순차 적용한다.
 4. Render 시작 명령과 FastAPI lifespan이 모두 `alembic upgrade head`를 보장하며, 동시에 시작돼도 PostgreSQL advisory lock으로 직렬화한다.
 5. Render와 keep-warm은 `/api/ping`으로 프로세스만 확인해 Neon의 scale-to-zero를 방해하지 않는다.
-6. 배포 후 QA의 `/api/health`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
+6. 배포 후 QA의 `/api/ready`가 `alembic_version`과 코드의 기대 리비전을 비교한다. 일치하지 않거나 DB를 읽지 못하면 503을 반환한다.
 7. 새 스키마 변경은 `api/alembic/versions/`에 순차 리비전으로 추가하고 `EXPECTED_SCHEMA_REVISION`과 운영 QA 기대값을 함께 갱신한다.
 8. 배포 전 `python -m alembic -c api/alembic.ini heads`가 단일 head인지 확인하고, 운영 API/UI 품질 게이트를 통과한 뒤 완료 처리한다.
 
@@ -165,7 +166,7 @@ Jira 이슈에는 코칭 과제 제목·설명·분류와 대상 학생 표시�
 | --- | --- | --- |
 | `render-deploy.yml` | `main`의 `api/**`, `render.yaml` 변경 | Render deploy hook |
 | `qa.yml` | `main` push·PR, 매일 09:00 KST, 수동 | 일괄 품질 게이트. 핵심 테스트, 인증된 배포 API/UI와 Postman 대표 흐름 검사 |
-| `keep-warm.yml` | 14분 간격, 수동 | Render health ping |
+| `keep-warm.yml` | 14분 간격, 수동 | Render DB 비의존 liveness ping |
 
 필요한 GitHub Secrets:
 
@@ -185,7 +186,7 @@ Postman 단계는 별도 Secret을 요구하지 않는다. 일반·관리자 QA 
 최소 smoke:
 
 1. `/api/ping` 200 및 DB 비의존 liveness 응답
-2. `/api/health` 200 및 운영 DB migration revision 일치
+2. `/api/ready` 200 및 운영 DB migration revision 일치
 3. 일반 계정 로그인, 로그아웃, refresh, 비회원 체험
 4. 훈련 일지 생성 → 통계 → 월간 리포트 같은 거리·횟수 반영 → 테스트 데이터 삭제
 5. 테스트 세트 두 건 저장 → 코스별 PB·단축 시간 → 월간 리포트 반영 → 잘못된 거리 거부 → 기록 삭제

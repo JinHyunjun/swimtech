@@ -103,13 +103,13 @@ def main():
             f"{ping_response.status_code}, status={ping.get('status')}",
         )
 
-        r = requests.get(f"{BASE}/api/health", timeout=60)
-        health = jget(r)
+        r = requests.get(f"{BASE}/api/ready", timeout=60)
+        readiness = jget(r)
         rec(
             0,
             "백엔드 readiness + DB migration revision",
-            r.status_code == 200 and health.get("schema_revision") == "20260723_10",
-            f"{r.status_code}, revision={health.get('schema_revision')}",
+            r.status_code == 200 and readiness.get("schema_revision") == "20260723_10",
+            f"{r.status_code}, revision={readiness.get('schema_revision')}",
         )
     except Exception as e:
         rec(0, "백엔드 liveness/readiness", False, str(e)[:60])

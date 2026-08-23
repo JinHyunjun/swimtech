@@ -95,7 +95,7 @@
       "description": "배포 상태와 비로그인 보호 경계를 확인합니다. 인증 정보가 없어도 실행할 수 있습니다.",
       "item": [
         {
-          "name": "Health",
+          "name": "Readiness",
           "request": {
             "method": "GET",
             "header": [
@@ -104,8 +104,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/health",
-            "description": "Render 콜드 스타트를 깨우고 DB 마이그레이션 상태가 정상인지 확인합니다."
+            "url": "{{base_url}}/api/ready",
+            "description": "운영 DB 연결과 마이그레이션 상태가 정상인지 확인합니다. Render의 주기적 상태 확인은 DB 비의존 /api/ping을 사용합니다."
           },
           "event": [
             {
@@ -113,7 +113,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('health 200', () => pm.response.to.have.status(200));",
+                  "pm.test('readiness 200', () => pm.response.to.have.status(200));",
                   "pm.test('DB 스키마가 준비됨', () => {",
                   "  const body = pm.response.json();",
                   "  pm.expect(body.status).to.eql('healthy');",

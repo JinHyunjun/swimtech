@@ -60,7 +60,7 @@ def test_postman_requests_use_base_url_and_cover_required_boundaries(monkeypatch
 
     method_urls = {(request["method"], request["url"].split("?", 1)[0]) for _, _, request in requests}
     assert {
-        ("GET", "{{base_url}}/api/health"),
+        ("GET", "{{base_url}}/api/ready"),
         ("POST", "{{base_url}}/auth/login"),
         ("GET", "{{base_url}}/auth/me"),
         ("POST", "{{base_url}}/api/training-log"),

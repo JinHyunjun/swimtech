@@ -4,7 +4,7 @@
 
 전체 회귀 검사의 기준은 scripts/qa_runner.py와 scripts/qa_ui_crawler.py다. Postman Collection은 이를 복제하지 않고 다음 경계만 담당한다.
 
-- 공개 health와 비로그인 401
+- 공개 DB readiness와 비로그인 401
 - 일반 사용자 쿠키 로그인과 로그인 유지
 - 미리보기 없이 운동 스크린샷 확정 API를 호출할 때 일지가 생성되지 않고 404로 거부되는 고객별 확인 토큰 경계
 - 훈련 일지 생성 → 월간 통계 → 월간 리포트 → 내 데이터 반영

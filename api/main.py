@@ -330,8 +330,16 @@ def ping():
     """
     return {"status": "ok"}
 
+
 @app.get("/api/health")
 def health():
+    """기존 인프라 설정과 호환되는 DB 비의존 liveness 응답."""
+    return {"status": "healthy"}
+
+
+@app.get("/api/ready")
+def readiness():
+    """배포 후 QA에서 사용하는 DB·마이그레이션 readiness 검사."""
     database_url = os.getenv("DATABASE_URL", "")
     if not database_url:
         raise HTTPException(status_code=503, detail="DATABASE_URL is not configured")
@@ -345,7 +353,7 @@ def health():
         row = cur.fetchone()
         revision = row[0] if row else None
     except Exception:
-        logging.exception("health: database migration state unavailable")
+        logging.exception("readiness: database migration state unavailable")
         raise HTTPException(status_code=503, detail="Database migration state unavailable")
     finally:
         if cur:

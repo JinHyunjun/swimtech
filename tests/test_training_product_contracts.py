@@ -91,7 +91,7 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'health.get("schema_revision") == "20260723_10"' in (
+    assert 'readiness.get("schema_revision") == "20260723_10"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -109,6 +109,9 @@ def test_render_liveness_does_not_wake_neon_compute():
         '@app.get("/api/health")', 1
     )[0]
     health_block = main.split('@app.get("/api/health")', 1)[1].split(
+        '@app.get("/api/ready")', 1
+    )[0]
+    readiness_block = main.split('@app.get("/api/ready")', 1)[1].split(
         '@app.post("/api/open-folder")', 1
     )[0]
 
@@ -118,11 +121,13 @@ def test_render_liveness_does_not_wake_neon_compute():
     assert "healthCheckPath: /api/ping" in render
     assert "https://swimtech-api.onrender.com/api/ping" in keep_warm
     assert "https://swimtech-api.onrender.com/api/health" not in keep_warm
-    assert "psycopg2.connect" in health_block
-    assert "SELECT version_num FROM alembic_version" in health_block
+    assert "psycopg2" not in health_block
+    assert "DATABASE_URL" not in health_block
+    assert "psycopg2.connect" in readiness_block
+    assert "SELECT version_num FROM alembic_version" in readiness_block
     qa_runner = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
     assert 'requests.get(f"{BASE}/api/ping"' in qa_runner
-    assert 'requests.get(f"{BASE}/api/health"' in qa_runner
+    assert 'requests.get(f"{BASE}/api/ready"' in qa_runner
 
 
 def test_analysis_routers_are_not_publicly_registered():

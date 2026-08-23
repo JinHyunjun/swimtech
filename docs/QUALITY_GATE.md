@@ -56,7 +56,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
 | 슈퍼 관리자 | 관리자 로그인·권한, 관리자 전용 사이드 메뉴, 모바일 드로어 8개 항목 비겹침·ESC 닫기·가로 넘침 0, 다섯 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 사용자 전체/일반/확정 QA/후보 필터와 근거, 일반/QA 운영 로그 상호 배제, 7/30/90일 실제 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `qa_account_audit.py`, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
-| DB 스키마 변경 | Alembic 순차 리비전, 단일 head, Render/FastAPI 시작 전 upgrade, health 리비전 일치 | `api/alembic/`, `alembic heads`, `qa_runner.py` health |
+| DB 스키마 변경 | Alembic 순차 리비전, 단일 head, Render/FastAPI 시작 전 upgrade, readiness 리비전 일치 | `api/alembic/`, `alembic heads`, `qa_runner.py` readiness |
 | AI·외부 연동 | Gemini rate limit, 모델 폴백 순서, 구조화 출력 검증, 답변 생성 실패 안내, OAuth·Kakao·Notion 키 없음 상태 | 관련 라우터 계약 테스트, 운영 smoke |
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
 | 릴리즈·문서 | README, 기능 지도, 아키텍처, 배포, 기능 체크리스트, 품질 게이트를 코드와 함께 갱신. Notion 릴리즈 노트·서비스 설명서는 배포 검증이 끝난 기능만 갱신 | `test_quality_gate_documentation_is_kept_current` |
@@ -76,7 +76,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 8. 운영 QA가 만든 임시 데이터는 삭제하거나 기존 상태로 복원한다.
 9. 릴리즈 노트, 저장소 문서, PWA 메타데이터와 정책 문서가 실제 공개 기능과 같은 방향을 말한다.
 10. 과거 영상 분석 실험 코드나 워치 기기명이 남아 있어도 공개 기능·직접 연동으로 오해할 표현이 없어야 한다.
-11. 테이블·컬럼·인덱스 변경은 Alembic 리비전과 기대 스키마 리비전, health QA를 함께 갱신한다.
+11. 테이블·컬럼·인덱스 변경은 Alembic 리비전과 기대 스키마 리비전, `/api/ready` QA를 함께 갱신한다.
 
 ## 자동 실행과 계정
 
