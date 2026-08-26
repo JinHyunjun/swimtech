@@ -1,6 +1,6 @@
 # SwimMate 기술 구조
 
-> 코드 기준일: 2026-08-09
+> 코드 기준일: 2026-08-26
 
 ## 한눈에 보는 구조
 
@@ -22,7 +22,7 @@
                     └────────────────────────────────────────── Notion changelog 읽기
 ```
 
-공개 배포는 Vercel·Render·Neon이 핵심이다. Docker Compose의 worker, Redis, MinIO, Flowise와 `analysis/`는 로컬 통합·과거 영상 분석 실험을 위한 선택 구성으로, 공개 제품 아키텍처에 포함하지 않는다.
+공개 배포는 Vercel·Render·Neon이 핵심이다. Docker Compose의 worker, Redis, MinIO, Flowise와 `analysis/`는 로컬 통합·과거 영상 분석 실험을 위한 선택 구성으로, 공개 제품 아키텍처에 포함하지 않는다. `analysis_v2/`도 다중 선수 추적·카운팅을 검증하는 오프라인 기준선이며 실제 대회 영상의 정확도·권리·비동기 인프라 게이트를 통과하기 전에는 FastAPI에서 불러오지 않는다.
 
 ## 프론트엔드
 

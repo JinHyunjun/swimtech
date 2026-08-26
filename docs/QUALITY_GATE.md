@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-21
+> 기준일: 2026-08-26
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -11,13 +11,14 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 레이어 | 파일 | 목적 |
 | --- | --- | --- |
 | 단위·계약 테스트 | `tests/test_api_unit.py`, `tests/test_training_product_contracts.py` | 라우터 등록, 데이터 계약, 문서와 QA 매핑 누락 방지 |
+| 영상 분석 v2 오프라인 테스트 | `tests/test_multiswimmer_analysis.py` | 다중 선수 ID 유지, 선수별 독립 카운팅, 타일 중복 제거, 저신뢰 킥 보류 |
 | Playwright E2E | `tests/test_swimtech.py` | 주요 페이지 로드, UI 상호작용, 스크린샷 회귀 검증 |
 | 운영 API QA | `scripts/qa_runner.py` | 실제 배포 URL에서 인증, 훈련 일지, 리포트, 준비도, 코치 AI, 관리자 API 흐름 점검 |
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약 123개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선 132개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -61,6 +62,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
 | 릴리즈·문서 | README, 기능 지도, 아키텍처, 배포, 기능 체크리스트, 품질 게이트를 코드와 함께 갱신. Notion 릴리즈 노트·서비스 설명서는 배포 검증이 끝난 기능만 갱신 | `test_quality_gate_documentation_is_kept_current` |
 | 영상 분석 재활성화 | 공개 라우터 등록 전 데이터셋, 보관·삭제 정책, 비동기 분석, E2E, 법적 안내 | 현재는 비활성 유지 계약 테스트 |
+| 다중 선수 영상 분석 실험 | 검출 순서 변경·단기 가림 뒤 ID 유지, 레인별 시계열 격리, 스트로크·킥 독립 계산, 저가시성 결과 보류, 타일 중복 제거. 실제 영상 정확도 게이트 전 공개 API/UI·릴리즈 노트 비노출 | `tests/test_multiswimmer_analysis.py`, `analysis_v2/`, `docs/VIDEO_ANALYSIS_V2.md` |
 
 ## 완료 기준
 

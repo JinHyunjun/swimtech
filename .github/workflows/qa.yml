@@ -49,6 +49,7 @@ jobs:
           PYTHONUTF8: "1"
         run: |
           python -m pytest tests/test_api_unit.py tests/test_chat_grounding.py tests/test_training_product_contracts.py \
+            tests/test_multiswimmer_analysis.py \
             tests/test_coach_crew_jira.py tests/test_jira_integration.py tests/test_postman_contract.py -v --tb=short \
             --html=tests/ci_report.html --self-contained-html \
             --junitxml=tests/ci_results.xml

@@ -1391,7 +1391,10 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "단위·계약·지식 검색·Jira 통합·Postman 자산 계약 123개" in quality_doc
+    assert "오프라인 영상 기준선 132개" in quality_doc
+    assert "tests/test_multiswimmer_analysis.py" in quality_doc
+    assert "analysis_v2/" in readme
+    assert "실제 영상 정확도 게이트 전까지 공개 API·UI에는 연결하지 않습니다" in readme
     assert "53개 API 시나리오" in quality_doc
     assert "30076991403" in quality_doc
     assert "역할별 35개 화면" in quality_doc
