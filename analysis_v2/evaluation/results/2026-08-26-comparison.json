@@ -1,0 +1,1886 @@
+{
+  "benchmark_version": "multiswimmer-benchmark-v0.1.0",
+  "manifest_seed": 20260826,
+  "protocol": {
+    "sample_fps": 6.0,
+    "view_requirement": "One continuous broadcast shot with a fixed lane quadrilateral; suspected cuts are excluded from the interval.",
+    "count_definition": "Freestyle/backstroke count each arm event; breaststroke/butterfly count each synchronous arm cycle. Kicks are model outputs unless independently visible enough to label.",
+    "accuracy_rule": "Detection coverage is reported separately from count accuracy. Count accuracy remains unverified until ground_truth contains independent human labels."
+  },
+  "providers": {
+    "baseline": "baseline-mediapipe-tiled",
+    "candidate": "lane-rtmpose-topdown"
+  },
+  "summary": {
+    "baseline": {
+      "sample_count": 20,
+      "mean_detected_lanes": 1.868,
+      "stable_tracks": 7,
+      "arm_count_outputs": 4,
+      "kick_count_outputs": 4,
+      "processed_frames": 715,
+      "inference_fps": 1.211,
+      "suspected_cuts": 0,
+      "per_stroke": {
+        "freestyle": {
+          "sample_count": 5,
+          "stable_tracks": 0,
+          "arm_count_outputs": 0,
+          "kick_count_outputs": 0,
+          "mean_detected_lanes": 1.089
+        },
+        "backstroke": {
+          "sample_count": 5,
+          "stable_tracks": 2,
+          "arm_count_outputs": 2,
+          "kick_count_outputs": 2,
+          "mean_detected_lanes": 1.969
+        },
+        "breaststroke": {
+          "sample_count": 5,
+          "stable_tracks": 4,
+          "arm_count_outputs": 1,
+          "kick_count_outputs": 1,
+          "mean_detected_lanes": 2.681
+        },
+        "butterfly": {
+          "sample_count": 5,
+          "stable_tracks": 1,
+          "arm_count_outputs": 1,
+          "kick_count_outputs": 1,
+          "mean_detected_lanes": 1.733
+        }
+      }
+    },
+    "candidate": {
+      "sample_count": 20,
+      "mean_detected_lanes": 4.897,
+      "stable_tracks": 93,
+      "arm_count_outputs": 73,
+      "kick_count_outputs": 73,
+      "processed_frames": 715,
+      "inference_fps": 1.327,
+      "suspected_cuts": 0,
+      "per_stroke": {
+        "freestyle": {
+          "sample_count": 5,
+          "stable_tracks": 24,
+          "arm_count_outputs": 15,
+          "kick_count_outputs": 16,
+          "mean_detected_lanes": 4.843
+        },
+        "backstroke": {
+          "sample_count": 5,
+          "stable_tracks": 23,
+          "arm_count_outputs": 18,
+          "kick_count_outputs": 19,
+          "mean_detected_lanes": 4.986
+        },
+        "breaststroke": {
+          "sample_count": 5,
+          "stable_tracks": 27,
+          "arm_count_outputs": 26,
+          "kick_count_outputs": 27,
+          "mean_detected_lanes": 5.318
+        },
+        "butterfly": {
+          "sample_count": 5,
+          "stable_tracks": 19,
+          "arm_count_outputs": 14,
+          "kick_count_outputs": 11,
+          "mean_detected_lanes": 4.44
+        }
+      }
+    }
+  },
+  "coverage_improvement": {
+    "mean_detected_lanes_percent": 162.2,
+    "stable_tracks_percent": 1228.6,
+    "arm_count_outputs_percent": 1725.0,
+    "kick_count_outputs_percent": 1725.0
+  },
+  "count_accuracy": {
+    "status": "unverified",
+    "labeled_arm_rows": 0,
+    "labeled_kick_rows": 0,
+    "reason": "The sampled broadcast clips have no independent event labels, and many kicks are not visually resolvable at source resolution. Predictions are not reused as truth."
+  },
+  "samples": [
+    {
+      "sample_id": "freestyle-1",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Cameron McEvoy 20.88",
+      "interval_sec": [
+        11.0,
+        18.0
+      ],
+      "evaluation_lane_id": 6,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 2,
+        "kicks": 6,
+        "track_coverage": 0.667
+      },
+      "baseline_mean_detected_lanes": 0.571,
+      "candidate_mean_detected_lanes": 4.405,
+      "scene_stability": {
+        "max_change_score": 0.2095,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 16,
+          "track_coverage": 0.381,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 30,
+          "track_coverage": 0.714,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 22,
+          "track_coverage": 0.524,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 17,
+          "track_coverage": 0.405,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 17,
+          "track_coverage": 0.405,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 28,
+          "track_coverage": 0.667,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 26,
+          "track_coverage": 0.619,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 29,
+          "track_coverage": 0.69,
+          "arm_strokes": 6,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "freestyle-2",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Record-setting",
+      "interval_sec": [
+        177.0,
+        181.2
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 3,
+        "kicks": 5,
+        "track_coverage": 0.962
+      },
+      "baseline_mean_detected_lanes": 1.731,
+      "candidate_mean_detected_lanes": 5.154,
+      "scene_stability": {
+        "max_change_score": 0.1216,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 2,
+          "observed_frames": 19,
+          "track_coverage": 0.731,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 20,
+          "track_coverage": 0.769,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 25,
+          "track_coverage": 0.962,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 25,
+          "track_coverage": 0.962,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 8,
+          "track_coverage": 0.308,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 25,
+          "track_coverage": 0.962,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 12,
+          "track_coverage": 0.462,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "freestyle-3",
+      "stroke_kind": "freestyle",
+      "video_prefix": "A New World Record!",
+      "interval_sec": [
+        16.0,
+        18.5
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": null,
+        "kicks": null,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 0.688,
+      "candidate_mean_detected_lanes": 6.562,
+      "scene_stability": {
+        "max_change_score": 0.1162,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 4,
+          "track_coverage": 0.25,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 16,
+          "track_coverage": 1.0,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 16,
+          "track_coverage": 1.0,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 16,
+          "track_coverage": 1.0,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 12,
+          "track_coverage": 0.75,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 16,
+          "track_coverage": 1.0,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 13,
+          "track_coverage": 0.812,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 12,
+          "track_coverage": 0.75,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        }
+      ]
+    },
+    {
+      "sample_id": "freestyle-4",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Rio 2016 4 x 100",
+      "interval_sec": [
+        22.0,
+        30.0
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 9,
+        "kicks": 7,
+        "track_coverage": 0.673
+      },
+      "baseline_mean_detected_lanes": 1.429,
+      "candidate_mean_detected_lanes": 1.51,
+      "scene_stability": {
+        "max_change_score": 0.2036,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 14,
+          "track_coverage": 0.286,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 13,
+          "track_coverage": 0.265,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 14,
+          "track_coverage": 0.286,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 33,
+          "track_coverage": 0.673,
+          "arm_strokes": 9,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "freestyle-5",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Caeleb Dressel makes history",
+      "interval_sec": [
+        12.5,
+        18.5
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 9,
+        "kicks": 5,
+        "track_coverage": 0.972
+      },
+      "baseline_mean_detected_lanes": 1.028,
+      "candidate_mean_detected_lanes": 6.583,
+      "scene_stability": {
+        "max_change_score": 0.1693,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 34,
+          "track_coverage": 0.944,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "legs_not_visible"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 34,
+          "track_coverage": 0.944,
+          "arm_strokes": 9,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 31,
+          "track_coverage": 0.861,
+          "arm_strokes": 7,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 35,
+          "track_coverage": 0.972,
+          "arm_strokes": 9,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 29,
+          "track_coverage": 0.806,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 8,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 30,
+          "track_coverage": 0.833,
+          "arm_strokes": 8,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 26,
+          "track_coverage": 0.722,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 18,
+          "track_coverage": 0.5,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "backstroke-1",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Mens 200m Backstroke",
+      "interval_sec": [
+        44.0,
+        51.0
+      ],
+      "evaluation_lane_id": 1,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 7,
+        "kicks": 4,
+        "track_coverage": 0.909
+      },
+      "baseline_mean_detected_lanes": 2.568,
+      "candidate_mean_detected_lanes": 3.705,
+      "scene_stability": {
+        "max_change_score": 0.1783,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 40,
+          "track_coverage": 0.909,
+          "arm_strokes": 7,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 27,
+          "track_coverage": 0.614,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 27,
+          "track_coverage": 0.614,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 18,
+          "track_coverage": 0.409,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 8,
+          "track_coverage": 0.182,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 12,
+          "track_coverage": 0.273,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 10,
+          "track_coverage": 0.227,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 21,
+          "track_coverage": 0.477,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "backstroke-2",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Rio Replay",
+      "interval_sec": [
+        130.0,
+        135.4
+      ],
+      "evaluation_lane_id": 8,
+      "evaluation_lane_prediction": {
+        "arm_strokes": null,
+        "kicks": null,
+        "track_coverage": 0.5
+      },
+      "baseline_mean_detected_lanes": 1.882,
+      "candidate_mean_detected_lanes": 3.824,
+      "scene_stability": {
+        "max_change_score": 0.1408,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 11,
+          "track_coverage": 0.324,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 7,
+          "track_coverage": 0.206,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 15,
+          "track_coverage": 0.441,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 23,
+          "track_coverage": 0.676,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 15,
+          "track_coverage": 0.441,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 26,
+          "track_coverage": 0.765,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 16,
+          "track_coverage": 0.471,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 17,
+          "track_coverage": 0.5,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "backstroke-3",
+      "stroke_kind": "backstroke",
+      "video_prefix": "World Record Alert!",
+      "interval_sec": [
+        19.3,
+        22.5
+      ],
+      "evaluation_lane_id": 5,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 4,
+        "kicks": 2,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 0.952,
+      "candidate_mean_detected_lanes": 5.952,
+      "scene_stability": {
+        "max_change_score": 0.1539,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 14,
+          "track_coverage": 0.667,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 10,
+          "track_coverage": 0.476,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 15,
+          "track_coverage": 0.714,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 17,
+          "track_coverage": 0.81,
+          "arm_strokes": 6,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 21,
+          "track_coverage": 1.0,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 17,
+          "track_coverage": 0.81,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 13,
+          "track_coverage": 0.619,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 18,
+          "track_coverage": 0.857,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "backstroke-4",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Hubert Kos Shatters",
+      "interval_sec": [
+        24.0,
+        32.0
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 15,
+        "kicks": 10,
+        "track_coverage": 0.959
+      },
+      "baseline_mean_detected_lanes": 3.286,
+      "candidate_mean_detected_lanes": 7.082,
+      "scene_stability": {
+        "max_change_score": 0.2005,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 19,
+          "track_coverage": 0.388,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 46,
+          "track_coverage": 0.939,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 10,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 49,
+          "track_coverage": 1.0,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 47,
+          "track_coverage": 0.959,
+          "arm_strokes": 15,
+          "arm_reason": null,
+          "kicks": 10,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 47,
+          "track_coverage": 0.959,
+          "arm_strokes": 15,
+          "arm_reason": null,
+          "kicks": 10,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 46,
+          "track_coverage": 0.939,
+          "arm_strokes": 10,
+          "arm_reason": null,
+          "kicks": 9,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 47,
+          "track_coverage": 0.959,
+          "arm_strokes": 7,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 45,
+          "track_coverage": 0.918,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 11,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "backstroke-5",
+      "stroke_kind": "backstroke",
+      "video_prefix": "New World Record",
+      "interval_sec": [
+        34.0,
+        40.0
+      ],
+      "evaluation_lane_id": 5,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 4,
+        "kicks": 3,
+        "track_coverage": 0.763
+      },
+      "baseline_mean_detected_lanes": 1.158,
+      "candidate_mean_detected_lanes": 4.368,
+      "scene_stability": {
+        "max_change_score": 0.1437,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 3,
+          "track_coverage": 0.079,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 25,
+          "track_coverage": 0.658,
+          "arm_strokes": 6,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 18,
+          "track_coverage": 0.474,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 28,
+          "track_coverage": 0.737,
+          "arm_strokes": null,
+          "arm_reason": "arms_not_visible",
+          "kicks": null,
+          "kick_reason": "legs_not_visible"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 29,
+          "track_coverage": 0.763,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 17,
+          "track_coverage": 0.447,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 25,
+          "track_coverage": 0.658,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 20,
+          "track_coverage": 0.526,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "breaststroke-1",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Junior World Swimming",
+      "interval_sec": [
+        73.0,
+        80.0
+      ],
+      "evaluation_lane_id": 5,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 5,
+        "kicks": 6,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 3.0,
+      "candidate_mean_detected_lanes": 6.581,
+      "scene_stability": {
+        "max_change_score": 0.2506,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 38,
+          "track_coverage": 0.884,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 33,
+          "track_coverage": 0.767,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 8,
+          "track_coverage": 0.186,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 40,
+          "track_coverage": 0.93,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 43,
+          "track_coverage": 1.0,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 40,
+          "track_coverage": 0.93,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 41,
+          "track_coverage": 0.953,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 40,
+          "track_coverage": 0.93,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "breaststroke-2",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Caspar Corbeau",
+      "interval_sec": [
+        28.0,
+        34.2
+      ],
+      "evaluation_lane_id": 3,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 1,
+        "kicks": 5,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 2.949,
+      "candidate_mean_detected_lanes": 6.846,
+      "scene_stability": {
+        "max_change_score": 0.1967,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 5,
+          "track_coverage": 0.128,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 36,
+          "track_coverage": 0.923,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 39,
+          "track_coverage": 1.0,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 39,
+          "track_coverage": 1.0,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 38,
+          "track_coverage": 0.974,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 38,
+          "track_coverage": 0.974,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 36,
+          "track_coverage": 0.923,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 36,
+          "track_coverage": 0.923,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "breaststroke-3",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Emre Sakci",
+      "interval_sec": [
+        14.0,
+        21.0
+      ],
+      "evaluation_lane_id": 6,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 1,
+        "kicks": 2,
+        "track_coverage": 0.674
+      },
+      "baseline_mean_detected_lanes": 3.233,
+      "candidate_mean_detected_lanes": 4.209,
+      "scene_stability": {
+        "max_change_score": 0.1532,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 14,
+          "track_coverage": 0.326,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 22,
+          "track_coverage": 0.512,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 27,
+          "track_coverage": 0.628,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 22,
+          "track_coverage": 0.512,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 20,
+          "track_coverage": 0.465,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 29,
+          "track_coverage": 0.674,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 28,
+          "track_coverage": 0.651,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 19,
+          "track_coverage": 0.442,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        }
+      ]
+    },
+    {
+      "sample_id": "breaststroke-4",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Peaty wins gold",
+      "interval_sec": [
+        17.0,
+        21.3
+      ],
+      "evaluation_lane_id": 5,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 2,
+        "kicks": 2,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 1.889,
+      "candidate_mean_detected_lanes": 4.185,
+      "scene_stability": {
+        "max_change_score": 0.1725,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 25,
+          "track_coverage": 0.926,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 20,
+          "track_coverage": 0.741,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 17,
+          "track_coverage": 0.63,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 24,
+          "track_coverage": 0.889,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 4,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 27,
+          "track_coverage": 1.0,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "breaststroke-5",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Hansen Takes",
+      "interval_sec": [
+        15.0,
+        23.0
+      ],
+      "evaluation_lane_id": 3,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 7,
+        "kicks": 6,
+        "track_coverage": 0.875
+      },
+      "baseline_mean_detected_lanes": 2.333,
+      "candidate_mean_detected_lanes": 4.771,
+      "scene_stability": {
+        "max_change_score": 0.1981,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 48,
+          "track_coverage": 1.0,
+          "arm_strokes": 6,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 45,
+          "track_coverage": 0.938,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 42,
+          "track_coverage": 0.875,
+          "arm_strokes": 7,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 48,
+          "track_coverage": 1.0,
+          "arm_strokes": 10,
+          "arm_reason": null,
+          "kicks": 5,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 46,
+          "track_coverage": 0.958,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 7,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "butterfly-1",
+      "stroke_kind": "butterfly",
+      "video_prefix": "2 World Records",
+      "interval_sec": [
+        27.0,
+        35.0
+      ],
+      "evaluation_lane_id": 6,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 5,
+        "kicks": 1,
+        "track_coverage": 0.918
+      },
+      "baseline_mean_detected_lanes": 0.857,
+      "candidate_mean_detected_lanes": 5.041,
+      "scene_stability": {
+        "max_change_score": 0.1392,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 6,
+          "track_coverage": 0.122,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 28,
+          "track_coverage": 0.571,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 10,
+          "track_coverage": 0.204,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 27,
+          "track_coverage": 0.551,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 47,
+          "track_coverage": 0.959,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 45,
+          "track_coverage": 0.918,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 45,
+          "track_coverage": 0.918,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 39,
+          "track_coverage": 0.796,
+          "arm_strokes": 4,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "butterfly-2",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Men's 100m Butterfly Final",
+      "interval_sec": [
+        41.0,
+        46.0
+      ],
+      "evaluation_lane_id": 1,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 3,
+        "kicks": 6,
+        "track_coverage": 0.903
+      },
+      "baseline_mean_detected_lanes": 2.226,
+      "candidate_mean_detected_lanes": 5.581,
+      "scene_stability": {
+        "max_change_score": 0.1154,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 28,
+          "track_coverage": 0.903,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 3,
+          "track_coverage": 0.097,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 23,
+          "track_coverage": 0.742,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 13,
+          "track_coverage": 0.419,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 25,
+          "track_coverage": 0.806,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": 6,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 31,
+          "track_coverage": 1.0,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 24,
+          "track_coverage": 0.774,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 26,
+          "track_coverage": 0.839,
+          "arm_strokes": 1,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        }
+      ]
+    },
+    {
+      "sample_id": "butterfly-3",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Josh Liendo Shatters",
+      "interval_sec": [
+        23.0,
+        26.0
+      ],
+      "evaluation_lane_id": 3,
+      "evaluation_lane_prediction": {
+        "arm_strokes": 5,
+        "kicks": 1,
+        "track_coverage": 1.0
+      },
+      "baseline_mean_detected_lanes": 2.158,
+      "candidate_mean_detected_lanes": 5.632,
+      "scene_stability": {
+        "max_change_score": 0.1805,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 14,
+          "track_coverage": 0.737,
+          "arm_strokes": null,
+          "arm_reason": "track_too_short",
+          "kicks": null,
+          "kick_reason": "track_too_short"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 19,
+          "track_coverage": 1.0,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": 2,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 19,
+          "track_coverage": 1.0,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 19,
+          "track_coverage": 1.0,
+          "arm_strokes": 5,
+          "arm_reason": null,
+          "kicks": 3,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 17,
+          "track_coverage": 0.895,
+          "arm_strokes": 3,
+          "arm_reason": null,
+          "kicks": 1,
+          "kick_reason": null
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 19,
+          "track_coverage": 1.0,
+          "arm_strokes": 2,
+          "arm_reason": null,
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        }
+      ]
+    },
+    {
+      "sample_id": "butterfly-4",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Women's 100m Butterfly Final",
+      "interval_sec": [
+        40.0,
+        43.0
+      ],
+      "evaluation_lane_id": 4,
+      "evaluation_lane_prediction": {
+        "arm_strokes": null,
+        "kicks": null,
+        "track_coverage": 0.474
+      },
+      "baseline_mean_detected_lanes": 1.474,
+      "candidate_mean_detected_lanes": 4.158,
+      "scene_stability": {
+        "max_change_score": 0.1709,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 2,
+          "track_coverage": 0.105,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 5,
+          "track_coverage": 0.263,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 10,
+          "track_coverage": 0.526,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 9,
+          "track_coverage": 0.474,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 10,
+          "track_coverage": 0.526,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 6,
+          "observed_frames": 10,
+          "track_coverage": 0.526,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 7,
+          "observed_frames": 18,
+          "track_coverage": 0.947,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": null,
+          "kick_reason": "no_reliable_kick_events"
+        },
+        {
+          "lane_id": 8,
+          "observed_frames": 15,
+          "track_coverage": 0.789,
+          "arm_strokes": null,
+          "arm_reason": "no_reliable_stroke_events",
+          "kicks": 1,
+          "kick_reason": null
+        }
+      ]
+    },
+    {
+      "sample_id": "butterfly-5",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Rio 2016 100m Butterfly",
+      "interval_sec": [
+        12.0,
+        19.0
+      ],
+      "evaluation_lane_id": 5,
+      "evaluation_lane_prediction": {
+        "arm_strokes": null,
+        "kicks": null,
+        "track_coverage": 0.762
+      },
+      "baseline_mean_detected_lanes": 1.952,
+      "candidate_mean_detected_lanes": 1.786,
+      "scene_stability": {
+        "max_change_score": 0.1722,
+        "suspected_cuts": [],
+        "threshold": 0.35
+      },
+      "lane_predictions": [
+        {
+          "lane_id": 1,
+          "observed_frames": 1,
+          "track_coverage": 0.024,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 2,
+          "observed_frames": 10,
+          "track_coverage": 0.238,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 3,
+          "observed_frames": 18,
+          "track_coverage": 0.429,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 4,
+          "observed_frames": 14,
+          "track_coverage": 0.333,
+          "arm_strokes": null,
+          "arm_reason": "track_coverage_too_low",
+          "kicks": null,
+          "kick_reason": "track_coverage_too_low"
+        },
+        {
+          "lane_id": 5,
+          "observed_frames": 32,
+          "track_coverage": 0.762,
+          "arm_strokes": null,
+          "arm_reason": "arms_not_visible",
+          "kicks": null,
+          "kick_reason": "legs_not_visible"
+        }
+      ]
+    }
+  ]
+}

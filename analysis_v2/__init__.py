@@ -7,6 +7,13 @@ until the release gates in ``docs/VIDEO_ANALYSIS_V2.md`` are satisfied.
 """
 
 from .counting import CounterConfig, count_track
+from .lanes import (
+    LaneCropPoseProvider,
+    LaneLayout,
+    LaneMosaicPoseProvider,
+    LaneRegion,
+    assign_detections_to_lanes,
+)
 from .pipeline import MultiSwimmerAnalyzer, MultiSwimmerAnalysis
 from .tracking import MultiSwimmerTracker, TrackerConfig
 from .types import KeypointIndex, PoseDetection, StrokeKind, TrackObservation
@@ -14,6 +21,10 @@ from .types import KeypointIndex, PoseDetection, StrokeKind, TrackObservation
 __all__ = [
     "CounterConfig",
     "KeypointIndex",
+    "LaneCropPoseProvider",
+    "LaneLayout",
+    "LaneMosaicPoseProvider",
+    "LaneRegion",
     "MultiSwimmerAnalysis",
     "MultiSwimmerAnalyzer",
     "MultiSwimmerTracker",
@@ -21,5 +32,6 @@ __all__ = [
     "StrokeKind",
     "TrackObservation",
     "TrackerConfig",
+    "assign_detections_to_lanes",
     "count_track",
 ]

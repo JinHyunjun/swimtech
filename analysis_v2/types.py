@@ -47,6 +47,7 @@ class PoseDetection:
     keypoints: np.ndarray
     bbox: tuple[float, float, float, float]
     confidence: float
+    lane_hint: int | None = None
 
     def __post_init__(self) -> None:
         points = np.asarray(self.keypoints, dtype=np.float64)
@@ -61,6 +62,8 @@ class PoseDetection:
             raise ValueError("bbox coordinates are reversed")
         object.__setattr__(self, "keypoints", points)
         object.__setattr__(self, "confidence", float(np.clip(self.confidence, 0.0, 1.0)))
+        if self.lane_hint is not None and self.lane_hint < 1:
+            raise ValueError("lane_hint must be a positive integer")
 
     @classmethod
     def from_keypoints(
@@ -69,6 +72,7 @@ class PoseDetection:
         confidence: float | None = None,
         visibility_threshold: float = 0.05,
         padding: float = 0.015,
+        lane_hint: int | None = None,
     ) -> "PoseDetection":
         points = np.asarray(keypoints, dtype=np.float64)
         if points.ndim != 2 or points.shape[1] not in (3, 4):
@@ -82,7 +86,7 @@ class PoseDetection:
         x1, y1 = np.min(xy, axis=0) - padding
         x2, y2 = np.max(xy, axis=0) + padding
         score = float(np.mean(points[visible, 3])) if confidence is None else confidence
-        return cls(points, (float(x1), float(y1), float(x2), float(y2)), score)
+        return cls(points, (float(x1), float(y1), float(x2), float(y2)), score, lane_hint)
 
     @property
     def centroid(self) -> np.ndarray:

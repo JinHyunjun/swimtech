@@ -135,10 +135,27 @@ class MultiSwimmerTracker:
         frame_index: int,
         timestamp_sec: float,
     ) -> _TrackState:
-        track_id = f"S{self._next_track_number:03d}"
-        self._next_track_number += 1
-        lane_id = self._next_lane_number
-        self._next_lane_number += 1
+        if detection.lane_hint is not None:
+            lane_id = detection.lane_hint
+            track_id = f"L{lane_id:02d}"
+            previous = self._closed.pop(track_id, None)
+            if previous is not None:
+                previous.closed = False
+                previous.missing_frames = 0
+                previous.velocity = np.zeros(2, dtype=np.float64)
+                previous.last_detection = detection
+                previous.last_frame_index = frame_index
+                previous.last_timestamp_sec = timestamp_sec
+                observation = TrackObservation(track_id, lane_id, frame_index, timestamp_sec, detection)
+                previous.observations.append(observation)
+                previous.hits += 1
+                self._active[track_id] = previous
+                return previous
+        else:
+            track_id = f"S{self._next_track_number:03d}"
+            self._next_track_number += 1
+            lane_id = self._next_lane_number
+            self._next_lane_number += 1
         state = _TrackState(
             track_id=track_id,
             lane_id=lane_id,
@@ -154,11 +171,17 @@ class MultiSwimmerTracker:
 
     def _association_cost(self, track: _TrackState, detection: PoseDetection) -> float:
         cfg = self.config
+        if detection.lane_hint is not None and detection.lane_hint != track.lane_id:
+            return float("inf")
         predicted = track.predicted_centroid
         centroid_distance = float(np.linalg.norm(predicted - detection.centroid))
         allowed_distance = cfg.max_centroid_distance * (1.0 + min(track.missing_frames, 6) * 0.16)
+        if detection.lane_hint == track.lane_id:
+            allowed_distance = max(allowed_distance, 0.55)
         lane_distance = abs(float(detection.centroid[self.lane_axis_index]) - track.lane_position)
-        if centroid_distance > allowed_distance or lane_distance > allowed_distance * 0.75:
+        if centroid_distance > allowed_distance or (
+            detection.lane_hint is None and lane_distance > allowed_distance * 0.75
+        ):
             return float("inf")
         pose_distance = mean_keypoint_distance(track.last_detection, detection, _ASSOCIATION_KEYPOINTS)
         iou_cost = 1.0 - _bbox_iou(track.last_detection.bbox, detection.bbox)
@@ -231,6 +254,8 @@ class MultiSwimmerTracker:
 
         for detection_index, detection in enumerate(valid):
             if detection_index in matched_detection_indexes:
+                continue
+            if detection.lane_hint is not None and f"L{detection.lane_hint:02d}" in self._active:
                 continue
             state = self._new_track(detection, frame_index, timestamp_sec)
             frame_observations.append(state.observations[-1])

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -17,6 +19,9 @@ from analysis_v2 import (
 )
 from analysis_v2.types import KeypointIndex
 from analysis_v2.mediapipe_provider import build_overlapping_tiles, deduplicate_detections
+from analysis_v2.lanes import LaneLayout, LaneRegion, assign_detections_to_lanes
+from analysis_v2.rtmpose_provider import coco_pose_to_detection
+from analysis_v2.benchmark import BenchmarkSample, score_result
 
 
 def _synthetic_swimmer(
@@ -229,3 +234,118 @@ def test_pool_tiles_stay_inside_roi_and_cover_grid() -> None:
     assert len(tiles) == 6
     assert all(100 <= x1 < x2 <= 900 for x1, _, x2, _ in tiles)
     assert all(100 <= y1 < y2 <= 400 for _, y1, _, y2 in tiles)
+
+
+def test_perspective_lane_polygons_assign_fixed_lane_ids() -> None:
+    layout = LaneLayout(
+        (
+            LaneRegion(3, np.asarray([[0.0, 0.15], [1.0, 0.05], [1.0, 0.35], [0.0, 0.45]])),
+            LaneRegion(4, np.asarray([[0.0, 0.45], [1.0, 0.35], [1.0, 0.65], [0.0, 0.75]])),
+        )
+    )
+    lane_three = _synthetic_swimmer(0.45, 0.25, 0.0)
+    lane_four = _synthetic_swimmer(0.45, 0.55, 0.0)
+    spectator = _synthetic_swimmer(0.45, 0.90, 0.0)
+
+    assigned = assign_detections_to_lanes([spectator, lane_four, lane_three], layout)
+
+    assert [item.lane_hint for item in assigned] == [3, 4]
+
+
+def test_tracker_uses_physical_lane_id_across_long_detection_gap() -> None:
+    tracker = MultiSwimmerTracker(TrackerConfig(max_missing_frames=1, max_centroid_distance=0.10))
+    first = _synthetic_swimmer(0.20, 0.30, 0.0)
+    first = PoseDetection.from_keypoints(first.keypoints, lane_hint=6)
+    tracker.update([first], 0, 0.0)
+    tracker.update([], 1, 0.1)
+    tracker.update([], 2, 0.2)
+    returned = _synthetic_swimmer(0.70, 0.25, 0.3)
+    returned = PoseDetection.from_keypoints(returned.keypoints, lane_hint=6)
+    tracker.update([returned], 3, 0.3)
+
+    tracks = tracker.all_tracks()
+    assert len(tracks) == 1
+    assert tracks[0][0].track_id == "L06"
+    assert tracks[0][-1].track_id == "L06"
+    assert len(tracks[0]) == 2
+
+
+def test_coco_rtmpose_output_maps_to_counter_keypoints() -> None:
+    keypoints = np.zeros((17, 2), dtype=np.float64)
+    scores = np.full(17, 0.9, dtype=np.float64)
+    keypoints[5] = [100, 40]
+    keypoints[6] = [120, 40]
+    keypoints[11] = [95, 80]
+    keypoints[12] = [125, 80]
+    keypoints[15] = [70, 100]
+    keypoints[16] = [150, 100]
+
+    detection = coco_pose_to_detection(keypoints, scores, 200, 120)
+
+    assert detection is not None
+    assert detection.keypoints[KeypointIndex.LEFT_SHOULDER, :2] == pytest.approx([0.5, 1 / 3])
+    assert detection.keypoints[KeypointIndex.RIGHT_ANKLE, :2] == pytest.approx([0.75, 5 / 6])
+    assert detection.confidence == pytest.approx(0.9)
+
+
+def test_lane_trapezoid_generates_horizontal_and_vertical_regions() -> None:
+    corners = np.asarray([[0.1, 0.2], [0.9, 0.1], [1.0, 0.9], [0.0, 0.8]])
+    horizontal = LaneLayout.from_trapezoid((1, 2, 3, 4), corners, "horizontal")
+    vertical = LaneLayout.from_trapezoid((5, 6), corners, "vertical")
+
+    assert len(horizontal.lanes) == 4
+    assert horizontal.lane_for_point(np.asarray([0.5, 0.3])).lane_id in {1, 2}
+    assert len(vertical.lanes) == 2
+    assert vertical.lane_for_point(np.asarray([0.25, 0.5])).lane_id == 5
+    assert vertical.lane_for_point(np.asarray([0.75, 0.5])).lane_id == 6
+
+
+def test_real_video_benchmark_manifest_has_five_samples_per_stroke() -> None:
+    manifest_path = Path("analysis_v2/evaluation/benchmark_manifest.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    samples = manifest["samples"]
+
+    assert len(samples) == 20
+    for stroke_kind in ("freestyle", "backstroke", "breaststroke", "butterfly"):
+        assert sum(item["stroke_kind"] == stroke_kind for item in samples) == 5
+    assert len({item["id"] for item in samples}) == 20
+    for item in samples:
+        layout = LaneLayout.from_dict(item["layout"])
+        assert item["evaluation_lane_id"] in {lane.lane_id for lane in layout.lanes}
+        assert item["interval_sec"][1] - item["interval_sec"][0] >= 2.5
+
+
+def test_benchmark_scoring_counts_abstention_as_zero_end_to_end_accuracy() -> None:
+    layout = LaneLayout(
+        (LaneRegion(1, np.asarray([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])),)
+    )
+    sample = BenchmarkSample(
+        sample_id="fixture",
+        stroke_kind="freestyle",
+        video=Path("fixture.mp4"),
+        start_sec=0.0,
+        end_sec=5.0,
+        lane_axis="y",
+        rotation="clockwise",
+        evaluation_lane_id=1,
+        layout=layout,
+        ground_truth=({"lane_id": 1, "arm_strokes": 8, "kicks": 12},),
+    )
+    result = {
+        "tracks": [
+            {
+                "lane_id": 1,
+                "observed_frames": 30,
+                "arm_strokes": {"available": True, "count": 7},
+                "kicks": {"available": False, "count": 0},
+            }
+        ]
+    }
+
+    score = score_result(sample, result)
+
+    assert score is not None
+    assert score["arm_strokes"]["mae_when_available"] == 1.0
+    assert score["arm_strokes"]["end_to_end_accuracy"] == 0.875
+    assert score["kicks"]["coverage"] == 0.0
+    assert score["kicks"]["end_to_end_accuracy"] == 0.0

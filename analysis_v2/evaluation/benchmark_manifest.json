@@ -1,0 +1,227 @@
+{
+  "benchmark": "multi-swimmer race clip benchmark",
+  "seed": 20260826,
+  "selection": "Five seeded candidates per stroke after excluding mismatched strokes, commentary-only clips, and clips without a continuous multi-swimmer segment.",
+  "protocol": {
+    "sample_fps": 6.0,
+    "view_requirement": "One continuous broadcast shot with a fixed lane quadrilateral; suspected cuts are excluded from the interval.",
+    "count_definition": "Freestyle/backstroke count each arm event; breaststroke/butterfly count each synchronous arm cycle. Kicks are model outputs unless independently visible enough to label.",
+    "accuracy_rule": "Detection coverage is reported separately from count accuracy. Count accuracy remains unverified until ground_truth contains independent human labels."
+  },
+  "replacements": [
+    {
+      "excluded": "CAELEB DRESSEL Analysis 100 METER FREESTYLE",
+      "reason": "analysis edit is predominantly a single swimmer",
+      "replacement": "Caeleb Dressel makes history with record 17.63 swim in 50 free"
+    },
+    {
+      "excluded": "CAELEB DRESSEL Analysis 100 METER FLY",
+      "reason": "analysis edit is predominantly a single swimmer",
+      "replacement": "Josh Liendo Shatters 100m Butterfly"
+    }
+  ],
+  "samples": [
+    {
+      "id": "freestyle-1",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Cameron McEvoy 20.88",
+      "interval_sec": [11.0, 18.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 6,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.33],[1.00,0.23],[1.00,0.90],[0.00,1.00]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "freestyle-2",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Record-setting",
+      "interval_sec": [177.0, 181.2],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.08],[0.91,0.08],[0.96,0.96],[0.00,0.91]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "freestyle-3",
+      "stroke_kind": "freestyle",
+      "video_prefix": "A New World Record!",
+      "interval_sec": [16.0, 18.5],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.16],[1.00,0.16],[1.00,0.93],[0.00,0.93]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "freestyle-4",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Rio 2016 4 x 100",
+      "interval_sec": [22.0, 30.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4], "corners": [[0.00,0.00],[1.00,0.12],[1.00,0.96],[0.00,0.77]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "freestyle-5",
+      "stroke_kind": "freestyle",
+      "video_prefix": "Caeleb Dressel makes history",
+      "interval_sec": [12.5, 18.5],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.19],[1.00,0.20],[1.00,0.91],[0.00,0.91]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "backstroke-1",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Mens 200m Backstroke",
+      "interval_sec": [44.0, 51.0],
+      "lane_axis": "x",
+      "rotation": "none",
+      "evaluation_lane_id": 1,
+      "layout": {"lane_quad": {"axis": "vertical", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.02,0.10],[0.98,0.10],[0.98,1.00],[0.02,1.00]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "backstroke-2",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Rio Replay",
+      "interval_sec": [130.0, 135.4],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 8,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.16],[1.00,0.13],[1.00,0.94],[0.00,0.95]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "backstroke-3",
+      "stroke_kind": "backstroke",
+      "video_prefix": "World Record Alert!",
+      "interval_sec": [19.3, 22.5],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 5,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.13],[1.00,0.05],[1.00,0.91],[0.00,0.97]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "backstroke-4",
+      "stroke_kind": "backstroke",
+      "video_prefix": "Hubert Kos Shatters",
+      "interval_sec": [24.0, 32.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.14],[1.00,0.15],[1.00,0.94],[0.00,0.93]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "backstroke-5",
+      "stroke_kind": "backstroke",
+      "video_prefix": "New World Record",
+      "interval_sec": [34.0, 40.0],
+      "lane_axis": "x",
+      "rotation": "none",
+      "evaluation_lane_id": 5,
+      "layout": {"lane_quad": {"axis": "vertical", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.03,0.00],[0.97,0.00],[0.90,1.00],[0.10,1.00]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "breaststroke-1",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Junior World Swimming",
+      "interval_sec": [73.0, 80.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 5,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.14],[1.00,0.12],[1.00,0.95],[0.00,0.96]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "breaststroke-2",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Caspar Corbeau",
+      "interval_sec": [28.0, 34.2],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 3,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.13],[1.00,0.14],[1.00,0.94],[0.00,0.94]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "breaststroke-3",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Emre Sakci",
+      "interval_sec": [14.0, 21.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 6,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.07],[1.00,0.00],[1.00,0.82],[0.00,0.99]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "breaststroke-4",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Peaty wins gold",
+      "interval_sec": [17.0, 21.3],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 5,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5], "corners": [[0.00,0.28],[1.00,0.27],[1.00,0.96],[0.00,0.96]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "breaststroke-5",
+      "stroke_kind": "breaststroke",
+      "video_prefix": "Hansen Takes",
+      "interval_sec": [15.0, 23.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 3,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5], "corners": [[0.00,0.21],[1.00,0.21],[1.00,0.93],[0.00,0.93]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "butterfly-1",
+      "stroke_kind": "butterfly",
+      "video_prefix": "2 World Records",
+      "interval_sec": [27.0, 35.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 6,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.14],[1.00,0.13],[1.00,0.92],[0.00,0.94]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "butterfly-2",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Men's 100m Butterfly Final",
+      "interval_sec": [41.0, 46.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 1,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.15],[1.00,0.14],[1.00,0.95],[0.00,0.95]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "butterfly-3",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Josh Liendo Shatters",
+      "interval_sec": [23.0, 26.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 3,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6], "corners": [[0.00,0.20],[1.00,0.19],[1.00,0.94],[0.00,0.95]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "butterfly-4",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Women's 100m Butterfly Final",
+      "interval_sec": [40.0, 43.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 4,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5,6,7,8], "corners": [[0.00,0.12],[1.00,0.14],[1.00,0.94],[0.00,0.92]]}},
+      "ground_truth": []
+    },
+    {
+      "id": "butterfly-5",
+      "stroke_kind": "butterfly",
+      "video_prefix": "Rio 2016 100m Butterfly",
+      "interval_sec": [12.0, 19.0],
+      "rotation": "clockwise",
+      "evaluation_lane_id": 5,
+      "layout": {"lane_quad": {"axis": "horizontal", "lane_ids": [1,2,3,4,5], "corners": [[0.00,0.00],[1.00,0.10],[1.00,0.96],[0.00,0.84]]}},
+      "ground_truth": []
+    }
+  ]
+}

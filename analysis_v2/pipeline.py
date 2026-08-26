@@ -11,7 +11,7 @@ from .tracking import MultiSwimmerTracker, TrackerConfig
 from .types import PoseDetection, StrokeKind
 
 
-MODEL_VERSION = "multiswimmer-counter-v0.1.0"
+MODEL_VERSION = "multiswimmer-counter-v0.2.0"
 
 
 @dataclass(frozen=True)
