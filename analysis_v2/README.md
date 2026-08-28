@@ -1,4 +1,4 @@
-# SwimMate multi-swimmer counter v0.2
+# SwimMate multi-swimmer counter v0.2.1
 
 This package is an **offline experiment**, not a public SwimMate feature. It
 changes the unit of analysis from one video to one physical pool lane:
@@ -22,6 +22,33 @@ frame -> fixed lane polygons -> one rotated crop per lane -> RTMPose
 The original overlapping-tile MediaPipe provider remains the comparison
 baseline. RTMPose and ONNX Runtime are offline-only dependencies and are not
 loaded by the deployed FastAPI service.
+
+## Current local runtime profiles
+
+The runtime is now selected explicitly instead of silently staying on CPU:
+
+- `auto` / `balanced`: RTMPose-M with OpenVINO Arc GPU when available
+- `quality`: RTMPose-X with OpenVINO Arc GPU for slower offline review
+- `portable`: RTMPose-S with ONNX Runtime CPU
+
+On the Galaxy Book4 Pro test machine, RTMPose-M/Arc measured 36.24 pose fps for
+one lane and is the default. RTMPose-X/Arc measured 10.06 pose fps and recovered
+more arm visibility in one private clip, but still could not establish kick
+accuracy. See
+[`evaluation/results/2026-08-28-galaxy-book4-pro.md`](evaluation/results/2026-08-28-galaxy-book4-pro.md).
+
+Across all 20 fixed-shot clips, the new balanced GPU runtime processed sampled
+frames at 7.72 aggregate fps, about 5.8x the previous CPU benchmark. Higher
+coverage is not treated as higher accuracy because the clips still lack
+independent event labels.
+
+```powershell
+python -m pip install -r analysis_v2/requirements-offline.txt
+
+python -m analysis_v2.runtime_benchmark .\video\sample.mp4 `
+  --timestamp-sec 5 `
+  --output tmp\analysis_v2\runtime.json
+```
 
 ## Current result
 
@@ -53,8 +80,35 @@ python -m analysis_v2.cli .\race.mp4 `
   --provider lane-rtmpose-topdown `
   --lane-layout .\lane-layout.json `
   --lane-rotation clockwise `
+  --runtime-profile balanced `
   --frame-step 5 `
   --output .\analysis\output\race-counts.json
+```
+
+Use a detector-guided provider (`lane-rtmpose` or
+`lane-mosaic-rtmpose`) for real footage. `lane-rtmpose-topdown` is retained for
+reproducibility, but it can hallucinate a pose because it treats the complete
+lane crop as one person.
+
+Create independent event labels before tuning counts:
+
+```powershell
+python -m analysis_v2.annotation .\video\sample.mp4 `
+  --stroke freestyle --lane-id 1 --start-sec 5.7 --end-sec 17.7 `
+  --annotator reviewer-a `
+  --output tmp\analysis_v2\labels\sample-a.json
+```
+
+Keys in the annotation window: `Space` play/pause, `A` arm event, `K` kick
+event, `Z`/`X` undo, `J`/`L` seek, `Q` save, `Esc` discard. A label is marked
+verified only when `--reviewer` names a different person.
+
+Audit the legacy data before any retraining. Exit code 2 means training is
+blocked:
+
+```powershell
+python analysis/train/07_audit_training_data.py `
+  --output tmp\analysis_v2\training-data-audit.json
 ```
 
 Run the two-provider benchmark:
@@ -128,3 +182,8 @@ URL or a Creative Commons flag alone is not proof that a re-uploader owns the
 broadcast footage. Public activation additionally requires independent labels,
 an error-based accuracy report, asynchronous processing infrastructure, and a
 video retention/deletion policy.
+
+The legacy classifier trainer now accepts only `verified=true`,
+`auto_labeled=false` labels and deduplicates by source video name. The current
+dataset contains no such labels, so retraining is intentionally blocked instead
+of producing another misleading accuracy number.

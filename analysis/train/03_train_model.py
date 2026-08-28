@@ -28,6 +28,7 @@ warnings.filterwarnings("ignore")
 BASE_DIR  = os.path.join(os.path.dirname(__file__), "data")
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 SUMMARY_CSV = os.path.join(BASE_DIR, "features_summary.csv")
+LABELS_PATH = os.path.join(BASE_DIR, "labels.json")
 
 # 학습에 사용할 기본 특징 컬럼 (summarize_video 출력 기준)
 _STAT_BASES = [
@@ -51,6 +52,29 @@ PURPOSE_TAGS   = ["competition", "health", "technique", "hobby"]
 VALID_STROKES  = {"freestyle", "backstroke", "breaststroke", "butterfly"}
 
 
+def _human_verified_labels() -> dict:
+    """Load only labels independently checked by a human reviewer.
+
+    Historical labels were inferred from folder names or from the same model
+    being trained.  Reusing those rows as truth creates label leakage and can
+    make an evaluation look better without improving real video accuracy.
+    """
+    if not os.path.exists(LABELS_PATH):
+        return {}
+    with open(LABELS_PATH, encoding="utf-8") as handle:
+        raw = json.load(handle)
+    return {
+        video_id: row
+        for video_id, row in raw.items()
+        if not video_id.startswith("_")
+        and isinstance(row, dict)
+        and row.get("verified") is True
+        and row.get("auto_labeled") is False
+        and row.get("excluded") is not True
+        and row.get("stroke_type") in VALID_STROKES
+    }
+
+
 def _available_cols(df: pd.DataFrame, cols: list) -> list:
     """df에 실제로 있는 컬럼만 반환"""
     return [c for c in cols if c in df.columns]
@@ -63,6 +87,20 @@ def _load_summary(min_samples: int = 2) -> pd.DataFrame:
         )
     df = pd.read_csv(SUMMARY_CSV)
     print(f"  로드: {len(df)}개 비디오")
+
+    verified = _human_verified_labels()
+    if not verified:
+        raise RuntimeError(
+            "Training blocked: labels.json contains no human-verified labels. "
+            "Folder names and auto_labeled rows are not ground truth."
+        )
+    df = df[df["video_id"].isin(verified)].copy()
+    df["stroke_label"] = df["video_id"].map(
+        {video_id: row["stroke_type"] for video_id, row in verified.items()}
+    )
+    # The same downloaded video can exist under several query folders. Keep a
+    # video in exactly one row so it cannot leak into both train and test.
+    df = df.sort_values("video_id").drop_duplicates("video_id", keep="first")
 
     before = len(df)
     if "stroke_label" in df.columns:

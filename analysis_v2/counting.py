@@ -21,6 +21,7 @@ class CounterConfig:
     smoothing_window: int = 5
     max_interpolation_gap: int = 5
     stroke_min_interval_sec: float = 0.28
+    alternating_merge_sec: float = 0.12
     kick_min_interval_sec: float = 0.11
     synchronous_merge_sec: float = 0.24
     minimum_peak_prominence_ratio: float = 0.18
@@ -330,8 +331,15 @@ def count_track(
             arm_events = _merge_nearby_events((left_events, right_events), cfg.synchronous_merge_sec)
             complete_cycles = len(arm_events)
         else:
-            arm_events = sorted(left_events + right_events)
-            complete_cycles = min(len(left_events), len(right_events))
+            # Freestyle/backstroke arms should alternate. Generic pose models
+            # can swap left/right identity around roll or water occlusion,
+            # producing two events at effectively the same instant. Treat
+            # those as one physical arm event instead of double-counting it.
+            arm_events = _merge_nearby_events(
+                (left_events, right_events),
+                cfg.alternating_merge_sec,
+            )
+            complete_cycles = len(arm_events) // 2
         if not arm_events:
             arm_result = _unavailable(arm_visibility, "no_reliable_stroke_events")
         else:

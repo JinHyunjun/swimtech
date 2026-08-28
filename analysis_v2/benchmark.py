@@ -17,6 +17,7 @@ from .lanes import LaneCropPoseProvider, LaneLayout, assign_detections_to_lanes
 from .mediapipe_provider import MediaPipeTiledPoseProvider
 from .pipeline import MultiSwimmerAnalyzer
 from .rtmpose_provider import RTMPoseTopDownProvider
+from .runtime import PoseRuntimeConfig, select_pose_runtime
 from .tracking import TrackerConfig
 
 
@@ -67,7 +68,12 @@ def load_manifest(path: str | Path, data_root: str | Path) -> tuple[dict[str, ob
     return manifest, samples
 
 
-def _create_provider(name: str, layout: LaneLayout, rotation: str):
+def _create_provider(
+    name: str,
+    layout: LaneLayout,
+    rotation: str,
+    runtime: PoseRuntimeConfig | None = None,
+):
     if name == "baseline-mediapipe-tiled":
         return MediaPipeTiledPoseProvider(
             "analysis/pose_landmarker.task",
@@ -79,8 +85,13 @@ def _create_provider(name: str, layout: LaneLayout, rotation: str):
             orientation="any",
         )
     if name == "lane-rtmpose-topdown":
+        runtime = runtime or select_pose_runtime("portable")
         return LaneCropPoseProvider(
-            RTMPoseTopDownProvider(mode="lightweight"),
+            RTMPoseTopDownProvider(
+                mode=runtime.mode,
+                backend=runtime.backend,
+                device=runtime.device,
+            ),
             layout,
             crop_padding=0.25,
             rotation=rotation,
@@ -92,6 +103,7 @@ def analyze_sample(
     sample: BenchmarkSample,
     provider_name: str,
     sample_fps: float = 6.0,
+    runtime: PoseRuntimeConfig | None = None,
 ) -> dict[str, object]:
     try:
         import cv2
@@ -134,7 +146,7 @@ def analyze_sample(
     scene_change_scores: list[tuple[float, float]] = []
     frame_index = start_frame
     started = time.perf_counter()
-    provider = _create_provider(provider_name, sample.layout, sample.rotation)
+    provider = _create_provider(provider_name, sample.layout, sample.rotation, runtime)
     try:
         while frame_index <= end_frame:
             ok, frame = capture.read()
@@ -203,6 +215,7 @@ def analyze_sample(
             ],
             "threshold": 0.35,
         },
+        "runtime": runtime.to_dict() if runtime is not None else None,
     }
     return result
 
@@ -217,15 +230,57 @@ def _prediction_by_lane(result: dict[str, object]) -> dict[int, dict[str, object
     return predictions
 
 
+def match_events(
+    expected: list[float] | tuple[float, ...],
+    predicted: list[float] | tuple[float, ...],
+    tolerance_sec: float = 0.25,
+) -> dict[str, object]:
+    """Greedily match predicted event timestamps to independent labels."""
+
+    truth = sorted(float(item) for item in expected)
+    candidates = sorted(float(item) for item in predicted)
+    unused = set(range(len(candidates)))
+    errors: list[float] = []
+    for target in truth:
+        possible = [
+            index
+            for index in unused
+            if abs(candidates[index] - target) <= tolerance_sec
+        ]
+        if not possible:
+            continue
+        selected = min(possible, key=lambda index: abs(candidates[index] - target))
+        unused.remove(selected)
+        errors.append(abs(candidates[selected] - target))
+    matched = len(errors)
+    precision = matched / len(candidates) if candidates else (1.0 if not truth else 0.0)
+    recall = matched / len(truth) if truth else (1.0 if not candidates else 0.0)
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {
+        "expected_events": len(truth),
+        "predicted_events": len(candidates),
+        "matched_events": matched,
+        "precision": round(precision, 4),
+        "recall": round(recall, 4),
+        "f1": round(f1, 4),
+        "timing_mae_sec": round(float(np.mean(errors)), 4) if errors else None,
+        "tolerance_sec": tolerance_sec,
+    }
+
+
 def score_result(sample: BenchmarkSample, result: dict[str, object]) -> dict[str, object] | None:
     if not sample.ground_truth:
         return None
     predicted = _prediction_by_lane(result)
     metrics: dict[str, object] = {}
     for truth_key, prediction_key in (("arm_strokes", "arm_strokes"), ("kicks", "kicks")):
+        event_key = "arm_event_times_sec" if truth_key == "arm_strokes" else "kick_event_times_sec"
         rows: list[dict[str, object]] = []
         for truth in sample.ground_truth:
             expected = truth.get(truth_key)
+            expected_events = truth.get(event_key)
+            if expected is None and isinstance(expected_events, list):
+                expected = len(expected_events)
             if expected is None:
                 continue
             lane_id = int(truth["lane_id"])
@@ -243,6 +298,12 @@ def score_result(sample: BenchmarkSample, result: dict[str, object]) -> dict[str
                     "predicted": value,
                     "absolute_error": error,
                     "normalized_accuracy": round(normalized_accuracy, 4),
+                    "event_timing": match_events(
+                        expected_events,
+                        event.get("event_times_sec", []) if available else [],
+                    )
+                    if isinstance(expected_events, list)
+                    else None,
                 }
             )
         available_rows = [row for row in rows if row["predicted"] is not None]
@@ -284,6 +345,23 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument("--sample-fps", type=float, default=6.0)
+    parser.add_argument(
+        "--runtime-profile",
+        choices=("auto", "quality", "balanced", "portable"),
+        default="portable",
+        help="Portable preserves the v0.2 benchmark; use quality for this machine",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("auto", "openvino", "onnxruntime"),
+        default="auto",
+    )
+    parser.add_argument("--device", choices=("auto", "cpu", "gpu", "npu"), default="auto")
+    parser.add_argument(
+        "--pose-mode",
+        choices=("auto", "lightweight", "balanced", "performance"),
+        default="auto",
+    )
     parser.add_argument("--only", nargs="*", help="Optional sample IDs")
     parser.add_argument("--output", type=Path, required=True)
     return parser
@@ -292,6 +370,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_parser().parse_args()
     manifest, samples = load_manifest(args.manifest, args.data_root)
+    runtime = None
+    if args.provider == "lane-rtmpose-topdown":
+        runtime = select_pose_runtime(
+            args.runtime_profile,
+            args.backend,
+            args.device,
+            args.pose_mode,
+        )
     if args.only:
         requested = set(args.only)
         samples = [sample for sample in samples if sample.sample_id in requested]
@@ -301,7 +387,7 @@ def main() -> int:
         # console cannot encode. Keep progress output ASCII-only so a long
         # benchmark does not fail after inference has already started.
         print(f"[{args.provider}] {sample.sample_id}", flush=True)
-        result = analyze_sample(sample, args.provider, args.sample_fps)
+        result = analyze_sample(sample, args.provider, args.sample_fps, runtime)
         score = score_result(sample, result)
         if score is not None:
             result["score"] = score
@@ -310,6 +396,7 @@ def main() -> int:
         "benchmark_version": "multiswimmer-benchmark-v0.1.0",
         "manifest_seed": manifest.get("seed"),
         "provider": args.provider,
+        "runtime": runtime.to_dict() if runtime is not None else None,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "sample_count": len(results),
         "results": results,

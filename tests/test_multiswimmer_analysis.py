@@ -19,9 +19,19 @@ from analysis_v2 import (
 )
 from analysis_v2.types import KeypointIndex
 from analysis_v2.mediapipe_provider import build_overlapping_tiles, deduplicate_detections
-from analysis_v2.lanes import LaneLayout, LaneRegion, assign_detections_to_lanes
+from analysis_v2.lanes import (
+    LaneCropPoseProvider,
+    LaneLayout,
+    LaneRegion,
+    assign_detections_to_lanes,
+    lane_direction,
+    pose_lane_alignment,
+)
 from analysis_v2.rtmpose_provider import coco_pose_to_detection
-from analysis_v2.benchmark import BenchmarkSample, score_result
+from analysis_v2.annotation import build_annotation
+from analysis_v2.benchmark import BenchmarkSample, match_events, score_result
+from analysis_v2.runtime import select_pose_runtime
+from analysis_v2.runtime_benchmark import choose_recommendation
 
 
 def _synthetic_swimmer(
@@ -139,7 +149,34 @@ def test_pipeline_counts_each_swimmer_independently() -> None:
     assert first.kicks.count > second.kicks.count
     assert first.complete_cycles >= 5
     assert second.complete_cycles >= 3
-    assert first.arm_strokes.count == len(first.left_arm_events) + len(first.right_arm_events)
+    assert first.arm_strokes.count <= len(first.left_arm_events) + len(first.right_arm_events)
+    assert first.complete_cycles == first.arm_strokes.count // 2
+
+
+def test_alternating_stroke_identity_swap_does_not_double_count() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.FREESTYLE,
+        counter_config=CounterConfig(smoothing_window=3),
+    )
+    for frame_index in range(101):
+        timestamp = frame_index / 10.0
+        # Simulate the common underwater failure where both detected wrist
+        # identities follow the same physical arm phase.
+        pose = _synthetic_swimmer(
+            0.30 + frame_index * 0.0005,
+            0.50,
+            timestamp,
+            stroke_hz=0.45,
+            kick_hz=0.9,
+            synchronous_arms=True,
+        )
+        analyzer.process_frame([pose], frame_index, timestamp)
+
+    track = analyzer.finalize().tracks[0]
+    raw_events = len(track.left_arm_events) + len(track.right_arm_events)
+    assert track.arm_strokes.available
+    assert track.arm_strokes.count < raw_events
+    assert track.complete_cycles == track.arm_strokes.count // 2
 
 
 def test_synchronous_butterfly_arms_are_not_double_counted() -> None:
@@ -250,6 +287,140 @@ def test_perspective_lane_polygons_assign_fixed_lane_ids() -> None:
     assigned = assign_detections_to_lanes([spectator, lane_four, lane_three], layout)
 
     assert [item.lane_hint for item in assigned] == [3, 4]
+
+
+def test_lane_crop_rejects_pose_with_torso_anchors_outside_lane() -> None:
+    class StubProvider:
+        def detect(self, rgb_frame: np.ndarray, timestamp_ms: int) -> list[PoseDetection]:
+            del rgb_frame, timestamp_ms
+            pose = _synthetic_swimmer(0.50, 0.50, 0.0)
+            points = pose.keypoints.copy()
+            points[KeypointIndex.LEFT_SHOULDER, 1] = 0.10
+            points[KeypointIndex.RIGHT_SHOULDER, 1] = 0.10
+            points[KeypointIndex.LEFT_HIP, 1] = 0.90
+            points[KeypointIndex.RIGHT_HIP, 1] = 0.90
+            return [PoseDetection.from_keypoints(points)]
+
+    layout = LaneLayout(
+        (LaneRegion(1, np.asarray([[0.0, 0.4], [1.0, 0.4], [1.0, 0.6], [0.0, 0.6]])),)
+    )
+    provider = LaneCropPoseProvider(
+        StubProvider(),
+        layout,
+        crop_padding=0.5,
+        min_anchor_inside_ratio=0.75,
+    )
+
+    assert provider.detect(np.zeros((100, 200, 3), dtype=np.uint8), 0) == []
+
+
+def test_lane_alignment_rejects_upright_spectator_and_accepts_swimmer() -> None:
+    lane = LaneRegion(
+        1,
+        np.asarray([[0.0, 0.35], [1.0, 0.35], [1.0, 0.65], [0.0, 0.65]]),
+    )
+    swimmer = _synthetic_swimmer(0.50, 0.50, 0.0)
+    upright_points = swimmer.keypoints.copy()
+    upright_points[KeypointIndex.LEFT_SHOULDER, :2] = [0.48, 0.40]
+    upright_points[KeypointIndex.RIGHT_SHOULDER, :2] = [0.52, 0.40]
+    upright_points[KeypointIndex.LEFT_HIP, :2] = [0.48, 0.58]
+    upright_points[KeypointIndex.RIGHT_HIP, :2] = [0.52, 0.58]
+    upright = PoseDetection.from_keypoints(upright_points)
+
+    assert lane_direction(lane) == pytest.approx([1.0, 0.0])
+    assert pose_lane_alignment(swimmer, lane) >= 0.95
+    assert pose_lane_alignment(upright, lane) <= 0.05
+
+
+def test_runtime_auto_uses_balanced_model_on_intel_gpu_class_device() -> None:
+    runtime = select_pose_runtime("auto", available_devices=("CPU", "GPU", "NPU"))
+
+    assert runtime.backend == "openvino"
+    assert runtime.device == "gpu"
+    assert runtime.mode == "balanced"
+
+    quality = select_pose_runtime("quality", available_devices=("CPU", "GPU", "NPU"))
+    assert (quality.backend, quality.device, quality.mode) == (
+        "openvino",
+        "gpu",
+        "performance",
+    )
+
+
+def test_runtime_cpu_and_portable_fallbacks_are_deterministic() -> None:
+    cpu = select_pose_runtime("auto", available_devices=("CPU",))
+    portable = select_pose_runtime("portable", available_devices=())
+
+    assert (cpu.backend, cpu.device, cpu.mode) == ("openvino", "cpu", "balanced")
+    assert (portable.backend, portable.device, portable.mode) == (
+        "onnxruntime",
+        "cpu",
+        "lightweight",
+    )
+
+
+def test_runtime_benchmark_recommends_highest_quality_that_meets_target() -> None:
+    rows = [
+        {
+            "mode": "performance",
+            "available": True,
+            "estimated_all_lanes_fps": 8.0,
+        },
+        {
+            "mode": "balanced",
+            "available": True,
+            "estimated_all_lanes_fps": 18.0,
+        },
+        {
+            "mode": "lightweight",
+            "available": True,
+            "estimated_all_lanes_fps": 30.0,
+        },
+    ]
+
+    assert choose_recommendation(rows, 15.0)["mode"] == "balanced"
+    assert choose_recommendation(rows, 40.0)["mode"] == "lightweight"
+
+
+def test_annotation_requires_independent_reviewer_and_bounded_events() -> None:
+    draft = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [4.0, 3.0, 4.0],
+        [3.5, 5.5],
+        "annotator-a",
+    )
+    reviewed = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.0, 4.0],
+        [3.5, 5.5],
+        "annotator-a",
+        "reviewer-b",
+    )
+
+    assert draft["verified"] is False
+    assert reviewed["verified"] is True
+    assert draft["arm_event_times_sec"] == [3.0, 4.0]
+    with pytest.raises(ValueError, match="outside"):
+        build_annotation(
+            "fixture.mp4", "freestyle", 1, 2.0, 8.0, [8.1], [], "annotator-a"
+        )
+
+
+def test_event_metric_penalizes_duplicates_and_missed_events() -> None:
+    score = match_events([1.0, 2.0, 3.0], [1.05, 1.08, 3.2], tolerance_sec=0.25)
+
+    assert score["matched_events"] == 2
+    assert score["precision"] == pytest.approx(2 / 3, abs=0.0001)
+    assert score["recall"] == pytest.approx(2 / 3, abs=0.0001)
+    assert score["f1"] == pytest.approx(2 / 3, abs=0.0001)
 
 
 def test_tracker_uses_physical_lane_id_across_long_detection_gap() -> None:

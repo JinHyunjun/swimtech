@@ -1,0 +1,6 @@
+# Offline video experiment only. Do not add these packages to api/requirements.txt.
+numpy==1.26.4
+opencv-python==4.9.0.80
+rtmlib==0.0.16
+onnxruntime==1.29.0
+openvino==2026.3.1

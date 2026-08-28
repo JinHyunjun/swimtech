@@ -37,6 +37,9 @@
 | `analysis_v2/benchmark.py` | 20개 고정 구간 실행, 장면 전환 점수, 정답 기반 채점 계약 |
 | `analysis_v2/report.py` | 기준선·후보의 검출 범위와 예측값 비교 보고서 생성 |
 | `analysis_v2/review.py` | 예측을 표시하지 않는 선수 중심 수동 검수 시트 생성 |
+| `analysis_v2/runtime.py` | OpenVINO 장치 탐색 및 품질·균형·휴대 프로필 결정 |
+| `analysis_v2/runtime_benchmark.py` | 실제 로컬 프레임의 CPU·GPU·NPU 처리량 비교 |
+| `analysis_v2/annotation.py` | 팔·킥 이벤트 시점을 독립 정답으로 기록하는 로컬 GUI |
 | `tests/test_multiswimmer_analysis.py` | 검출 순서 변경·가림·독립 카운팅 회귀 테스트 |
 
 ## ID 유지 원칙
@@ -88,6 +91,20 @@ MediaPipe 겹침 타일 기준선과 레인 RTMPose top-down 후보에 입력했
 아니며, 카운트 정확도 상태는 계속 `미검증`이다. 자유형 7초 구간에서 팔 2회처럼
 육안상 과소 계수 가능성이 큰 출력도 확인되어 공개 게이트를 통과하지 못했다. 전체
 예측과 보류 사유는 `analysis_v2/evaluation/results/2026-08-26-report.md`에 기록했다.
+
+2026-08-28 Galaxy Book4 Pro 실측에서는 기존 ONNX Runtime이 CPU만 사용하고
+있음을 확인했다. OpenVINO에서 RTMPose-M은 Arc GPU 36.24fps(단일 레인),
+RTMPose-X는 10.06fps였다. 자동 프로필은 M/GPU, 명시적 `quality` 프로필은
+X/GPU를 사용한다. 다만 대형 모델도 킥 가시성을 통과하지 못했고 독립 이벤트
+정답이 없으므로 정확도 개선으로 기록하지 않는다. 상세 결과는
+`analysis_v2/evaluation/results/2026-08-28-galaxy-book4-pro.md`에 있다.
+20개 고정 구간의 M/GPU 처리량은 기존 1.327fps에서 7.724fps로 약 5.8배
+증가했지만, 정답 없는 검출 범위 변화는 정확도 변화로 간주하지 않는다.
+
+기존 학습 데이터 감사에서는 폴더 라벨 오염, 동일 영상 중복·상충 라벨, 학습
+데이터 재평가 누수, 사람 검증 라벨 0건을 확인했다. 이 상태의 재학습은 차단하며
+`analysis_v2.annotation`으로 만든 팔·킥 이벤트 타임라인을 서로 다른 검수자가
+확인한 뒤에만 정답으로 사용한다.
 빈 검정·수영장색 단색·무작위 노이즈 입력에서는 top-down 제공자가 모두 포즈 0개를
 반환했지만 실제 물보라·레인 로프에 대한 오탐률은 별도 정답 프레임으로 검증해야 한다.
 

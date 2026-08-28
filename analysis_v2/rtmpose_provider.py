@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from .types import KeypointIndex, PoseDetection
+from .runtime import PoseRuntimeConfig, select_pose_runtime
 
 
 COCO_TO_MEDIAPIPE = {
@@ -81,6 +82,36 @@ class RTMPoseProvider:
         self.model = Body(mode=mode, backend=backend, device=device, to_openpose=False)
         self.max_swimmers = max_swimmers
         self.min_pose_confidence = min_pose_confidence
+        self.runtime = PoseRuntimeConfig(
+            profile="explicit",
+            backend=backend,
+            device=device,
+            mode=mode,
+            available_openvino_devices=(),
+            reason="explicit provider configuration",
+        )
+
+    @classmethod
+    def from_profile(
+        cls,
+        profile: str = "auto",
+        *,
+        backend: str = "auto",
+        device: str = "auto",
+        mode: str = "auto",
+        max_swimmers: int = 10,
+        min_pose_confidence: float = 0.12,
+    ) -> "RTMPoseProvider":
+        runtime = select_pose_runtime(profile, backend, device, mode)
+        provider = cls(
+            mode=runtime.mode,
+            backend=runtime.backend,
+            device=runtime.device,
+            max_swimmers=max_swimmers,
+            min_pose_confidence=min_pose_confidence,
+        )
+        provider.runtime = runtime
+        return provider
 
     def detect(self, rgb_frame: np.ndarray, timestamp_ms: int = 0) -> list[PoseDetection]:
         del timestamp_ms
@@ -140,6 +171,34 @@ class RTMPoseTopDownProvider:
             device=device,
         )
         self.min_pose_confidence = min_pose_confidence
+        self.runtime = PoseRuntimeConfig(
+            profile="explicit",
+            backend=backend,
+            device=device,
+            mode=mode,
+            available_openvino_devices=(),
+            reason="explicit provider configuration",
+        )
+
+    @classmethod
+    def from_profile(
+        cls,
+        profile: str = "auto",
+        *,
+        backend: str = "auto",
+        device: str = "auto",
+        mode: str = "auto",
+        min_pose_confidence: float = 0.16,
+    ) -> "RTMPoseTopDownProvider":
+        runtime = select_pose_runtime(profile, backend, device, mode)
+        provider = cls(
+            mode=runtime.mode,
+            backend=runtime.backend,
+            device=runtime.device,
+            min_pose_confidence=min_pose_confidence,
+        )
+        provider.runtime = runtime
+        return provider
 
     def detect(self, rgb_frame: np.ndarray, timestamp_ms: int = 0) -> list[PoseDetection]:
         del timestamp_ms

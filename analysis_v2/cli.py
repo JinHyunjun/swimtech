@@ -11,6 +11,7 @@ from .lanes import LaneCropPoseProvider, LaneLayout, LaneMosaicPoseProvider
 from .mediapipe_provider import MediaPipeMultiPoseProvider, MediaPipeTiledPoseProvider
 from .pipeline import MultiSwimmerAnalyzer
 from .rtmpose_provider import RTMPoseProvider, RTMPoseTopDownProvider
+from .runtime import select_pose_runtime
 from .tracking import TrackerConfig
 from .types import StrokeKind
 
@@ -53,6 +54,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Normalized x1,y1,x2,y2 pool bounds; excludes spectators and officials",
     )
     parser.add_argument("--orientation", choices=("any", "horizontal", "vertical"), default="horizontal")
+    parser.add_argument(
+        "--runtime-profile",
+        choices=("auto", "quality", "balanced", "portable"),
+        default="auto",
+        help="Hardware/model profile for RTMPose providers",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("auto", "openvino", "onnxruntime"),
+        default="auto",
+    )
+    parser.add_argument("--device", choices=("auto", "cpu", "gpu", "npu"), default="auto")
+    parser.add_argument(
+        "--pose-mode",
+        choices=("auto", "lightweight", "balanced", "performance"),
+        default="auto",
+    )
     return parser
 
 
@@ -101,6 +119,18 @@ def main() -> int:
     columns, rows = _parse_grid(args.tile_grid)
     pool_roi = _parse_roi(args.pool_roi)
     lane_layout = LaneLayout.load(args.lane_layout) if args.lane_layout else None
+    runtime = None
+    if "rtmpose" in args.provider:
+        runtime = select_pose_runtime(
+            args.runtime_profile,
+            args.backend,
+            args.device,
+            args.pose_mode,
+        )
+        print(
+            f"RTMPose runtime: {runtime.mode} / {runtime.backend}:{runtime.device} "
+            f"({runtime.reason})"
+        )
     if args.provider.startswith("lane-") and lane_layout is None:
         raise SystemExit("--lane-layout is required for lane providers")
     if args.provider in {"tiled", "lane-tiled"}:
@@ -116,14 +146,16 @@ def main() -> int:
     elif args.provider == "whole-frame":
         provider_factory = lambda: MediaPipeMultiPoseProvider(args.model, max_swimmers=args.max_swimmers)
     elif args.provider == "lane-rtmpose-topdown":
-        provider_factory = lambda: RTMPoseTopDownProvider(mode="lightweight")
+        provider_factory = lambda: RTMPoseTopDownProvider(
+            mode=runtime.mode,
+            backend=runtime.backend,
+            device=runtime.device,
+        )
     else:
         provider_factory = lambda: RTMPoseProvider(
-            mode=(
-                "lightweight"
-                if args.provider in {"lane-rtmpose", "lane-mosaic-rtmpose"}
-                else "balanced"
-            ),
+            mode=runtime.mode,
+            backend=runtime.backend,
+            device=runtime.device,
             max_swimmers=args.max_swimmers,
         )
     if args.provider == "lane-mosaic-rtmpose":
@@ -178,6 +210,7 @@ def main() -> int:
         "elapsed_sec": round(elapsed, 3),
         "frames_per_sec": round(analyzed_frames / elapsed, 3) if elapsed > 0 else None,
         "lane_layout": str(args.lane_layout) if args.lane_layout else None,
+        "runtime": runtime.to_dict() if runtime is not None else None,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

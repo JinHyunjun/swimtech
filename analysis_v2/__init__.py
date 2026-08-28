@@ -14,6 +14,7 @@ from .lanes import (
     LaneRegion,
     assign_detections_to_lanes,
 )
+from .runtime import PoseRuntimeConfig, discover_openvino_devices, select_pose_runtime
 from .pipeline import MultiSwimmerAnalyzer, MultiSwimmerAnalysis
 from .tracking import MultiSwimmerTracker, TrackerConfig
 from .types import KeypointIndex, PoseDetection, StrokeKind, TrackObservation
@@ -23,6 +24,9 @@ __all__ = [
     "KeypointIndex",
     "LaneCropPoseProvider",
     "LaneLayout",
+    "PoseRuntimeConfig",
+    "discover_openvino_devices",
+    "select_pose_runtime",
     "LaneMosaicPoseProvider",
     "LaneRegion",
     "MultiSwimmerAnalysis",

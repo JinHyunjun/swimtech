@@ -9,7 +9,18 @@ from typing import Iterable, Protocol
 
 import numpy as np
 
-from .types import PoseDetection
+from .types import KeypointIndex, PoseDetection
+
+
+_TORSO_ANCHORS = np.asarray(
+    [
+        KeypointIndex.LEFT_SHOULDER,
+        KeypointIndex.RIGHT_SHOULDER,
+        KeypointIndex.LEFT_HIP,
+        KeypointIndex.RIGHT_HIP,
+    ],
+    dtype=int,
+)
 
 
 class PoseProvider(Protocol):
@@ -40,6 +51,71 @@ def point_in_polygon(point: np.ndarray, polygon: np.ndarray) -> bool:
                 inside = not inside
         previous = current
     return inside
+
+
+def pose_anchor_inside_ratio(
+    detection: PoseDetection,
+    lane: "LaneRegion",
+    min_confidence: float = 0.12,
+) -> float:
+    """Return the share of visible torso anchors inside a physical lane.
+
+    A centroid-only check can accept a pose whose shoulders are on the pool
+    deck and hips are in the water. Requiring the torso anchors themselves to
+    stay in the lane rejects that common false positive while still allowing
+    arms and legs to cross a lane boundary during recovery or splash.
+    """
+
+    anchors = detection.keypoints[_TORSO_ANCHORS]
+    visible = anchors[:, 3] >= min_confidence
+    if np.count_nonzero(visible) < 2:
+        return 0.0
+    inside = sum(lane.contains(point[:2]) for point in anchors[visible])
+    return float(inside / np.count_nonzero(visible))
+
+
+def lane_direction(lane: "LaneRegion") -> np.ndarray:
+    """Return the normalized long axis of a perspective lane polygon."""
+
+    polygon = lane.polygon
+    first_axis = (polygon[1] - polygon[0]) + (polygon[2] - polygon[3])
+    second_axis = (polygon[3] - polygon[0]) + (polygon[2] - polygon[1])
+    direction = (
+        first_axis
+        if np.linalg.norm(first_axis) >= np.linalg.norm(second_axis)
+        else second_axis
+    )
+    length = float(np.linalg.norm(direction))
+    return direction / length if length > 1e-9 else np.asarray([1.0, 0.0])
+
+
+def pose_lane_alignment(
+    detection: PoseDetection,
+    lane: "LaneRegion",
+    min_confidence: float = 0.12,
+) -> float:
+    """Measure how closely the detected torso follows the swimming lane.
+
+    Pool-deck spectators are usually upright while swimmers are elongated
+    along the lane.  This geometry check is independent of model confidence,
+    which can be high even when a generic pose model locks onto the wrong
+    person.
+    """
+
+    points = detection.keypoints
+    shoulders = points[[KeypointIndex.LEFT_SHOULDER, KeypointIndex.RIGHT_SHOULDER]]
+    hips = points[[KeypointIndex.LEFT_HIP, KeypointIndex.RIGHT_HIP]]
+    visible_shoulders = shoulders[:, 3] >= min_confidence
+    visible_hips = hips[:, 3] >= min_confidence
+    if not visible_shoulders.any() or not visible_hips.any():
+        return 0.0
+    body_axis = np.mean(shoulders[visible_shoulders, :2], axis=0) - np.mean(
+        hips[visible_hips, :2], axis=0
+    )
+    length = float(np.linalg.norm(body_axis))
+    if length <= 1e-9:
+        return 0.0
+    return float(abs(np.dot(body_axis / length, lane_direction(lane))))
 
 
 @dataclass(frozen=True)
@@ -257,15 +333,27 @@ class LaneCropPoseProvider:
         layout: LaneLayout,
         crop_padding: float = 0.08,
         rotation: str = "none",
+        min_anchor_inside_ratio: float = 0.0,
+        min_anchor_confidence: float = 0.12,
+        min_lane_alignment: float = 0.0,
     ) -> None:
         if not 0.0 <= crop_padding <= 0.5:
             raise ValueError("crop_padding must be between 0 and 0.5")
         if rotation not in {"none", "clockwise", "counterclockwise"}:
             raise ValueError("rotation must be none, clockwise, or counterclockwise")
+        if not 0.0 <= min_anchor_inside_ratio <= 1.0:
+            raise ValueError("min_anchor_inside_ratio must be between 0 and 1")
+        if not 0.0 <= min_anchor_confidence <= 1.0:
+            raise ValueError("min_anchor_confidence must be between 0 and 1")
+        if not 0.0 <= min_lane_alignment <= 1.0:
+            raise ValueError("min_lane_alignment must be between 0 and 1")
         self.provider = provider
         self.layout = layout
         self.crop_padding = crop_padding
         self.rotation = rotation
+        self.min_anchor_inside_ratio = min_anchor_inside_ratio
+        self.min_anchor_confidence = min_anchor_confidence
+        self.min_lane_alignment = min_lane_alignment
 
     def detect(self, rgb_frame: np.ndarray, timestamp_ms: int) -> list[PoseDetection]:
         height, width = rgb_frame.shape[:2]
@@ -289,7 +377,19 @@ class LaneCropPoseProvider:
                     lane.lane_id,
                     self.rotation,
                 )
-                if lane.contains(mapped.centroid):
+                if (
+                    lane.contains(mapped.centroid)
+                    and (
+                        self.min_anchor_inside_ratio <= 0.0
+                        or pose_anchor_inside_ratio(mapped, lane, self.min_anchor_confidence)
+                        >= self.min_anchor_inside_ratio
+                    )
+                    and (
+                        self.min_lane_alignment <= 0.0
+                        or pose_lane_alignment(mapped, lane, self.min_anchor_confidence)
+                        >= self.min_lane_alignment
+                    )
+                ):
                     assigned.append(mapped)
         return assign_detections_to_lanes(assigned, self.layout, one_per_lane=True)
 
