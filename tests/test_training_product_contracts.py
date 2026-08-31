@@ -1292,6 +1292,11 @@ def test_qa_database_retention_is_bounded_and_automated():
     assert "/api/admin/maintenance/database-audit" in qa_api
     assert 'cron: "0 0 * * 0"' in qa_workflow
     assert "database-retention:" in qa_workflow
+    retention_job = qa_workflow.split("  database-retention:", 1)[1].split("\n  result:", 1)[0]
+    assert "always()" in retention_job
+    assert "needs.production-api.result == 'success'" not in retention_job
+    assert "needs.production-ui.result == 'success'" not in retention_job
+    assert "needs.postman-smoke.result == 'success'" not in retention_job
     assert "scripts/database_maintenance.py --mode apply --qa-days 3 --regular-days 90" in qa_workflow
     assert "Production Database Maintenance" in maintenance_workflow
     assert 'choices=("audit", "dry-run", "apply")' in maintenance

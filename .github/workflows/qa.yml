@@ -260,12 +260,9 @@ jobs:
         run: rm -f /tmp/swimmate-postman-environment.json
 
   database-retention:
-    name: Retain only recent QA telemetry
+    name: Retain QA data after every production run
     if: >-
       always() &&
-      needs.production-api.result == 'success' &&
-      needs.production-ui.result == 'success' &&
-      needs.postman-smoke.result == 'success' &&
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [production-api, production-ui, postman-smoke]
     runs-on: ubuntu-latest
