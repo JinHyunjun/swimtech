@@ -136,17 +136,75 @@ class DatabaseCleanupBody(BaseModel):
     """Bounded retention policy for production activity data.
 
     QA identities remain intact because the production quality gate reuses them.
-    Domain data is audited separately and is never removed by this endpoint.
+    QA-owned artifacts are removable, while the reusable QA identities remain.
     """
 
     dry_run: bool = True
     confirm: str | None = Field(default=None, max_length=80)
     qa_log_retention_days: int = Field(default=3, ge=1, le=30)
     regular_log_retention_days: int = Field(default=90, ge=30, le=365)
+    purge_qa_artifacts: bool = True
 
 
 QA_AUTOMATION_HEADER = "x-swimmate-qa-run"
 DATABASE_CLEANUP_CONFIRMATION = "DELETE_EXPIRED_QA_ACTIVITY"
+QA_USERNAME_ARTIFACT_TABLES = (
+    "custom_plans",
+    "plan_favorites",
+    "preset_plan_favorites",
+    "plan_shares",
+    "user_badges",
+    "challenge_participants",
+    "pool_favorites",
+    "chat_histories",
+)
+QA_CUSTOMER_ARTIFACT_TABLES = {
+    "coach_action_items": ("student_id",),
+    "coach_feedbacks": ("student_id",),
+    "coach_plans": ("student_id",),
+    "coach_students": ("student_id",),
+    "swim_shares": ("student_id",),
+    "coach_ai_document_recipients": ("student_id",),
+    "notifications": ("customer_id",),
+    "promotion_result_shares": ("customer_id",),
+    "training_readiness": ("customer_id",),
+}
+QA_COACH_ARTIFACT_TABLES = {
+    "coach_action_items": ("coach_id",),
+    "coach_ai_documents": ("coach_id",),
+    "coach_ai_insights": ("coach_id",),
+    "coach_feedbacks": ("coach_id",),
+    "coach_lessons": ("coach_id",),
+    "coach_plans": ("coach_id",),
+    "coach_students": ("coach_id",),
+    "swim_shares": ("coach_id",),
+    "coach_verification_events": ("coach_id",),
+    "swim_clubs": ("owner_coach_id",),
+}
+QA_ARTIFACT_DELETE_ORDER = (
+    "swim_clubs",
+    "coach_ai_documents",
+    "custom_plans",
+    "coach_action_items",
+    "coach_feedbacks",
+    "coach_plans",
+    "coach_students",
+    "swim_shares",
+    "coach_ai_document_recipients",
+    "coach_ai_insights",
+    "coach_lessons",
+    "coach_verification_events",
+    "notifications",
+    "promotion_result_shares",
+    "training_readiness",
+    "plan_favorites",
+    "preset_plan_favorites",
+    "plan_shares",
+    "user_badges",
+    "challenge_participants",
+    "pool_favorites",
+    "chat_histories",
+)
 _QA_IDENTIFIER_RE = re.compile(
     r"(?:^|[_-])(?:qa(?:bot|test|user|student|coach|runner|\d*)?|e2e|playwright|selenium|autotest|test(?:user|student|coach|runner|\d*)?)(?:$|[_-])",
     re.IGNORECASE,
@@ -261,6 +319,112 @@ def _normalize_qa_run_id(value):
     return marker[:64] if re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", marker) else "marked"
 
 
+def _relation_exists(cur, table_name):
+    cur.execute("SELECT to_regclass(%s)", (f"public.{table_name}",))
+    return bool(cur.fetchone()[0])
+
+
+def _artifact_targets(qa_customer_ids, qa_usernames, qa_coach_ids):
+    targets = {}
+
+    def add(table_name, columns, values, owner_type):
+        if not values:
+            return
+        entry = targets.setdefault(table_name, {"predicates": [], "ownership": []})
+        entry["predicates"].extend((column_name, values) for column_name in columns)
+        entry["ownership"].append({"type": owner_type, "columns": list(columns)})
+
+    for table_name, columns in QA_CUSTOMER_ARTIFACT_TABLES.items():
+        add(table_name, columns, qa_customer_ids, "customer")
+    for table_name in QA_USERNAME_ARTIFACT_TABLES:
+        add(table_name, ("username",), qa_usernames, "username")
+    for table_name, columns in QA_COACH_ARTIFACT_TABLES.items():
+        add(table_name, columns, qa_coach_ids, "coach")
+    return targets
+
+
+def _count_artifact_rows(cur, table_name, predicates):
+    if not predicates or not _relation_exists(cur, table_name):
+        return 0
+    where_sql = sql.SQL(" OR ").join(
+        sql.SQL("{} = ANY(%s)").format(sql.Identifier(column_name))
+        for column_name, _ in predicates
+    )
+    query = sql.SQL("SELECT COUNT(*) FROM {} WHERE ").format(
+        sql.Identifier(table_name)
+    ) + where_sql
+    cur.execute(query, tuple(values for _, values in predicates))
+    return _safe_int(cur.fetchone()[0])
+
+
+def _delete_artifact_rows(cur, table_name, predicates):
+    if not predicates or not _relation_exists(cur, table_name):
+        return 0
+    where_sql = sql.SQL(" OR ").join(
+        sql.SQL("{} = ANY(%s)").format(sql.Identifier(column_name))
+        for column_name, _ in predicates
+    )
+    query = sql.SQL("DELETE FROM {} WHERE ").format(sql.Identifier(table_name)) + where_sql
+    cur.execute(query, tuple(values for _, values in predicates))
+    return max(0, cur.rowcount)
+
+
+def _qa_artifact_counts(cur, qa_customer_ids, qa_usernames, qa_coach_ids):
+    rows = []
+    for table_name, target in _artifact_targets(
+        qa_customer_ids, qa_usernames, qa_coach_ids
+    ).items():
+        count = _count_artifact_rows(cur, table_name, target["predicates"])
+        if count:
+            rows.append({
+                "table": table_name,
+                "ownership": target["ownership"],
+                "rows": count,
+            })
+    rows.sort(key=lambda item: (-item["rows"], item["table"]))
+    return {
+        "tables": rows,
+        "total_rows": sum(item["rows"] for item in rows),
+    }
+
+
+def _purge_qa_artifacts(cur, qa_customer_ids, qa_usernames, qa_coach_ids):
+    """Delete bounded QA fixtures in dependency-safe groups and preserve identities."""
+    deleted = {}
+    targets = _artifact_targets(qa_customer_ids, qa_usernames, qa_coach_ids)
+    ordered_tables = list(QA_ARTIFACT_DELETE_ORDER)
+    ordered_tables.extend(table_name for table_name in targets if table_name not in ordered_tables)
+    for table_name in ordered_tables:
+        target = targets.get(table_name)
+        if not target:
+            continue
+        count = _delete_artifact_rows(cur, table_name, target["predicates"])
+        if count:
+            deleted[table_name] = count
+
+    return {"tables": deleted, "total": sum(deleted.values())}
+
+
+def _qa_identities(cur):
+    cur.execute("""
+        SELECT id, username
+        FROM customers
+        WHERE COALESCE(is_qa_account, FALSE) = TRUE
+        ORDER BY id
+    """)
+    customer_rows = cur.fetchall()
+    qa_customer_ids = [row[0] for row in customer_rows]
+    qa_usernames = [row[1] for row in customer_rows if row[1]]
+    qa_coach_ids = []
+    if qa_customer_ids and _relation_exists(cur, "coaches"):
+        cur.execute(
+            "SELECT id FROM coaches WHERE customer_id = ANY(%s) ORDER BY id",
+            (qa_customer_ids,),
+        )
+        qa_coach_ids = [row[0] for row in cur.fetchall()]
+    return qa_customer_ids, qa_usernames, qa_coach_ids
+
+
 def _database_maintenance_audit(cur, qa_days=3, regular_days=90):
     """Collect storage and retention counts without returning row contents or PII."""
     cur.execute("SELECT pg_database_size(current_database())")
@@ -317,12 +481,7 @@ def _database_maintenance_audit(cur, qa_days=3, regular_days=90):
         "regular_retention_days": regular_days,
     }
 
-    cur.execute("""
-        SELECT id FROM customers
-        WHERE COALESCE(is_qa_account, FALSE) = TRUE
-        ORDER BY id
-    """)
-    qa_customer_ids = [row[0] for row in cur.fetchall()]
+    qa_customer_ids, qa_usernames, qa_coach_ids = _qa_identities(cur)
 
     qa_related_rows = []
     if qa_customer_ids:
@@ -365,6 +524,10 @@ def _database_maintenance_audit(cur, qa_days=3, regular_days=90):
                     "rows": count,
                 })
 
+    qa_artifacts = _qa_artifact_counts(
+        cur, qa_customer_ids, qa_usernames, qa_coach_ids
+    )
+
     cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
     migration_row = cur.fetchone()
     return {
@@ -373,11 +536,14 @@ def _database_maintenance_audit(cur, qa_days=3, regular_days=90):
         "tables": tables,
         "activity": activity,
         "qa_account_count": len(qa_customer_ids),
+        "qa_coach_identity_count": len(qa_coach_ids),
+        "qa_artifacts": qa_artifacts,
         "qa_related_domain_rows": qa_related_rows,
         "migration": migration_row[0] if migration_row else None,
         "policy": {
             "qa_accounts": "preserved",
-            "qa_domain_data": "audit_only",
+            "qa_coach_identities": "preserved",
+            "qa_domain_data": "purged_on_apply",
             "qa_activity_days": qa_days,
             "all_activity_days": regular_days,
         },
@@ -1476,7 +1642,7 @@ def cleanup_expired_database_activity(
     body: DatabaseCleanupBody,
     swimtech_token: str = Cookie(default=None),
 ):
-    """Delete only expired activity telemetry; never delete customer/domain rows."""
+    """Delete expired telemetry and QA-owned fixtures while preserving identities."""
     reviewer = _require_admin(swimtech_token)
     _ensure_table()
     conn = _get_db()
@@ -1490,12 +1656,20 @@ def cleanup_expired_database_activity(
         planned = {
             "expired_qa_activity": before["activity"]["expired_qa_rows"],
             "expired_all_activity": before["activity"]["expired_all_rows"],
+            "qa_artifacts": (
+                before["qa_artifacts"]["total_rows"] if body.purge_qa_artifacts else 0
+            ),
         }
         if body.dry_run:
             conn.rollback()
             return {
                 "status": "dry_run",
-                "deleted": {"qa_activity": 0, "old_activity": 0},
+                "deleted": {
+                    "qa_activity": 0,
+                    "old_activity": 0,
+                    "qa_artifacts": 0,
+                    "total": 0,
+                },
                 "planned": planned,
                 "before": before,
                 "confirmation_required": DATABASE_CLEANUP_CONFIRMATION,
@@ -1522,6 +1696,13 @@ def cleanup_expired_database_activity(
             WHERE created_at < NOW() - (%s * INTERVAL '1 day')
         """, (body.regular_log_retention_days,))
         deleted_old = max(0, cur.rowcount)
+
+        artifact_deletion = {"tables": {}, "total": 0}
+        if body.purge_qa_artifacts:
+            qa_customer_ids, qa_usernames, qa_coach_ids = _qa_identities(cur)
+            artifact_deletion = _purge_qa_artifacts(
+                cur, qa_customer_ids, qa_usernames, qa_coach_ids
+            )
         conn.commit()
 
         # A regular VACUUM makes the deleted pages reusable without the long lock
@@ -1540,6 +1721,11 @@ def cleanup_expired_database_activity(
             body.qa_log_retention_days,
             body.regular_log_retention_days,
         )
+        removed_artifacts = max(
+            0,
+            before["qa_artifacts"]["total_rows"]
+            - after["qa_artifacts"]["total_rows"],
+        )
     except HTTPException:
         conn.rollback()
         raise
@@ -1555,7 +1741,9 @@ def cleanup_expired_database_activity(
         "deleted": {
             "qa_activity": deleted_qa,
             "old_activity": deleted_old,
-            "total": deleted_qa + deleted_old,
+            "qa_artifacts": removed_artifacts,
+            "qa_artifact_direct_deletes": artifact_deletion,
+            "total": deleted_qa + deleted_old + removed_artifacts,
         },
         "planned": planned,
         "vacuum": vacuum_status,
@@ -1571,6 +1759,8 @@ def cleanup_expired_database_activity(
         metadata={
             "deleted_qa_activity": deleted_qa,
             "deleted_old_activity": deleted_old,
+            "deleted_qa_artifacts": removed_artifacts,
+            "qa_artifact_direct_deletes": artifact_deletion["total"],
             "qa_retention_days": body.qa_log_retention_days,
             "regular_retention_days": body.regular_log_retention_days,
         },

@@ -64,6 +64,7 @@ def run(mode: str, base: str, qa_days: int, regular_days: int) -> dict:
             json={
                 "dry_run": mode != "apply",
                 "confirm": CONFIRMATION if mode == "apply" else None,
+                "purge_qa_artifacts": True,
                 **params,
             },
             timeout=300,
@@ -113,6 +114,8 @@ def main() -> int:
         print(
             f"Database maintenance {result.get('status')}: "
             f"planned_qa={planned.get('expired_qa_activity', 0)}, "
+            f"planned_artifacts={planned.get('qa_artifacts', 0)}, "
+            f"deleted_artifacts={deleted.get('qa_artifacts', 0)}, "
             f"deleted={deleted.get('total', 0)}"
         )
     return 0

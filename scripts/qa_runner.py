@@ -1336,7 +1336,8 @@ def main():
             and admin_database_audit.status_code == 200
             and isinstance(database_audit_json.get("tables"), list)
             and "expired_qa_rows" in (database_audit_json.get("activity") or {})
-            and (database_audit_json.get("policy") or {}).get("qa_domain_data") == "audit_only"
+            and (database_audit_json.get("policy") or {}).get("qa_domain_data") == "purged_on_apply"
+            and isinstance((database_audit_json.get("qa_artifacts") or {}).get("tables"), list)
             and admin_logs.status_code == 200
             and admin_page_view_logs.status_code == 200
             and admin_paging_ok

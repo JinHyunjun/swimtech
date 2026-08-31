@@ -1277,13 +1277,16 @@ def test_qa_database_retention_is_bounded_and_automated():
     assert 'dry_run: bool = True' in admin_api
     assert 'qa_log_retention_days: int = Field(default=3, ge=1, le=30)' in admin_api
     assert 'regular_log_retention_days: int = Field(default=90, ge=30, le=365)' in admin_api
+    assert 'purge_qa_artifacts: bool = True' in admin_api
     assert 'DATABASE_CLEANUP_CONFIRMATION = "DELETE_EXPIRED_QA_ACTIVITY"' in admin_api
     assert '@router.get("/maintenance/database-audit")' in admin_api
     assert '@router.post("/maintenance/database-cleanup")' in admin_api
     assert "WITH expired_qa AS MATERIALIZED" in admin_api
     assert "VACUUM (ANALYZE) user_activity_logs" in admin_api
-    assert '"qa_domain_data": "audit_only"' in admin_api
+    assert '"qa_domain_data": "purged_on_apply"' in admin_api
     assert '"qa_accounts": "preserved"' in admin_api
+    assert '"qa_coach_identities": "preserved"' in admin_api
+    assert '_purge_qa_artifacts(' in admin_api
 
     assert "QA_RUN_ID" in qa_ui and '"value": QA_RUN_ID' in qa_ui
     assert "/api/admin/maintenance/database-audit" in qa_api
@@ -1292,8 +1295,20 @@ def test_qa_database_retention_is_bounded_and_automated():
     assert "scripts/database_maintenance.py --mode apply --qa-days 3 --regular-days 90" in qa_workflow
     assert "Production Database Maintenance" in maintenance_workflow
     assert 'choices=("audit", "dry-run", "apply")' in maintenance
+    assert '"purge_qa_artifacts": True' in maintenance
     assert "privacy_scope" in maintenance
     assert "/api/admin/maintenance/database-audit" in postman
+
+    import sys
+    sys.path.insert(0, str(ROOT / "api"))
+    from routers.admin import _artifact_targets
+
+    targets = _artifact_targets([11], ["qabot"], [22])
+    assert [item[0] for item in targets["coach_action_items"]["predicates"]] == [
+        "student_id", "coach_id"
+    ]
+    assert targets["custom_plans"]["predicates"] == [("username", ["qabot"])]
+    assert targets["swim_clubs"]["predicates"] == [("owner_coach_id", [22])]
 
 
 def test_admin_category_search_and_traffic_charts_are_fully_mapped():
