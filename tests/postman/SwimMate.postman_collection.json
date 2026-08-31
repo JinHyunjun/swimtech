@@ -918,7 +918,8 @@
                   "  pm.expect(body).to.include.all.keys('database_bytes', 'tables', 'activity', 'policy');",
                   "  pm.expect(body.activity).to.include.all.keys('total_rows', 'qa_rows', 'expired_qa_rows');",
                   "  pm.expect(body.policy.qa_accounts).to.eql('preserved');",
-                  "  pm.expect(body.policy.qa_domain_data).to.eql('audit_only');",
+                  "  pm.expect(body.policy.qa_domain_data).to.eql('purged_on_apply');",
+                  "  pm.expect(body.qa_artifacts.tables).to.be.an('array');",
                   "});"
                 ]
               }
