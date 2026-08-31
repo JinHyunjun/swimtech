@@ -1166,7 +1166,7 @@ def main():
         qa_marker_track = requests.post(
             f"{BASE}/api/admin/track",
             params={"page": "/tutorial/help"},
-            headers={"X-SwimMate-QA-Run": "1"},
+            headers={"X-SwimMate-QA-Run": os.getenv("QA_RUN_ID", "manual")},
             timeout=60,
         )
         admin_dashboard = admin_sess.get(f"{BASE}/api/admin/dashboard?days=30", timeout=60)
@@ -1178,6 +1178,11 @@ def main():
         admin_coaches = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page_size=100", timeout=60)
         admin_coaches_page2 = admin_sess.get(f"{BASE}/api/admin/coaches?status=all&page=2&page_size=20", timeout=60)
         admin_health = admin_sess.get(f"{BASE}/api/admin/training-health", timeout=60)
+        admin_database_audit = admin_sess.get(
+            f"{BASE}/api/admin/maintenance/database-audit",
+            params={"qa_log_retention_days": 3, "regular_log_retention_days": 90},
+            timeout=120,
+        )
         admin_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular", timeout=60)
         admin_page_view_logs = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular&event_type=page_view&page_size=100", timeout=60)
         admin_page_view_logs_page2 = admin_sess.get(f"{BASE}/api/admin/logs?account_scope=regular&event_type=page_view&page=2&page_size=20", timeout=60)
@@ -1223,6 +1228,7 @@ def main():
         coaches_page2_json = jget(admin_coaches_page2)
         health_json = jget(admin_health)
         health_summary = health_json.get("summary") or {}
+        database_audit_json = jget(admin_database_audit)
         logs_json = jget(admin_page_view_logs)
         logs_page2_json = jget(admin_page_view_logs_page2)
         qa_logs_json = jget(admin_qa_logs)
@@ -1327,6 +1333,10 @@ def main():
             and admin_activity.status_code == 200
             and admin_coaches.status_code == 200
             and admin_health.status_code == 200
+            and admin_database_audit.status_code == 200
+            and isinstance(database_audit_json.get("tables"), list)
+            and "expired_qa_rows" in (database_audit_json.get("activity") or {})
+            and (database_audit_json.get("policy") or {}).get("qa_domain_data") == "audit_only"
             and admin_logs.status_code == 200
             and admin_page_view_logs.status_code == 200
             and admin_paging_ok
@@ -1358,6 +1368,7 @@ def main():
             f"dashboard {admin_dashboard.status_code}, activity {admin_activity.status_code}, "
             f"coaches {admin_coaches.status_code}/total={coaches_json.get('total')}/page2={coaches_page2_json.get('page')}, "
             f"training-health {admin_health.status_code}, logs {admin_logs.status_code}, "
+            f"db-audit {admin_database_audit.status_code}/expired-qa={(database_audit_json.get('activity') or {}).get('expired_qa_rows')}, "
             f"qa-log-split={qa_log_split_ok}/qa_total={qa_logs_json.get('total')}/qa_views={qa_page_views_json.get('total')}, "
             f"users {admin_users.status_code}/page_size={users_json.get('page_size')}/page2={users_page2_json.get('page')}, "
             f"page_view_logs {admin_page_view_logs.status_code}/page_size={logs_json.get('page_size')}/page2={logs_page2_json.get('page')}, "

@@ -57,6 +57,7 @@ BASE = os.getenv("QA_BASE_URL", "https://swimtech.vercel.app")
 USERNAME = os.getenv("QA_USERNAME", "")
 PASSWORD = os.getenv("QA_PASSWORD", "")
 EMAIL = os.getenv("QA_EMAIL", "")
+QA_RUN_ID = re.sub(r"[^A-Za-z0-9_.:-]", "-", os.getenv("QA_RUN_ID", "manual"))[:64] or "manual"
 
 # /coach 검증용 — 일반 QA 계정을 코치로, 보조 계정을 수강생으로 등록한다.
 STUDENT_USERNAME = os.getenv("QA_STUDENT_USERNAME", "")
@@ -1473,7 +1474,7 @@ def install_qa_tracking_marker(context):
     """Mark QA analytics without rewriting request headers or auth cookies."""
     context.add_cookies([{
         "name": "swimmate_qa_run",
-        "value": "1",
+        "value": QA_RUN_ID,
         "url": BASE,
         "sameSite": "Lax",
     }])

@@ -7,6 +7,7 @@ import os
 import re
 from fastapi import APIRouter, Request, HTTPException, Cookie
 from pydantic import BaseModel, Field
+from psycopg2 import sql
 from routers.auth import decode_token
 from activity_log import log_activity, resolve_menu_name
 from db import get_db
@@ -131,7 +132,21 @@ class QAAccountFlagBody(BaseModel):
     is_qa_account: bool = True
 
 
+class DatabaseCleanupBody(BaseModel):
+    """Bounded retention policy for production activity data.
+
+    QA identities remain intact because the production quality gate reuses them.
+    Domain data is audited separately and is never removed by this endpoint.
+    """
+
+    dry_run: bool = True
+    confirm: str | None = Field(default=None, max_length=80)
+    qa_log_retention_days: int = Field(default=3, ge=1, le=30)
+    regular_log_retention_days: int = Field(default=90, ge=30, le=365)
+
+
 QA_AUTOMATION_HEADER = "x-swimmate-qa-run"
+DATABASE_CLEANUP_CONFIRMATION = "DELETE_EXPIRED_QA_ACTIVITY"
 _QA_IDENTIFIER_RE = re.compile(
     r"(?:^|[_-])(?:qa(?:bot|test|user|student|coach|runner|\d*)?|e2e|playwright|selenium|autotest|test(?:user|student|coach|runner|\d*)?)(?:$|[_-])",
     re.IGNORECASE,
@@ -236,6 +251,139 @@ def _log_scope_filter(account_scope, alias="l"):
     return qa_match if scope == "qa" else f"NOT {qa_match}"
 
 
+def _normalize_qa_run_id(value):
+    """Return a compact analytics marker without accepting arbitrary metadata."""
+    marker = str(value or "").strip()
+    if not marker:
+        return None
+    if marker == "1":
+        return "legacy"
+    return marker[:64] if re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", marker) else "marked"
+
+
+def _database_maintenance_audit(cur, qa_days=3, regular_days=90):
+    """Collect storage and retention counts without returning row contents or PII."""
+    cur.execute("SELECT pg_database_size(current_database())")
+    database_bytes = _safe_int(cur.fetchone()[0])
+
+    cur.execute("""
+        SELECT relname,
+               COALESCE(n_live_tup, 0)::bigint,
+               COALESCE(n_dead_tup, 0)::bigint,
+               pg_total_relation_size(relid)::bigint,
+               pg_relation_size(relid)::bigint,
+               pg_indexes_size(relid)::bigint,
+               last_autovacuum,
+               last_autoanalyze
+        FROM pg_stat_user_tables
+        ORDER BY pg_total_relation_size(relid) DESC, relname
+    """)
+    tables = [{
+        "table": row[0],
+        "estimated_live_rows": _safe_int(row[1]),
+        "estimated_dead_rows": _safe_int(row[2]),
+        "total_bytes": _safe_int(row[3]),
+        "table_bytes": _safe_int(row[4]),
+        "index_bytes": _safe_int(row[5]),
+        "last_autovacuum": str(row[6]) if row[6] else None,
+        "last_autoanalyze": str(row[7]) if row[7] else None,
+    } for row in cur.fetchall()]
+
+    qa_filter = _log_scope_filter("qa", "l")
+    cur.execute(f"""
+        SELECT COUNT(*),
+               COUNT(*) FILTER (WHERE {qa_filter}),
+               COUNT(*) FILTER (WHERE NOT {qa_filter}),
+               COUNT(*) FILTER (
+                   WHERE {qa_filter}
+                     AND l.created_at < NOW() - (%s * INTERVAL '1 day')
+               ),
+               COUNT(*) FILTER (
+                   WHERE l.created_at < NOW() - (%s * INTERVAL '1 day')
+               ),
+               MIN(l.created_at), MAX(l.created_at)
+        FROM user_activity_logs l
+    """, (qa_days, regular_days))
+    activity_row = cur.fetchone()
+    activity = {
+        "total_rows": _safe_int(activity_row[0]),
+        "qa_rows": _safe_int(activity_row[1]),
+        "regular_rows": _safe_int(activity_row[2]),
+        "expired_qa_rows": _safe_int(activity_row[3]),
+        "expired_all_rows": _safe_int(activity_row[4]),
+        "oldest_at": str(activity_row[5]) if activity_row[5] else None,
+        "newest_at": str(activity_row[6]) if activity_row[6] else None,
+        "qa_retention_days": qa_days,
+        "regular_retention_days": regular_days,
+    }
+
+    cur.execute("""
+        SELECT id FROM customers
+        WHERE COALESCE(is_qa_account, FALSE) = TRUE
+        ORDER BY id
+    """)
+    qa_customer_ids = [row[0] for row in cur.fetchall()]
+
+    qa_related_rows = []
+    if qa_customer_ids:
+        cur.execute("""
+            SELECT tc.table_name, kcu.column_name
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+             AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage ccu
+              ON ccu.constraint_name = tc.constraint_name
+             AND ccu.table_schema = tc.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND tc.table_schema = 'public'
+              AND ccu.table_schema = 'public'
+              AND ccu.table_name = 'customers'
+              AND ccu.column_name = 'id'
+            ORDER BY tc.table_name, kcu.column_name
+        """)
+        references = {}
+        for table_name, column_name in cur.fetchall():
+            if table_name == "user_activity_logs":
+                continue
+            references.setdefault(table_name, []).append(column_name)
+
+        for table_name, column_names in references.items():
+            predicates = sql.SQL(" OR ").join(
+                sql.SQL("{} = ANY(%s)").format(sql.Identifier(column_name))
+                for column_name in column_names
+            )
+            query = sql.SQL("SELECT COUNT(*) FROM {} WHERE ").format(
+                sql.Identifier(table_name)
+            ) + predicates
+            cur.execute(query, tuple(qa_customer_ids for _ in column_names))
+            count = _safe_int(cur.fetchone()[0])
+            if count:
+                qa_related_rows.append({
+                    "table": table_name,
+                    "customer_columns": column_names,
+                    "rows": count,
+                })
+
+    cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
+    migration_row = cur.fetchone()
+    return {
+        "database_bytes": database_bytes,
+        "table_count": len(tables),
+        "tables": tables,
+        "activity": activity,
+        "qa_account_count": len(qa_customer_ids),
+        "qa_related_domain_rows": qa_related_rows,
+        "migration": migration_row[0] if migration_row else None,
+        "policy": {
+            "qa_accounts": "preserved",
+            "qa_domain_data": "audit_only",
+            "qa_activity_days": qa_days,
+            "all_activity_days": regular_days,
+        },
+    }
+
+
 def _require_admin(swimtech_token: str):
     """role='admin' 우선 확인, 없으면 ADMIN_ID 폴백(과도기 호환)."""
     if not swimtech_token:
@@ -287,17 +435,20 @@ def track_page_view(
             except Exception:
                 pass
 
-        qa_automation = (
-            swimmate_qa_run == "1"
-            or request.headers.get(QA_AUTOMATION_HEADER, "").strip() == "1"
+        qa_run_id = _normalize_qa_run_id(
+            swimmate_qa_run or request.headers.get(QA_AUTOMATION_HEADER, "")
         )
+        qa_automation = bool(qa_run_id)
         log_activity(
             customer_id=customer_id, username=username,
             event_type="page_view", page=page, menu_name=menu,
             method="GET", path=page,
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            metadata={"qa_automation": True} if qa_automation else None,
+            metadata={
+                "qa_automation": True,
+                "qa_run_id": qa_run_id,
+            } if qa_automation else None,
         )
         return {"status": "ok"}
     except Exception:
@@ -1298,3 +1449,130 @@ def set_qa_accounts(
         "missing": missing,
         "is_qa_account": body.is_qa_account,
     }
+
+
+@router.get("/maintenance/database-audit")
+def get_database_maintenance_audit(
+    qa_log_retention_days: int = 3,
+    regular_log_retention_days: int = 90,
+    swimtech_token: str = Cookie(default=None),
+):
+    """Return aggregate Neon storage/retention evidence without row contents."""
+    _require_admin(swimtech_token)
+    qa_days = min(30, max(1, _safe_int(qa_log_retention_days, 3)))
+    regular_days = min(365, max(30, _safe_int(regular_log_retention_days, 90)))
+    _ensure_table()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        return _database_maintenance_audit(cur, qa_days, regular_days)
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.post("/maintenance/database-cleanup")
+def cleanup_expired_database_activity(
+    body: DatabaseCleanupBody,
+    swimtech_token: str = Cookie(default=None),
+):
+    """Delete only expired activity telemetry; never delete customer/domain rows."""
+    reviewer = _require_admin(swimtech_token)
+    _ensure_table()
+    conn = _get_db()
+    cur = conn.cursor()
+    try:
+        before = _database_maintenance_audit(
+            cur,
+            body.qa_log_retention_days,
+            body.regular_log_retention_days,
+        )
+        planned = {
+            "expired_qa_activity": before["activity"]["expired_qa_rows"],
+            "expired_all_activity": before["activity"]["expired_all_rows"],
+        }
+        if body.dry_run:
+            conn.rollback()
+            return {
+                "status": "dry_run",
+                "deleted": {"qa_activity": 0, "old_activity": 0},
+                "planned": planned,
+                "before": before,
+                "confirmation_required": DATABASE_CLEANUP_CONFIRMATION,
+            }
+        if body.confirm != DATABASE_CLEANUP_CONFIRMATION:
+            raise HTTPException(400, "데이터 정리 확인 문구가 올바르지 않습니다.")
+
+        qa_filter = _log_scope_filter("qa", "l")
+        cur.execute(f"""
+            WITH expired_qa AS MATERIALIZED (
+                SELECT l.id
+                FROM user_activity_logs l
+                WHERE l.created_at < NOW() - (%s * INTERVAL '1 day')
+                  AND {qa_filter}
+            )
+            DELETE FROM user_activity_logs target
+            USING expired_qa
+            WHERE target.id = expired_qa.id
+        """, (body.qa_log_retention_days,))
+        deleted_qa = max(0, cur.rowcount)
+
+        cur.execute("""
+            DELETE FROM user_activity_logs
+            WHERE created_at < NOW() - (%s * INTERVAL '1 day')
+        """, (body.regular_log_retention_days,))
+        deleted_old = max(0, cur.rowcount)
+        conn.commit()
+
+        # A regular VACUUM makes the deleted pages reusable without the long lock
+        # and table rewrite caused by VACUUM FULL.
+        vacuum_status = "ok"
+        try:
+            conn.autocommit = True
+            cur.execute("VACUUM (ANALYZE) user_activity_logs")
+        except Exception:
+            vacuum_status = "deferred_to_autovacuum"
+        finally:
+            conn.autocommit = False
+
+        after = _database_maintenance_audit(
+            cur,
+            body.qa_log_retention_days,
+            body.regular_log_retention_days,
+        )
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+    result = {
+        "status": "applied",
+        "deleted": {
+            "qa_activity": deleted_qa,
+            "old_activity": deleted_old,
+            "total": deleted_qa + deleted_old,
+        },
+        "planned": planned,
+        "vacuum": vacuum_status,
+        "before": before,
+        "after": after,
+    }
+    log_activity(
+        username=reviewer,
+        event_type="admin_database_cleanup",
+        action="activity_retention_applied",
+        method="POST",
+        path="/api/admin/maintenance/database-cleanup",
+        metadata={
+            "deleted_qa_activity": deleted_qa,
+            "deleted_old_activity": deleted_old,
+            "qa_retention_days": body.qa_log_retention_days,
+            "regular_retention_days": body.regular_log_retention_days,
+        },
+    )
+    return result

@@ -1,0 +1,67 @@
+name: Production Database Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read-only audit, deletion preview, or apply retention
+        required: true
+        default: audit
+        type: choice
+        options:
+          - audit
+          - dry-run
+          - apply
+      qa_days:
+        description: Days of QA activity logs to preserve (1-30)
+        required: true
+        default: "3"
+        type: string
+      regular_days:
+        description: Days of all activity logs to preserve (30-365)
+        required: true
+        default: "90"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swimmate-production-database-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    name: Audit or apply bounded retention
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      QA_BASE_URL: https://swimtech.vercel.app
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install maintenance dependency
+        run: python -m pip install requests
+
+      - name: Audit or apply database retention
+        run: >-
+          python scripts/database_maintenance.py
+          --mode "${{ inputs.mode }}"
+          --qa-days "${{ inputs.qa_days }}"
+          --regular-days "${{ inputs.regular_days }}"
+
+      - name: Upload sanitized maintenance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-maintenance-${{ github.run_id }}
+          path: database_maintenance_report.json
+          if-no-files-found: warn
+          retention-days: 30

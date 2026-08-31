@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: "0 0 * * *" # 매일 09:00 KST (UTC 00:00)
+    - cron: "0 0 * * 0" # 매주 일요일 09:00 KST (UTC 00:00)
   workflow_dispatch:
 
 permissions:
@@ -106,6 +106,7 @@ jobs:
       QA_STUDENT_EMAIL: ${{ secrets.QA_STUDENT_EMAIL }}
       ADMIN_ID: ${{ secrets.ADMIN_ID }}
       ADMIN_PW: ${{ secrets.ADMIN_PW }}
+      QA_RUN_ID: ${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -155,6 +156,7 @@ jobs:
       QA_STUDENT_EMAIL: ${{ secrets.QA_STUDENT_EMAIL }}
       ADMIN_ID: ${{ secrets.ADMIN_ID }}
       ADMIN_PW: ${{ secrets.ADMIN_PW }}
+      QA_RUN_ID: ${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -257,10 +259,48 @@ jobs:
         shell: bash
         run: rm -f /tmp/swimmate-postman-environment.json
 
+  database-retention:
+    name: Retain only recent QA telemetry
+    if: >-
+      always() &&
+      needs.production-api.result == 'success' &&
+      needs.production-ui.result == 'success' &&
+      needs.postman-smoke.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [production-api, production-ui, postman-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      QA_BASE_URL: https://swimtech.vercel.app
+      ADMIN_ID: ${{ secrets.ADMIN_ID }}
+      ADMIN_PW: ${{ secrets.ADMIN_PW }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install maintenance dependency
+        run: python -m pip install requests
+
+      - name: Apply bounded activity retention
+        run: python scripts/database_maintenance.py --mode apply --qa-days 3 --regular-days 90
+
+      - name: Upload sanitized retention evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-retention-report
+          path: database_maintenance_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
   result:
     name: Quality gate result
     if: always()
-    needs: [core, production-api, production-ui, postman-smoke]
+    needs: [core, production-api, production-ui, postman-smoke, database-retention]
     runs-on: ubuntu-latest
     steps:
       - name: Publish and enforce result
@@ -270,6 +310,7 @@ jobs:
           API_RESULT: ${{ needs.production-api.result }}
           UI_RESULT: ${{ needs.production-ui.result }}
           POSTMAN_RESULT: ${{ needs.postman-smoke.result }}
+          RETENTION_RESULT: ${{ needs.database-retention.result }}
         run: |
           {
             echo "## SwimMate quality gate"
@@ -279,6 +320,7 @@ jobs:
             echo "| 운영 API | $API_RESULT |"
             echo "| 운영 브라우저 | $UI_RESULT |"
             echo "| Postman API 스모크 | $POSTMAN_RESULT |"
+            echo "| QA 데이터 보존 정책 | $RETENTION_RESULT |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$CORE_RESULT" != "success" ]; then
@@ -287,8 +329,8 @@ jobs:
           fi
 
           if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            if [ "$API_RESULT" != "success" ] || [ "$UI_RESULT" != "success" ] || [ "$POSTMAN_RESULT" != "success" ]; then
-              echo "::error::The full production quality gate did not pass (API=$API_RESULT, UI=$UI_RESULT, Postman=$POSTMAN_RESULT)."
+            if [ "$API_RESULT" != "success" ] || [ "$UI_RESULT" != "success" ] || [ "$POSTMAN_RESULT" != "success" ] || [ "$RETENTION_RESULT" != "success" ]; then
+              echo "::error::The full production quality gate did not pass (API=$API_RESULT, UI=$UI_RESULT, Postman=$POSTMAN_RESULT, Retention=$RETENTION_RESULT)."
               exit 1
             fi
           fi

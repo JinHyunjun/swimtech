@@ -1264,6 +1264,38 @@ def test_admin_regular_and_qa_operation_logs_are_separated():
     assert evidence["score"] >= 75
 
 
+def test_qa_database_retention_is_bounded_and_automated():
+    admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
+    maintenance = (ROOT / "scripts" / "database_maintenance.py").read_text(encoding="utf-8")
+    qa_ui = (ROOT / "scripts" / "qa_ui_crawler.py").read_text(encoding="utf-8")
+    qa_api = (ROOT / "scripts" / "qa_runner.py").read_text(encoding="utf-8")
+    qa_workflow = (ROOT / ".github" / "workflows" / "qa.yml").read_text(encoding="utf-8")
+    maintenance_workflow = (ROOT / ".github" / "workflows" / "database-maintenance.yml").read_text(encoding="utf-8")
+    postman = (ROOT / "tests" / "postman" / "SwimMate.postman_collection.json").read_text(encoding="utf-8")
+
+    assert 'class DatabaseCleanupBody(BaseModel)' in admin_api
+    assert 'dry_run: bool = True' in admin_api
+    assert 'qa_log_retention_days: int = Field(default=3, ge=1, le=30)' in admin_api
+    assert 'regular_log_retention_days: int = Field(default=90, ge=30, le=365)' in admin_api
+    assert 'DATABASE_CLEANUP_CONFIRMATION = "DELETE_EXPIRED_QA_ACTIVITY"' in admin_api
+    assert '@router.get("/maintenance/database-audit")' in admin_api
+    assert '@router.post("/maintenance/database-cleanup")' in admin_api
+    assert "WITH expired_qa AS MATERIALIZED" in admin_api
+    assert "VACUUM (ANALYZE) user_activity_logs" in admin_api
+    assert '"qa_domain_data": "audit_only"' in admin_api
+    assert '"qa_accounts": "preserved"' in admin_api
+
+    assert "QA_RUN_ID" in qa_ui and '"value": QA_RUN_ID' in qa_ui
+    assert "/api/admin/maintenance/database-audit" in qa_api
+    assert 'cron: "0 0 * * 0"' in qa_workflow
+    assert "database-retention:" in qa_workflow
+    assert "scripts/database_maintenance.py --mode apply --qa-days 3 --regular-days 90" in qa_workflow
+    assert "Production Database Maintenance" in maintenance_workflow
+    assert 'choices=("audit", "dry-run", "apply")' in maintenance
+    assert "privacy_scope" in maintenance
+    assert "/api/admin/maintenance/database-audit" in postman
+
+
 def test_admin_category_search_and_traffic_charts_are_fully_mapped():
     admin_api = (ROOT / "api" / "routers" / "admin.py").read_text(encoding="utf-8")
     feedback_api = (ROOT / "api" / "routers" / "feedback.py").read_text(encoding="utf-8")

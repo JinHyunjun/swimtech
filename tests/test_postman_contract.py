@@ -74,6 +74,7 @@ def test_postman_requests_use_base_url_and_cover_required_boundaries(monkeypatch
         ("GET", "{{base_url}}/api/admin/dashboard"),
         ("GET", "{{base_url}}/api/admin/users"),
         ("GET", "{{base_url}}/api/admin/logs"),
+        ("GET", "{{base_url}}/api/admin/maintenance/database-audit"),
         ("POST", "{{base_url}}/auth/logout"),
     }.issubset(method_urls)
 
