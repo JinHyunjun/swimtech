@@ -31,6 +31,7 @@ from analysis_v2.lanes import (
 )
 from analysis_v2.rtmpose_provider import coco_pose_to_detection
 from analysis_v2.annotation import build_annotation
+from analysis_v2.adjudication import build_review_report, compare_annotations
 from analysis_v2.benchmark import BenchmarkSample, match_events, score_result
 from analysis_v2.runtime import select_pose_runtime
 from analysis_v2.runtime_benchmark import choose_recommendation
@@ -523,7 +524,7 @@ def test_runtime_benchmark_recommends_highest_quality_that_meets_target() -> Non
     assert choose_recommendation(rows, 40.0)["mode"] == "lightweight"
 
 
-def test_annotation_requires_independent_reviewer_and_bounded_events() -> None:
+def test_annotation_cannot_be_self_verified_and_bounds_events() -> None:
     draft = build_annotation(
         "fixture.mp4",
         "freestyle",
@@ -534,25 +535,171 @@ def test_annotation_requires_independent_reviewer_and_bounded_events() -> None:
         [3.5, 5.5],
         "annotator-a",
     )
-    reviewed = build_annotation(
+    assert draft["verified"] is False
+    assert draft["schema_version"] == "swimmate-event-label-v2"
+    assert draft["prediction_visible"] is False
+    assert draft["arm_event_times_sec"] == [3.0, 4.0]
+    with pytest.raises(ValueError, match="cannot verify itself"):
+        build_annotation(
+            "fixture.mp4",
+            "freestyle",
+            1,
+            2.0,
+            8.0,
+            [3.0, 4.0],
+            [3.5, 5.5],
+            "annotator-a",
+            "reviewer-b",
+        )
+    with pytest.raises(ValueError, match="outside"):
+        build_annotation(
+            "fixture.mp4", "freestyle", 1, 2.0, 8.0, [8.1], [], "annotator-a"
+        )
+
+
+def test_two_blinded_annotations_build_verified_consensus_and_score_prediction() -> None:
+    first = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.0, 4.0, 5.0],
+        [3.5, 4.5],
+        "annotator-a",
+        video_sha256="a" * 64,
+    )
+    second = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.05, 4.05, 5.05],
+        [3.55, 4.55],
+        "annotator-b",
+        video_sha256="a" * 64,
+    )
+    prediction = {
+        "tracks": [
+            {
+                "lane_id": 1,
+                "observed_frames": 80,
+                "arm_strokes": {
+                    "available": True,
+                    "count": 2,
+                    "event_times_sec": [3.02, 5.02],
+                    "reason": None,
+                },
+                "kicks": {
+                    "available": False,
+                    "count": 0,
+                    "event_times_sec": [],
+                    "reason": "legs_not_visible",
+                },
+            }
+        ]
+    }
+
+    report = build_review_report(first, second, prediction)
+    comparison = report["comparison"]
+    assert comparison["verified_independent_consensus"] is True
+    assert comparison["consensus_ground_truth"]["arm_event_times_sec"] == [3.025, 4.025, 5.025]
+    assert report["model_evaluation"]["arm"]["absolute_count_error"] == 1
+    assert report["model_evaluation"]["arm"]["event_timing"]["f1"] == pytest.approx(0.8)
+    assert report["model_evaluation"]["kick"]["withheld_reason"] == "legs_not_visible"
+
+
+def test_annotation_disagreement_blocks_model_accuracy() -> None:
+    first = build_annotation(
         "fixture.mp4",
         "freestyle",
         1,
         2.0,
         8.0,
         [3.0, 4.0],
-        [3.5, 5.5],
+        [3.5],
         "annotator-a",
-        "reviewer-b",
+        video_sha256="a" * 64,
+    )
+    second = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.0],
+        [3.5],
+        "annotator-b",
+        video_sha256="a" * 64,
     )
 
-    assert draft["verified"] is False
-    assert reviewed["verified"] is True
-    assert draft["arm_event_times_sec"] == [3.0, 4.0]
-    with pytest.raises(ValueError, match="outside"):
-        build_annotation(
-            "fixture.mp4", "freestyle", 1, 2.0, 8.0, [8.1], [], "annotator-a"
-        )
+    report = build_review_report(first, second, {"tracks": []})
+    assert report["comparison"]["agreement_status"] == "adjudication_required"
+    assert report["comparison"]["events"]["arm"]["first_only_event_times_sec"] == [4.0]
+    assert report["model_evaluation"]["status"] == "blocked_by_annotation_disagreement"
+
+
+def test_independent_annotation_comparison_rejects_same_annotator() -> None:
+    first = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.0],
+        [],
+        "annotator-a",
+        video_sha256="a" * 64,
+    )
+    second = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.1],
+        [],
+        "annotator-a",
+        video_sha256="a" * 64,
+    )
+
+    with pytest.raises(ValueError, match="distinct annotators"):
+        compare_annotations(first, second)
+
+
+def test_unresolvable_kicks_are_not_interpreted_as_zero() -> None:
+    first = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.0, 4.0],
+        [],
+        "annotator-a",
+        video_sha256="a" * 64,
+        kick_label_status="unresolvable",
+    )
+    second = build_annotation(
+        "fixture.mp4",
+        "freestyle",
+        1,
+        2.0,
+        8.0,
+        [3.05, 4.05],
+        [],
+        "annotator-b",
+        video_sha256="a" * 64,
+        kick_label_status="unresolvable",
+    )
+
+    report = build_review_report(first, second, {"tracks": []})
+    truth = report["comparison"]["consensus_ground_truth"]
+    assert report["comparison"]["verified_independent_consensus"] is True
+    assert truth["kicks"] is None
+    assert truth["kick_event_times_sec"] is None
+    assert report["model_evaluation"]["kick"]["status"] == "unscored_unresolvable"
 
 
 def test_event_metric_penalizes_duplicates_and_missed_events() -> None:

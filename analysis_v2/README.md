@@ -107,7 +107,7 @@ Use a detector-guided provider (`lane-rtmpose` or
 reproducibility, but it can hallucinate a pose because it treats the complete
 lane crop as one person.
 
-Create independent event labels before tuning counts:
+Create the first blinded event label before tuning counts:
 
 ```powershell
 python -m analysis_v2.annotation .\video\sample.mp4 `
@@ -116,9 +116,34 @@ python -m analysis_v2.annotation .\video\sample.mp4 `
   --output tmp\analysis_v2\labels\sample-a.json
 ```
 
+Run the same command in a separate session for `reviewer-b` and save to
+`sample-b.json`. Neither reviewer should see model output or the other label.
+The source video's SHA-256 is stored automatically, so labels made from
+different files cannot be combined.
+
 Keys in the annotation window: `Space` play/pause, `A` arm event, `K` kick
-event, `Z`/`X` undo, `J`/`L` seek, `Q` save, `Esc` discard. A label is marked
-verified only when `--reviewer` names a different person.
+event, `I` arm unresolvable, `U` kick unresolvable, `Z`/`X` undo, `J`/`L`
+seek, `Q` save, `Esc` discard. Empty events mean a visible zero; use `I` or
+`U` when the motion cannot be resolved. For freestyle/backstroke, mark one
+arm event at each hand's maximum forward extension/entry. Mark one kick event
+at the completion of each visible downward beat by either foot. For
+breaststroke/butterfly, mark the synchronized arm cycle and each distinct
+propulsive kick at the same consistent phase throughout the clip.
+
+Compare the two independent labels and score a prediction only when every
+resolvable event has one-to-one agreement within 0.25 seconds:
+
+```powershell
+python -m analysis_v2.adjudication `
+  --first tmp\analysis_v2\labels\sample-a.json `
+  --second tmp\analysis_v2\labels\sample-b.json `
+  --prediction tmp\analysis_v2\runtime\local-detector-quality-v03-fullfps.json `
+  --output tmp\analysis_v2\labels\sample-evaluation.json
+```
+
+If either reviewer marks an event type unresolvable, that type is excluded
+instead of being interpreted as zero. If unmatched events remain, model
+accuracy is blocked until the reviewers adjudicate the disagreement.
 
 Audit the legacy data before any retraining. Exit code 2 means training is
 blocked:
