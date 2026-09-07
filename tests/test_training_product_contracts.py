@@ -1443,7 +1443,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "오프라인 영상 기준선 132개" in quality_doc
+    assert "오프라인 영상 기준선을 합친 147개" in quality_doc
     assert "tests/test_multiswimmer_analysis.py" in quality_doc
     assert "analysis_v2/" in readme
     assert "실제 영상 정확도 게이트 전까지 공개 API·UI에는 연결하지 않습니다" in readme
@@ -1469,8 +1469,13 @@ def test_quality_gate_documentation_is_kept_current():
         "릴리즈·문서",
         "영상 분석 재활성화",
         "실행 가능한 Postman API 문서",
+        "운영 DB·QA 데이터 보존",
     ]:
         assert required in quality_doc
+    assert "scripts/database_maintenance.py" in quality_doc
+    assert "QA 활동 로그는 3일" in quality_doc
+    assert "P33 — 완료" in checklist
+    assert "34007715003" in checklist
     assert "[품질 검증 게이트](./docs/QUALITY_GATE.md)" in readme
     assert "[기능 지도](./docs/FEATURE_MAP.md)" in readme
     assert "[기술 구조](./docs/ARCHITECTURE.md)" in readme

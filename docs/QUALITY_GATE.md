@@ -1,6 +1,6 @@
 # SwimMate 품질 검증 게이트
 
-> 기준일: 2026-08-26
+> 기준일: 2026-09-07
 
 SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준비도, 커뮤니티, 코치-수강생, 코치 AI, Jira 운영판까지 연결된 서비스로 커졌다. 이제 기능 하나를 추가할 때 화면이 열리는지만 확인하면 부족하다. 데이터가 다른 화면에 반영되는지, 권한 경계가 지켜지는지, 외부 연동이 실패해도 업무가 이어지는지까지 함께 봐야 한다.
 
@@ -16,9 +16,10 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 API QA | `scripts/qa_runner.py` | 실제 배포 URL에서 인증, 훈련 일지, 리포트, 준비도, 코치 AI, 관리자 API 흐름 점검 |
 | 운영 UI QA | `scripts/qa_ui_crawler.py` | 실제 브라우저로 주요 메뉴, 탭, 버튼, 콘솔 오류, 실패 API 응답 점검 |
 | Postman API 스모크 | `tests/postman/SwimMate.postman_collection.json` | 실행 가능한 API 문서, 쿠키 인증, 일지→통계·리포트·내 데이터, 관리자 읽기 경계를 대표 흐름으로 점검 |
+| 운영 DB 보존·정리 | `scripts/database_maintenance.py`, `.github/workflows/database-maintenance.yml` | QA 로그·기능 데이터 누적 감사와 정리, 일반 사용자 데이터·재사용 QA 계정 보존, 개인 행 없는 증적 생성 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선 132개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 27개·44개 assertion으로 일괄 확인하고 실행별 결과를 증적으로 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 147개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -57,6 +58,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 코치 AI 강습 운영 | 생성 결과 검토 후 배포, 선택 학생 수신, 템플릿 폴백, 익명 `S1` 참조, 삭제 정리 | `coach_ai.py` 계약 테스트, `qa_runner.py` 18e |
 | Jira 운영판 | SwimMate DB 선저장, Jira 동기화 실패 격리, 웹훅 멱등성, 60초 캐시, 100개 검색 제한 | `test_coach_crew_jira.py`, 선택 환경변수 QA |
 | 슈퍼 관리자 | 관리자 로그인·권한, 관리자 전용 사이드 메뉴, 모바일 드로어 8개 항목 비겹침·ESC 닫기·가로 넘침 0, 다섯 목록의 화이트리스트 카테고리 검색, 페이지네이션, 20/50/100 page size, 사용자 전체/일반/확정 QA/후보 필터와 근거, 일반/QA 운영 로그 상호 배제, 7/30/90일 실제 방문·가입 그래프, 읽기 전용 QA, 선택 테이블 0값 폴백 | `qa_runner.py` 18b, `qa_account_audit.py`, `check_admin_search_and_charts`, `PAGE_EXPECTATIONS["/admin"]`, Postman 관리자 흐름 |
+| 운영 DB·QA 데이터 보존 | QA 활동 3일·전체 활동 90일 보존, QA 기능 데이터 실행 후 삭제, 일반 데이터·QA 계정·재사용 코치 식별자 보존, dry-run/apply 분리, 삭제 수·전후 집계·마이그레이션·vacuum 결과만 증적화, 선행 QA 실패 때도 정리 시도 | 관리자 DB audit/cleanup API, `scripts/database_maintenance.py`, `.github/workflows/database-maintenance.yml`, `test_qa_database_retention_is_bounded_and_automated`, Postman 관리자 흐름 |
 | DB 스키마 변경 | Alembic 순차 리비전, 단일 head, Render/FastAPI 시작 전 upgrade, readiness 리비전 일치 | `api/alembic/`, `alembic heads`, `qa_runner.py` readiness |
 | AI·외부 연동 | Gemini rate limit, 모델 폴백 순서, 구조화 출력 검증, 답변 생성 실패 안내, OAuth·Kakao·Notion 키 없음 상태 | 관련 라우터 계약 테스트, 운영 smoke |
 | 공개 메타데이터·정책 | PWA 이름·설명, 개인정보처리방침, 이용약관, 커뮤니티 초기 콘텐츠가 현재 브랜드·데이터 처리·활성 기능과 일치 | 문서 계약 테스트, `manifest.json`, `privacy.html`, `terms.html` |
@@ -85,10 +87,11 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 로컬 배치 파일은 사용하지 않는다. `.github/workflows/qa.yml`이 유일한 필수 품질 게이트다.
 
 1. `main` Push·PR에서는 핵심 테스트를 실행한다.
-2. 매일 09:00 KST 및 `workflow_dispatch`에서는 핵심 테스트 통과 후 운영 API와 브라우저 검사를 순차 실행한다.
+2. 매주 일요일 09:00 KST 및 `workflow_dispatch`에서는 핵심 테스트 통과 후 운영 API와 브라우저 검사를 순차 실행한다.
 3. API가 실패해도 브라우저 검사를 실행해 두 리포트를 모두 수집한다.
 4. 운영 API와 브라우저 검사가 모두 성공하면 저장소의 Postman Collection을 로컬 파일 방식으로 실행한다.
-5. 마지막 결과 작업이 핵심·운영 API·브라우저·Postman 필수 단계 전체를 판정한다.
+5. 정기·수동 실행은 선행 API·브라우저·Postman 단계의 성공 여부와 관계없이 운영 DB 정리를 마지막에 시도한다.
+6. 마지막 결과 작업이 핵심·운영 API·브라우저·Postman·DB 정리 필수 단계 전체를 판정한다.
 
 로그인 검사는 GitHub Actions Secrets의 전용 계정으로 수행한다. 누락된 계정이 있으면 관리자 검사를 생략하지 않고 사전 검증 단계에서 실패한다.
 
@@ -101,6 +104,8 @@ QA는 비로그인 401, 잘못된 비밀번호 401, 정상 로그인, 보안 쿠
 Postman은 일반 QA 계정과 슈퍼 관리자 계정만 사용한다. Collection과 환경 템플릿에는 아이디·비밀번호를 저장하지 않고 GitHub Secrets로 실행 중 `/tmp`에 만든 임시 환경 파일에만 주입한 뒤 항상 삭제한다. 로컬 Collection 파일을 실행하므로 `POSTMAN_API_KEY`는 필요하지 않으며 실행 결과를 Postman Cloud로 전송하지 않는다.
 
 운영 API QA는 일반·학생 전용 계정을 관리자 전용 `/api/admin/qa-accounts`로 등록한다. 계정 표식은 테스트가 끝난 뒤에도 유지해 과거와 다음 실행의 활동을 같은 기준으로 분류하며, 비밀번호나 시크릿 값은 DB 표식 요청·로그·리포트에 포함하지 않는다. 브라우저 QA는 인증 헤더를 재작성하지 않는 전용 분석 쿠키로 페이지 조회만 표식하고 Postman은 같은 경계를 전용 헤더로 검증한다. 기존 익명 로그는 동일 IP만이 아니라 동일 브라우저와 전후 15분 안의 확정 QA 활동까지 만족해야 QA 세션으로 결합한다. 일반 운영 로그는 `account_scope=regular`, QA 검증 로그는 `account_scope=qa`를 명시하고 두 응답의 `is_qa_account` 값이 상호 배타적인지 검사한다. 전수 감사 결과는 변경용 아이디만 남기고 이메일·이름·닉네임·IP를 제외한 최소정보 `qa_account_audit.json`으로 보관하며 후보는 자동 지정하지 않는다.
+
+DB 정리는 관리자 전용 감사 API의 집계 결과를 기준으로 수행한다. QA 활동 로그는 3일, QA 여부와 관계없는 전체 활동 로그는 90일을 상한으로 두고, QA 계정이 만든 임시 플랜·공유·알림·코치 관계 등 기능 데이터는 정기·수동 QA 종료 시 삭제한다. 계정 자체와 재사용 코치 식별자는 다음 검증에 필요하므로 보존한다. 수동 유지보수 워크플로는 기본 dry-run이며 명시적으로 `apply=true`를 선택해야 삭제한다. 산출물에는 테이블별 건수와 용량만 남기고 사용자 행·자격 증명은 넣지 않는다.
 
 ## 최근 운영 검증
 
@@ -167,11 +172,14 @@ CPU/portable fallback, 팔 좌우 동시 오검출 병합, 레인 기하 실험 
 카운트 정확도는 `미검증`으로 유지한다. 이는 검출 범위 개선일 뿐 정확도 통과가
 아니며, 공개 API/UI·릴리즈 노트·Notion 서비스 설명서는 계속 갱신하지 않는다.
 
+2026-09-07에는 Neon 사용량 경고를 저장 용량과 compute로 분리해 감사했다. DB는 54개 테이블·약 30MB로 무료 저장 한도보다 작았고, 과거 14분 간격의 DB-backed `/api/health` 호출이 Scale to Zero를 막아 CU-hour를 누적시킨 것이 핵심 원인이었다. 상시 확인은 이미 DB를 조회하지 않는 `/api/ping`으로 교체됐고, 전체 운영 QA는 매일에서 주 1회로 줄였다. 최초 정리에서 만료 QA 활동 18,907건을 삭제하고 일반 활동 9,043건을 보존했으며, 후속 감사에서 확인한 QA 기능 데이터 156건도 삭제해 QA 기능 잔여를 0건으로 만들었다. 최종 코드의 정기 실행 [GitHub Actions `34007715003`](https://github.com/JinHyunjun/swimtech/actions/runs/34007715003)은 핵심 147개·Alembic, 운영 API 53개, 브라우저 37개 화면, Postman 28개 요청·46개 assertion과 DB 정리를 모두 통과했다. 이 실행이 새로 만든 QA 활동 1,279건과 기능 데이터 3건은 종료 단계에서 정리됐고, 이후 일반 활동 9,072건·QA 활동 256건·QA 계정 4개·코치 식별자 1개를 보존했으며 만료 로그와 QA 기능 데이터는 0건이었다.
+
 ## 산출물
 
 - `tests/ci_report.html`, `tests/ci_results.xml`: 핵심 테스트 리포트
 - `qa_report.json`: 운영 API QA 결과
 - `qa_ui_report.json`: 운영 UI QA 결과
 - `qa_ui_screenshots/`: 운영 UI QA 스크린샷
-- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 27개 대표 API 요청과 assertion 결과
+- GitHub Actions `Postman production smoke` 로그: 저장소 Collection의 28개 대표 API 요청과 46개 assertion 결과
 - GitHub Actions `QA Account Classification` artifact: 확정·후보 아이디와 최소정보 활동 근거, 명시적 변경 결과
+- `database_maintenance_report.json`: 개인 행 없이 DB 용량·테이블 수·보존 정책·삭제 전후 집계·vacuum 결과만 담은 운영 DB 정리 증적
