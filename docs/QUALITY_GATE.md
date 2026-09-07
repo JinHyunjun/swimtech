@@ -19,7 +19,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 DB 보존·정리 | `scripts/database_maintenance.py`, `.github/workflows/database-maintenance.yml` | QA 로그·기능 데이터 누적 감사와 정리, 일반 사용자 데이터·재사용 QA 계정 보존, 개인 행 없는 증적 생성 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 147개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 154개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -157,7 +157,7 @@ DB 정리는 관리자 전용 감사 API의 집계 결과를 기준으로 수행
 실행 프로필과 재현 가능한 런타임 벤치마크를 추가했다. 자동 프로필 선택,
 CPU/portable fallback, 팔 좌우 동시 오검출 병합, 레인 기하 실험 옵션, 독립
 주석 검수 조건, ±0.25초 이벤트 precision/recall/F1 계약을
-`tests/test_multiswimmer_analysis.py` 22개로 검증했다. 기존 데이터의 폴더 라벨
+`tests/test_multiswimmer_analysis.py` 29개로 검증했다. 기존 데이터의 폴더 라벨
 오염과 학습·평가 누수를 확인해 사람 검증 라벨이 0건인 현재 상태에서는 재학습을
 차단한다. 전체 Core Quality Gate와 동일한 146개 테스트 및 Alembic 단일 head가
 로컬에서 통과했다. 20개 영상 처리량은 증가했지만 독립 이벤트 정답이 없으므로

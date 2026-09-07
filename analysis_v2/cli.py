@@ -13,13 +13,19 @@ from .pipeline import MultiSwimmerAnalyzer
 from .rtmpose_provider import RTMPoseProvider, RTMPoseTopDownProvider
 from .runtime import select_pose_runtime
 from .tracking import TrackerConfig
-from .types import StrokeKind
+from .types import StrokeKind, StrokeSource
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Experimental SwimMate multi-swimmer counter")
     parser.add_argument("video", type=Path)
     parser.add_argument("--stroke", choices=[item.value for item in StrokeKind], required=True)
+    parser.add_argument(
+        "--stroke-source",
+        choices=(StrokeSource.USER_CONFIRMED.value, StrokeSource.EVENT_METADATA.value),
+        default=StrokeSource.USER_CONFIRMED.value,
+        help="Provenance of the explicit label; directory-name inference is intentionally unsupported",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", type=Path, default=Path("analysis/pose_landmarker.task"))
     parser.add_argument("--max-swimmers", type=int, default=10)
@@ -113,6 +119,7 @@ def main() -> int:
     analyzer = MultiSwimmerAnalyzer(
         args.stroke,
         tracker_config=TrackerConfig(max_swimmers=args.max_swimmers, lane_axis=args.lane_axis),
+        stroke_source=args.stroke_source,
     )
 
     frame_index = 0

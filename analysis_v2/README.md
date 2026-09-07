@@ -1,4 +1,4 @@
-# SwimMate multi-swimmer counter v0.2.1
+# SwimMate multi-swimmer counter v0.3.0
 
 This package is an **offline experiment**, not a public SwimMate feature. It
 changes the unit of analysis from one video to one physical pool lane:
@@ -8,7 +8,23 @@ frame -> fixed lane polygons -> one rotated crop per lane -> RTMPose
       -> physical lane tracks -> per-lane arm and kick signals
 ```
 
-## What v0.2 adds
+## What v0.3 adds
+
+- Explicit stroke-label provenance (`user_confirmed`, `event_metadata`, or
+  `benchmark_manifest`) instead of treating a legacy directory name as a
+  classifier
+- A left/right arm-pattern check that withholds synchronous-stroke counts when
+  observed motion is alternating
+- An alternating-arm identity gate that withholds counts when both detected
+  wrists repeatedly follow the same physical arm
+- Time-based smoothing so supported 10/20/30 fps inputs use comparable signal
+  windows
+- Physiological refractory periods that merge near-duplicate arm and kick
+  events
+- Kick gating based on knee and ankle visibility, effective sample rate, and
+  stroke-to-kick ratio
+
+The v0.2 lane and runtime work remains in place:
 
 - Perspective-aware lane polygons generated from a pool quadrilateral
 - Stable physical IDs such as `L01` and `L08`
@@ -77,6 +93,7 @@ Analyze a known fixed shot with a lane layout:
 ```powershell
 python -m analysis_v2.cli .\race.mp4 `
   --stroke freestyle `
+  --stroke-source user_confirmed `
   --provider lane-rtmpose-topdown `
   --lane-layout .\lane-layout.json `
   --lane-rotation clockwise `
@@ -152,11 +169,29 @@ Each result contains one entry per physical lane track with:
 - complete cycle count
 - kick count and event timestamps
 - visibility, confidence, warnings, and explicit withholding reasons
+- stroke-label provenance, effective sample rate, and observed arm pattern
 
 Counts are withheld when an athlete is observed in less than 60% of the
-processed frames or the relevant joints are not sufficiently visible. An
-available count is still a model prediction; it is not considered accurate
-until compared with an independent label.
+processed frames, the relevant joints are not sufficiently visible, temporal
+sampling is inadequate, the two arms cannot be distinguished, or the selected
+stroke conflicts with the observed temporal pattern. An available count is
+still a model prediction; it is not considered accurate until compared with an
+independent label.
+
+## 2026-09-07 private local safety check
+
+The user-confirmed freestyle clip `이강해.mp4` was rerun on the Galaxy Book4
+Pro with detector-guided RTMPose-X/OpenVINO Arc GPU. At every second source
+frame (14.992 fps), v0.3 withheld both arm and kick counts because the two arms
+collapsed into a synchronous pose artifact and flutter kicks were
+undersampled. At full source rate (29.984 fps), it retained 13 arm-event
+candidates / 6 complete-cycle candidates but withheld seven kick candidates
+because 1.17 kicks per cycle was implausibly low for the selected stroke.
+
+This check proves the new failure gates execute on real footage. It does
+**not** prove that 13 is the correct arm count; the clip still needs an
+independent human event annotation. See
+[`evaluation/results/2026-09-07-v0.3-safety-gates.md`](evaluation/results/2026-09-07-v0.3-safety-gates.md).
 
 ## Unsupported input
 

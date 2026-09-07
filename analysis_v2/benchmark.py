@@ -19,6 +19,7 @@ from .pipeline import MultiSwimmerAnalyzer
 from .rtmpose_provider import RTMPoseTopDownProvider
 from .runtime import PoseRuntimeConfig, select_pose_runtime
 from .tracking import TrackerConfig
+from .types import StrokeSource
 
 
 @dataclass(frozen=True)
@@ -138,6 +139,7 @@ def analyze_sample(
             max_missing_frames=max(3, int(round(sample_fps * 1.5))),
         ),
         counter_config=counter_config,
+        stroke_source=StrokeSource.BENCHMARK_MANIFEST,
     )
     lane_hits = {lane.lane_id: 0 for lane in sample.layout.lanes}
     detections_per_frame: list[int] = []

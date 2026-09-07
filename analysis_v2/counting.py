@@ -19,11 +19,27 @@ class CounterConfig:
     min_arm_visibility: float = 0.50
     min_leg_visibility: float = 0.58
     smoothing_window: int = 5
+    smoothing_window_sec: float = 0.30
     max_interpolation_gap: int = 5
+    max_interpolation_gap_sec: float = 0.35
     stroke_min_interval_sec: float = 0.28
     alternating_merge_sec: float = 0.12
-    kick_min_interval_sec: float = 0.11
+    alternating_min_event_interval_sec: float = 0.22
+    kick_min_interval_sec: float = 0.16
     synchronous_merge_sec: float = 0.24
+    synchronous_min_cycle_interval_sec: float = 0.40
+    minimum_sync_pattern_events: int = 3
+    minimum_sync_pattern_ratio: float = 0.50
+    maximum_alternating_synchrony_ratio: float = 0.70
+    synchronous_pattern_tolerance_sec: float = 0.18
+    minimum_flutter_kick_sample_hz: float = 18.0
+    minimum_synchronous_kick_sample_hz: float = 10.0
+    minimum_alternating_kicks_per_cycle: float = 1.50
+    maximum_alternating_kicks_per_cycle: float = 8.00
+    minimum_breaststroke_kicks_per_cycle: float = 0.65
+    maximum_breaststroke_kicks_per_cycle: float = 1.50
+    minimum_butterfly_kicks_per_cycle: float = 1.00
+    maximum_butterfly_kicks_per_cycle: float = 3.00
     minimum_peak_prominence_ratio: float = 0.18
     minimum_absolute_prominence: float = 0.035
 
@@ -54,6 +70,9 @@ class TrackCountResult:
     observed_frames: int
     track_coverage: float
     stroke_kind: str
+    sample_rate_hz: float | None
+    arm_pattern: str
+    arm_pattern_synchrony: float | None
     arm_strokes: EventCount
     complete_cycles: int
     left_arm_events: tuple[float, ...]
@@ -72,6 +91,9 @@ class TrackCountResult:
             "observed_frames": self.observed_frames,
             "track_coverage": self.track_coverage,
             "stroke_kind": self.stroke_kind,
+            "sample_rate_hz": self.sample_rate_hz,
+            "arm_pattern": self.arm_pattern,
+            "arm_pattern_synchrony": self.arm_pattern_synchrony,
             "arm_strokes": self.arm_strokes.to_dict(),
             "complete_cycles": self.complete_cycles,
             "left_arm_events": list(self.left_arm_events),
@@ -138,14 +160,21 @@ def _ankle_difference_signal(
     for row_index, observation in enumerate(observations):
         points = observation.detection.keypoints
         frame = _body_frame(points, config.min_landmark_confidence)
+        left_knee = _visible_point(points, KeypointIndex.LEFT_KNEE, config.min_landmark_confidence)
+        right_knee = _visible_point(points, KeypointIndex.RIGHT_KNEE, config.min_landmark_confidence)
         left = _visible_point(points, KeypointIndex.LEFT_ANKLE, config.min_landmark_confidence)
         right = _visible_point(points, KeypointIndex.RIGHT_ANKLE, config.min_landmark_confidence)
-        if frame is None or left is None or right is None:
+        if frame is None or left_knee is None or right_knee is None or left is None or right is None:
             continue
         _, _, scale, transverse = frame
         values[row_index] = float(np.dot(left - right, transverse) / scale)
         confidences[row_index] = float(
-            min(points[int(KeypointIndex.LEFT_ANKLE), 3], points[int(KeypointIndex.RIGHT_ANKLE), 3])
+            min(
+                points[int(KeypointIndex.LEFT_KNEE), 3],
+                points[int(KeypointIndex.RIGHT_KNEE), 3],
+                points[int(KeypointIndex.LEFT_ANKLE), 3],
+                points[int(KeypointIndex.RIGHT_ANKLE), 3],
+            )
         )
     return values, confidences
 
@@ -158,9 +187,11 @@ def _synchronous_kick_signal(
     for row_index, observation in enumerate(observations):
         points = observation.detection.keypoints
         frame = _body_frame(points, config.min_landmark_confidence)
+        left_knee = _visible_point(points, KeypointIndex.LEFT_KNEE, config.min_landmark_confidence)
+        right_knee = _visible_point(points, KeypointIndex.RIGHT_KNEE, config.min_landmark_confidence)
         left = _visible_point(points, KeypointIndex.LEFT_ANKLE, config.min_landmark_confidence)
         right = _visible_point(points, KeypointIndex.RIGHT_ANKLE, config.min_landmark_confidence)
-        if frame is None or left is None or right is None:
+        if frame is None or left_knee is None or right_knee is None or left is None or right is None:
             continue
         hip_mid, longitudinal, scale, transverse = frame
         if stroke_kind == StrokeKind.BREASTSTROKE:
@@ -169,7 +200,12 @@ def _synchronous_kick_signal(
             mean_ankle = (left + right) / 2.0
             values[row_index] = float(np.dot(mean_ankle - hip_mid, transverse) / scale)
         confidences[row_index] = float(
-            min(points[int(KeypointIndex.LEFT_ANKLE), 3], points[int(KeypointIndex.RIGHT_ANKLE), 3])
+            min(
+                points[int(KeypointIndex.LEFT_KNEE), 3],
+                points[int(KeypointIndex.RIGHT_KNEE), 3],
+                points[int(KeypointIndex.LEFT_ANKLE), 3],
+                points[int(KeypointIndex.RIGHT_ANKLE), 3],
+            )
         )
     return values, confidences
 
@@ -224,7 +260,18 @@ def _find_peak_events(
     config: CounterConfig,
     include_troughs: bool = False,
 ) -> list[float]:
-    values = _smooth(_interpolate_short_gaps(raw_values, config.max_interpolation_gap), config.smoothing_window)
+    sampling_rate = _sampling_rate_hz(timestamps, None)
+    smoothing_window = config.smoothing_window
+    interpolation_gap = config.max_interpolation_gap
+    if sampling_rate is not None:
+        smoothing_window = max(3, int(round(sampling_rate * config.smoothing_window_sec)))
+        if smoothing_window % 2 == 0:
+            smoothing_window += 1
+        interpolation_gap = max(1, int(round(sampling_rate * config.max_interpolation_gap_sec)))
+    values = _smooth(
+        _interpolate_short_gaps(raw_values, interpolation_gap),
+        smoothing_window,
+    )
     finite = values[np.isfinite(values)]
     if finite.size < max(config.min_track_frames // 2, 8):
         return []
@@ -238,7 +285,7 @@ def _find_peak_events(
 
     candidates: list[tuple[int, float]] = []
     signals = (values, -values) if include_troughs else (values,)
-    prominence_radius = max(config.smoothing_window * 2, 3)
+    prominence_radius = max(smoothing_window * 2, 3)
     for signal in signals:
         finite_signal = signal[np.isfinite(signal)]
         center_threshold = float(np.median(finite_signal))
@@ -281,6 +328,53 @@ def _merge_nearby_events(event_groups: Iterable[Iterable[float]], tolerance_sec:
     return [round(float(np.mean(cluster)), 3) for cluster in clusters]
 
 
+def _reconcile_events(events: Iterable[float], minimum_interval_sec: float) -> list[float]:
+    """Collapse physiologically impossible near-duplicate temporal events."""
+
+    ordered = sorted(float(value) for value in events)
+    if not ordered:
+        return []
+    clusters: list[list[float]] = [[ordered[0]]]
+    for value in ordered[1:]:
+        if value - clusters[-1][-1] < minimum_interval_sec:
+            clusters[-1].append(value)
+        else:
+            clusters.append([value])
+    return [round(float(np.mean(cluster)), 3) for cluster in clusters]
+
+
+def _arm_synchrony_ratio(
+    left_events: list[float],
+    right_events: list[float],
+    tolerance_sec: float,
+) -> float | None:
+    """Return a one-to-one temporal match ratio for the two arms."""
+
+    if not left_events or not right_events:
+        return None
+    available = set(range(len(right_events)))
+    matched = 0
+    for left in left_events:
+        candidates = [index for index in available if abs(right_events[index] - left) <= tolerance_sec]
+        if not candidates:
+            continue
+        best = min(candidates, key=lambda index: abs(right_events[index] - left))
+        available.remove(best)
+        matched += 1
+    return float(matched / max(min(len(left_events), len(right_events)), 1))
+
+
+def _sampling_rate_hz(timestamps: np.ndarray, provided: float | None) -> float | None:
+    if provided is not None and np.isfinite(provided) and provided > 0:
+        return float(provided)
+    if len(timestamps) < 2:
+        return None
+    duration = float(timestamps[-1] - timestamps[0])
+    if duration <= 0:
+        return None
+    return float((len(timestamps) - 1) / duration)
+
+
 def _unavailable(visibility: float, reason: str) -> EventCount:
     return EventCount(False, 0, (), None, 0.0, round(visibility, 3), reason)
 
@@ -290,6 +384,7 @@ def count_track(
     stroke_kind: StrokeKind | str,
     config: CounterConfig | None = None,
     total_processed_frames: int | None = None,
+    processed_sample_rate_hz: float | None = None,
 ) -> TrackCountResult:
     cfg = config or CounterConfig()
     kind = stroke_kind if isinstance(stroke_kind, StrokeKind) else StrokeKind(stroke_kind)
@@ -298,6 +393,7 @@ def count_track(
         raise ValueError("at least one track observation is required")
     timestamps = np.asarray([row.timestamp_sec for row in rows], dtype=np.float64)
     duration = max(float(timestamps[-1] - timestamps[0]), 0.0)
+    sample_rate_hz = _sampling_rate_hz(timestamps, processed_sample_rate_hz)
     denominator = total_processed_frames if total_processed_frames is not None else len(rows)
     track_coverage = float(np.clip(len(rows) / max(denominator, 1), 0.0, 1.0))
     warnings: list[str] = []
@@ -307,6 +403,8 @@ def count_track(
     left_visibility = float(np.mean(left_confidence >= cfg.min_landmark_confidence))
     right_visibility = float(np.mean(right_confidence >= cfg.min_landmark_confidence))
     arm_visibility = (left_visibility + right_visibility) / 2.0
+    arm_pattern = "insufficient_evidence"
+    arm_pattern_synchrony: float | None = None
 
     if track_coverage < cfg.min_track_coverage:
         arm_result = _unavailable(arm_visibility, "track_coverage_too_low")
@@ -327,8 +425,25 @@ def count_track(
     else:
         left_events = _find_peak_events(timestamps, left_wrist, cfg.stroke_min_interval_sec, cfg)
         right_events = _find_peak_events(timestamps, right_wrist, cfg.stroke_min_interval_sec, cfg)
+        arm_pattern_synchrony = _arm_synchrony_ratio(
+            left_events,
+            right_events,
+            cfg.synchronous_pattern_tolerance_sec,
+        )
+        enough_pattern_events = (
+            len(left_events) >= cfg.minimum_sync_pattern_events
+            and len(right_events) >= cfg.minimum_sync_pattern_events
+        )
+        if enough_pattern_events and arm_pattern_synchrony is not None:
+            if arm_pattern_synchrony >= cfg.maximum_alternating_synchrony_ratio:
+                arm_pattern = "synchronous"
+            elif arm_pattern_synchrony < cfg.minimum_sync_pattern_ratio:
+                arm_pattern = "alternating"
+            else:
+                arm_pattern = "mixed"
         if kind in {StrokeKind.BREASTSTROKE, StrokeKind.BUTTERFLY}:
             arm_events = _merge_nearby_events((left_events, right_events), cfg.synchronous_merge_sec)
+            arm_events = _reconcile_events(arm_events, cfg.synchronous_min_cycle_interval_sec)
             complete_cycles = len(arm_events)
         else:
             # Freestyle/backstroke arms should alternate. Generic pose models
@@ -339,8 +454,32 @@ def count_track(
                 (left_events, right_events),
                 cfg.alternating_merge_sec,
             )
+            unreconciled_count = len(arm_events)
+            arm_events = _reconcile_events(arm_events, cfg.alternating_min_event_interval_sec)
+            if len(arm_events) < unreconciled_count:
+                warnings.append("near_duplicate_arm_events_reconciled")
             complete_cycles = len(arm_events) // 2
-        if not arm_events:
+        pattern_conflict = (
+            kind in {StrokeKind.BREASTSTROKE, StrokeKind.BUTTERFLY}
+            and enough_pattern_events
+            and arm_pattern_synchrony is not None
+            and arm_pattern_synchrony < cfg.minimum_sync_pattern_ratio
+        )
+        ambiguous_alternating_identity = (
+            kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE}
+            and enough_pattern_events
+            and arm_pattern_synchrony is not None
+            and arm_pattern_synchrony >= cfg.maximum_alternating_synchrony_ratio
+        )
+        if pattern_conflict:
+            arm_result = _unavailable(arm_visibility, "stroke_pattern_conflict")
+            complete_cycles = 0
+            warnings.append("selected_stroke_conflicts_with_observed_arm_pattern")
+        elif ambiguous_alternating_identity:
+            arm_result = _unavailable(arm_visibility, "arm_identity_ambiguous")
+            complete_cycles = 0
+            warnings.append("alternating_arm_count_withheld_synchronous_pose_artifact")
+        elif not arm_events:
             arm_result = _unavailable(arm_visibility, "no_reliable_stroke_events")
         else:
             regularity = _regularity_confidence(arm_events)
@@ -362,6 +501,11 @@ def count_track(
         kick_values, kick_confidence_values = _synchronous_kick_signal(rows, kind, cfg)
         include_troughs = False
     leg_visibility = float(np.mean(kick_confidence_values >= cfg.min_landmark_confidence))
+    required_kick_sample_hz = (
+        cfg.minimum_flutter_kick_sample_hz
+        if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}
+        else cfg.minimum_synchronous_kick_sample_hz
+    )
 
     if track_coverage < cfg.min_track_coverage:
         kick_result = _unavailable(leg_visibility, "track_coverage_too_low")
@@ -370,6 +514,9 @@ def count_track(
     elif leg_visibility < cfg.min_leg_visibility:
         kick_result = _unavailable(leg_visibility, "legs_not_visible")
         warnings.append("kick_count_withheld_low_leg_visibility")
+    elif sample_rate_hz is not None and sample_rate_hz < required_kick_sample_hz:
+        kick_result = _unavailable(leg_visibility, "sample_rate_too_low_for_kicks")
+        warnings.append("kick_count_withheld_low_sample_rate")
     else:
         kick_events = _find_peak_events(
             timestamps,
@@ -396,6 +543,19 @@ def count_track(
     kicks_per_cycle = None
     if kick_result.available and complete_cycles > 0:
         kicks_per_cycle = round(kick_result.count / complete_cycles, 2)
+        if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}:
+            minimum_ratio = cfg.minimum_alternating_kicks_per_cycle
+            maximum_ratio = cfg.maximum_alternating_kicks_per_cycle
+        elif kind == StrokeKind.BREASTSTROKE:
+            minimum_ratio = cfg.minimum_breaststroke_kicks_per_cycle
+            maximum_ratio = cfg.maximum_breaststroke_kicks_per_cycle
+        else:
+            minimum_ratio = cfg.minimum_butterfly_kicks_per_cycle
+            maximum_ratio = cfg.maximum_butterfly_kicks_per_cycle
+        if kicks_per_cycle < minimum_ratio or kicks_per_cycle > maximum_ratio:
+            kick_result = _unavailable(leg_visibility, "kick_stroke_ratio_implausible")
+            warnings.append("kick_count_withheld_implausible_stroke_ratio")
+            kicks_per_cycle = None
     if kind == StrokeKind.UNKNOWN:
         warnings.append("stroke_kind_unknown_counts_are_not_cycle_normalized")
 
@@ -409,6 +569,11 @@ def count_track(
         observed_frames=len(rows),
         track_coverage=round(track_coverage, 3),
         stroke_kind=kind.value,
+        sample_rate_hz=round(sample_rate_hz, 3) if sample_rate_hz is not None else None,
+        arm_pattern=arm_pattern,
+        arm_pattern_synchrony=(
+            round(arm_pattern_synchrony, 3) if arm_pattern_synchrony is not None else None
+        ),
         arm_strokes=arm_result,
         complete_cycles=complete_cycles,
         left_arm_events=tuple(left_events),

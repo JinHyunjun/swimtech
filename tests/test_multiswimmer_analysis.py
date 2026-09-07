@@ -15,8 +15,10 @@ from analysis_v2 import (
     MultiSwimmerTracker,
     PoseDetection,
     StrokeKind,
+    StrokeSource,
     TrackerConfig,
 )
+from analysis_v2.counting import _reconcile_events
 from analysis_v2.types import KeypointIndex
 from analysis_v2.mediapipe_provider import build_overlapping_tiles, deduplicate_detections
 from analysis_v2.lanes import (
@@ -127,7 +129,10 @@ def test_pipeline_counts_each_swimmer_independently() -> None:
     analyzer = MultiSwimmerAnalyzer(
         StrokeKind.FREESTYLE,
         tracker_config=TrackerConfig(max_swimmers=8, max_centroid_distance=0.24),
-        counter_config=CounterConfig(smoothing_window=3),
+        counter_config=CounterConfig(
+            smoothing_window=3,
+            minimum_flutter_kick_sample_hz=0.0,
+        ),
     )
     fps = 10.0
     for frame_index in range(121):
@@ -153,7 +158,7 @@ def test_pipeline_counts_each_swimmer_independently() -> None:
     assert first.complete_cycles == first.arm_strokes.count // 2
 
 
-def test_alternating_stroke_identity_swap_does_not_double_count() -> None:
+def test_alternating_stroke_identity_swap_withholds_ambiguous_count() -> None:
     analyzer = MultiSwimmerAnalyzer(
         StrokeKind.FREESTYLE,
         counter_config=CounterConfig(smoothing_window=3),
@@ -174,9 +179,11 @@ def test_alternating_stroke_identity_swap_does_not_double_count() -> None:
 
     track = analyzer.finalize().tracks[0]
     raw_events = len(track.left_arm_events) + len(track.right_arm_events)
-    assert track.arm_strokes.available
-    assert track.arm_strokes.count < raw_events
-    assert track.complete_cycles == track.arm_strokes.count // 2
+    assert raw_events > 0
+    assert track.arm_pattern == "synchronous"
+    assert track.arm_strokes.available is False
+    assert track.arm_strokes.reason == "arm_identity_ambiguous"
+    assert "alternating_arm_count_withheld_synchronous_pose_artifact" in track.warnings
 
 
 def test_synchronous_butterfly_arms_are_not_double_counted() -> None:
@@ -200,6 +207,140 @@ def test_synchronous_butterfly_arms_are_not_double_counted() -> None:
     assert track.arm_strokes.available
     assert track.complete_cycles == track.arm_strokes.count
     assert track.arm_strokes.count <= max(len(track.left_arm_events), len(track.right_arm_events)) + 1
+
+
+def test_alternating_motion_is_rejected_when_labeled_as_synchronous_stroke() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.BUTTERFLY,
+        counter_config=CounterConfig(smoothing_window=3),
+        stroke_source=StrokeSource.USER_CONFIRMED,
+    )
+    for frame_index in range(121):
+        timestamp = frame_index / 20.0
+        analyzer.process_frame(
+            [_synthetic_swimmer(0.30, 0.50, timestamp, stroke_hz=0.65)],
+            frame_index,
+            timestamp,
+        )
+
+    track = analyzer.finalize().tracks[0]
+    assert track.arm_pattern == "alternating"
+    assert track.arm_strokes.available is False
+    assert track.arm_strokes.reason == "stroke_pattern_conflict"
+    assert "selected_stroke_conflicts_with_observed_arm_pattern" in track.warnings
+
+
+def test_near_duplicate_events_are_reconciled_before_counting() -> None:
+    assert _reconcile_events([1.0, 1.08, 1.31, 2.0], 0.22) == [1.04, 1.31, 2.0]
+
+
+def test_flutter_kicks_are_withheld_when_temporal_sampling_is_too_low() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.FREESTYLE,
+        counter_config=CounterConfig(smoothing_window=3),
+    )
+    for frame_index in range(81):
+        timestamp = frame_index / 10.0
+        analyzer.process_frame(
+            [_synthetic_swimmer(0.25, 0.5, timestamp)],
+            frame_index,
+            timestamp,
+        )
+
+    result = analyzer.finalize()
+    track = result.tracks[0]
+    assert result.sample_rate_hz == pytest.approx(10.0)
+    assert track.kicks.available is False
+    assert track.kicks.reason == "sample_rate_too_low_for_kicks"
+    assert "kick_count_withheld_low_sample_rate" in track.warnings
+
+
+def test_kicks_require_knees_as_well_as_ankles() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.FREESTYLE,
+        counter_config=CounterConfig(smoothing_window=3),
+    )
+    for frame_index in range(121):
+        timestamp = frame_index / 20.0
+        pose = _synthetic_swimmer(0.25, 0.5, timestamp)
+        points = pose.keypoints.copy()
+        points[int(KeypointIndex.LEFT_KNEE), 3] = 0.05
+        points[int(KeypointIndex.RIGHT_KNEE), 3] = 0.05
+        analyzer.process_frame(
+            [PoseDetection.from_keypoints(points)],
+            frame_index,
+            timestamp,
+        )
+
+    track = analyzer.finalize().tracks[0]
+    assert track.kicks.available is False
+    assert track.kicks.reason == "legs_not_visible"
+
+
+def test_implausible_freestyle_kick_to_stroke_ratio_is_withheld() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.FREESTYLE,
+        counter_config=CounterConfig(smoothing_window=3),
+    )
+    for frame_index in range(241):
+        timestamp = frame_index / 20.0
+        analyzer.process_frame(
+            [
+                _synthetic_swimmer(
+                    0.25,
+                    0.5,
+                    timestamp,
+                    stroke_hz=0.60,
+                    kick_hz=0.20,
+                )
+            ],
+            frame_index,
+            timestamp,
+        )
+
+    track = analyzer.finalize().tracks[0]
+    assert track.arm_strokes.available
+    assert track.complete_cycles > 0
+    assert track.kicks.available is False
+    assert track.kicks.reason == "kick_stroke_ratio_implausible"
+    assert "kick_count_withheld_implausible_stroke_ratio" in track.warnings
+
+
+def test_output_retains_stroke_label_provenance() -> None:
+    analyzer = MultiSwimmerAnalyzer(
+        StrokeKind.FREESTYLE,
+        stroke_source=StrokeSource.USER_CONFIRMED,
+    )
+    for frame_index in range(3):
+        timestamp = frame_index / 20.0
+        analyzer.process_frame([_synthetic_swimmer(0.25, 0.5, timestamp)], frame_index, timestamp)
+
+    output = analyzer.finalize().to_dict()
+    assert output["stroke_source"] == "user_confirmed"
+    assert output["sample_rate_hz"] == pytest.approx(20.0)
+
+
+def test_arm_count_is_stable_across_supported_sampling_rates() -> None:
+    counts: list[int] = []
+    for fps in (10.0, 20.0, 30.0):
+        analyzer = MultiSwimmerAnalyzer(
+            StrokeKind.FREESTYLE,
+            counter_config=CounterConfig(
+                minimum_flutter_kick_sample_hz=0.0,
+            ),
+        )
+        for frame_index in range(int(fps * 12) + 1):
+            timestamp = frame_index / fps
+            analyzer.process_frame(
+                [_synthetic_swimmer(0.25, 0.5, timestamp, stroke_hz=0.5)],
+                frame_index,
+                timestamp,
+            )
+        track = analyzer.finalize().tracks[0]
+        assert track.arm_strokes.available
+        counts.append(track.arm_strokes.count)
+
+    assert max(counts) - min(counts) <= 1
 
 
 def test_kick_count_is_withheld_when_legs_are_not_visible() -> None:

@@ -8,10 +8,10 @@ from typing import Iterable
 
 from .counting import CounterConfig, TrackCountResult, count_track
 from .tracking import MultiSwimmerTracker, TrackerConfig
-from .types import PoseDetection, StrokeKind
+from .types import PoseDetection, StrokeKind, StrokeSource
 
 
-MODEL_VERSION = "multiswimmer-counter-v0.2.1"
+MODEL_VERSION = "multiswimmer-counter-v0.3.0"
 
 
 @dataclass(frozen=True)
@@ -20,6 +20,8 @@ class MultiSwimmerAnalysis:
     experimental: bool
     generated_at: str
     stroke_kind: str
+    stroke_source: str
+    sample_rate_hz: float | None
     processed_frames: int
     detected_track_count: int
     tracks: tuple[TrackCountResult, ...]
@@ -31,6 +33,8 @@ class MultiSwimmerAnalysis:
             "experimental": self.experimental,
             "generated_at": self.generated_at,
             "stroke_kind": self.stroke_kind,
+            "stroke_source": self.stroke_source,
+            "sample_rate_hz": self.sample_rate_hz,
             "processed_frames": self.processed_frames,
             "detected_track_count": self.detected_track_count,
             "tracks": [track.to_dict() for track in self.tracks],
@@ -46,13 +50,18 @@ class MultiSwimmerAnalyzer:
         stroke_kind: StrokeKind | str,
         tracker_config: TrackerConfig | None = None,
         counter_config: CounterConfig | None = None,
+        stroke_source: StrokeSource | str = StrokeSource.UNVERIFIED,
     ) -> None:
         self.stroke_kind = stroke_kind if isinstance(stroke_kind, StrokeKind) else StrokeKind(stroke_kind)
+        self.stroke_source = (
+            stroke_source if isinstance(stroke_source, StrokeSource) else StrokeSource(stroke_source)
+        )
         self.tracker = MultiSwimmerTracker(tracker_config)
         self.counter_config = counter_config or CounterConfig()
         self.processed_frames = 0
         self._last_frame_index = -1
         self._last_timestamp = -1.0
+        self._first_timestamp: float | None = None
 
     def process_frame(
         self,
@@ -65,17 +74,25 @@ class MultiSwimmerAnalyzer:
         if timestamp_sec <= self._last_timestamp:
             raise ValueError("timestamp_sec must increase monotonically")
         self.tracker.update(detections, frame_index, timestamp_sec)
+        if self._first_timestamp is None:
+            self._first_timestamp = timestamp_sec
         self.processed_frames += 1
         self._last_frame_index = frame_index
         self._last_timestamp = timestamp_sec
 
     def finalize(self) -> MultiSwimmerAnalysis:
+        sample_rate_hz = None
+        if self.processed_frames > 1 and self._first_timestamp is not None:
+            duration = self._last_timestamp - self._first_timestamp
+            if duration > 0:
+                sample_rate_hz = (self.processed_frames - 1) / duration
         results = tuple(
             count_track(
                 track,
                 self.stroke_kind,
                 self.counter_config,
                 total_processed_frames=self.processed_frames,
+                processed_sample_rate_hz=sample_rate_hz,
             )
             for track in self.tracker.all_tracks()
             if track
@@ -83,7 +100,8 @@ class MultiSwimmerAnalyzer:
         limitations = (
             "Offline experimental baseline; not registered in the public API.",
             "Counts require stable, continuous footage without replay, cuts, or speed changes.",
-            "Kick counts are withheld when both ankles are not sufficiently visible.",
+            "Stroke kind is externally supplied and its provenance is retained; filenames are not classifiers.",
+            "Kick counts require both knees and ankles plus sufficient temporal sampling.",
             "Generic pose estimation must be validated on rights-cleared swimming footage.",
         )
         return MultiSwimmerAnalysis(
@@ -91,6 +109,8 @@ class MultiSwimmerAnalyzer:
             experimental=True,
             generated_at=datetime.now(timezone.utc).isoformat(),
             stroke_kind=self.stroke_kind.value,
+            stroke_source=self.stroke_source.value,
+            sample_rate_hz=round(sample_rate_hz, 3) if sample_rate_hz is not None else None,
             processed_frames=self.processed_frames,
             detected_track_count=len(results),
             tracks=results,

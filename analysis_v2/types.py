@@ -35,6 +35,20 @@ class StrokeKind(str, Enum):
     UNKNOWN = "unknown"
 
 
+class StrokeSource(str, Enum):
+    """Provenance of the stroke label used by the temporal counter.
+
+    The counter deliberately does not infer a stroke from a directory name.
+    Legacy folders in the original dataset contain known label contamination,
+    so every run must retain where its stroke label came from.
+    """
+
+    USER_CONFIRMED = "user_confirmed"
+    EVENT_METADATA = "event_metadata"
+    BENCHMARK_MANIFEST = "benchmark_manifest"
+    UNVERIFIED = "unverified"
+
+
 @dataclass(frozen=True)
 class PoseDetection:
     """One swimmer pose detected in one video frame.

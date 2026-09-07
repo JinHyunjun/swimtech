@@ -17,7 +17,7 @@ from .lanes import (
 from .runtime import PoseRuntimeConfig, discover_openvino_devices, select_pose_runtime
 from .pipeline import MultiSwimmerAnalyzer, MultiSwimmerAnalysis
 from .tracking import MultiSwimmerTracker, TrackerConfig
-from .types import KeypointIndex, PoseDetection, StrokeKind, TrackObservation
+from .types import KeypointIndex, PoseDetection, StrokeKind, StrokeSource, TrackObservation
 
 __all__ = [
     "CounterConfig",
@@ -34,6 +34,7 @@ __all__ = [
     "MultiSwimmerTracker",
     "PoseDetection",
     "StrokeKind",
+    "StrokeSource",
     "TrackObservation",
     "TrackerConfig",
     "assign_detections_to_lanes",
