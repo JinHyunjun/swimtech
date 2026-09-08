@@ -1,4 +1,4 @@
-# SwimMate multi-swimmer counter v0.4.0
+# SwimMate multi-swimmer counter v0.4.1
 
 This package is an **offline experiment**, not a public SwimMate feature. It
 changes the unit of analysis from one video to one physical pool lane:
@@ -34,6 +34,34 @@ a synthetic signal result, **not real-video accuracy**. The private freestyle
 clip still has 0.800 s arm and 0.634 s kick signal gaps; its 13 arm and 12 kick
 candidates are not complete counts. See
 [`evaluation/results/2026-09-08-v0.4-counting-dps.md`](evaluation/results/2026-09-08-v0.4-counting-dps.md).
+
+### v0.4.1: reviewed entry/glide exclusions
+
+`--arm-exclusions <json>` accepts explicitly reviewed **per-swimmer** half-open
+intervals. Signals are split before smoothing, interpolation and event merging,
+including exclusions shorter than a source frame. Kicks, timestamps, distance,
+visibility and gap checks are unchanged. The mixed-support kick/stroke ratio is
+withheld rather than used to reject kicks during a glide.
+
+The file must contain `schema: "swimmate-arm-exclusions-v1"`, the actual
+`source_video_sha256`, and an `exclusions` array. Each interval requires
+`track_id`, `start_sec`, `end_sec`, `reason` (`entry_glide`, `streamline`,
+`stationary`) and `source` (`user_reviewed` or `assistant_visual_review`).
+Unknown swimmer IDs, overlapping intervals and a different video hash are rejected.
+No exclusions are inferred from the filename or pool length, and this option
+does **not** implement automatic phase detection or underwater kick classification.
+
+Results retain `arm_count_mode: review_assisted` and the input provenance.
+Assistant-reviewed exclusions cannot enable DPS without user review, and even
+user-reviewed exclusions cannot bypass missing-joint/coverage checks. Reported
+counts remain unverified predictions; an unavailable zero is not a measured zero.
+Use `--distance-source user_reported` (or the corresponding distance-segment field)
+when the supplied length is a recollection, not an independent measurement.
+
+On the private clip, excluding reviewed entry/glide time changed arm candidates
+from 13 to 9; kick candidates stayed at 12. These are **not confirmed totals** and
+the user-reported 25 m DPS remains withheld. See the
+[v0.4.1 follow-up report](evaluation/results/2026-09-08-v0.4.1-phase-review.md).
 
 ## What v0.3 added
 

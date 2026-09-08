@@ -8,11 +8,12 @@ from typing import Iterable
 
 from .counting import CounterConfig, TrackCountResult, count_track
 from .distance import DistanceSegment, calculate_dps
+from .phases import ArmExclusion, validate_arm_exclusions
 from .tracking import MultiSwimmerTracker, TrackerConfig
 from .types import PoseDetection, StrokeKind, StrokeSource
 
 
-MODEL_VERSION = "multiswimmer-counter-v0.4.0"
+MODEL_VERSION = "multiswimmer-counter-v0.4.1"
 
 
 @dataclass(frozen=True)
@@ -85,7 +86,12 @@ class MultiSwimmerAnalyzer:
         self._last_timestamp = timestamp_sec
         self._processed_timestamps.append(timestamp_sec)
 
-    def finalize(self, distance_segments: Iterable[DistanceSegment] = ()) -> MultiSwimmerAnalysis:
+    def finalize(self, distance_segments: Iterable[DistanceSegment] = (), *,
+                 arm_exclusions: Iterable[ArmExclusion] = ()) -> MultiSwimmerAnalysis:
+        exclusions = validate_arm_exclusions(arm_exclusions)
+        track_ids = {track[0].track_id for track in self.tracker.all_tracks() if track}
+        if any(item.track_id not in track_ids for item in exclusions):
+            raise ValueError("arm exclusion swimmer not found in analyzed tracks")
         sample_rate_hz = None
         if self.processed_frames > 1 and self._first_timestamp is not None:
             duration = self._last_timestamp - self._first_timestamp
@@ -98,6 +104,7 @@ class MultiSwimmerAnalyzer:
                 self.counter_config,
                 total_processed_frames=self.processed_frames,
                 processed_sample_rate_hz=sample_rate_hz,
+                arm_exclusions=exclusions,
             )
             for track in self.tracker.all_tracks()
             if track
@@ -112,6 +119,7 @@ class MultiSwimmerAnalyzer:
             interval_result = count_track(
                 interval_rows, self.stroke_kind, self.counter_config,
                 total_processed_frames=interval_frames, processed_sample_rate_hz=sample_rate_hz,
+                arm_exclusions=exclusions,
             ) if interval_rows else None
             distance_metrics.append(calculate_dps(interval_result, segment))
         limitations = (
@@ -121,6 +129,7 @@ class MultiSwimmerAnalyzer:
             "Kick counts require both knees and ankles plus sufficient temporal sampling.",
             "Generic pose estimation must be validated on rights-cleared swimming footage.",
             "DPS uses a supplied distance for the same swimmer and time interval; it is an unverified model estimate.",
+            "Optional arm exclusions are explicit review metadata, not learned phase predictions or independent event labels.",
         )
         return MultiSwimmerAnalysis(
             model_version=MODEL_VERSION,

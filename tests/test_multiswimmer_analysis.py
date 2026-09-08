@@ -23,6 +23,7 @@ from analysis_v2.distance import DistanceSegment
 from analysis_v2.cli import main as counter_cli, build_parser as counter_parser, parse_distance_segments
 from analysis_v2.pose_cache import video_sha256, serialize_frame, write_pose_cache, read_pose_cache
 from analysis_v2.types import KeypointIndex
+from analysis_v2.phases import ArmExclusion, load_arm_exclusions, validate_arm_exclusions
 from analysis_v2.mediapipe_provider import build_overlapping_tiles, deduplicate_detections
 from analysis_v2.lanes import (
     LaneCropPoseProvider,
@@ -971,6 +972,18 @@ def test_distance_cli_requires_swimmer_and_matching_time_bounds() -> None:
         parse_distance_segments(args)
 
 
+def test_user_reported_pool_distance_retains_its_actual_provenance() -> None:
+    args = counter_parser().parse_args([
+        "video.mp4", "--stroke", "freestyle", "--output", "out.json", "--distance-m", "25",
+        "--start-sec", "0", "--end-sec", "12", "--distance-track-id", "S001",
+        "--distance-source", "user_reported"])
+    segments = parse_distance_segments(args)
+    result = _phase_analyzer().finalize(segments).distance_metrics[0]
+    assert result["distance_m"] == 25
+    assert result["distance_source"] == "user_reported"
+    assert result["accuracy_status"] == "unverified_model_prediction"
+
+
 def test_pose_replay_runs_counter_and_dps_without_inference(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     video = tmp_path / "fixture.mp4"
     video.write_bytes(b"private source fixture; replay does not decode video")
@@ -992,3 +1005,144 @@ def test_pose_replay_runs_counter_and_dps_without_inference(tmp_path: Path, monk
     assert result["run"]["provider"] == "pose-cache-replay"
     assert result["distance_metrics"][0]["dps_m_per_stroke"] == 2
     assert result["tracks"][0]["arm_strokes"]["count"] == 12
+
+
+def _phase_analyzer(*, hidden_start: bool = False, two_swimmers: bool = False) -> MultiSwimmerAnalyzer:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        t = frame / 30
+        pose = _synthetic_swimmer(.5, .3, t)
+        if hidden_start and t < 3:
+            pose.keypoints[[KeypointIndex.LEFT_WRIST, KeypointIndex.RIGHT_WRIST], 3] = .01
+        poses = [pose]
+        if two_swimmers:
+            poses.append(_synthetic_swimmer(.5, .7, t))
+        analyzer.process_frame(poses, frame, t)
+    return analyzer
+
+
+def test_reviewed_arm_exclusion_preserves_kicks_and_full_interval_distance() -> None:
+    analyzer = _phase_analyzer()
+    baseline = analyzer.finalize().tracks[0]
+    exclusion = ArmExclusion("S001", 0, 4, "entry_glide", "user_reviewed")
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 24)], arm_exclusions=[exclusion])
+    track = result.tracks[0]
+    assert baseline.arm_strokes.count == 12 and track.arm_strokes.count == 8
+    assert all(time >= 4 for time in track.arm_strokes.event_times_sec)
+    assert track.kicks == baseline.kicks
+    assert track.kicks.available and track.kicks_per_cycle is None
+    assert track.duration_sec == baseline.duration_sec
+    metrics = result.distance_metrics[0]
+    assert metrics["distance_m"] == 24 and metrics["dps_m_per_stroke"] == 3
+    assert metrics["count_source"] == "review_assisted_model_prediction"
+    assert metrics["arm_exclusions"][0]["source"] == "user_reviewed"
+    assert analyzer.finalize().tracks[0] == baseline  # No hidden state/mutation.
+
+
+def test_assistant_phase_review_cannot_silently_certify_dps() -> None:
+    analyzer = _phase_analyzer()
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 25)], arm_exclusions=[
+        ArmExclusion("S001", 0, 4, "entry_glide", "assistant_visual_review")])
+    assert result.tracks[0].arm_strokes.count == 8
+    assert result.tracks[0].diagnostics["arm_count_mode"] == "review_assisted"
+    assert result.distance_metrics[0]["reason"] == "arm_phase_review_required_for_dps"
+    assert result.distance_metrics[0]["dps_m_per_stroke"] is None
+
+
+def test_phase_exclusion_cannot_hide_missing_arm_observations() -> None:
+    analyzer = _phase_analyzer(hidden_start=True)
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 25)], arm_exclusions=[
+        ArmExclusion("S001", 0, 4, "entry_glide", "user_reviewed")])
+    track = result.tracks[0]
+    assert track.arm_strokes.reason == "arm_signal_gaps"
+    assert track.diagnostics["arm_candidate_count"] == 8
+    assert result.distance_metrics[0]["reason"] == "stroke_count_unavailable:arm_signal_gaps"
+
+
+def test_arm_exclusion_only_affects_the_specified_swimmer() -> None:
+    result = _phase_analyzer(two_swimmers=True).finalize(arm_exclusions=[
+        ArmExclusion("S001", 0, 4, "entry_glide", "user_reviewed")])
+    a, b = result.tracks
+    assert a.arm_strokes.count == 8 and b.arm_strokes.count == 12
+    assert b.diagnostics["arm_exclusions"] == []
+
+
+def test_subframe_exclusion_splits_signals_before_smoothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    from analysis_v2 import counting
+    original = counting._find_peak_events
+    checked = []
+
+    def check(times, values, interval, config, **kwargs):
+        if not kwargs:  # Arms; kicks must continue across the same interval.
+            assert not (len(times) and times[0] < 1.01 and times[-1] >= 1.02)
+            checked.append(times.copy())
+        return original(times, values, interval, config, **kwargs)
+
+    monkeypatch.setattr(counting, "_find_peak_events", check)
+    _phase_analyzer().finalize(arm_exclusions=[
+        ArmExclusion("S001", 1.01, 1.02, "streamline", "user_reviewed")])
+    assert len(checked) == 4  # Two arms, two independently processed windows.
+
+
+def test_all_arms_excluded_is_not_a_confirmed_zero_or_dps() -> None:
+    analyzer = _phase_analyzer()
+    baseline = analyzer.finalize().tracks[0]
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 25)], arm_exclusions=[
+        ArmExclusion("S001", 0, 13, "streamline", "user_reviewed")])
+    assert not result.tracks[0].arm_strokes.available
+    assert result.tracks[0].arm_strokes.reason == "no_reliable_stroke_events"
+    assert result.tracks[0].diagnostics["arm_candidate_count"] == 0
+    assert result.tracks[0].kicks == baseline.kicks
+    assert not result.distance_metrics[0]["available"]
+
+
+def test_distance_recount_only_uses_intersecting_arm_exclusions() -> None:
+    result = _phase_analyzer().finalize([DistanceSegment("S001", 4, 12, 16)], arm_exclusions=[
+        ArmExclusion("S001", 0, 4, "entry_glide", "assistant_visual_review")])
+    metric = result.distance_metrics[0]
+    assert metric["available"] and metric["dps_m_per_stroke"] == 2
+    assert metric["arm_exclusions"] == []
+    assert metric["count_source"] == "model_prediction"
+
+
+@pytest.mark.parametrize("updates", [
+    {"track_id": ""}, {"start_sec": -1}, {"start_sec": float("nan")},
+    {"end_sec": float("inf")}, {"end_sec": 0}, {"start_sec": True},
+    {"reason": "arbitrary"}, {"source": "automatic"},
+])
+def test_invalid_arm_exclusion_metadata_is_rejected(updates: dict) -> None:
+    row = dict(track_id="S001", start_sec=0, end_sec=4, reason="entry_glide", source="user_reviewed")
+    with pytest.raises(ValueError):
+        ArmExclusion(**(row | updates))
+
+
+def test_overlapping_exclusions_and_unknown_swimmers_are_rejected() -> None:
+    first = ArmExclusion("S001", 0, 4, "entry_glide", "user_reviewed")
+    with pytest.raises(ValueError, match="overlap"):
+        validate_arm_exclusions([first, ArmExclusion("S001", 3, 5, "streamline", "user_reviewed")])
+    assert len(validate_arm_exclusions([first, ArmExclusion("S002", 0, 4, "streamline", "user_reviewed")])) == 2
+    with pytest.raises(ValueError, match="swimmer not found"):
+        _phase_analyzer().finalize(arm_exclusions=[ArmExclusion("S099", 0, 4, "streamline", "user_reviewed")])
+
+
+def test_arm_exclusion_cli_replay_validates_video_hash_and_provenance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dataclasses import asdict
+    video = tmp_path / "fixture.mp4"
+    video.write_bytes(b"private source fixture")
+    source_hash = video_sha256(video)
+    frames = [serialize_frame(frame, frame / 30, [_synthetic_swimmer(.5, .5, frame / 30)]) for frame in range(361)]
+    cache, output, phases = tmp_path / "poses.json.gz", tmp_path / "result.json", tmp_path / "phases.json"
+    write_pose_cache(cache, source_hash, 30, frames, {"provider": "analytic_fixture"})
+    phases.write_text(json.dumps({"schema": "swimmate-arm-exclusions-v1", "source_video_sha256": source_hash,
+        "exclusions": [asdict(ArmExclusion("S001", 0, 4, "entry_glide", "assistant_visual_review"))]}), encoding="utf-8")
+    with pytest.raises(ValueError, match="different source video"):
+        load_arm_exclusions(phases, "f" * 64)
+    monkeypatch.setattr("sys.argv", [
+        "counter", str(video), "--stroke", "freestyle", "--output", str(output),
+        "--pose-cache-in", str(cache), "--arm-exclusions", str(phases),
+        "--start-sec", "0", "--end-sec", "12", "--distance-m", "25", "--distance-track-id", "S001"])
+    assert counter_cli() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["tracks"][0]["arm_strokes"]["count"] == 8
+    assert result["tracks"][0]["diagnostics"]["arm_exclusions"][0]["source"] == "assistant_visual_review"
+    assert result["distance_metrics"][0]["reason"] == "arm_phase_review_required_for_dps"

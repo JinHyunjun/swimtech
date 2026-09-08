@@ -12,6 +12,7 @@ from .lanes import LaneCropPoseProvider, LaneLayout, LaneMosaicPoseProvider
 from .mediapipe_provider import MediaPipeMultiPoseProvider, MediaPipeTiledPoseProvider
 from .pipeline import MultiSwimmerAnalyzer
 from .distance import DistanceSegment
+from .phases import load_arm_exclusions
 from .pose_cache import deserialize_detections, read_pose_cache, serialize_frame, video_sha256, write_pose_cache
 from .rtmpose_provider import RTMPoseProvider, RTMPoseTopDownProvider
 from .runtime import select_pose_runtime
@@ -41,6 +42,10 @@ def build_parser() -> argparse.ArgumentParser:
     distance.add_argument("--distance-segments", type=Path, help="JSON list of per-swimmer measured intervals")
     parser.add_argument("--distance-track-id", help="Explicit swimmer, e.g. L01; required with --distance-m")
     parser.add_argument("--distance-basis", choices=("interval_total", "surface_swimming"), default="interval_total")
+    parser.add_argument("--distance-source", choices=("user_measured", "user_reported", "calibrated_pool"),
+                        default="user_measured", help="Keep a reported distance distinct from an actual measurement")
+    parser.add_argument("--arm-exclusions", type=Path,
+                        help="Source-hash-bound, per-swimmer reviewed entry/glide intervals (arms only)")
     cache = parser.add_mutually_exclusive_group()
     cache.add_argument("--pose-cache-out", type=Path, help="Save private compressed poses for repeatable counter evaluation")
     cache.add_argument("--pose-cache-in", type=Path, help="Reuse poses after validating the source video hash")
@@ -126,6 +131,7 @@ def main() -> int:
         raise SystemExit("--end-sec must be after --start-sec")
     distance_segments = parse_distance_segments(args)
     source_hash = video_sha256(args.video)
+    arm_exclusions = load_arm_exclusions(args.arm_exclusions, source_hash) if args.arm_exclusions else ()
     analyzer = MultiSwimmerAnalyzer(
         args.stroke,
         tracker_config=TrackerConfig(max_swimmers=args.max_swimmers, lane_axis=args.lane_axis),
@@ -142,7 +148,7 @@ def main() -> int:
                 break
             if frame["frame_index"] % args.frame_step == 0:
                 analyzer.process_frame(deserialize_detections(frame), frame["frame_index"], timestamp)
-        result = analyzer.finalize(distance_segments).to_dict()
+        result = analyzer.finalize(distance_segments, arm_exclusions=arm_exclusions).to_dict()
         result["source_video_sha256"] = source_hash
         result["run"] = {"provider": "pose-cache-replay", "inference": cache["inference"],
                          "elapsed_sec": round(time.perf_counter() - started, 3),
@@ -257,7 +263,7 @@ def main() -> int:
     finally:
         capture.release()
 
-    result = analyzer.finalize(distance_segments).to_dict()
+    result = analyzer.finalize(distance_segments, arm_exclusions=arm_exclusions).to_dict()
     result["source_video_sha256"] = source_hash
     elapsed = time.perf_counter() - started
     result["run"] = {
@@ -287,7 +293,7 @@ def parse_distance_segments(args: argparse.Namespace) -> list[DistanceSegment]:
     if args.start_sec is None or args.end_sec is None or not args.distance_track_id:
         raise ValueError("--distance-m requires --start-sec, --end-sec and --distance-track-id")
     return [DistanceSegment(args.distance_track_id, args.start_sec, args.end_sec,
-                            args.distance_m, args.distance_basis)]
+                            args.distance_m, args.distance_basis, args.distance_source)]
 
 
 def save_result(path: Path, result: dict) -> None:

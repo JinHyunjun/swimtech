@@ -7,6 +7,7 @@ from typing import Iterable
 
 import numpy as np
 
+from .phases import ArmExclusion, arm_counting_windows, validate_arm_exclusions
 from .types import KeypointIndex, StrokeKind, TrackObservation
 
 
@@ -453,6 +454,7 @@ def count_track(
     config: CounterConfig | None = None,
     total_processed_frames: int | None = None,
     processed_sample_rate_hz: float | None = None,
+    arm_exclusions: Iterable[ArmExclusion] = (),
 ) -> TrackCountResult:
     cfg = config or CounterConfig()
     kind = stroke_kind if isinstance(stroke_kind, StrokeKind) else StrokeKind(stroke_kind)
@@ -464,6 +466,10 @@ def count_track(
         raise ValueError("track timestamps must be finite and strictly increasing")
     if len({(row.track_id, row.lane_id) for row in rows}) != 1:
         raise ValueError("count_track requires observations of a single swimmer")
+    exclusions = tuple(item for item in validate_arm_exclusions(arm_exclusions)
+                       if item.track_id == rows[0].track_id
+                       and item.start_sec <= timestamps[-1] and item.end_sec > timestamps[0])
+    windows = arm_counting_windows(exclusions)
     duration = max(float(timestamps[-1] - timestamps[0]), 0.0)
     observed_sample_rate = _sampling_rate_hz(timestamps, None)
     sample_rate_hz = _sampling_rate_hz(timestamps, processed_sample_rate_hz)
@@ -472,6 +478,9 @@ def count_track(
     denominator = total_processed_frames if total_processed_frames is not None else len(rows)
     track_coverage = float(np.clip(len(rows) / max(denominator, 1), 0.0, 1.0))
     warnings: list[str] = []
+    if exclusions:
+        warnings.append("arm_count_is_review_assisted_not_automatic_phase_detection")
+        warnings.append("arm_exclusions_do_not_classify_underwater_kick_style")
 
     left_wrist, left_confidence = _projected_signal(rows, KeypointIndex.LEFT_WRIST, "longitudinal", cfg)
     right_wrist, right_confidence = _projected_signal(rows, KeypointIndex.RIGHT_WRIST, "longitudinal", cfg)
@@ -499,8 +508,13 @@ def count_track(
         right_events = []
         complete_cycles = 0
     else:
-        left_events = _find_peak_events(timestamps, left_wrist, cfg.stroke_min_interval_sec, cfg)
-        right_events = _find_peak_events(timestamps, right_wrist, cfg.stroke_min_interval_sec, cfg)
+        # Split BEFORE smoothing/interpolation. A removed glide must never
+        # connect the entry pose to a later recovery as one false arm cycle.
+        left_events, right_events = [], []
+        for start, end in windows:
+            selected = (timestamps >= start) & (timestamps < end)
+            left_events.extend(_find_peak_events(timestamps[selected], left_wrist[selected], cfg.stroke_min_interval_sec, cfg))
+            right_events.extend(_find_peak_events(timestamps[selected], right_wrist[selected], cfg.stroke_min_interval_sec, cfg))
         arm_pattern_synchrony = _arm_synchrony_ratio(
             left_events,
             right_events,
@@ -517,24 +531,24 @@ def count_track(
                 arm_pattern = "alternating"
             else:
                 arm_pattern = "mixed"
-        if kind in {StrokeKind.BREASTSTROKE, StrokeKind.BUTTERFLY}:
-            arm_events = _merge_nearby_events((left_events, right_events), cfg.synchronous_merge_sec)
-            arm_events = _reconcile_events(arm_events, cfg.synchronous_min_cycle_interval_sec)
-            complete_cycles = len(arm_events)
-        else:
+        synchronous = kind in {StrokeKind.BREASTSTROKE, StrokeKind.BUTTERFLY}
+        unreconciled_count = 0
+        for start, end in windows:
             # Freestyle/backstroke arms should alternate. Generic pose models
             # can swap left/right identity around roll or water occlusion,
             # producing two events at effectively the same instant. Treat
             # those as one physical arm event instead of double-counting it.
-            arm_events = _merge_nearby_events(
-                (left_events, right_events),
-                cfg.alternating_merge_sec,
+            merged = _merge_nearby_events(
+                ([time for time in left_events if start <= time < end],
+                 [time for time in right_events if start <= time < end]),
+                cfg.synchronous_merge_sec if synchronous else cfg.alternating_merge_sec,
             )
-            unreconciled_count = len(arm_events)
-            arm_events = _reconcile_events(arm_events, cfg.alternating_min_event_interval_sec)
-            if len(arm_events) < unreconciled_count:
-                warnings.append("near_duplicate_arm_events_reconciled")
-            complete_cycles = len(arm_events) // 2
+            unreconciled_count += len(merged)
+            arm_events.extend(_reconcile_events(merged, cfg.synchronous_min_cycle_interval_sec
+                                               if synchronous else cfg.alternating_min_event_interval_sec))
+        if not synchronous and len(arm_events) < unreconciled_count:
+            warnings.append("near_duplicate_arm_events_reconciled")
+        complete_cycles = len(arm_events) if synchronous else len(arm_events) // 2
         pattern_conflict = (
             kind in {StrokeKind.BREASTSTROKE, StrokeKind.BUTTERFLY}
             and enough_pattern_events
@@ -633,7 +647,11 @@ def count_track(
         warnings.append("kick_candidates_cover_only_visible_segments")
 
     kicks_per_cycle = None
-    if kick_result.available and complete_cycles > 0:
+    # Whole-interval kicks (including underwater kicks) and phase-filtered
+    # arms have different supports. Their ratio cannot validate either count.
+    if exclusions:
+        warnings.append("kick_stroke_ratio_withheld_different_motion_intervals")
+    if kick_result.available and complete_cycles > 0 and not exclusions:
         cycle_equivalents = (
             arm_result.count / 2.0
             if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}
@@ -679,6 +697,8 @@ def count_track(
         kicks_per_cycle=kicks_per_cycle,
         warnings=tuple(warnings),
         diagnostics={
+            "arm_count_mode": "review_assisted" if exclusions else "unsegmented",
+            "arm_exclusions": [asdict(item) for item in exclusions],
             "left_arm_visibility": round(left_visibility, 3),
             "right_arm_visibility": round(right_visibility, 3),
             "longest_observation_gap_sec": round(float(np.max(np.diff(timestamps))), 3) if len(rows) > 1 else None,

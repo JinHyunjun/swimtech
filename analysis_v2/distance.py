@@ -26,8 +26,8 @@ class DistanceSegment:
             raise ValueError("distance must be positive and interval must increase")
         if self.distance_basis not in {"interval_total", "surface_swimming"}:
             raise ValueError("distance_basis must be interval_total or surface_swimming")
-        if self.distance_source not in {"user_measured", "calibrated_pool"}:
-            raise ValueError("distance_source must be user_measured or calibrated_pool")
+        if self.distance_source not in {"user_measured", "user_reported", "calibrated_pool"}:
+            raise ValueError("distance_source must be user_measured, user_reported or calibrated_pool")
 
 
 def calculate_dps(track: TrackCountResult | None, segment: DistanceSegment) -> dict[str, object]:
@@ -49,7 +49,10 @@ def calculate_dps(track: TrackCountResult | None, segment: DistanceSegment) -> d
         "distance_per_cycle_m": None,
         "count_source": "model_prediction",
         "accuracy_status": "unverified_model_prediction",
+        "arm_exclusions": track.diagnostics.get("arm_exclusions", []) if track else [],
     }
+    if result["arm_exclusions"]:
+        result["count_source"] = "review_assisted_model_prediction"
     reason = None
     if track is None or track.track_id != segment.track_id:
         reason = "swimmer_not_found_in_interval"
@@ -57,6 +60,8 @@ def calculate_dps(track: TrackCountResult | None, segment: DistanceSegment) -> d
         reason = "stroke_kind_required_for_dps"
     elif not track.arm_strokes.available:
         reason = f"stroke_count_unavailable:{track.arm_strokes.reason}"
+    elif any(item["source"] != "user_reviewed" for item in result["arm_exclusions"]):
+        reason = "arm_phase_review_required_for_dps"
     else:
         # One source-frame tolerance accommodates video frame quantization only.
         tolerance = 1.0 / (track.sample_rate_hz or 30.0) + 0.002

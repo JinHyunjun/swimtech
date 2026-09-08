@@ -19,7 +19,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 DB 보존·정리 | `scripts/database_maintenance.py`, `.github/workflows/database-maintenance.yml` | QA 로그·기능 데이터 누적 감사와 정리, 일반 사용자 데이터·재사용 QA 계정 보존, 개인 행 없는 증적 생성 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 186개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 204개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -176,10 +176,13 @@ CPU/portable fallback, 팔 좌우 동시 오검출 병합, 레인 기하 실험 
 
 2026-09-08에는 오프라인 v0.4 카운터의 빠른 킥 필터·시간 공백 분리·프레임 사이
 피크 시점 보정·각 팔 가시성, 선수별 같은 시간 구간의 DPS, 원본 해시 검증 후
-포즈 재분석을 기존 CI 파일에서 검증한다. `tests/test_multiswimmer_analysis.py`는
-61개, 전체 핵심 검사는 186개다. 합성 9조건의 횟수 오차 합은 67→3으로 줄었지만
+포즈 재분석을 기존 CI 파일에서 검증한다. 이어서 v0.4.1의 출발·활주 팔 제외,
+선수별 격리, 킥 보존, 관측 공백 우회 방지, 구간 입력 해시·출처 검증을 추가했다.
+`tests/test_multiswimmer_analysis.py`는
+79개, 전체 핵심 검사는 204개다. 합성 9조건의 횟수 오차 합은 67→3으로 줄었지만
 실영상 포즈 공백과 독립 정답 부재는 남아 있어 공개 기능 검증과 구분한다.
 자세한 재현 결과는 [v0.4 검증 보고서](../analysis_v2/evaluation/results/2026-09-08-v0.4-counting-dps.md)에 있다.
+25m 거리 보충과 검토 보정 결과는 [v0.4.1 후속 보고서](../analysis_v2/evaluation/results/2026-09-08-v0.4.1-phase-review.md)에 있다.
 
 ## 산출물
 
