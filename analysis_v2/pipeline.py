@@ -7,11 +7,12 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .counting import CounterConfig, TrackCountResult, count_track
+from .distance import DistanceSegment, calculate_dps
 from .tracking import MultiSwimmerTracker, TrackerConfig
 from .types import PoseDetection, StrokeKind, StrokeSource
 
 
-MODEL_VERSION = "multiswimmer-counter-v0.3.0"
+MODEL_VERSION = "multiswimmer-counter-v0.4.0"
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,7 @@ class MultiSwimmerAnalysis:
     detected_track_count: int
     tracks: tuple[TrackCountResult, ...]
     limitations: tuple[str, ...]
+    distance_metrics: tuple[dict[str, object], ...]
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -39,6 +41,7 @@ class MultiSwimmerAnalysis:
             "detected_track_count": self.detected_track_count,
             "tracks": [track.to_dict() for track in self.tracks],
             "limitations": list(self.limitations),
+            "distance_metrics": list(self.distance_metrics),
         }
 
 
@@ -62,6 +65,7 @@ class MultiSwimmerAnalyzer:
         self._last_frame_index = -1
         self._last_timestamp = -1.0
         self._first_timestamp: float | None = None
+        self._processed_timestamps: list[float] = []
 
     def process_frame(
         self,
@@ -79,8 +83,9 @@ class MultiSwimmerAnalyzer:
         self.processed_frames += 1
         self._last_frame_index = frame_index
         self._last_timestamp = timestamp_sec
+        self._processed_timestamps.append(timestamp_sec)
 
-    def finalize(self) -> MultiSwimmerAnalysis:
+    def finalize(self, distance_segments: Iterable[DistanceSegment] = ()) -> MultiSwimmerAnalysis:
         sample_rate_hz = None
         if self.processed_frames > 1 and self._first_timestamp is not None:
             duration = self._last_timestamp - self._first_timestamp
@@ -97,12 +102,25 @@ class MultiSwimmerAnalyzer:
             for track in self.tracker.all_tracks()
             if track
         )
+        distance_metrics: list[dict[str, object]] = []
+        for segment in distance_segments:
+            interval_rows = [
+                row for track in self.tracker.all_tracks() for row in track
+                if row.track_id == segment.track_id and segment.start_sec <= row.timestamp_sec < segment.end_sec
+            ]
+            interval_frames = sum(segment.start_sec <= time < segment.end_sec for time in self._processed_timestamps)
+            interval_result = count_track(
+                interval_rows, self.stroke_kind, self.counter_config,
+                total_processed_frames=interval_frames, processed_sample_rate_hz=sample_rate_hz,
+            ) if interval_rows else None
+            distance_metrics.append(calculate_dps(interval_result, segment))
         limitations = (
             "Offline experimental baseline; not registered in the public API.",
             "Counts require stable, continuous footage without replay, cuts, or speed changes.",
             "Stroke kind is externally supplied and its provenance is retained; filenames are not classifiers.",
             "Kick counts require both knees and ankles plus sufficient temporal sampling.",
             "Generic pose estimation must be validated on rights-cleared swimming footage.",
+            "DPS uses a supplied distance for the same swimmer and time interval; it is an unverified model estimate.",
         )
         return MultiSwimmerAnalysis(
             model_version=MODEL_VERSION,
@@ -115,4 +133,5 @@ class MultiSwimmerAnalyzer:
             detected_track_count=len(results),
             tracks=results,
             limitations=limitations,
+            distance_metrics=tuple(distance_metrics),
         )

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import time
 
 from .lanes import LaneCropPoseProvider, LaneLayout, LaneMosaicPoseProvider
 from .mediapipe_provider import MediaPipeMultiPoseProvider, MediaPipeTiledPoseProvider
 from .pipeline import MultiSwimmerAnalyzer
+from .distance import DistanceSegment
+from .pose_cache import deserialize_detections, read_pose_cache, serialize_frame, video_sha256, write_pose_cache
 from .rtmpose_provider import RTMPoseProvider, RTMPoseTopDownProvider
 from .runtime import select_pose_runtime
 from .tracking import TrackerConfig
@@ -30,7 +33,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", type=Path, default=Path("analysis/pose_landmarker.task"))
     parser.add_argument("--max-swimmers", type=int, default=10)
     parser.add_argument("--lane-axis", choices=("x", "y"), default="y")
-    parser.add_argument("--frame-step", type=int, default=2)
+    parser.add_argument("--frame-step", type=int, default=1, help="Default: all source frames to preserve kick motion")
+    parser.add_argument("--start-sec", type=float)
+    parser.add_argument("--end-sec", type=float)
+    distance = parser.add_mutually_exclusive_group()
+    distance.add_argument("--distance-m", type=float, help="Measured distance for the explicit start/end interval")
+    distance.add_argument("--distance-segments", type=Path, help="JSON list of per-swimmer measured intervals")
+    parser.add_argument("--distance-track-id", help="Explicit swimmer, e.g. L01; required with --distance-m")
+    parser.add_argument("--distance-basis", choices=("interval_total", "surface_swimming"), default="interval_total")
+    cache = parser.add_mutually_exclusive_group()
+    cache.add_argument("--pose-cache-out", type=Path, help="Save private compressed poses for repeatable counter evaluation")
+    cache.add_argument("--pose-cache-in", type=Path, help="Reuse poses after validating the source video hash")
     parser.add_argument(
         "--provider",
         choices=(
@@ -106,6 +119,36 @@ def main() -> int:
         raise SystemExit(f"Video not found: {args.video}")
     if args.frame_step < 1:
         raise SystemExit("--frame-step must be at least 1")
+    if any(value is not None and (not math.isfinite(value) or value < 0)
+           for value in (args.start_sec, args.end_sec)):
+        raise SystemExit("--start-sec/--end-sec must be nonnegative and finite")
+    if args.start_sec is not None and args.end_sec is not None and args.end_sec <= args.start_sec:
+        raise SystemExit("--end-sec must be after --start-sec")
+    distance_segments = parse_distance_segments(args)
+    source_hash = video_sha256(args.video)
+    analyzer = MultiSwimmerAnalyzer(
+        args.stroke,
+        tracker_config=TrackerConfig(max_swimmers=args.max_swimmers, lane_axis=args.lane_axis),
+        stroke_source=args.stroke_source,
+    )
+    if args.pose_cache_in:
+        started = time.perf_counter()
+        cache = read_pose_cache(args.pose_cache_in, source_hash)
+        for frame in cache["frames"]:
+            timestamp = frame["timestamp_sec"]
+            if args.start_sec is not None and timestamp < args.start_sec:
+                continue
+            if args.end_sec is not None and timestamp >= args.end_sec:
+                break
+            if frame["frame_index"] % args.frame_step == 0:
+                analyzer.process_frame(deserialize_detections(frame), frame["frame_index"], timestamp)
+        result = analyzer.finalize(distance_segments).to_dict()
+        result["source_video_sha256"] = source_hash
+        result["run"] = {"provider": "pose-cache-replay", "inference": cache["inference"],
+                         "elapsed_sec": round(time.perf_counter() - started, 3),
+                         "source_fps": cache["source_fps"], "analyzed_frames": analyzer.processed_frames}
+        save_result(args.output, result)
+        return 0
 
     try:
         import cv2
@@ -115,12 +158,10 @@ def main() -> int:
     capture = cv2.VideoCapture(str(args.video))
     if not capture.isOpened():
         raise SystemExit(f"Cannot open video: {args.video}")
-    fps = float(capture.get(cv2.CAP_PROP_FPS) or 30.0)
-    analyzer = MultiSwimmerAnalyzer(
-        args.stroke,
-        tracker_config=TrackerConfig(max_swimmers=args.max_swimmers, lane_axis=args.lane_axis),
-        stroke_source=args.stroke_source,
-    )
+    fps = float(capture.get(cv2.CAP_PROP_FPS))
+    if not math.isfinite(fps) or fps <= 0:
+        capture.release()
+        raise SystemExit("Video source FPS is missing or invalid; event timing cannot be calibrated")
 
     frame_index = 0
     columns, rows = _parse_grid(args.tile_grid)
@@ -183,6 +224,7 @@ def main() -> int:
         )
     started = time.perf_counter()
     analyzed_frames = 0
+    cached_frames = []
     try:
         with provider_factory() as provider:
             while True:
@@ -191,6 +233,11 @@ def main() -> int:
                     break
                 if frame_index % args.frame_step == 0:
                     timestamp_sec = frame_index / fps
+                    if args.start_sec is not None and timestamp_sec < args.start_sec:
+                        frame_index += 1
+                        continue
+                    if args.end_sec is not None and timestamp_sec >= args.end_sec:
+                        break
                     if lane_layout is not None:
                         if (
                             lane_layout.active_start_sec is not None
@@ -202,16 +249,20 @@ def main() -> int:
                             break
                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     detections = provider.detect(rgb, int(timestamp_sec * 1000))
+                    if args.pose_cache_out:
+                        cached_frames.append(serialize_frame(frame_index, timestamp_sec, detections))
                     analyzer.process_frame(detections, frame_index, timestamp_sec)
                     analyzed_frames += 1
                 frame_index += 1
     finally:
         capture.release()
 
-    result = analyzer.finalize().to_dict()
+    result = analyzer.finalize(distance_segments).to_dict()
+    result["source_video_sha256"] = source_hash
     elapsed = time.perf_counter() - started
     result["run"] = {
         "provider": args.provider,
+        "source_fps": fps,
         "frame_step": args.frame_step,
         "analyzed_frames": analyzed_frames,
         "elapsed_sec": round(elapsed, 3),
@@ -219,10 +270,30 @@ def main() -> int:
         "lane_layout": str(args.lane_layout) if args.lane_layout else None,
         "runtime": runtime.to_dict() if runtime is not None else None,
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Saved {result['detected_track_count']} tracks to {args.output}")
+    if args.pose_cache_out:
+        write_pose_cache(args.pose_cache_out, source_hash, fps, cached_frames, result["run"])
+    save_result(args.output, result)
     return 0
+
+
+def parse_distance_segments(args: argparse.Namespace) -> list[DistanceSegment]:
+    if args.distance_segments:
+        rows = json.loads(args.distance_segments.read_text(encoding="utf-8"))
+        return [DistanceSegment(**row) for row in rows]
+    if args.distance_m is None:
+        if args.distance_track_id:
+            raise ValueError("--distance-track-id requires --distance-m")
+        return []
+    if args.start_sec is None or args.end_sec is None or not args.distance_track_id:
+        raise ValueError("--distance-m requires --start-sec, --end-sec and --distance-track-id")
+    return [DistanceSegment(args.distance_track_id, args.start_sec, args.end_sec,
+                            args.distance_m, args.distance_basis)]
+
+
+def save_result(path: Path, result: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+    print(f"Saved {result['detected_track_count']} tracks to {path}")
 
 
 if __name__ == "__main__":  # pragma: no cover

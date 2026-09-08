@@ -7,6 +7,7 @@ until the release gates in ``docs/VIDEO_ANALYSIS_V2.md`` are satisfied.
 """
 
 from .counting import CounterConfig, count_track
+from .distance import DistanceSegment, calculate_dps
 from .lanes import (
     LaneCropPoseProvider,
     LaneLayout,
@@ -21,6 +22,8 @@ from .types import KeypointIndex, PoseDetection, StrokeKind, StrokeSource, Track
 
 __all__ = [
     "CounterConfig",
+    "DistanceSegment",
+    "calculate_dps",
     "KeypointIndex",
     "LaneCropPoseProvider",
     "LaneLayout",

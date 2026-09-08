@@ -18,7 +18,10 @@ from analysis_v2 import (
     StrokeSource,
     TrackerConfig,
 )
-from analysis_v2.counting import _reconcile_events
+from analysis_v2.counting import _reconcile_events, _find_peak_events
+from analysis_v2.distance import DistanceSegment
+from analysis_v2.cli import main as counter_cli, build_parser as counter_parser, parse_distance_segments
+from analysis_v2.pose_cache import video_sha256, serialize_frame, write_pose_cache, read_pose_cache
 from analysis_v2.types import KeypointIndex
 from analysis_v2.mediapipe_provider import build_overlapping_tiles, deduplicate_detections
 from analysis_v2.lanes import (
@@ -808,3 +811,184 @@ def test_benchmark_scoring_counts_abstention_as_zero_end_to_end_accuracy() -> No
     assert score["arm_strokes"]["end_to_end_accuracy"] == 0.875
     assert score["kicks"]["coverage"] == 0.0
     assert score["kicks"]["end_to_end_accuracy"] == 0.0
+
+
+@pytest.mark.parametrize("fps", [20, 30, 60])
+@pytest.mark.parametrize("frequency", [1.0, 2.0, 3.0])
+def test_fast_kicks_preserve_each_visible_beat(fps: int, frequency: float) -> None:
+    # Analytic ground truth: each positive and negative extremum is one beat.
+    timestamps = np.arange(0.0, 12.0, 1.0 / fps)
+    expected = np.arange(1 / (4 * frequency), timestamps[-1], 1 / (2 * frequency))
+    cfg = CounterConfig()
+    predicted = _find_peak_events(
+        timestamps, np.sin(2 * np.pi * frequency * timestamps), cfg.kick_min_interval_sec,
+        cfg, include_troughs=True, smoothing_window_sec=cfg.kick_smoothing_window_sec,
+        max_gap_sec=cfg.kick_max_interpolation_gap_sec,
+    )
+    # A cut may not show enough of the final beat to confirm its prominence.
+    assert abs(len(predicted) - len(expected)) <= 1
+    assert match_events(expected, predicted, tolerance_sec=1 / fps)["f1"] >= 0.97
+
+
+def test_missing_time_cannot_create_a_synthetic_stroke_peak() -> None:
+    # No peak in either visible portion; the old concatenation made a peak
+    # across the four-second hole. Exercise missing rows and explicit NaNs.
+    t = np.arange(0, 10, 1 / 30)
+    visible = (t < 3) | (t >= 7)
+    values = np.where(t < 3, t, 10 - t)
+    cfg = CounterConfig()
+    assert _find_peak_events(t[visible], values[visible], .28, cfg) == []
+    values[~visible] = np.nan
+    assert _find_peak_events(t, values, .28, cfg) == []
+
+
+def test_short_occlusion_preserves_known_stroke_timestamps() -> None:
+    t = np.arange(0, 12, 1 / 30)
+    signal = np.sin(np.pi * t)
+    signal[(t > 4.42) & (t < 4.55)] = np.nan
+    events = _find_peak_events(t, signal, .28, CounterConfig())
+    score = match_events([.5, 2.5, 4.5, 6.5, 8.5, 10.5], events, tolerance_sec=.1)
+    assert score["f1"] == 1
+
+
+def test_one_visible_arm_cannot_be_reported_as_both_arms() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        pose = _synthetic_swimmer(.5, .5, frame / 30)
+        pose.keypoints[KeypointIndex.RIGHT_WRIST, 3] = .01
+        analyzer.process_frame([pose], frame, frame / 30)
+    result = analyzer.finalize().tracks[0]
+    assert not result.arm_strokes.available
+    assert result.arm_strokes.reason == "arms_not_visible"
+
+
+def test_reported_camera_fps_cannot_hide_missing_pose_samples() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        detections = [_synthetic_swimmer(.5, .5, frame / 30)] if frame % 3 != 0 else []
+        analyzer.process_frame(detections, frame, frame / 30)
+    result = analyzer.finalize().tracks[0]
+    assert result.sample_rate_hz == pytest.approx(20, abs=.1)
+
+
+@pytest.mark.parametrize("kind", ["freestyle", "backstroke", "breaststroke", "butterfly"])
+def test_dps_uses_explicit_stroke_units_for_all_four_strokes(kind: str) -> None:
+    synchronous = kind in {"breaststroke", "butterfly"}
+    analyzer = MultiSwimmerAnalyzer(kind)
+    for frame in range(361):
+        analyzer.process_frame([_synthetic_swimmer(.5, .5, frame / 30, synchronous_arms=synchronous)], frame, frame / 30)
+    # 12 arm events (6 pairs) or 6 synchronized cycles in this 12 s interval.
+    metrics = analyzer.finalize([DistanceSegment("S001", 0, 12, 24)]).distance_metrics[0]
+    assert metrics["available"] is True
+    assert metrics["stroke_count"] == (6 if synchronous else 12)
+    assert metrics["dps_m_per_stroke"] == (4 if synchronous else 2)
+    assert metrics["distance_per_cycle_m"] == 4
+    assert metrics["stroke_count_unit"] == ("synchronized_arm_cycle" if synchronous else "single_arm_action")
+    assert metrics["accuracy_status"] == "unverified_model_prediction"
+
+
+def test_dps_keeps_half_cycle_and_does_not_require_visible_kicks() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(391):
+        analyzer.process_frame([_synthetic_swimmer(.5, .5, frame / 30, leg_visibility=.01)], frame, frame / 30)
+    result = analyzer.finalize([DistanceSegment("S001", 0, 13, 13, "surface_swimming")])
+    assert not result.tracks[0].kicks.available
+    metrics = result.distance_metrics[0]
+    assert metrics["available"] is True
+    assert metrics["cycle_equivalents"] == 6.5
+    assert metrics["dps_m_per_stroke"] == 1
+    assert metrics["distance_per_cycle_m"] == 2
+
+
+def test_dps_separates_swimmers_and_recounts_only_the_measured_interval() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        t = frame / 30
+        analyzer.process_frame([_synthetic_swimmer(.5, .3, t), _synthetic_swimmer(.5, .7, t, stroke_hz=.75)], frame, t)
+    result = analyzer.finalize([
+        DistanceSegment("S001", 2, 10, 16),
+        DistanceSegment("S002", 0, 12, 18),
+        DistanceSegment("S099", 0, 12, 25),
+    ])
+    a, b, missing = result.distance_metrics
+    assert a["stroke_count"] == 8 and a["dps_m_per_stroke"] == 2
+    assert b["stroke_count"] == 18 and b["dps_m_per_stroke"] == 1
+    assert not missing["available"] and missing["dps_m_per_stroke"] is None
+    assert analyzer.finalize().distance_metrics == ()
+
+
+def test_dps_refuses_unobserved_distance_and_hidden_arm_sections() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        t = frame / 30
+        pose = _synthetic_swimmer(.5, .5, t)
+        if 4 < t < 4.8:
+            pose.keypoints[[KeypointIndex.LEFT_WRIST, KeypointIndex.RIGHT_WRIST], 3] = .01
+        analyzer.process_frame([pose], frame, t)
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 24), DistanceSegment("S001", 0, 16, 25)])
+    assert not result.tracks[0].arm_strokes.available
+    assert result.tracks[0].arm_strokes.reason == "arm_signal_gaps"
+    assert result.tracks[0].diagnostics["arm_candidate_count"] > 0
+    assert result.distance_metrics[0]["reason"] == "stroke_count_unavailable:arm_signal_gaps"
+    assert not result.distance_metrics[1]["available"]
+    assert all(item["dps_m_per_stroke"] is None for item in result.distance_metrics)
+
+
+def test_incomplete_arm_count_cannot_invalidate_visible_kicks() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(361):
+        t = frame / 30
+        pose = _synthetic_swimmer(.5, .5, t, kick_hz=3)
+        if 4 < t < 8:
+            pose.keypoints[[KeypointIndex.LEFT_WRIST, KeypointIndex.RIGHT_WRIST], 3] = .01
+        analyzer.process_frame([pose], frame, t)
+    track = analyzer.finalize().tracks[0]
+    assert track.arm_strokes.reason == "arm_signal_gaps"
+    assert track.kicks.available
+    assert abs(track.kicks.count - 72) <= 1
+    assert track.kicks_per_cycle is None
+
+
+def test_dps_refuses_a_distance_covering_unfilmed_time() -> None:
+    analyzer = MultiSwimmerAnalyzer("freestyle")
+    for frame in range(180, 361):
+        analyzer.process_frame([_synthetic_swimmer(.5, .5, frame / 30)], frame, frame / 30)
+    result = analyzer.finalize([DistanceSegment("S001", 0, 12, 24)])
+    assert result.tracks[0].arm_strokes.available
+    assert result.distance_metrics[0]["reason"] == "distance_interval_not_fully_observed"
+
+
+@pytest.mark.parametrize("distance", [0, -1, float("nan"), float("inf")])
+def test_dps_rejects_invalid_distances(distance: float) -> None:
+    with pytest.raises(ValueError):
+        DistanceSegment("S001", 0, 12, distance)
+
+
+def test_distance_cli_requires_swimmer_and_matching_time_bounds() -> None:
+    args = counter_parser().parse_args(["video.mp4", "--stroke", "freestyle", "--output", "out.json", "--distance-m", "25"])
+    assert args.frame_step == 1
+    with pytest.raises(ValueError, match="--start-sec"):
+        parse_distance_segments(args)
+
+
+def test_pose_replay_runs_counter_and_dps_without_inference(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    video = tmp_path / "fixture.mp4"
+    video.write_bytes(b"private source fixture; replay does not decode video")
+    source_hash = video_sha256(video)
+    frames = [serialize_frame(frame, frame / 30, [_synthetic_swimmer(.5, .5, frame / 30)]) for frame in range(361)]
+    cache = tmp_path / "poses.json.gz"
+    output = tmp_path / "result.json"
+    write_pose_cache(cache, source_hash, 30, frames, {"provider": "analytic_fixture"})
+    with pytest.raises(ValueError, match="different source"):
+        read_pose_cache(cache, "f" * 64)
+    monkeypatch.setattr("sys.argv", [
+        "counter", str(video), "--stroke", "freestyle", "--output", str(output),
+        "--pose-cache-in", str(cache), "--start-sec", "0", "--end-sec", "12",
+        "--distance-m", "24", "--distance-track-id", "S001",
+    ])
+    assert counter_cli() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["source_video_sha256"] == source_hash
+    assert result["run"]["provider"] == "pose-cache-replay"
+    assert result["distance_metrics"][0]["dps_m_per_stroke"] == 2
+    assert result["tracks"][0]["arm_strokes"]["count"] == 12

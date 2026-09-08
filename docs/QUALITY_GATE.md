@@ -19,7 +19,7 @@ SwimMate는 단순 페이지 모음에서 훈련 기록, 플랜, 리포트, 준�
 | 운영 DB 보존·정리 | `scripts/database_maintenance.py`, `.github/workflows/database-maintenance.yml` | QA 로그·기능 데이터 누적 감사와 정리, 일반 사용자 데이터·재사용 QA 계정 보존, 개인 행 없는 증적 생성 |
 | GitHub Actions 일괄 품질 게이트 | `.github/workflows/qa.yml` | Push·PR 핵심 검사와 정기·수동 운영 API/UI 검사를 한 워크플로에서 판정 |
 
-현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 158개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
+현재 소스 기준 핵심 자동 테스트는 단위·계약·지식 검색·Jira 통합·Postman 자산 계약·오프라인 영상 기준선을 합친 186개이며 Alembic 단일 head 검사도 같은 작업에서 실행한다. `tests/test_swimtech.py`의 Playwright E2E 정의 108개는 과거 로컬 통합 환경용 참고 시나리오이며 필수 품질 게이트의 통과 수에는 포함하지 않는다. 실제 로그인 화면과 배포 서비스는 `qa_runner.py`의 53개 API 시나리오, `qa_ui_crawler.py`의 역할별 35개 화면과 fixture 기반 공개 화면 2개, Postman 대표 API 요청 28개·46개 assertion으로 일괄 확인하고 실행별 결과와 DB 정리 증적을 보관한다.
 
 ## 변경 유형별 필수 게이트
 
@@ -173,6 +173,13 @@ CPU/portable fallback, 팔 좌우 동시 오검출 병합, 레인 기하 실험 
 아니며, 공개 API/UI·릴리즈 노트·Notion 서비스 설명서는 계속 갱신하지 않는다.
 
 2026-09-07에는 Neon 사용량 경고를 저장 용량과 compute로 분리해 감사했다. DB는 54개 테이블·약 30MB로 무료 저장 한도보다 작았고, 과거 14분 간격의 DB-backed `/api/health` 호출이 Scale to Zero를 막아 CU-hour를 누적시킨 것이 핵심 원인이었다. 상시 확인은 이미 DB를 조회하지 않는 `/api/ping`으로 교체됐고, 전체 운영 QA는 매일에서 주 1회로 줄였다. 최초 정리에서 만료 QA 활동 18,907건을 삭제하고 일반 활동 9,043건을 보존했으며, 후속 감사에서 확인한 QA 기능 데이터 156건도 삭제해 QA 기능 잔여를 0건으로 만들었다. 최종 코드의 정기 실행 [GitHub Actions `34007715003`](https://github.com/JinHyunjun/swimtech/actions/runs/34007715003)은 핵심 147개·Alembic, 운영 API 53개, 브라우저 37개 화면, Postman 28개 요청·46개 assertion과 DB 정리를 모두 통과했다. 이 실행이 새로 만든 QA 활동 1,279건과 기능 데이터 3건은 종료 단계에서 정리됐고, 이후 일반 활동 9,072건·QA 활동 256건·QA 계정 4개·코치 식별자 1개를 보존했으며 만료 로그와 QA 기능 데이터는 0건이었다.
+
+2026-09-08에는 오프라인 v0.4 카운터의 빠른 킥 필터·시간 공백 분리·프레임 사이
+피크 시점 보정·각 팔 가시성, 선수별 같은 시간 구간의 DPS, 원본 해시 검증 후
+포즈 재분석을 기존 CI 파일에서 검증한다. `tests/test_multiswimmer_analysis.py`는
+61개, 전체 핵심 검사는 186개다. 합성 9조건의 횟수 오차 합은 67→3으로 줄었지만
+실영상 포즈 공백과 독립 정답 부재는 남아 있어 공개 기능 검증과 구분한다.
+자세한 재현 결과는 [v0.4 검증 보고서](../analysis_v2/evaluation/results/2026-09-08-v0.4-counting-dps.md)에 있다.
 
 ## 산출물
 

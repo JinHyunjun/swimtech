@@ -20,8 +20,10 @@ class CounterConfig:
     min_leg_visibility: float = 0.58
     smoothing_window: int = 5
     smoothing_window_sec: float = 0.30
+    kick_smoothing_window_sec: float = 0.09
     max_interpolation_gap: int = 5
     max_interpolation_gap_sec: float = 0.35
+    kick_max_interpolation_gap_sec: float = 0.10
     stroke_min_interval_sec: float = 0.28
     alternating_merge_sec: float = 0.12
     alternating_min_event_interval_sec: float = 0.22
@@ -42,6 +44,7 @@ class CounterConfig:
     maximum_butterfly_kicks_per_cycle: float = 3.00
     minimum_peak_prominence_ratio: float = 0.18
     minimum_absolute_prominence: float = 0.035
+    prominence_window_sec: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -80,6 +83,7 @@ class TrackCountResult:
     kicks: EventCount
     kicks_per_cycle: float | None
     warnings: tuple[str, ...]
+    diagnostics: dict[str, object]
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -101,6 +105,17 @@ class TrackCountResult:
             "kicks": self.kicks.to_dict(),
             "kicks_per_cycle": self.kicks_per_cycle,
             "warnings": list(self.warnings),
+            "diagnostics": self.diagnostics,
+            "stroke_count_unit": (
+                "single_arm_action" if self.stroke_kind in {"freestyle", "backstroke", "unknown"}
+                else "synchronized_arm_cycle"
+            ),
+            "cycle_equivalents": (
+                self.arm_strokes.count / 2.0
+                if self.stroke_kind in {"freestyle", "backstroke"} and self.arm_strokes.available
+                else self.arm_strokes.count if self.arm_strokes.available and self.stroke_kind != "unknown"
+                else None
+            ),
         }
 
 
@@ -259,21 +274,55 @@ def _find_peak_events(
     min_interval_sec: float,
     config: CounterConfig,
     include_troughs: bool = False,
+    *,
+    smoothing_window_sec: float | None = None,
+    max_gap_sec: float | None = None,
 ) -> list[float]:
-    sampling_rate = _sampling_rate_hz(timestamps, None)
-    smoothing_window = config.smoothing_window
-    interpolation_gap = config.max_interpolation_gap
-    if sampling_rate is not None:
-        smoothing_window = max(3, int(round(sampling_rate * config.smoothing_window_sec)))
-        if smoothing_window % 2 == 0:
-            smoothing_window += 1
-        interpolation_gap = max(1, int(round(sampling_rate * config.max_interpolation_gap_sec)))
-    values = _smooth(
-        _interpolate_short_gaps(raw_values, interpolation_gap),
-        smoothing_window,
-    )
+    """Count observed extrema on continuous, uniformly timed signal segments.
+
+    Missing detections have missing *timestamps*, not just NaNs. Never smooth
+    across those holes or use an array-index gap as a proxy for elapsed time.
+    A kick has a shorter period than an arm cycle and needs its own filter.
+    """
+    if len(timestamps) < 3:
+        return []
+    delta = np.diff(timestamps)
+    if not np.isfinite(timestamps).all() or np.any(delta <= 0):
+        raise ValueError("signal timestamps must be finite and strictly increasing")
+    step = float(np.median(delta))
+    window_sec = config.smoothing_window_sec if smoothing_window_sec is None else smoothing_window_sec
+    gap_sec = config.max_interpolation_gap_sec if max_gap_sec is None else max_gap_sec
+    smoothing_window = max(1, int(round(window_sec / step)))
+    if smoothing_window % 2 == 0:
+        smoothing_window += 1
+    valid_indexes = np.flatnonzero(np.isfinite(raw_values))
+    if len(valid_indexes) < max(config.min_track_frames // 2, 8):
+        return []
+    split_indexes = np.flatnonzero(
+        np.diff(timestamps[valid_indexes]) > max(gap_sec, step * 1.5)
+    ) + 1
+    events: list[float] = []
+    for indexes in np.split(valid_indexes, split_indexes):
+        if len(indexes) < 3:
+            continue
+        start, end = timestamps[indexes[0]], timestamps[indexes[-1]]
+        grid = np.linspace(start, end, max(3, int(round((end - start) / step)) + 1))
+        values = _smooth(np.interp(grid, timestamps[indexes], raw_values[indexes]), smoothing_window)
+        events.extend(_segment_peak_events(grid, values, min_interval_sec, config,
+                                           smoothing_window, include_troughs))
+    return sorted(events)
+
+
+def _segment_peak_events(
+    timestamps: np.ndarray,
+    values: np.ndarray,
+    min_interval_sec: float,
+    config: CounterConfig,
+    smoothing_window: int,
+    include_troughs: bool,
+) -> list[float]:
     finite = values[np.isfinite(values)]
-    if finite.size < max(config.min_track_frames // 2, 8):
+    if finite.size < 3:
         return []
     amplitude = float(np.percentile(finite, 95) - np.percentile(finite, 5))
     if amplitude < config.minimum_absolute_prominence:
@@ -283,9 +332,10 @@ def _find_peak_events(
         amplitude * config.minimum_peak_prominence_ratio,
     )
 
-    candidates: list[tuple[int, float]] = []
+    candidates: list[tuple[float, float]] = []
     signals = (values, -values) if include_troughs else (values,)
-    prominence_radius = max(smoothing_window * 2, 3)
+    step = float(np.median(np.diff(timestamps)))
+    prominence_radius = max(int(round(config.prominence_window_sec / step)), smoothing_window * 2, 3)
     for signal in signals:
         finite_signal = signal[np.isfinite(signal)]
         center_threshold = float(np.median(finite_signal))
@@ -302,17 +352,28 @@ def _find_peak_events(
             right = right[np.isfinite(right)]
             if not left.size or not right.size:
                 continue
+            # A higher neighbour bounds prominence; a ripple on a large peak
+            # must not borrow that peak's distant valley and become a stroke.
+            higher_left = np.flatnonzero(left > signal[index])
+            higher_right = np.flatnonzero(right > signal[index])
+            if higher_left.size:
+                left = left[higher_left[-1]:]
+            if higher_right.size:
+                right = right[:higher_right[0] + 1]
             prominence = float(signal[index] - max(np.min(left), np.min(right)))
             if prominence >= prominence_threshold:
-                candidates.append((index, float(signal[index])))
+                a, b, c = signal[index - 1:index + 2]
+                curvature = a - 2.0 * b + c
+                offset = float(np.clip(0.5 * (a - c) / curvature, -0.5, 0.5)) if curvature < -1e-12 else 0.0
+                candidates.append((float(timestamps[index] + offset * step), prominence))
 
     candidates.sort(key=lambda item: item[1], reverse=True)
-    accepted: list[int] = []
-    for index, _ in candidates:
-        if all(abs(float(timestamps[index] - timestamps[other])) >= min_interval_sec for other in accepted):
-            accepted.append(index)
+    accepted: list[float] = []
+    for timestamp, _ in candidates:
+        if all(abs(timestamp - other) >= min_interval_sec for other in accepted):
+            accepted.append(timestamp)
     accepted.sort()
-    return [round(float(timestamps[index]), 3) for index in accepted]
+    return [round(timestamp, 3) for timestamp in accepted]
 
 
 def _merge_nearby_events(event_groups: Iterable[Iterable[float]], tolerance_sec: float) -> list[float]:
@@ -379,6 +440,13 @@ def _unavailable(visibility: float, reason: str) -> EventCount:
     return EventCount(False, 0, (), None, 0.0, round(visibility, 3), reason)
 
 
+def _longest_signal_gap(timestamps: np.ndarray, values: np.ndarray) -> float:
+    valid_times = timestamps[np.isfinite(values)]
+    if not len(valid_times):
+        return float(timestamps[-1] - timestamps[0])
+    return float(np.max(np.diff(np.r_[timestamps[0], valid_times, timestamps[-1]])))
+
+
 def count_track(
     observations: Iterable[TrackObservation],
     stroke_kind: StrokeKind | str,
@@ -392,8 +460,15 @@ def count_track(
     if not rows:
         raise ValueError("at least one track observation is required")
     timestamps = np.asarray([row.timestamp_sec for row in rows], dtype=np.float64)
+    if not np.isfinite(timestamps).all() or np.any(np.diff(timestamps) <= 0):
+        raise ValueError("track timestamps must be finite and strictly increasing")
+    if len({(row.track_id, row.lane_id) for row in rows}) != 1:
+        raise ValueError("count_track requires observations of a single swimmer")
     duration = max(float(timestamps[-1] - timestamps[0]), 0.0)
+    observed_sample_rate = _sampling_rate_hz(timestamps, None)
     sample_rate_hz = _sampling_rate_hz(timestamps, processed_sample_rate_hz)
+    if observed_sample_rate is not None and sample_rate_hz is not None:
+        sample_rate_hz = min(sample_rate_hz, observed_sample_rate)
     denominator = total_processed_frames if total_processed_frames is not None else len(rows)
     track_coverage = float(np.clip(len(rows) / max(denominator, 1), 0.0, 1.0))
     warnings: list[str] = []
@@ -405,6 +480,7 @@ def count_track(
     arm_visibility = (left_visibility + right_visibility) / 2.0
     arm_pattern = "insufficient_evidence"
     arm_pattern_synchrony: float | None = None
+    arm_events: list[float] = []
 
     if track_coverage < cfg.min_track_coverage:
         arm_result = _unavailable(arm_visibility, "track_coverage_too_low")
@@ -417,7 +493,7 @@ def count_track(
         left_events: list[float] = []
         right_events: list[float] = []
         complete_cycles = 0
-    elif arm_visibility < cfg.min_arm_visibility:
+    elif min(left_visibility, right_visibility) < cfg.min_arm_visibility:
         arm_result = _unavailable(arm_visibility, "arms_not_visible")
         left_events = []
         right_events = []
@@ -506,6 +582,7 @@ def count_track(
         if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}
         else cfg.minimum_synchronous_kick_sample_hz
     )
+    kick_events: list[float] = []
 
     if track_coverage < cfg.min_track_coverage:
         kick_result = _unavailable(leg_visibility, "track_coverage_too_low")
@@ -524,6 +601,8 @@ def count_track(
             cfg.kick_min_interval_sec,
             cfg,
             include_troughs=include_troughs,
+            smoothing_window_sec=cfg.kick_smoothing_window_sec,
+            max_gap_sec=cfg.kick_max_interpolation_gap_sec,
         )
         if not kick_events:
             kick_result = _unavailable(leg_visibility, "no_reliable_kick_events")
@@ -540,9 +619,27 @@ def count_track(
                 round(leg_visibility, 3),
             )
 
+    arm_gap = max(_longest_signal_gap(timestamps, left_wrist), _longest_signal_gap(timestamps, right_wrist))
+    kick_gap = _longest_signal_gap(timestamps, kick_values)
+    frame_interval = float(np.median(np.diff(timestamps))) if len(rows) > 1 else 0.0
+    # Check completeness before comparing rates: a partial arm count must not
+    # invalidate an independently observable kick count through a bad ratio.
+    if arm_result.available and arm_gap > max(cfg.max_interpolation_gap_sec, frame_interval * 1.5) + 1e-6:
+        arm_result = _unavailable(arm_visibility, "arm_signal_gaps")
+        complete_cycles = 0
+        warnings.append("arm_candidates_cover_only_visible_segments")
+    if kick_result.available and kick_gap > max(cfg.kick_max_interpolation_gap_sec, frame_interval * 1.5) + 1e-6:
+        kick_result = _unavailable(leg_visibility, "kick_signal_gaps")
+        warnings.append("kick_candidates_cover_only_visible_segments")
+
     kicks_per_cycle = None
     if kick_result.available and complete_cycles > 0:
-        kicks_per_cycle = round(kick_result.count / complete_cycles, 2)
+        cycle_equivalents = (
+            arm_result.count / 2.0
+            if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}
+            else float(arm_result.count)
+        )
+        kicks_per_cycle = round(kick_result.count / cycle_equivalents, 2)
         if kind in {StrokeKind.FREESTYLE, StrokeKind.BACKSTROKE, StrokeKind.UNKNOWN}:
             minimum_ratio = cfg.minimum_alternating_kicks_per_cycle
             maximum_ratio = cfg.maximum_alternating_kicks_per_cycle
@@ -581,4 +678,19 @@ def count_track(
         kicks=kick_result,
         kicks_per_cycle=kicks_per_cycle,
         warnings=tuple(warnings),
+        diagnostics={
+            "left_arm_visibility": round(left_visibility, 3),
+            "right_arm_visibility": round(right_visibility, 3),
+            "longest_observation_gap_sec": round(float(np.max(np.diff(timestamps))), 3) if len(rows) > 1 else None,
+            "longest_arm_signal_gap_sec": round(arm_gap, 3),
+            "longest_kick_signal_gap_sec": round(kick_gap, 3),
+            "arm_candidate_count": len(arm_events),
+            "kick_candidate_count": len(kick_events),
+            "merged_arm_candidate_times_sec": arm_events,
+            "arm_candidate_times_sec": list(sorted(set(left_events + right_events))),
+            "kick_candidate_times_sec": kick_events,
+            "arm_smoothing_window_sec": cfg.smoothing_window_sec,
+            "kick_smoothing_window_sec": cfg.kick_smoothing_window_sec,
+            "accuracy_status": "unverified_model_prediction",
+        },
     )
