@@ -1,0 +1,5 @@
+# Private local reviewer only. Never install on the production API host.
+-r requirements-offline.txt
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+imageio-ffmpeg==0.6.0

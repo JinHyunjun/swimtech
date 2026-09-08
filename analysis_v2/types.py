@@ -62,6 +62,7 @@ class PoseDetection:
     bbox: tuple[float, float, float, float]
     confidence: float
     lane_hint: int | None = None
+    frame_aspect_ratio: float | None = None
 
     def __post_init__(self) -> None:
         points = np.asarray(self.keypoints, dtype=np.float64)
@@ -78,6 +79,8 @@ class PoseDetection:
         object.__setattr__(self, "confidence", float(np.clip(self.confidence, 0.0, 1.0)))
         if self.lane_hint is not None and self.lane_hint < 1:
             raise ValueError("lane_hint must be a positive integer")
+        if self.frame_aspect_ratio is not None and (not np.isfinite(self.frame_aspect_ratio) or self.frame_aspect_ratio <= 0):
+            raise ValueError("frame_aspect_ratio must be positive and finite")
 
     @classmethod
     def from_keypoints(
@@ -87,6 +90,7 @@ class PoseDetection:
         visibility_threshold: float = 0.05,
         padding: float = 0.015,
         lane_hint: int | None = None,
+        frame_aspect_ratio: float | None = None,
     ) -> "PoseDetection":
         points = np.asarray(keypoints, dtype=np.float64)
         if points.ndim != 2 or points.shape[1] not in (3, 4):
@@ -100,7 +104,18 @@ class PoseDetection:
         x1, y1 = np.min(xy, axis=0) - padding
         x2, y2 = np.max(xy, axis=0) + padding
         score = float(np.mean(points[visible, 3])) if confidence is None else confidence
-        return cls(points, (float(x1), float(y1), float(x2), float(y2)), score, lane_hint)
+        return cls(points, (float(x1), float(y1), float(x2), float(y2)), score, lane_hint, frame_aspect_ratio)
+
+    @property
+    def metric_keypoints(self) -> np.ndarray:
+        """Use equal x/y units for geometry; normalized screen axes differ.
+
+        Coordinates remain normalized for drawing/tracking. Legacy caches with
+        missing dimensions retain the old behaviour and are marked uncalibrated.
+        """
+        points = self.keypoints.copy()
+        points[:, 0] *= self.frame_aspect_ratio or 1.0
+        return points
 
     @property
     def centroid(self) -> np.ndarray:

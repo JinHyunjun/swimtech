@@ -1,4 +1,4 @@
-# SwimMate multi-swimmer counter v0.4.1
+# SwimMate multi-swimmer counter v0.5.0
 
 This package is an **offline experiment**, not a public SwimMate feature. It
 changes the unit of analysis from one video to one physical pool lane:
@@ -7,6 +7,26 @@ changes the unit of analysis from one video to one physical pool lane:
 frame -> fixed lane polygons -> one rotated crop per lane -> RTMPose
       -> physical lane tracks -> per-lane arm and kick signals
 ```
+
+## v0.5: local cross-review website and geometry correction
+
+Run `python -m analysis_v2.workbench` from the repository root, then open
+**http://127.0.0.1:8765**. [Local reviewer guide](workbench/README.md) covers
+dependencies, uploading, frame controls, independent annotations, comparison,
+export and deletion. This is a separate **loopback-only** site, not a restored
+public video-analysis feature. Original video, silent H.264 playback proxy,
+pose cache and labels stay on this PC. No production DB or cloud AI is called.
+
+Body-relative signals now scale normalized x by source width/height before
+constructing the body frame. Treating normalized x and y as equal units distorted
+angles on non-square frames, especially when a swimmer is diagonal. Source
+geometry survives rotated lane remapping and pose caching. Legacy caches with
+no dimensions retain old behavior with an explicit diagnostic; no ratio is guessed.
+
+The review UI shows joint-evidence gaps and sudden position changes to direct
+manual review, **not** automatic occlusion/entry/glide labels. Confirmed totals
+and withheld candidates are separate. It does not retrain neural weights or
+claim improved real-video accuracy without independent event references.
 
 ## What v0.4 adds
 

@@ -167,7 +167,7 @@ class MediaPipeMultiPoseProvider:
                 ],
                 dtype=np.float64,
             )
-            detections.append(PoseDetection.from_keypoints(points))
+            detections.append(PoseDetection.from_keypoints(points, frame_aspect_ratio=rgb_frame.shape[1] / rgb_frame.shape[0]))
         return detections
 
     def close(self) -> None:
@@ -267,7 +267,7 @@ class MediaPipeTiledPoseProvider:
                 points = _remap_keypoints(local_points, tile, width, height)
                 if not _orientation_matches(points, self.orientation):
                     continue
-                candidates.append(PoseDetection.from_keypoints(points))
+                candidates.append(PoseDetection.from_keypoints(points, frame_aspect_ratio=width / height))
         return deduplicate_detections(candidates)[: self.max_swimmers]
 
     def close(self) -> None:

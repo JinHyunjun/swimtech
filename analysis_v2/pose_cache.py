@@ -29,7 +29,7 @@ def serialize_frame(frame_index: int, timestamp_sec: float, detections: Iterable
         "timestamp_sec": timestamp_sec,
         "detections": [
             {"keypoints": pose.keypoints.tolist(), "bbox": list(pose.bbox),
-             "confidence": pose.confidence, "lane_hint": pose.lane_hint}
+             "confidence": pose.confidence, "lane_hint": pose.lane_hint, "frame_aspect_ratio": pose.frame_aspect_ratio}
             for pose in detections
         ],
     }

@@ -321,7 +321,8 @@ def _remap_crop_detection(
     points[:, 0] = (x1 + points[:, 0] * (x2 - x1)) / frame_width
     points[:, 1] = (y1 + points[:, 1] * (y2 - y1)) / frame_height
     points[:, 2] *= max(x2 - x1, y2 - y1) / max(frame_width, frame_height)
-    return PoseDetection.from_keypoints(points, confidence=detection.confidence, lane_hint=lane_id)
+    return PoseDetection.from_keypoints(points, confidence=detection.confidence, lane_hint=lane_id,
+                                       frame_aspect_ratio=frame_width / frame_height)
 
 
 class LaneCropPoseProvider:

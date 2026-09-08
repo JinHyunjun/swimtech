@@ -59,7 +59,7 @@ def coco_pose_to_detection(
         ]
     visible = confidence[confidence >= min_anchor_confidence]
     pose_confidence = float(np.mean(visible)) if visible.size else 0.0
-    return PoseDetection.from_keypoints(points, confidence=pose_confidence)
+    return PoseDetection.from_keypoints(points, confidence=pose_confidence, frame_aspect_ratio=frame_width / frame_height)
 
 
 class RTMPoseProvider:

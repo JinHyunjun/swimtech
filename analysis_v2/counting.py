@@ -156,7 +156,7 @@ def _projected_signal(
     values = np.full(len(observations), np.nan, dtype=np.float64)
     confidences = np.zeros(len(observations), dtype=np.float64)
     for row_index, observation in enumerate(observations):
-        points = observation.detection.keypoints
+        points = observation.detection.metric_keypoints
         frame = _body_frame(points, config.min_landmark_confidence)
         point = _visible_point(points, keypoint_index, config.min_landmark_confidence)
         if frame is None or point is None:
@@ -174,7 +174,7 @@ def _ankle_difference_signal(
     values = np.full(len(observations), np.nan, dtype=np.float64)
     confidences = np.zeros(len(observations), dtype=np.float64)
     for row_index, observation in enumerate(observations):
-        points = observation.detection.keypoints
+        points = observation.detection.metric_keypoints
         frame = _body_frame(points, config.min_landmark_confidence)
         left_knee = _visible_point(points, KeypointIndex.LEFT_KNEE, config.min_landmark_confidence)
         right_knee = _visible_point(points, KeypointIndex.RIGHT_KNEE, config.min_landmark_confidence)
@@ -201,7 +201,7 @@ def _synchronous_kick_signal(
     values = np.full(len(observations), np.nan, dtype=np.float64)
     confidences = np.zeros(len(observations), dtype=np.float64)
     for row_index, observation in enumerate(observations):
-        points = observation.detection.keypoints
+        points = observation.detection.metric_keypoints
         frame = _body_frame(points, config.min_landmark_confidence)
         left_knee = _visible_point(points, KeypointIndex.LEFT_KNEE, config.min_landmark_confidence)
         right_knee = _visible_point(points, KeypointIndex.RIGHT_KNEE, config.min_landmark_confidence)
@@ -697,6 +697,8 @@ def count_track(
         kicks_per_cycle=kicks_per_cycle,
         warnings=tuple(warnings),
         diagnostics={
+            "geometry_status": "pixel_aspect_corrected" if all(row.detection.frame_aspect_ratio is not None for row in rows)
+            else "legacy_normalized_axes_dimensions_unknown",
             "arm_count_mode": "review_assisted" if exclusions else "unsegmented",
             "arm_exclusions": [asdict(item) for item in exclusions],
             "left_arm_visibility": round(left_visibility, 3),

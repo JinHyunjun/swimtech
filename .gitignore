@@ -79,3 +79,7 @@ qa_ui_screenshots/
 tests/postman/*.postman_environment.json
 !tests/postman/*.template.postman_environment.json
 tests/postman/results/
+
+# Private local video review (originals, proxies, poses, labels and UI captures)
+/tmp/analysis_v2/workbench/
+/tmp/analysis_v2/workbench-browser/

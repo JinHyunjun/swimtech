@@ -1,0 +1,4 @@
+/* System fonts only: private review does not contact font or analytics CDNs. */
+.preview-note{padding:10px 16px}
+.mobile-markers{display:none}
+@media(max-width:1150px){.mobile-markers{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}.mobile-markers button{flex:1;padding:10px 8px;background:var(--soft);color:var(--teal)}.mobile-markers button:nth-child(2){background:#fdf2e6;color:var(--orange)}.mobile-markers button:last-child{flex:0 0 auto;background:white;color:var(--muted)}}

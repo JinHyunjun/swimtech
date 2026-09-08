@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,8 @@ EVENT_KEYS = {
 
 
 def _validate_annotation(label: dict[str, Any]) -> None:
+    if not isinstance(label, dict):
+        raise ValueError("annotation must be an object")
     if label.get("schema_version") != "swimmate-event-label-v2":
         raise ValueError("independent evaluation requires swimmate-event-label-v2")
     if label.get("label_mode") != "blinded_manual" or label.get("prediction_visible") is not False:
@@ -38,6 +41,24 @@ def _validate_annotation(label: dict[str, Any]) -> None:
     interval = label.get("interval_sec")
     if not isinstance(interval, list) or len(interval) != 2:
         raise ValueError("annotation interval is invalid")
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in interval):
+        raise ValueError("annotation interval must contain finite numbers")
+    start, end = interval
+    if start < 0 or end <= start:
+        raise ValueError("annotation interval must increase")
+    lane = label.get("lane_id")
+    if isinstance(lane, bool) or not isinstance(lane, int) or lane < 1:
+        raise ValueError("annotation lane must be a positive integer")
+    if label.get("stroke_kind") not in {"freestyle", "backstroke", "breaststroke", "butterfly"}:
+        raise ValueError("annotation stroke is invalid")
+    for key in EVENT_KEYS.values():
+        events = label.get(key)
+        if not isinstance(events, list) or len(events) > 2000:
+            raise ValueError("annotation events must be a bounded list")
+        if any(isinstance(t, bool) or not isinstance(t, (int, float)) or not math.isfinite(t) or not start <= t <= end for t in events):
+            raise ValueError("annotation events must be finite and inside the interval")
+        if len(set(events)) != len(events):
+            raise ValueError("annotation events must not contain duplicates")
 
 
 def _context(label: dict[str, Any]) -> tuple[object, ...]:
@@ -47,6 +68,7 @@ def _context(label: dict[str, Any]) -> tuple[object, ...]:
         label.get("stroke_kind"),
         int(label.get("lane_id", 0)),
         tuple(float(value) for value in label.get("interval_sec", [])),
+        label.get("review_context"),
     )
 
 
@@ -83,12 +105,14 @@ def compare_annotations(
 ) -> dict[str, Any]:
     """Build inter-annotator agreement without treating predictions as truth."""
 
+    if not math.isfinite(tolerance_sec) or not 0 < tolerance_sec <= 1:
+        raise ValueError("tolerance must be positive, finite and at most one second")
     _validate_annotation(first)
     _validate_annotation(second)
     if str(first["annotator"]).casefold() == str(second["annotator"]).casefold():
         raise ValueError("two distinct annotators are required")
     if _context(first) != _context(second):
-        raise ValueError("annotations do not describe the same video, lane, stroke, and interval")
+        raise ValueError("annotations do not describe the same video, lane/ROI, stroke, interval, and timeline")
 
     event_results: dict[str, Any] = {}
     consensus: dict[str, list[float]] = {}
