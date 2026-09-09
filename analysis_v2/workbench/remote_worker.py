@@ -43,7 +43,7 @@ def issue_ticket(base):
     with requests.Session() as session:
         response = session.post(base+'/auth/login', json={'username': username, 'password': password}, timeout=90)
         if response.status_code != 200:
-            raise RuntimeError('Administrator login failed (credentials are not logged)')
+            raise RuntimeError(f'Administrator login failed (HTTP {response.status_code}; credentials are not logged)')
         response = session.post(base+'/api/admin/video-lab/worker-ticket', headers={'X-Video-Lab': '1'}, timeout=60)
         if response.status_code != 200:
             raise RuntimeError('Administrator worker authorization failed')
@@ -60,6 +60,19 @@ class RemoteWorker:
         response = self.session.request(method, self.base+path, timeout=90, **kwargs)
         response.raise_for_status()
         return response
+
+    def claim_job(self):
+        # Keep-alive connections can close just as the idle poll begins. Retry
+        # only the claim, never replay a partially acknowledged upload/result.
+        for attempt in range(4):
+            try:
+                return self.request('POST', '/worker/claim').json()
+            except requests.RequestException as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if (status is not None and status < 500 and status != 429) or attempt == 3:
+                    raise
+                print('Queue connection interrupted; retrying.', flush=True)
+                time.sleep(2*(attempt+1))
 
     def process(self, job):
         data = job['project']
@@ -162,7 +175,7 @@ def main():
     last_work = time.monotonic()
     try:
         while time.monotonic() < deadline:
-            job = worker.request('POST', '/worker/claim').json()
+            job = worker.claim_job()
             if job:
                 worker.process(job)
                 last_work = time.monotonic()

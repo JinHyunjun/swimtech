@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import time
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright, expect
@@ -26,20 +27,24 @@ def main():
     parser.add_argument('--end-sec', type=float, required=True)
     parser.add_argument('--distance-m', type=float)
     parser.add_argument('--timeout-sec', type=int, default=900)
+    parser.add_argument('--base-url', default='https://swimtech.vercel.app', help='Production origin or a loopback-only integration harness')
     parser.add_argument('--output-dir', type=Path, default=ROOT/'tmp/analysis_v2/admin-browser')
     args = parser.parse_args()
+    url = urlsplit(args.base_url)
+    if args.base_url != 'https://swimtech.vercel.app' and not (url.scheme == 'http' and url.hostname in {'127.0.0.1','localhost'} and url.path in {'','/'} and not url.username and not url.query and not url.fragment):
+        parser.error('Only SwimMate production or loopback QA is allowed')
     if not args.video.is_file() or not 0 <= args.start_sec < args.end_sec <= 60:
         parser.error('Explicit local video and interval within 60 seconds required')
     load_dotenv(ROOT/'.env')
     if not os.getenv('ADMIN_ID') or not os.getenv('ADMIN_PW'):
         parser.error('Set ADMIN_ID / ADMIN_PW locally; never pass credentials on the command line')
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    report = {'status':'running', 'not_ground_truth':True, 'base_url':'https://swimtech.vercel.app/admin'}
+    report = {'status':'running', 'not_ground_truth':True, 'base_url':args.base_url+'/admin'}
     ident = None
     errors = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(base_url='https://swimtech.vercel.app', viewport={'width':1440, 'height':1000})
+        context = browser.new_context(base_url=args.base_url, viewport={'width':1440, 'height':1000})
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.on('dialog', lambda dialog: dialog.accept())
@@ -48,7 +53,7 @@ def main():
             # Check anonymous rejection in an isolated context, not existing user state.
             assert context.request.get(PREFIX+'/session', timeout=90000).status == 401
             login = context.request.post('/auth/login', data={'username':os.environ['ADMIN_ID'], 'password':os.environ['ADMIN_PW']}, timeout=90000)
-            assert login.status == 200, 'Administrator login failed; credentials not logged'
+            assert login.status == 200, f'Administrator login failed (HTTP {login.status}); credentials not logged'
             status = context.request.get(PREFIX+'/session', timeout=90000)
             assert status.ok and status.json()['worker_online'], 'Run the outbound HTTPS processor first'
             page.goto('/admin', wait_until='domcontentloaded', timeout=90000)

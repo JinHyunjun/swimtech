@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from routers import admin_video_lab as api
 from services.video_lab import VideoLab, CHUNK
-from analysis_v2.workbench.remote_worker import validate_base
+from analysis_v2.workbench.remote_worker import validate_base, RemoteWorker
 
 PREFIX = '/api/admin/video-lab'
 BODY = b'private fake video - not a model accuracy fixture'
@@ -201,3 +201,18 @@ def test_deployed_admin_assets_and_qa_are_mapped():
     assert '/api/admin/video-lab' in js and 'X-Video-Lab' in js and 'workerStatus' in js
     assert '127.0.0.1' not in html+js
     assert 'test_admin_video_lab.py' in (root/'.github/workflows/qa.yml').read_text(encoding='utf-8')
+
+
+def test_worker_retries_transient_poll_but_not_auth_failure(monkeypatch):
+    import requests
+    from unittest.mock import Mock
+    monkeypatch.setattr('analysis_v2.workbench.remote_worker.time.sleep', lambda _: None)
+    worker = RemoteWorker('http://127.0.0.1:8791', 'synthetic-only')
+    worker.request = Mock(side_effect=[requests.ConnectionError(), Mock(json=lambda:None)])
+    assert worker.claim_job() is None
+    assert worker.request.call_count == 2
+    reply = requests.Response()
+    reply.status_code = 401
+    worker.request = Mock(side_effect=requests.HTTPError(response=reply))
+    with pytest.raises(requests.HTTPError): worker.claim_job()
+    assert worker.request.call_count == 1
