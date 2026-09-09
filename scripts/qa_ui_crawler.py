@@ -365,7 +365,7 @@ def check_admin_search_and_charts(page):
             }"""
         )
         if (
-            mobile_nav["itemCount"] != 8
+            mobile_nav["itemCount"] != 9
             or mobile_nav["minItemWidth"] < 220
             or mobile_nav["overlaps"]
             or mobile_nav["labelsOutside"]
@@ -373,7 +373,7 @@ def check_admin_search_and_charts(page):
         ):
             errors.append({"type": "admin_sidebar_mobile_layout", **mobile_nav})
         else:
-            actions.append({"action": "관리자 모바일 드로어 8개 메뉴 비겹침", "status": "ok"})
+            actions.append({"action": "관리자 모바일 드로어 9개 메뉴 비겹침", "status": "ok"})
         page.keyboard.press("Escape")
         page.wait_for_timeout(250)
     except Exception as error:
@@ -433,6 +433,15 @@ def check_admin_search_and_charts(page):
             page.select_option("#u-account-scope", "all")
     except Exception as error:
         errors.append({"type": "admin_qa_candidate_filter_failed", "error": str(error)[:200]})
+
+    try:
+        page.click('#admin-tab-video-lab')
+        lab = page.frame_locator('#admin-video-lab')
+        lab.locator('#workerStatus').wait_for(state='visible', timeout=20000)
+        lab.locator('#file:enabled').wait_for(state='attached', timeout=20000)
+        actions.append({'action':'관리자 영법 분석 TEST 인증·화면 연결 (추론/업로드는 별도 검증)', 'status':'ok'})
+    except Exception as error:
+        errors.append({'type':'admin_video_lab_connection', 'error':str(error)[:200]})
 
     marker = "qa-admin-ui-no-match-7f3a"
     search_specs = [

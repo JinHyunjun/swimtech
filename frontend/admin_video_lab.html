@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SwimMate Lab · 영상 교차 검증</title><link rel="icon" href="/static/video-lab/wave.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/video-lab/style.css"><script src="/static/video-lab/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/admin#video-lab" target="_top"><img src="/static/video-lab/wave.svg" alt=""><span>SwimMate <b>LAB</b></span></a>
+<span class="local" id="workerStatus" role="status">처리기 연결 확인 중</span><button id="helpButton" class="quiet">사용 방법</button></header>
+<div class="shell"><aside><div class="aside-heading"><h2>내 검증 영상</h2><button id="newVideo" title="새 영상">＋</button></div>
+<div id="projects"></div><p class="privacy">관리자 전용 TEST. 영상은 임시 서버와 분석 PC로 전송됩니다. Neon·일반 훈련 일지에는 저장하지 않습니다.</p></aside>
+<main>
+<div class="page-heading"><div><p class="eyebrow">WATCH · COUNT · COMPARE</p><h1>같이 세어보는 수영</h1>
+<p class="muted">직접 기록한 동작과 모델의 후보를 나란히 확인하세요.</p></div><span class="badge">관리자 TEST · 정확도 미검증</span></div>
+<ol class="steps"><li class="active" id="step1"><span>1</span> 영상 선택</li><li id="step2"><span>2</span> 직접 기록</li><li id="step3"><span>3</span> 결과 비교</li></ol>
+<section id="uploadPanel" class="upload panel"><img src="/static/video-lab/wave.svg" alt=""><h2>검증할 수영 영상을 올려주세요</h2>
+<p>파일을 여기에 놓거나 아래 버튼으로 선택하세요.</p><label class="button primary" for="file">영상 선택</label>
+<input id="file" type="file" accept="video/*" hidden><p class="muted small">최대 64MB · 원본 60초 · 4K / 관리자당 3개 보관</p>
+<p class="muted small">사용 권한이 있는 영상만 업로드하세요. PC 처리기가 연결되어야 재생 준비와 모델 분석이 진행됩니다.</p><progress id="uploadProgress" max="100" value="0" hidden></progress></section>
+<section id="workspace" hidden>
+<div class="project-heading"><h2 id="videoName"></h2><div class="actions"><button id="exportButton">기록 내보내기</button><button id="deleteButton" class="danger quiet">영상 삭제</button></div></div>
+<div class="work-grid"><div class="watch-column">
+<section class="player panel"><div class="stage" id="stage"><video id="video" controls preload="auto" playsinline></video><canvas id="overlay"></canvas></div>
+<div class="player-tools"><div class="actions"><button id="backFrame" title="이전 프레임 (←)">← 한 프레임</button><button id="playButton">재생 / 정지</button><button id="nextFrame" title="다음 프레임 (→)">한 프레임 →</button></div>
+<div class="actions"><output id="currentTime">0.000초</output><label>속도 <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option></select></label></div></div>
+<div class="mobile-markers" aria-label="영상 옆 빠른 기록"><button id="mobileArm" disabled>팔 ＋ <span id="mobileArmCount">0</span></button><button id="mobileKick" disabled>킥 ＋ <span id="mobileKickCount">0</span></button><button id="mobileUndo">취소</button></div>
+<p id="playbackError" class="error" hidden>영상을 재생할 수 없습니다. 새로고침하거나 영상을 다시 올려주세요.</p>
+<p class="small muted preview-note">재생용 무음 영상 · 원본 프레임 순서/FPS 기준 시간 · 분석에는 원본 사용</p>
+<div class="player-footer"><button id="roiButton">선수·레인 영역 지정</button><button id="resetRoi" class="quiet">영역 초기화</button><label id="poseToggleWrap" hidden><input type="checkbox" id="poseToggle"> 관절 추정 표시</label><span id="roiLabel" class="small muted">전체 화면 · 다른 인물이 포함되지 않게 선택하세요</span></div></section>
+<section class="panel settings"><h3>분석 조건</h3><p class="small muted">한 프로젝트에서 한 선수/레인을 검증합니다. 구간을 확정하면 같은 조건으로 수기 기록과 비교합니다.</p>
+<fieldset id="settingsFields"><div class="field-grid"><label>영법<select id="stroke"><option value="freestyle">자유형</option><option value="backstroke">배영</option><option value="breaststroke">평영</option><option value="butterfly">접영</option></select></label>
+<label>시작 (초)<input id="start" type="number" min="0" step="0.001" value="0"></label><label>종료 (초)<input id="end" type="number" min="0" step="0.001"></label>
+<label>구간 이동 거리 (m, 선택)<input id="distance" type="number" min="0.1" step="0.1" placeholder="예: 편도 전체라면 25"></label>
+<label>영상 속 진행 방향<select id="rotation"><option value="clockwise">주로 가로 방향</option><option value="none">주로 세로 방향</option><option value="counterclockwise">가로 방향 · 반대 회전</option></select></label></div></fieldset>
+<p class="small muted">수영장 길이와 부분 구간 이동 거리는 다릅니다. 모르면 거리는 비워두세요. 카메라 이동·재생 속도 변경·장면 전환이 있는 영상은 결과가 불안정할 수 있습니다.</p>
+<div class="actions"><button id="analyzeButton" class="primary">조건 확정 · 분석 시작</button><button id="cancelButton" hidden>분석 중지</button><span id="jobStatus" role="status"></span></div></section>
+</div><div class="review-column">
+<section class="panel manual"><div class="section-heading"><h3>내가 직접 센 동작</h3><span id="labelMode" class="badge">모델 답안 숨김</span></div>
+<label>검수자 이름<input id="annotator" maxlength="80" placeholder="검수자를 구분할 이름"></label>
+<p class="small muted" id="countConvention">자유형·배영: 한 팔의 동작을 1회. 평영·접영: 양팔이 함께 하는 한 주기를 1회로 기록하세요. 같은 동작 지점을 일관되게 선택하세요.</p>
+<div class="count-grid"><button id="armButton" class="count-button" disabled><span>팔 동작 <kbd>A</kbd></span><strong id="armCount">0</strong><small>현재 시점에 기록 ＋</small></button>
+<button id="kickButton" class="count-button kick" disabled><span>발차기 <kbd>K</kbd></span><strong id="kickCount">0</strong><small>현재 시점에 기록 ＋</small></button></div>
+<div class="status-grid"><label><input id="armUnresolvable" type="checkbox"> 팔 판독 불가</label><label><input id="kickUnresolvable" type="checkbox"> 킥 판독 불가</label></div>
+<p class="small muted">자유형 교대 킥은 발 한 번, 동시 킥은 두 발이 함께 하는 한 주기입니다. 가려져 셀 수 없으면 ‘판독 불가’를 선택하세요.</p>
+<div class="section-heading"><h4>기록한 시점</h4><button id="undoButton" class="quiet">마지막 기록 취소</button></div><div id="events" class="events"><p class="muted">분석 조건 확정 후 A / K로 기록하세요.</p></div>
+<label class="check-text"><input id="blindClaim" type="checkbox"> 이 영상의 모델 결과를 이전에도 본 적 없이 직접 기록했습니다.</label>
+<button id="saveLabel" class="primary full" disabled>수기 기록 저장</button><p class="small muted" id="saveStatus"></p>
+<button id="revealButton" class="full" disabled>모델 결과 열고 비교하기</button><p class="small muted">모델 결과를 열면 이후 수정은 ‘보정용’으로 저장됩니다. 먼저 저장한 독립 기록은 따로 보존합니다.</p></section>
+</div></div>
+<section id="results" class="panel results" hidden><div class="section-heading"><div><p class="eyebrow">CROSS CHECK</p><h2>어디에서 차이가 났을까요?</h2></div><span class="badge">1인 비교 · 검증된 정확도 아님</span></div>
+<div id="resultCards" class="result-grid"></div><div id="dpsResult" class="notice"></div>
+<div class="results-grid"><div><h3>모델이 찾은 동작 후보</h3><p class="small muted">버튼을 누르면 해당 장면으로 이동합니다. 후보가 실제 동작인지 확인해 주세요.</p><div id="candidates" class="events"></div></div>
+<div><h3>다시 볼 구간</h3><p class="small muted">관절 관측 공백·급격한 위치 변화입니다. 실제 가림인지 추적 오류인지는 영상으로 판단합니다.</p><div id="reviewWindows" class="events"></div></div></div></section>
+</section>
+<section id="helpPanel" class="panel help" hidden><h2>교차 검증, 이렇게 해보세요</h2><ol><li>사용 권한이 있는 영상에서 한 선수/레인을 선택하고 분석 구간을 확정합니다.</li><li>저속 재생·프레임 이동으로 보면서 팔은 A, 킥은 K를 누릅니다. 판독 불가를 0회로 기록하지 마세요.</li><li>수기 기록을 저장한 뒤 모델 답안을 엽니다. 후보 시점을 눌러 차이를 확인합니다.</li><li>‘기록 내보내기’로 JSON과 비교 자료를 보관합니다. 다른 사람이 독립 검수하려면 같은 영상을 새로 올리고 답안을 보기 전에 기록해야 합니다.</li></ol>
+<p>이 도구는 실제 정확도 검증을 위한 실험실입니다. 가중치를 자동 학습하거나 서비스 훈련 일지에 저장하지 않습니다. 서버의 영상·라벨은 업로드 1시간 후 만료됩니다. 비활동 시 실제 파일 정리는 다음 접근 시 수행되며, 서버 재시작으로 더 일찍 사라질 수 있습니다. 처리기 임시 파일은 작업 종료 시 삭제합니다. 필요한 기록은 먼저 내보내세요.</p>
+<p>두 검수자의 독립 기록 합의 검사는 내보낸 파일로 로컬 검증 도구에서 진행할 수 있습니다.</p></section>
+<p id="message" class="message" role="alert" hidden></p>
+</main></div><footer>SwimMate Review Lab · 관리자 실험 전용 · 일반 회원에게 제공되지 않습니다. · 결과는 반드시 수기로 교차 검증하세요.</footer>
+</body></html>

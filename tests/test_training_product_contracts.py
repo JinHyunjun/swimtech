@@ -1074,13 +1074,13 @@ def test_admin_navigation_uses_non_overlapping_responsive_sidebar():
     assert 'id="admin-menu-toggle"' in admin_page
     assert 'id="admin-nav-backdrop"' in admin_page
     assert '<nav class="admin-tabs" role="tablist"' in admin_page
-    assert admin_page.count('role="tab"') == 8
+    assert admin_page.count('role="tab"') == 9
     assert "grid-template-columns: var(--global-service-nav-width, 268px) minmax(0, 1fr)" in admin_page
     assert "flex: 0 0 auto" in admin_page
     assert "@media (max-width: 1100px)" in admin_page
     assert "setAdminNavOpen" in admin_page
     assert "activateAdminTab" in admin_page
-    assert "관리자 모바일 드로어 8개 메뉴 비겹침" in qa_ui
+    assert "관리자 모바일 드로어 9개 메뉴 비겹침" in qa_ui
     assert "admin_sidebar_mobile_layout" in qa_ui
     assert "관리자 전용 사이드 메뉴" in quality
 
@@ -1443,7 +1443,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "오프라인 영상 기준선을 합친 241개" in quality_doc
+    assert "오프라인 영상 기준선을 합친 264개" in quality_doc
     assert "tests/test_multiswimmer_analysis.py" in quality_doc
     assert "analysis_v2/" in readme
     assert "실제 영상 정확도 게이트 전까지 공개 API·UI에는 연결하지 않습니다" in readme

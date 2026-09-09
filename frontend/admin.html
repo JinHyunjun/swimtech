@@ -571,6 +571,7 @@ body {
       <button class="admin-tab" id="admin-tab-logs" role="tab" aria-selected="false" aria-controls="tab-logs" data-tab="logs"><span class="admin-tab-index" aria-hidden="true">06</span><span class="admin-tab-label">운영 로그</span></button>
       <button class="admin-tab" id="admin-tab-qa-logs" role="tab" aria-selected="false" aria-controls="tab-qa-logs" data-tab="qa-logs"><span class="admin-tab-index" aria-hidden="true">07</span><span class="admin-tab-label">QA 검증 로그</span></button>
       <button class="admin-tab" id="admin-tab-feedback" role="tab" aria-selected="false" aria-controls="tab-feedback" data-tab="feedback"><span class="admin-tab-index" aria-hidden="true">08</span><span class="admin-tab-label">피드백</span></button>
+      <button class="admin-tab" id="admin-tab-video-lab" role="tab" aria-selected="false" aria-controls="tab-video-lab" data-tab="video-lab"><span class="admin-tab-index" aria-hidden="true">09</span><span class="admin-tab-label">영법 분석 TEST</span></button>
     </nav>
     <div class="admin-sidebar-footer">운영 데이터 조회와 서비스 상태 확인을 위한 슈퍼 관리자 전용 화면입니다.</div>
   </aside>
@@ -1080,6 +1081,13 @@ body {
     </div>
   </section>
 
+  <section class="admin-section" id="tab-video-lab">
+    <div class="admin-card" style="padding:16px;margin-bottom:16px">
+      <h2 style="font-size:1.2rem;margin:0 0 8px">영법 분석 TEST</h2>
+      <p style="margin:0;line-height:1.7;overflow-wrap:anywhere">영상 업로드 → 선수·구간 지정 → 수기 기록 → 모델 결과 비교. 관리자 실험 기능이며 정확도가 검증된 서비스가 아닙니다. 분석 PC 처리기가 연결되어야 실행됩니다. 영상·기록은 임시 보관되므로 필요한 결과는 내보내세요.</p>
+    </div>
+    <iframe id="admin-video-lab" title="관리자 영법 분석 테스트 실험실" style="display:block;width:100%;height:1100px;border:0;border-radius:16px;background:#f4f8f7" referrerpolicy="same-origin"></iframe>
+  </section>
 </main>
 </div>
 
@@ -1235,6 +1243,10 @@ function setAdminNavOpen(open, restoreFocus = false) {
 
 function activateAdminTab(btn, moveFocus = false) {
   if (!btn) return;
+  const videoLab = document.getElementById('admin-video-lab');
+  const labActive = btn.dataset.tab === 'video-lab';
+  if (labActive && !videoLab.getAttribute('src')) videoLab.src = '/admin_video_lab';
+  videoLab.contentWindow?.postMessage({type:'video-lab-active', active:labActive}, location.origin);
   adminTabs.forEach(tab => {
     const active = tab === btn;
     tab.classList.toggle('active', active);
@@ -1746,6 +1758,12 @@ document.addEventListener('click', e => {
 });
 
 // 초기 로드
+window.addEventListener('message', event => {
+  const frame = document.getElementById('admin-video-lab');
+  if (event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== 'video-lab-height') return;
+  if (Number.isFinite(event.data.height)) frame.style.height = Math.min(14000, Math.max(800, event.data.height + 8)) + 'px';
+});
+if (location.hash === '#video-lab') activateAdminTab(document.getElementById('admin-tab-video-lab'));
 loadDashboard();
 loadUsers();
 loadCoaches();
