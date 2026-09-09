@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--timeout-sec', type=int, default=900)
     parser.add_argument('--offline-check', action='store_true', help='Without a processor: native H.264 playback, blocked analysis, offline guidance, and administrator device approval')
     parser.add_argument('--expect-unsupported-native', action='store_true', help='Offline HEVC test: verify explicit conversion guidance instead of native playback')
+    parser.add_argument('--device-check', action='store_true', help='Also enroll, renew, and revoke this QA device using the browser (offline mode only)')
     parser.add_argument('--base-url', default='https://swimtech.vercel.app', help='Production origin or a loopback-only integration harness')
     parser.add_argument('--output-dir', type=Path, default=ROOT/'tmp/analysis_v2/admin-browser')
     args = parser.parse_args()
@@ -105,15 +106,37 @@ def main():
                     expect(frame.locator('#mediaPending')).to_be_hidden(timeout=45000)
                     assert frame.locator('#video').evaluate('v=>v.videoWidth>0')
                 # Browser approval is explicit, and never exposes the worker token in the DOM.
-                pair=context.request.post(PREFIX+'/worker/pair').json()
+                pair=context.request.post(PREFIX+'/worker/pair',data={'remember':args.device_check}).json()
                 page.goto('/admin_video_lab?connect='+pair['code'],wait_until='domcontentloaded')
                 expect(page.locator('#pairCode')).to_have_text(pair['code'])
                 expect(page.locator('#approvePair')).to_be_enabled(timeout=30000)
+                if args.device_check:
+                    expect(page.locator('#rememberDevice')).to_be_checked()
+                    page.locator('#deviceName').fill('QA temporary device - remove after check')
                 assert context.request.post(PREFIX+'/worker/pair/poll',data={'code':pair['code'],'secret':pair['secret']}).json()['status']=='pending'
                 page.locator('#approvePair').click()
                 expect(page.locator('#pairStatus')).to_contain_text('승인했습니다')
                 approved=context.request.post(PREFIX+'/worker/pair/poll',data={'code':pair['code'],'secret':pair['secret']}).json()
                 assert approved['status']=='approved' and approved['token'] not in page.locator('body').inner_text()
+                if args.device_check:
+                    assert approved['device']['secret'] not in page.locator('body').inner_text()
+                    device_id=approved['device']['device_id']
+                    try:
+                        assert context.request.post(PREFIX+'/worker/device/refresh',data=approved['device']).ok
+                        page.locator('#devicesPanel summary').click()
+                        row=page.locator('#deviceList .actions').filter(has_text='QA temporary device')
+                        expect(row).to_be_visible(timeout=30000)
+                        for width in [1440,390,320]:
+                            page.set_viewport_size({'width':width,'height':950})
+                            page.wait_for_timeout(200)
+                            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+                            page.screenshot(path=str(args.output_dir/f'device-{width}.png'),full_page=True)
+                        row.get_by_role('button',name='연결 해제').click()
+                        expect(page.locator('#deviceList')).not_to_contain_text('QA temporary device',timeout=30000)
+                        assert context.request.post(PREFIX+'/worker/device/refresh',data=approved['device']).status==401
+                    finally:
+                        context.request.delete(PREFIX+'/devices/'+device_id,headers=headers)
+                    report['device_renewal_and_revoke']=True
                 assert not errors and not resource_errors, (errors,resource_errors)
                 report.update(status='passed', mode='offline_source_and_device_approval', native_playback=not args.expect_unsupported_native,
                               unsupported_codec_guidance=args.expect_unsupported_native, reload_verified=True,

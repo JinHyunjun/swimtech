@@ -25,6 +25,7 @@ def lab(tmp_path, monkeypatch):
             raise HTTPException(401 if not token else 403)
         return token
     monkeypatch.setattr(api, '_require_admin', require)
+    monkeypatch.setattr(api, '_revoked_devices', set())
     app = FastAPI()
     app.include_router(api.router, prefix=PREFIX)
     with TestClient(app) as client:
@@ -300,3 +301,149 @@ def test_browser_worker_login_does_not_use_admin_password(monkeypatch, capsys):
     assert 'connect=1234ABCD' in out
     assert 'private-device-only' not in out and 'private-worker-only' not in out
     assert all('/auth/login' not in call.args[0] for call in session.post.call_args_list)
+
+
+@pytest.fixture
+def remembered(lab, monkeypatch):
+    from unittest.mock import Mock
+    client, service = lab
+    record = {'device_id':'a'*32,'secret':'S'*43}
+    registry = Mock()
+    registry.register.return_value = record.copy()
+    registry.renew.return_value = 'admin-a'
+    registry.list.return_value = [{'id':'a'*32,'name':'Test PC','expires_at':'future','last_used_at':'now'}]
+    registry.revoke.side_effect = lambda owner, ident: owner == 'admin-a' and ident == 'a'*32
+    monkeypatch.setattr(api, '_devices', registry)
+    pair = client.post(PREFIX+'/worker/pair', json={'remember':True}).json()
+    assert client.get(PREFIX+'/worker/pair/'+pair['code']).json()['remember_requested'] is True
+    approved = client.post(PREFIX+'/worker/pair/approve',json={'code':pair['code'],'remember':True,'name':'Test PC'})
+    assert approved.json() == {'approved':True}
+    value = client.post(PREFIX+'/worker/pair/poll',json={'code':pair['code'],'secret':pair['secret']}).json()
+    return client, service, registry, value
+
+
+def test_persistent_device_renewal_keeps_worker_identity_and_lease(remembered):
+    client, service, registry, grant = remembered
+    ident = upload(client)
+    header = {'Authorization':'Bearer '+grant['token']}
+    job = client.post(PREFIX+'/worker/claim', headers=header).json()
+    reply = client.post(PREFIX+'/worker/device/refresh', json=grant['device'])
+    assert reply.status_code == 200
+    header = {'Authorization':'Bearer '+reply.json()['token'], 'X-Lab-Lease':job['lease']}
+    assert client.post(PREFIX+f'/worker/{ident}/heartbeat',headers=header).status_code == 200
+    assert client.get(PREFIX+'/devices').json()[0]['online'] is True
+    assert service.read(ident)['worker'] == grant['device']['device_id']
+    registry.renew.assert_called_once()
+
+
+def test_device_revoke_is_owner_scoped_and_invalidates_access(remembered):
+    client, service, registry, grant = remembered
+    ident = upload(client)
+    header = {'Authorization':'Bearer '+grant['token']}
+    client.post(PREFIX+'/worker/claim', headers=header)
+    client.cookies.set('swimtech_token','admin-b')
+    assert client.delete(PREFIX+'/devices/'+'a'*32).status_code == 404
+    client.cookies.set('swimtech_token','admin-a')
+    assert client.delete(PREFIX+'/devices/'+'a'*32).status_code == 200
+    assert client.post(PREFIX+'/worker/claim',headers=header).status_code == 401
+    assert client.post(PREFIX+'/worker/device/refresh',json=grant['device']).status_code == 401
+    assert service.read(ident)['state'] == 'cancelled'
+
+
+def test_server_restart_requires_durable_device_validation(remembered, monkeypatch):
+    client, _, registry, grant = remembered
+    monkeypatch.setattr(api,'_boot_id','new-process')
+    assert client.post(PREFIX+'/worker/claim',headers={'Authorization':'Bearer '+grant['token']}).status_code == 401
+    fresh = client.post(PREFIX+'/worker/device/refresh',json=grant['device']).json()['token']
+    assert client.post(PREFIX+'/worker/claim',headers={'Authorization':'Bearer '+fresh}).status_code == 200
+    registry.renew.return_value = None  # DB remembers revocation or expired grant after restart.
+    assert client.post(PREFIX+'/worker/device/refresh',json=grant['device']).status_code == 401
+
+
+def test_forged_refresh_never_queries_database(remembered):
+    client, _, registry, grant = remembered
+    bad = {**grant['device'],'proof':'0'*64}
+    assert client.post(PREFIX+'/worker/device/refresh',json=bad).status_code == 401
+    registry.renew.assert_not_called()
+
+
+def test_legacy_pair_cannot_silently_become_persistent(lab):
+    client, _ = lab
+    pair = client.post(PREFIX+'/worker/pair').json()
+    assert client.post(PREFIX+'/worker/pair/approve',json={'code':pair['code'],'remember':True}).status_code == 400
+
+
+def test_worker_continues_past_55_minutes_and_recovers_network(monkeypatch):
+    import requests
+    from unittest.mock import Mock
+    from analysis_v2.workbench import remote_worker as remote
+    clock = [0]
+    monkeypatch.setattr(remote.time,'monotonic',lambda:clock[0])
+    monkeypatch.setattr(remote.time,'sleep',lambda delay:clock.__setitem__(0,clock[0]+1800))
+    worker = Mock()
+    worker.claim_job.side_effect = [None, requests.ConnectionError(), None, None, KeyboardInterrupt()]
+    with pytest.raises(KeyboardInterrupt): remote.run_connected(worker)
+    assert clock[0] >= 7200 and worker.claim_job.call_count == 5
+
+
+def test_worker_refreshes_after_45_minutes_and_on_401(monkeypatch):
+    from unittest.mock import Mock
+    worker = RemoteWorker('http://127.0.0.1:8791','old',device={'device_id':'a'*32})
+    worker.refresh_at = 0
+    context = Mock()
+    context.__enter__ = Mock(return_value=context)
+    context.__exit__ = Mock(return_value=False)
+    context.post.return_value = Mock(json=lambda:{'token':'fresh'})
+    monkeypatch.setattr('analysis_v2.workbench.remote_worker.requests.Session',lambda:context)
+    worker.session.request = Mock(side_effect=[Mock(status_code=401),Mock(status_code=200)])
+    assert worker.request('POST','/worker/claim').status_code == 200
+    assert context.post.call_count == 2
+    assert worker.session.headers['Authorization'] == 'Bearer fresh'
+
+
+def test_worker_refuses_reconnect_when_permission_is_revoked(monkeypatch):
+    import requests
+    from unittest.mock import Mock
+    from analysis_v2.workbench import remote_worker as remote
+    response = requests.Response();response.status_code = 401
+    worker = Mock();worker.claim_job.side_effect = requests.HTTPError(response=response)
+    with pytest.raises(requests.HTTPError): remote.run_connected(worker)
+    worker.claim_job.assert_called_once()
+
+
+def test_device_credentials_roundtrip_and_no_plaintext(tmp_path):
+    import os
+    from analysis_v2.workbench.device_credentials import DeviceCredentials
+    if os.name != 'nt': pytest.skip('Windows DPAPI only; Linux has no plaintext fallback')
+    store = DeviceCredentials('https://swimtech.vercel.app', root=tmp_path)
+    device = {'device_id':'test-device','secret':'synthetic-private-grant'}
+    store.save(device)
+    assert b'synthetic-private-grant' not in store.path.read_bytes()
+    assert store.load() == device
+    with store.single_instance():
+        with pytest.raises(RuntimeError):
+            with store.single_instance(): pass
+    store.forget();assert store.load() is None
+
+
+def test_device_registry_checks_hash_role_version_expiry_and_owner(monkeypatch):
+    from contextlib import contextmanager
+    from unittest.mock import Mock
+    from services import video_devices
+    cursor = Mock()
+    @contextmanager
+    def db(): yield None, cursor
+    monkeypatch.setattr(video_devices,'db_conn',db)
+    registry = video_devices.DeviceRegistry()
+    cursor.fetchone.side_effect = [(7,2),(0,)]
+    record = registry.register('admin-a','PC')
+    command, params = cursor.execute.call_args.args
+    assert record['secret'] not in params
+    assert hashlib.sha256(record['secret'].encode()).hexdigest() in params
+    cursor.fetchone.side_effect = [('admin-a',)]
+    assert registry.renew(record['device_id'],record['secret']) == 'admin-a'
+    sql = cursor.execute.call_args.args[0]
+    for check in ['revoked_at IS NULL','expires_at>NOW()','auth_version=','c.role=']: assert check in sql
+    cursor.fetchone.side_effect = [None]
+    assert registry.revoke('admin-b',record['device_id']) is False
+    assert 'c.username=%s' in cursor.execute.call_args.args[0]

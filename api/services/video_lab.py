@@ -55,7 +55,7 @@ class VideoLab:
         self.root=Path(root).resolve();self.root.mkdir(parents=True,exist_ok=True)
         self.lock=threading.RLock();self.workers={};self.pairings={};self.pair_requests={}
 
-    def start_pairing(self, address):
+    def start_pairing(self, address, remember=False):
         """Device authorization: no account password or browser session is shared."""
         with self.lock:
             now=time.time()
@@ -68,15 +68,19 @@ class VideoLab:
             code=secrets.token_hex(4).upper()
             while code in self.pairings:code=secrets.token_hex(4).upper()
             secret=secrets.token_urlsafe(32)
-            self.pairings[code]={'digest':hashlib.sha256(secret.encode()).hexdigest(),'expires_at':now+300,'token':None}
+            self.pairings[code]={'digest':hashlib.sha256(secret.encode()).hexdigest(),'expires_at':now+300,'token':None,'remember_requested':remember}
             return {'code':code,'secret':secret,'expires_in':300}
 
     def approve_pairing(self, code, token):
         with self.lock:
-            data=self.pairings.get(code)
-            if not data or data['expires_at']<=time.time() or data['token']:
-                raise ValueError('연결 코드가 만료되었거나 이미 사용되었습니다. PC에서 다시 실행하세요.')
+            data=self.pending_pair(code)
             data['token']=token
+
+    def pending_pair(self, code):
+        data=self.pairings.get(code)
+        if not data or data['expires_at']<=time.time() or data['token']:
+            raise ValueError('연결 코드가 만료되었거나 이미 사용되었습니다. PC에서 다시 실행하세요.')
+        return data
 
     def poll_pairing(self, code, secret):
         with self.lock:
@@ -85,7 +89,7 @@ class VideoLab:
                 raise ValueError('연결 요청이 만료되었거나 올바르지 않습니다.')
             if not data['token']:return {'status':'pending'}
             token=data['token'];del self.pairings[code]
-            return {'status':'approved','token':token}
+            return {'status':'approved',**(token if isinstance(token,dict) else {'token':token})}
 
     def directory(self, ident):
         if not re.fullmatch('[a-f0-9]{32}',ident):raise ValueError('잘못된 영상 ID입니다.')

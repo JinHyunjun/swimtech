@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import hashlib
+import hmac
 import os
 import re
 import tempfile
@@ -20,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from routers.admin import _require_admin
 from routers.auth import SECRET_KEY, ALGORITHM
 from services.video_lab import VideoLab, MAX_VIDEO, CHUNK, TTL, write_json, event_comparison
+from services.video_devices import DeviceRegistry
 
 
 class LabRoute(APIRoute):
@@ -43,6 +46,10 @@ class LabRoute(APIRoute):
 
 router = APIRouter(route_class=LabRoute)
 _store = None
+_devices = DeviceRegistry()
+_boot_id = uuid4().hex
+_revoked_devices = set()
+_persistent_workers = set()
 
 
 def store():
@@ -68,6 +75,11 @@ def worker(request: Request):
         data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], audience='video-lab')
         if scheme != 'Bearer' or data.get('scope') != 'video-lab-worker' or not re.fullmatch('[a-f0-9]{32}', data.get('worker', '')):
             raise ValueError('scope')
+        # Restart requires durable re-authorization; a revoked token cannot
+        # become valid again after the in-memory revocation set is lost.
+        if data.get('device') and (data.get('boot') != _boot_id or data['worker'] in _revoked_devices):
+            raise ValueError('device authorization')
+        if data.get('device'): _persistent_workers.add((data['sub'],data['worker']))
         return data['sub'], data['worker']
     except (JWTError, ValueError, KeyError):
         raise HTTPException(401, '처리기 인증이 만료됐습니다.')
@@ -117,6 +129,25 @@ class PairPoll(PairCode):
     secret: str = Field(pattern='^[A-Za-z0-9_-]{43}$')
 
 
+class PairStart(StrictModel):
+    remember: bool = False
+
+
+class PairApproval(PairCode):
+    remember: bool = False
+    name: str = Field(default='분석 PC', min_length=1, max_length=80)
+
+
+class DeviceSecret(StrictModel):
+    device_id: str = Field(pattern='^[a-f0-9]{32}$')
+    secret: str = Field(pattern='^[A-Za-z0-9_-]{43}$')
+    proof: str = Field(pattern='^[a-f0-9]{64}$')
+
+
+def device_proof(ident, secret):
+    return hmac.new(SECRET_KEY.encode(), ('video-lab-device:'+ident+':'+secret).encode(), hashlib.sha256).hexdigest()
+
+
 async def bounded_body(request, maximum):
     result = bytearray()
     async for chunk in request.stream():
@@ -133,14 +164,18 @@ def session(owner=Depends(admin)):
         s.cleanup()
         s.workers = {key: value for key, value in s.workers.items() if value > time.time()-180}
         online = any(key[0] == owner and value > time.time()-45 for key, value in s.workers.items())
+        persistent = any(key[0] == owner and key in _persistent_workers and value > time.time()-45 for key, value in s.workers.items())
     return {'max_bytes': MAX_VIDEO, 'ttl_seconds': TTL, 'worker_online': online,
+            'persistent_worker_online':persistent,
             'experimental': True, 'storage': 'ephemeral', 'token': '1'}
 
 
-def make_worker_ticket(owner):
-    ident = uuid4().hex
-    ticket = jwt.encode({'sub': owner, 'worker': ident, 'scope': 'video-lab-worker',
-                         'aud': 'video-lab', 'exp': int(time.time())+TTL}, SECRET_KEY, algorithm=ALGORITHM)
+def make_worker_ticket(owner, device_id=None):
+    ident = device_id or uuid4().hex
+    claims = {'sub': owner, 'worker': ident, 'scope': 'video-lab-worker',
+              'aud': 'video-lab', 'exp': int(time.time())+TTL}
+    if device_id: claims.update(device=True, boot=_boot_id)
+    ticket = jwt.encode(claims, SECRET_KEY, algorithm=ALGORITHM)
     return {'token': ticket, 'expires_in': TTL}
 
 
@@ -150,10 +185,17 @@ def worker_ticket(owner=Depends(admin)):
 
 
 @router.post('/worker/pair')
-def pair_start(request: Request):
+def pair_start(request: Request, options: PairStart | None = None):
     # Unauthenticated creation alone grants no access. Bounded five-minute
     # requests require explicit approval by a signed-in administrator.
-    return store().start_pairing(request.client.host if request.client else 'unknown')
+    return store().start_pairing(request.client.host if request.client else 'unknown', remember=bool(options and options.remember))
+
+
+@router.get('/worker/pair/{code}')
+def pair_info(code: str, owner=Depends(admin)):
+    s = store()
+    with s.lock:
+        return {'remember_requested':s.pending_pair(code)['remember_requested']}
 
 
 @router.post('/worker/pair/poll')
@@ -162,9 +204,53 @@ def pair_poll(data: PairPoll):
 
 
 @router.post('/worker/pair/approve')
-def pair_approve(data: PairCode, owner=Depends(admin)):
-    store().approve_pairing(data.code, make_worker_ticket(owner)['token'])
+def pair_approve(data: PairApproval, owner=Depends(admin)):
+    s = store()
+    with s.lock:
+        pair = s.pending_pair(data.code)
+        if data.remember and not pair['remember_requested']:
+            raise ValueError('이 요청은 지속 연결을 지원하지 않습니다. 새 처리기로 다시 연결하세요.')
+        if data.remember:
+            device = _devices.register(owner, data.name.strip() or '분석 PC')
+            device['proof'] = device_proof(device['device_id'], device['secret'])
+            bundle = {**make_worker_ticket(owner, device['device_id']), 'device':device}
+        else:
+            bundle = make_worker_ticket(owner)['token']
+        s.approve_pairing(data.code, bundle)
     return {'approved': True}
+
+
+@router.post('/worker/device/refresh')
+def device_refresh(data: DeviceSecret):
+    if not hmac.compare_digest(data.proof, device_proof(data.device_id, data.secret)):
+        raise HTTPException(401, '올바르지 않은 PC 연결 정보입니다.')
+    s = store()
+    with s.lock:
+        owner = _devices.renew(data.device_id, data.secret)
+        if not owner or data.device_id in _revoked_devices:
+            raise HTTPException(401, 'PC 연결이 해제되었거나 만료되었습니다. 다시 승인하세요.')
+        return make_worker_ticket(owner, data.device_id)
+
+
+@router.get('/devices')
+def devices(owner=Depends(admin)):
+    s = store()
+    with s.lock:
+        return [{**d, 'online':s.workers.get((owner,d['id']),0)>time.time()-45} for d in _devices.list(owner)]
+
+
+@router.delete('/devices/{ident}')
+def revoke_device(ident: str, owner=Depends(admin)):
+    s = store()
+    with s.lock:
+        if not _devices.revoke(owner, ident): raise HTTPException(404, '등록된 PC가 없습니다.')
+        _revoked_devices.add(ident)
+        s.workers.pop((owner,ident), None)
+        for data in s.list(owner):
+            private = s.read(data['id'])
+            if private.get('worker') == ident and private['state'] in {'running','preparing'}:
+                s.update(data['id'],state='cancelled',lease=None,error='관리자가 PC 연결을 해제했습니다.')
+    return {'revoked':True}
 
 
 @router.get('/videos')

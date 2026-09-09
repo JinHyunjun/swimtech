@@ -87,11 +87,15 @@ def test_database_schema_changes_are_versioned_and_deploy_gated():
     assert 'revision: str = "20260723_10"' in qa_session_revision
     assert 'down_revision: Union[str, None] = "20260723_09"' in qa_session_revision
     assert "ix_activity_qa_session_anchor" in qa_session_revision
-    assert 'EXPECTED_SCHEMA_REVISION = "20260723_10"' in main
+    device_revision = (ROOT / 'api/alembic/versions/20260909_11_video_worker_devices.py').read_text(encoding='utf-8')
+    assert 'revision: str = "20260909_11"' in device_revision
+    assert 'down_revision: str = "20260723_10"' in device_revision
+    assert 'video_worker_devices' in device_revision and 'secret_hash' in device_revision
+    assert 'EXPECTED_SCHEMA_REVISION = "20260909_11"' in main
     assert 'command.upgrade(config, "head")' in main
     assert "lifespan=lifespan" in main
     assert 'SELECT version_num FROM alembic_version' in main
-    assert 'readiness.get("schema_revision") == "20260723_10"' in (
+    assert 'readiness.get("schema_revision") == "20260909_11"' in (
         ROOT / "scripts" / "qa_runner.py"
     ).read_text(encoding="utf-8")
     assert '@app.on_event("startup")' not in main
@@ -1443,7 +1447,7 @@ def test_quality_gate_documentation_is_kept_current():
     terms = (ROOT / "frontend" / "terms.html").read_text(encoding="utf-8")
 
     assert "SwimMate 품질 검증 게이트" in quality_doc
-    assert "오프라인 영상 기준선을 합친 271개" in quality_doc
+    assert "오프라인 영상 기준선을 합친 281개" in quality_doc
     assert "tests/test_multiswimmer_analysis.py" in quality_doc
     assert "analysis_v2/" in readme
     assert "실제 영상 정확도 게이트 전까지 공개 API·UI에는 연결하지 않습니다" in readme

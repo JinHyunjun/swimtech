@@ -193,6 +193,7 @@ async function workerStatus(){
   try{status=await api(BASE+'/session');}catch(error){workerOnline=false;$('connectionTitle').textContent='연결 상태를 확인할 수 없습니다';$('connectionMessage').textContent=error.message;$('connectionPanel').dataset.online='false';$('workerStatus').textContent='연결 상태 확인 실패';updateState();throw error;}
   workerOnline=status.worker_online;
   $('workerStatus').textContent=status.worker_online?'● 분석 처리기 연결됨':'○ 처리기 연결 대기 · 분석 PC 실행 필요';
+  if(status.persistent_worker_online)$('workerStatus').textContent+=' · 자동 유지';
   $('workerStatus').dataset.online=String(status.worker_online);
   $('connectionPanel').dataset.online=String(workerOnline);
   $('connectionTitle').textContent=workerOnline?'분석 PC가 연결되어 있습니다':'분석 PC가 연결되어 있지 않습니다';
@@ -200,15 +201,30 @@ async function workerStatus(){
   updateState();
 }
 act('refreshWorker',workerStatus);
+async function loadDevices(){
+  const devices=await api(BASE+'/devices');$('deviceList').replaceChildren();
+  if(!devices.length)$('deviceList').append(textNode('p','기억한 PC가 없습니다. 처음 연결할 때 「이 PC 기억」을 선택하세요.'));
+  for(const device of devices){
+    const row=textNode('div','','actions');row.append(textNode('span',`${device.name} · ${device.online?'연결됨':'연결 대기'}`));
+    const revoke=textNode('button','연결 해제','danger');
+    revoke.onclick=async()=>{if(!confirm('이 PC의 자동 연결 권한을 해제할까요? 진행 중인 분석도 중지됩니다.'))return;
+      revoke.disabled=true;try{await api(BASE+'/devices/'+device.id,{method:'DELETE'});await loadDevices();await workerStatus();}catch(e){message(e.message);revoke.disabled=false;}};
+    row.append(revoke);$('deviceList').append(row);
+  }
+}
+act('reloadDevices',loadDevices);
+$('devicesPanel').addEventListener('toggle',()=>{if($('devicesPanel').open)loadDevices().catch(e=>message(e.message));});
 const pairCode=new URLSearchParams(location.search).get('connect');
 if(pairCode&&/^[A-F0-9]{8}$/.test(pairCode)){$('pairPanel').hidden=false;$('pairCode').textContent=pairCode;}
 act('approvePair',async()=>{
   $('approvePair').disabled=true;
-  try{await post(BASE+'/worker/pair/approve',{code:pairCode});$('pairStatus').textContent='승인했습니다. PC 연결을 기다리는 중입니다. 기존 관리자 탭으로 돌아가 연결 상태를 확인하세요.';}
+  try{await post(BASE+'/worker/pair/approve',{code:pairCode,remember:$('rememberDevice').checked,name:$('deviceName').value.trim()||'내 분석 PC'});$('pairStatus').textContent='승인했습니다. PC 연결을 기다리는 중입니다. 기존 관리자 탭으로 돌아가 연결 상태를 확인하세요.';}
   catch(error){$('pairStatus').textContent=error.message;$('approvePair').disabled=false;}
 });
 $('file').disabled=true;
-(async()=>{try{await workerStatus();$('file').disabled=false;$('approvePair').disabled=false;await refreshProjects();}catch(error){message(error.message);$('uploadPanel').hidden=true;$('pairStatus').textContent='관리자 계정으로 로그인한 뒤 이 연결 링크를 다시 열어 주세요.';}})();
+(async()=>{try{await workerStatus();$('file').disabled=false;await refreshProjects();if(pairCode&&/^[A-F0-9]{8}$/.test(pairCode)){
+  const info=await api(BASE+'/worker/pair/'+pairCode);$('rememberOptions').hidden=!info.remember_requested;$('rememberDevice').checked=info.remember_requested;$('approvePair').disabled=false;
+}}catch(error){message(error.message);$('pairStatus').textContent=error.message;}})();
 setInterval(()=>{if(labActive&&!document.hidden)workerStatus().catch(error=>message(error.message));},15000);
 window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='video-lab-active'){labActive=!!event.data.active;if(!labActive)video.pause();}});
 new ResizeObserver(()=>{if(parent!==window)parent.postMessage({type:'video-lab-height',height:Math.ceil(document.body.getBoundingClientRect().height)},location.origin);}).observe(document.body);

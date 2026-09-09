@@ -2,7 +2,7 @@
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SwimMate Lab · 영상 교차 검증</title><link rel="icon" href="/static/video-lab/wave.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/video-lab/style.css?v=20260909b"><script src="/static/video-lab/app.js?v=20260909b" defer></script></head>
+<link rel="stylesheet" href="/static/video-lab/style.css?v=20260909c"><script src="/static/video-lab/app.js?v=20260909c" defer></script></head>
 <body>
 <header><a class="brand" href="/admin#video-lab" target="_top"><img src="/static/video-lab/wave.svg" alt=""><span>SwimMate <b>LAB</b></span></a>
 <span class="local" id="workerStatus" role="status">처리기 연결 확인 중</span><button id="helpButton" class="quiet">사용 방법</button></header>
@@ -13,14 +13,16 @@
 <p class="muted">직접 기록한 동작과 모델의 후보를 나란히 확인하세요.</p></div><span class="badge">관리자 TEST · 정확도 미검증</span></div>
 <ol class="steps"><li class="active" id="step1"><span>1</span> 영상 선택</li><li id="step2"><span>2</span> 직접 기록</li><li id="step3"><span>3</span> 결과 비교</li></ol>
 <section id="pairPanel" class="panel connection" hidden aria-labelledby="pairTitle"><h2 id="pairTitle">분석 PC 연결 승인</h2>
-<p>직접 실행한 PC의 코드와 아래 코드가 같은지 확인하세요. 승인하면 이 PC가 내 TEST 영상 다운로드·재생 변환·모델 분석을 최대 55분간 처리할 수 있습니다. 비밀번호나 일반 관리자 권한은 전달되지 않습니다.</p>
+<p>직접 실행한 PC의 코드와 아래 코드가 같은지 확인하세요. 승인하면 이 PC가 내 TEST 영상 다운로드·재생 변환·모델 분석을 처리할 수 있습니다. 비밀번호나 일반 관리자 권한은 전달되지 않습니다.</p>
+<div id="rememberOptions" hidden><label><input id="rememberDevice" type="checkbox"> 이 PC 기억 · 연결 자동 유지</label><label>PC 이름<input id="deviceName" value="내 분석 PC" maxlength="80"></label><p class="small">Windows 사용자 계정으로 암호화해 연결 정보를 보관합니다. 처리기를 켜 둔 동안 시간 제한 없이 자동 갱신하며, 재실행할 때도 승인을 재사용합니다. 90일간 미사용·비밀번호 변경·관리자 해제 시에는 다시 승인해야 합니다.</p></div>
 <p>연결 코드: <strong id="pairCode"></strong></p><p class="small">직접 요청하지 않은 연결은 승인하지 마세요. 코드는 발급 후 5분간 유효합니다.</p>
 <button id="approvePair" class="primary" disabled>이 PC 연결 승인</button><p id="pairStatus" role="status"></p></section>
 <section id="connectionPanel" class="panel connection" aria-labelledby="connectionTitle"><h3 id="connectionTitle">분석 PC 연결 확인 중</h3>
 <p id="connectionMessage" role="status">영상 처리기 상태를 확인하고 있습니다.</p>
 <details id="connectionHelp"><summary>분석 PC 연결 방법</summary><p>모델 실행 환경이 있는 PC의 프로젝트 폴더에서 아래 명령을 실행한 뒤, 표시되는 링크를 관리자 계정으로 열고 같은 코드를 승인하세요. 이 창에서 비밀번호를 입력할 필요가 없습니다.</p>
-<code>python -m analysis_v2.workbench.remote_worker --browser-login</code><p class="small">PC가 꺼지면 분석도 중단됩니다. 연결 후 재생 준비가 끝나면 아래에서 조건을 확정하고 분석을 시작하세요.</p></details>
+<code>python -m analysis_v2.workbench.remote_worker</code><p class="small">처음에만 「이 PC 기억」으로 승인하세요. 이후에는 승인 없이 다시 연결됩니다. 처리기를 켜 두면 연결을 자동 유지하지만 PC 종료·절전 중에는 분석할 수 없습니다. Windows 자동 시작 등록은 별도입니다.</p></details>
 <button id="refreshWorker" class="quiet">연결 상태 다시 확인</button></section>
+<section class="panel connection"><details id="devicesPanel"><summary>등록된 PC 관리 · 연결 해제</summary><div id="deviceList"></div><button id="reloadDevices">목록 새로고침</button></details></section>
 <section id="uploadPanel" class="upload panel"><img src="/static/video-lab/wave.svg" alt=""><h2>검증할 수영 영상을 올려주세요</h2>
 <p>파일을 여기에 놓거나 아래 버튼으로 선택하세요.</p><label class="button primary" for="file">영상 선택</label>
 <input id="file" type="file" accept="video/*" hidden><p class="muted small">최대 64MB · 원본 60초 · 4K / 관리자당 3개 보관</p>

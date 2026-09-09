@@ -1,7 +1,7 @@
 """Opt-in workstation processor for the deployed admin TEST queue.
 
-Outbound HTTPS only; no listening port or tunnel. Admin credentials are used
-once to mint a short-lived, worker-only capability and never written to disk.
+Outbound HTTPS only; no listening port or tunnel. Administrator passwords are
+never stored. Remembered device grants renew short-lived worker capabilities.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 import requests
 
 from .service import Workbench, create_preview, inspect_video, save_json
+from .device_credentials import DeviceCredentials
 
 CHUNK = 1024 * 1024
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +28,7 @@ def validate_base(base):
     url = urlsplit(base)
     if url.username or url.password or url.query or url.fragment or url.path not in {'', '/'}:
         raise ValueError('A service origin, without credentials or path, is required')
-    if not (url.scheme == 'https' and url.hostname == 'swimtech.vercel.app') and not (
+    if not (url.scheme == 'https' and url.hostname == 'swimtech.vercel.app' and url.port in {None,443}) and not (
             url.scheme == 'http' and url.hostname in {'127.0.0.1', 'localhost'}):
         raise ValueError('Only the deployed SwimMate origin or loopback QA is allowed')
     return base.rstrip('/')
@@ -50,11 +51,11 @@ def issue_ticket(base):
         return response.json()['token']
 
 
-def browser_ticket(base):
+def browser_ticket(base, remember=False):
     """Explicit device approval; never reads the browser's cookies/passwords."""
     base = validate_base(base)
     with requests.Session() as session:
-        reply = session.post(base+'/api/admin/video-lab/worker/pair', timeout=90)
+        reply = session.post(base+'/api/admin/video-lab/worker/pair', json={'remember':remember}, timeout=90)
         reply.raise_for_status()
         pair = reply.json()
         print('Open this link while signed in as administrator, check the code, and approve this PC:', flush=True)
@@ -68,18 +69,36 @@ def browser_ticket(base):
             reply.raise_for_status()
             data = reply.json()
             if data['status'] == 'approved':
-                return data['token']
+                return data if remember else data['token']
         raise RuntimeError('PC approval expired. Run again and approve the new code.')
 
 
 class RemoteWorker:
-    def __init__(self, base, ticket):
+    def __init__(self, base, ticket, device=None):
         self.base = validate_base(base)+'/api/admin/video-lab'
         self.session = requests.Session()
-        self.session.headers['Authorization'] = 'Bearer '+ticket
+        self.session.headers['Authorization'] = 'Bearer '+(ticket or '')
+        self.device = device
+        self.auth_lock = threading.RLock()
+        self.refresh_at = time.monotonic()+2700 if ticket else 0
+
+    def authorization(self, force=False):
+        with self.auth_lock:
+            if self.device and (force or time.monotonic() >= self.refresh_at):
+                with requests.Session() as renewal:
+                    reply = renewal.post(self.base+'/worker/device/refresh', json=self.device, timeout=90, allow_redirects=False)
+                    reply.raise_for_status()
+                    self.session.headers['Authorization'] = 'Bearer '+reply.json()['token']
+                    self.refresh_at = time.monotonic()+2700
+                print('PC authorization renewed automatically.', flush=True)
+            return self.session.headers['Authorization']
 
     def request(self, method, path, **kwargs):
+        self.authorization()
         response = self.session.request(method, self.base+path, timeout=90, **kwargs)
+        if response.status_code == 401 and self.device:
+            self.authorization(force=True)
+            response = self.session.request(method, self.base+path, timeout=90, **kwargs)
         response.raise_for_status()
         return response
 
@@ -112,15 +131,20 @@ class RemoteWorker:
             def heartbeat():
                 # Separate session: requests.Session is not shared by threads.
                 with requests.Session() as keepalive:
+                    last_success = time.monotonic()
                     while not stopped.wait(20):
                         try:
                             reply = keepalive.post(self.base+prefix+'/heartbeat',
-                                headers={**headers, 'Authorization': self.session.headers['Authorization']}, timeout=30)
+                                headers={**headers, 'Authorization': self.authorization()}, timeout=30)
+                            if reply.status_code == 401 and self.device:
+                                reply = keepalive.post(self.base+prefix+'/heartbeat',
+                                    headers={**headers, 'Authorization': self.authorization(force=True)}, timeout=30)
                             reply.raise_for_status()
-                        except requests.RequestException:
-                            lost.set()
-                            bench.cancel(ident)
-                            return
+                            last_success = time.monotonic()
+                        except requests.RequestException as exc:
+                            code = exc.response.status_code if exc.response is not None else None
+                            if (code is not None and code < 500 and code != 429) or time.monotonic()-last_success > 120:
+                                lost.set(); bench.cancel(ident); return
 
             thread = threading.Thread(target=heartbeat, daemon=True)
             thread.start()
@@ -184,30 +208,75 @@ class RemoteWorker:
                 bench.close()
 
 
+def run_connected(worker, idle_timeout=0, max_minutes=0):
+    deadline = time.monotonic()+max_minutes*60 if max_minutes else None
+    last_work = time.monotonic()
+    retry_delay, connected = 5, False
+    while deadline is None or time.monotonic() < deadline:
+        try:
+            job = worker.claim_job()
+        except requests.RequestException as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status is not None and status < 500 and status not in {408,429}:
+                raise
+            print(f'Connection interrupted. Retrying in {retry_delay}s; approval is retained.', flush=True)
+            connected = False
+            time.sleep(retry_delay)
+            retry_delay = min(retry_delay*2, 60)
+            continue
+        if not connected:
+            print('Admin TEST processor connected. Automatic reconnect is enabled. Stop with Ctrl+C.', flush=True)
+            connected = True
+        retry_delay = 5
+        if job:
+            worker.process(job)
+            last_work = time.monotonic()
+        elif idle_timeout and time.monotonic()-last_work > idle_timeout:
+            return
+        time.sleep(5)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-url', default='https://swimtech.vercel.app')
     parser.add_argument('--browser-login', action='store_true', help='Approve this PC using the existing administrator browser login; no .env password required')
-    parser.add_argument('--idle-timeout', type=int, default=900, help='Stop after this many idle seconds (default 15 minutes)')
-    parser.add_argument('--max-minutes', type=int, default=55, help='Bounded session, at most 55 minutes per capability')
+    parser.add_argument('--env-login', action='store_true', help='Legacy temporary login using local ADMIN_ID/PW')
+    parser.add_argument('--memory-only', action='store_true', help='Renew until stopped, without saving the device grant to disk')
+    parser.add_argument('--forget-device', action='store_true', help='Delete only this service saved grant; revoke it separately in the administrator screen')
+    parser.add_argument('--idle-timeout', type=int, default=0, help='Optional idle limit in seconds; 0 keeps waiting')
+    parser.add_argument('--max-minutes', type=int, default=0, help='Optional runtime limit; 0 keeps connected')
     args = parser.parse_args()
     base = validate_base(args.base_url)
-    worker = RemoteWorker(base, browser_ticket(base) if args.browser_login else issue_ticket(base))
-    print('Admin TEST processor connected via outbound HTTPS. Stop with Ctrl+C.', flush=True)
-    deadline = time.monotonic()+min(max(args.max_minutes, 1), 55)*60
-    last_work = time.monotonic()
-    try:
-        while time.monotonic() < deadline:
-            job = worker.claim_job()
-            if job:
-                worker.process(job)
-                last_work = time.monotonic()
-            elif time.monotonic()-last_work > max(30, args.idle_timeout):
-                break
-            time.sleep(5)
-    finally:
-        worker.session.close()
-    print('Processor session ended. Re-run when testing again.', flush=True)
+    if args.idle_timeout < 0 or args.max_minutes < 0: parser.error('Limits must be zero or positive')
+    credentials = DeviceCredentials(base)
+    with credentials.single_instance():
+        if args.forget_device:
+            credentials.forget(); print('Saved PC connection removed locally.'); return
+        device = None if args.memory_only or args.browser_login or args.env_login else credentials.load()
+        ticket = None
+        if not device:
+            if args.env_login:
+                ticket = issue_ticket(base)
+            else:
+                if os.name != 'nt' and not args.memory_only:
+                    parser.error('Use --memory-only on non-Windows systems; no plaintext credentials are stored')
+                grant = browser_ticket(base, remember=True)
+                ticket, device = grant['token'], grant.get('device')
+                if device and not args.memory_only: credentials.save(device)
+        worker = RemoteWorker(base, ticket, device)
+        limit = args.max_minutes if device else min(args.max_minutes or 55, 55)
+        print('Continuous PC connection enabled.' if device else 'Temporary approval: session remains limited to 55 minutes.', flush=True)
+        try:
+            run_connected(worker, args.idle_timeout, limit)
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code in {401,403}:
+                if device and not args.memory_only: credentials.forget()
+                raise RuntimeError('PC authorization was revoked or expired. Restart and approve again.') from None
+            raise
+        except KeyboardInterrupt:
+            print('Processor stopped. Saved approval is retained for the next run.', flush=True)
+        finally:
+            worker.session.close()
 
 
 if __name__ == '__main__':

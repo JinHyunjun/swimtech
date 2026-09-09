@@ -108,7 +108,7 @@ def main():
         rec(
             0,
             "백엔드 readiness + DB migration revision",
-            r.status_code == 200 and readiness.get("schema_revision") == "20260723_10",
+            r.status_code == 200 and readiness.get("schema_revision") == "20260909_11",
             f"{r.status_code}, revision={readiness.get('schema_revision')}",
         )
     except Exception as e:
