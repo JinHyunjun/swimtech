@@ -109,6 +109,14 @@ class Prepared(StrictModel):
     height: int = Field(gt=0, le=4096)
 
 
+class PairCode(StrictModel):
+    code: str = Field(pattern='^[A-F0-9]{8}$')
+
+
+class PairPoll(PairCode):
+    secret: str = Field(pattern='^[A-Za-z0-9_-]{43}$')
+
+
 async def bounded_body(request, maximum):
     result = bytearray()
     async for chunk in request.stream():
@@ -129,12 +137,34 @@ def session(owner=Depends(admin)):
             'experimental': True, 'storage': 'ephemeral', 'token': '1'}
 
 
-@router.post('/worker-ticket')
-def worker_ticket(owner=Depends(admin)):
+def make_worker_ticket(owner):
     ident = uuid4().hex
     ticket = jwt.encode({'sub': owner, 'worker': ident, 'scope': 'video-lab-worker',
                          'aud': 'video-lab', 'exp': int(time.time())+TTL}, SECRET_KEY, algorithm=ALGORITHM)
     return {'token': ticket, 'expires_in': TTL}
+
+
+@router.post('/worker-ticket')
+def worker_ticket(owner=Depends(admin)):
+    return make_worker_ticket(owner)
+
+
+@router.post('/worker/pair')
+def pair_start(request: Request):
+    # Unauthenticated creation alone grants no access. Bounded five-minute
+    # requests require explicit approval by a signed-in administrator.
+    return store().start_pairing(request.client.host if request.client else 'unknown')
+
+
+@router.post('/worker/pair/poll')
+def pair_poll(data: PairPoll):
+    return store().poll_pairing(data.code, data.secret)
+
+
+@router.post('/worker/pair/approve')
+def pair_approve(data: PairCode, owner=Depends(admin)):
+    store().approve_pairing(data.code, make_worker_ticket(owner)['token'])
+    return {'approved': True}
 
 
 @router.get('/videos')
@@ -309,6 +339,16 @@ def stream_file(path, request, max_chunk=None):
 def media(ident: str, request: Request, owner=Depends(admin)):
     store().owned(ident, owner)
     return stream_file(store().directory(ident)/'preview.mp4', request)
+
+
+@router.get('/media/{ident}/source')
+def original_media(ident: str, request: Request, owner=Depends(admin)):
+    s = store()
+    if s.owned(ident, owner)['state'] == 'uploading':
+        raise HTTPException(409, '업로드가 완료된 뒤 원본을 재생할 수 있습니다.')
+    # Native browser preview only. Authoritative FPS/frame-index time and
+    # model settings remain locked until workstation inspection completes.
+    return stream_file(s.directory(ident)/'source.mp4', request, CHUNK)
 
 
 @router.post('/worker/claim')

@@ -1,6 +1,6 @@
 'use strict';
 const BASE = '/api/admin/video-lab';
-let labActive = true, uploadBusy = false;
+let labActive = true, uploadBusy = false, workerOnline = false;
 const $ = id => document.getElementById(id);
 let token = '', current = null, roi = [0, 0, 1, 1], arm = [], kick = [], history = [], prediction = null;
 let selecting = false, dragStart = null, selectedId = null, dirty = false, polling = false;
@@ -21,7 +21,7 @@ async function refreshProjects() {
   const items=await api('/api/admin/video-lab/videos'); $('projects').replaceChildren();
   for(const item of items) {
     const button=textNode('button','',`project${current?.id===item.id?' selected':''}`);
-    button.append(textNode('strong',item.name),textNode('small',`${item.duration.toFixed(1)}초 · ${stateText[item.state]||item.state}`));
+    button.append(textNode('strong',item.name),textNode('small',`${item.duration>0?item.duration.toFixed(1)+'초':'길이 확인 중'} · ${stateText[item.state]||item.state}`));
     button.onclick=()=>openProject(item.id).catch(error=>message(error.message)); $('projects').append(button);
   }
 }
@@ -32,7 +32,10 @@ async function openProject(id) {
   current=data; prediction=null; arm=[]; kick=[]; history=[]; dirty=false;
   $('file').value=''; $('uploadPanel').hidden=true; $('workspace').hidden=false; $('results').hidden=true;
   $('poseToggleWrap').hidden=true; $('poseToggle').checked=false; $('playbackError').hidden=true;
-  $('videoName').textContent=data.name; if(data.preview)video.src=`${BASE}/media/${id}`;else{video.removeAttribute('src');video.load();}
+  $('videoName').textContent=data.name;
+  $('mediaPending').hidden=false;$('mediaPending').textContent=data.preview?'재생용 영상 불러오는 중':'원본 영상 재생 확인 중 · 변환에는 분석 PC 연결이 필요합니다.';
+  if(data.state!=='uploading')video.src=`${BASE}/media/${id}${data.preview?'':'/source'}`;else{video.removeAttribute('src');video.load();}
+  clearTimeout(openProject.mediaTimer);openProject.mediaTimer=setTimeout(()=>{if(current?.id===id&&!video.videoWidth)mediaUnavailable();},12000);
   const settings=data.settings;
   roi=settings?.roi||[0,0,1,1]; $('stroke').value=settings?.stroke||'freestyle';
   $('start').value=settings?.start_sec||0; $('end').value=settings?.end_sec??Math.min(60,Math.floor(data.duration*1000)/1000);
@@ -51,7 +54,9 @@ function updateState() {
   if(!current) return;
   const configured=!!current.settings, busy=['running','queued','prepare_queued','preparing'].includes(current.state);
   const locked=configured || current.state!=='uploaded';
-  $('settingsFields').disabled=locked; $('analyzeButton').disabled=locked||current.revealed;
+  $('settingsFields').disabled=locked; $('analyzeButton').disabled=locked||current.revealed||!workerOnline;
+  $('backFrame').disabled=!current.preview;$('nextFrame').disabled=!current.preview;
+  $('previewNote').textContent=current.preview?'재생용 무음 영상 · 원본 프레임 순서/FPS 기준 시간 · 분석에는 원본 사용':'원본 미리보기 · 정확한 프레임 이동·분석 조건·수기 기록은 PC 재생 변환 후 활성화됩니다.';
   $('roiButton').disabled=locked; $('resetRoi').disabled=locked;
   $('cancelButton').hidden=!busy; $('saveLabel').disabled=!configured; $('revealButton').disabled=current.state!=='complete';
   $('armButton').disabled=!configured||$('armUnresolvable').checked; $('kickButton').disabled=!configured||$('kickUnresolvable').checked;
@@ -77,7 +82,7 @@ async function upload(file) {
       $('uploadProgress').value=Math.min(100,(offset+1024*1024)/file.size*100);
     }
     await post(BASE+'/videos/'+id+'/seal');sealed=true;dirty=false;await openProject(id);
-    message('업로드 완료. 처리기가 연결되면 재생용 영상을 준비합니다. 이 페이지에서 기다려 주세요.');
+    message(workerOnline?'업로드 완료. 재생용 영상 변환이 끝나면 분석 조건을 지정하세요.':'업로드 완료. 분석 PC가 연결되어 있지 않습니다. 위 연결 방법을 확인하세요. 지원되는 원본은 바로 재생할 수 있습니다.');
   } catch(error) {
     if(id&&!sealed)try{await api(BASE+'/videos/'+id,{method:'DELETE'});}catch{}
     throw error;
@@ -99,10 +104,16 @@ act('analyzeButton',async()=>{
 act('cancelButton',async()=>{await post(endpoint('/cancel'));current=await api(endpoint(''));updateState();});
 act('deleteButton',async()=>{if(confirm('이 영상과 모델 결과·수기 기록을 임시 저장소에서 모두 삭제할까요?')){await api(endpoint(''),{method:'DELETE'});video.pause();video.removeAttribute('src');video.load();current=null;selectedId=null;dirty=false;$('workspace').hidden=true;$('uploadPanel').hidden=false;await refreshProjects();}});
 act('exportButton',()=>{if(dirty)message('저장하지 않은 수정은 내보내기에 포함되지 않습니다.');const a=document.createElement('a');a.href=endpoint('/export');a.download='swimmate-review.json';a.click();});
-function seek(time) { video.pause(); video.currentTime=Math.max(0,Math.min(current?.duration||0,time)); }
+function seek(time) { video.pause(); video.currentTime=Math.max(0,Math.min(current?.duration||(Number.isFinite(video.duration)?video.duration:0),time)); }
 act('backFrame',()=>seek(video.currentTime-1/(current?.fps||30))); act('nextFrame',()=>seek(video.currentTime+1/(current?.fps||30)));
 act('playButton',()=>video.paused?video.play():video.pause()); $('speed').onchange=()=>video.playbackRate=Number($('speed').value);
-video.addEventListener('error',()=>{$('playbackError').hidden=false;});
+video.addEventListener('loadeddata',()=>{if(video.videoWidth>0){$('mediaPending').hidden=true;$('playbackError').hidden=true;clearTimeout(openProject.mediaTimer);}else mediaUnavailable();});
+function mediaUnavailable(){
+  if(!current)return;
+  const text=current.preview?'재생 파일을 불러오지 못했습니다. 로그인·연결 상태를 확인한 뒤 영상을 다시 선택하세요.':'이 브라우저에서 원본 코덱을 재생할 수 없습니다. 분석 PC를 연결하면 호환 영상으로 변환됩니다.';
+  $('mediaPending').textContent=text;$('mediaPending').hidden=false;$('playbackError').textContent=text;$('playbackError').hidden=false;
+}
+video.addEventListener('error',mediaUnavailable);
 function mark(type) {
   if(!current?.settings||$(type==='arm'?'armUnresolvable':'kickUnresolvable').checked)return;
   const time=Math.round(video.currentTime*1000)/1000, s=current.settings;
@@ -178,12 +189,26 @@ document.addEventListener('keydown',e=>{if(!current||['INPUT','SELECT','TEXTAREA
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 setInterval(async()=>{if(!current||polling||!labActive||document.hidden)return;const id=current.id;polling=true;try{const data=await api(`/api/admin/video-lab/videos/${id}`);if(current?.id!==id)return;const changed=current.state!==data.state;const ready=!current.preview&&data.preview;current=data;if(ready){await openProject(id);}else{updateState();if(changed)await refreshProjects();}}catch(e){message(e.message);}finally{polling=false;}},5000);
 async function workerStatus(){
-  const status=await api(BASE+'/session');
+  let status;
+  try{status=await api(BASE+'/session');}catch(error){workerOnline=false;$('connectionTitle').textContent='연결 상태를 확인할 수 없습니다';$('connectionMessage').textContent=error.message;$('connectionPanel').dataset.online='false';$('workerStatus').textContent='연결 상태 확인 실패';updateState();throw error;}
+  workerOnline=status.worker_online;
   $('workerStatus').textContent=status.worker_online?'● 분석 처리기 연결됨':'○ 처리기 연결 대기 · 분석 PC 실행 필요';
   $('workerStatus').dataset.online=String(status.worker_online);
+  $('connectionPanel').dataset.online=String(workerOnline);
+  $('connectionTitle').textContent=workerOnline?'분석 PC가 연결되어 있습니다':'분석 PC가 연결되어 있지 않습니다';
+  $('connectionMessage').textContent=workerOnline?'재생 준비 중인 영상은 자동 변환됩니다. 준비가 끝나면 분석 조건을 확인하고 「조건 확정 · 분석 시작」을 누르세요.':'업로드만으로 모델 분석이 실행되지는 않습니다. 지원되는 원본은 지금 재생할 수 있지만, 재생 변환·프레임 검수·모델 분석에는 아래 방법으로 PC를 연결해야 합니다.';
+  updateState();
 }
+act('refreshWorker',workerStatus);
+const pairCode=new URLSearchParams(location.search).get('connect');
+if(pairCode&&/^[A-F0-9]{8}$/.test(pairCode)){$('pairPanel').hidden=false;$('pairCode').textContent=pairCode;}
+act('approvePair',async()=>{
+  $('approvePair').disabled=true;
+  try{await post(BASE+'/worker/pair/approve',{code:pairCode});$('pairStatus').textContent='승인했습니다. PC 연결을 기다리는 중입니다. 기존 관리자 탭으로 돌아가 연결 상태를 확인하세요.';}
+  catch(error){$('pairStatus').textContent=error.message;$('approvePair').disabled=false;}
+});
 $('file').disabled=true;
-(async()=>{try{await workerStatus();$('file').disabled=false;await refreshProjects();}catch(error){message(error.message);$('uploadPanel').hidden=true;}})();
+(async()=>{try{await workerStatus();$('file').disabled=false;$('approvePair').disabled=false;await refreshProjects();}catch(error){message(error.message);$('uploadPanel').hidden=true;$('pairStatus').textContent='관리자 계정으로 로그인한 뒤 이 연결 링크를 다시 열어 주세요.';}})();
 setInterval(()=>{if(labActive&&!document.hidden)workerStatus().catch(error=>message(error.message));},15000);
 window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='video-lab-active'){labActive=!!event.data.active;if(!labActive)video.pause();}});
 new ResizeObserver(()=>{if(parent!==window)parent.postMessage({type:'video-lab-height',height:Math.ceil(document.body.getBoundingClientRect().height)},location.origin);}).observe(document.body);

@@ -53,7 +53,39 @@ def event_comparison(label, result, distance):
 class VideoLab:
     def __init__(self, root):
         self.root=Path(root).resolve();self.root.mkdir(parents=True,exist_ok=True)
-        self.lock=threading.RLock();self.workers={}
+        self.lock=threading.RLock();self.workers={};self.pairings={};self.pair_requests={}
+
+    def start_pairing(self, address):
+        """Device authorization: no account password or browser session is shared."""
+        with self.lock:
+            now=time.time()
+            self.pairings={k:v for k,v in self.pairings.items() if v['expires_at']>now}
+            self.pair_requests={k:v for k,v in self.pair_requests.items() if v['until']>now}
+            rate=self.pair_requests.get(address, {'until':now+60,'count':0})
+            if rate['count']>=5 or len(self.pairings)>=32:
+                raise ValueError('연결 요청이 많습니다. 잠시 후 다시 시도하세요.')
+            rate['count']+=1;self.pair_requests[address]=rate
+            code=secrets.token_hex(4).upper()
+            while code in self.pairings:code=secrets.token_hex(4).upper()
+            secret=secrets.token_urlsafe(32)
+            self.pairings[code]={'digest':hashlib.sha256(secret.encode()).hexdigest(),'expires_at':now+300,'token':None}
+            return {'code':code,'secret':secret,'expires_in':300}
+
+    def approve_pairing(self, code, token):
+        with self.lock:
+            data=self.pairings.get(code)
+            if not data or data['expires_at']<=time.time() or data['token']:
+                raise ValueError('연결 코드가 만료되었거나 이미 사용되었습니다. PC에서 다시 실행하세요.')
+            data['token']=token
+
+    def poll_pairing(self, code, secret):
+        with self.lock:
+            data=self.pairings.get(code)
+            if not data or data['expires_at']<=time.time() or not secrets.compare_digest(data['digest'], hashlib.sha256(secret.encode()).hexdigest()):
+                raise ValueError('연결 요청이 만료되었거나 올바르지 않습니다.')
+            if not data['token']:return {'status':'pending'}
+            token=data['token'];del self.pairings[code]
+            return {'status':'approved','token':token}
 
     def directory(self, ident):
         if not re.fullmatch('[a-f0-9]{32}',ident):raise ValueError('잘못된 영상 ID입니다.')

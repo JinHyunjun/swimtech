@@ -50,6 +50,28 @@ def issue_ticket(base):
         return response.json()['token']
 
 
+def browser_ticket(base):
+    """Explicit device approval; never reads the browser's cookies/passwords."""
+    base = validate_base(base)
+    with requests.Session() as session:
+        reply = session.post(base+'/api/admin/video-lab/worker/pair', timeout=90)
+        reply.raise_for_status()
+        pair = reply.json()
+        print('Open this link while signed in as administrator, check the code, and approve this PC:', flush=True)
+        print(base+'/admin_video_lab?connect='+pair['code'], flush=True)
+        print('Code: '+pair['code']+' (expires in 5 minutes). No password is shared.', flush=True)
+        deadline = time.monotonic()+min(pair['expires_in'], 300)
+        while time.monotonic() < deadline:
+            time.sleep(3)
+            reply = session.post(base+'/api/admin/video-lab/worker/pair/poll',
+                json={'code':pair['code'], 'secret':pair['secret']}, timeout=30)
+            reply.raise_for_status()
+            data = reply.json()
+            if data['status'] == 'approved':
+                return data['token']
+        raise RuntimeError('PC approval expired. Run again and approve the new code.')
+
+
 class RemoteWorker:
     def __init__(self, base, ticket):
         self.base = validate_base(base)+'/api/admin/video-lab'
@@ -165,11 +187,12 @@ class RemoteWorker:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-url', default='https://swimtech.vercel.app')
+    parser.add_argument('--browser-login', action='store_true', help='Approve this PC using the existing administrator browser login; no .env password required')
     parser.add_argument('--idle-timeout', type=int, default=900, help='Stop after this many idle seconds (default 15 minutes)')
     parser.add_argument('--max-minutes', type=int, default=55, help='Bounded session, at most 55 minutes per capability')
     args = parser.parse_args()
     base = validate_base(args.base_url)
-    worker = RemoteWorker(base, issue_ticket(base))
+    worker = RemoteWorker(base, browser_ticket(base) if args.browser_login else issue_ticket(base))
     print('Admin TEST processor connected via outbound HTTPS. Stop with Ctrl+C.', flush=True)
     deadline = time.monotonic()+min(max(args.max_minutes, 1), 55)*60
     last_work = time.monotonic()

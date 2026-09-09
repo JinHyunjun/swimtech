@@ -72,7 +72,7 @@ def test_mutations_require_custom_header_and_same_site(lab):
     assert client.post(PREFIX+'/worker-ticket', headers={'X-Video-Lab':'1', 'Sec-Fetch-Site':'cross-site'}).status_code == 403
 
 
-@pytest.mark.parametrize('path', ['/videos/{id}', '/videos/{id}/labels', '/videos/{id}/export', '/media/{id}'])
+@pytest.mark.parametrize('path', ['/videos/{id}', '/videos/{id}/labels', '/videos/{id}/export', '/media/{id}', '/media/{id}/source'])
 def test_other_admin_cannot_read_private_video(lab, path):
     client, _ = lab
     ident = upload(client)
@@ -216,3 +216,87 @@ def test_worker_retries_transient_poll_but_not_auth_failure(monkeypatch):
     worker.request = Mock(side_effect=requests.HTTPError(response=reply))
     with pytest.raises(requests.HTTPError): worker.claim_job()
     assert worker.request.call_count == 1
+
+
+def test_source_preview_before_processor_connection(lab):
+    client, _ = lab
+    data = client.post(PREFIX+'/videos', json={'name':'source.mp4','size':len(BODY),'sha256':hashlib.sha256(BODY).hexdigest()}).json()
+    path = PREFIX+'/media/'+data['id']+'/source'
+    assert client.get(path).status_code == 409
+    ident = upload(client)
+    path = PREFIX+'/media/'+ident+'/source'
+    assert client.get(PREFIX+'/session').json()['worker_online'] is False
+    reply = client.get(path, headers={'Range':'bytes=3-9'})
+    assert reply.status_code == 206 and reply.content == BODY[3:10]
+    assert reply.headers['cache-control'] == 'no-store'
+    assert client.get(PREFIX+f'/videos/{ident}').json()['preview'] is False
+    assert client.post(PREFIX+f'/videos/{ident}/analyze', json=SETTINGS).status_code == 400
+    client.cookies.clear()
+    assert client.get(path).status_code == 401
+
+
+def test_pairing_requires_explicit_admin_approval_and_private_device_secret(lab):
+    client, _ = lab
+    client.cookies.clear()
+    pair = client.post(PREFIX+'/worker/pair').json()
+    payload = {'code':pair['code'],'secret':pair['secret']}
+    assert client.post(PREFIX+'/worker/pair/poll', json=payload).json() == {'status':'pending'}
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}).status_code == 401
+    client.cookies.set('swimtech_token', 'member')
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}).status_code == 403
+    client.cookies.set('swimtech_token', 'admin-a')
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}, headers={'Sec-Fetch-Site':'cross-site'}).status_code == 403
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}).json() == {'approved':True}
+    assert client.post(PREFIX+'/worker/pair/poll', json={**payload,'secret':'A'*43}).status_code == 400
+    reply = client.post(PREFIX+'/worker/pair/poll', json=payload)
+    assert reply.headers['cache-control'] == 'no-store'
+    token = reply.json()['token']
+    assert client.post(PREFIX+'/worker/pair/poll', json=payload).status_code == 400
+    client.cookies.clear()
+    assert client.post(PREFIX+'/worker/claim', headers={'Authorization':'Bearer '+token}).status_code == 200
+    # The worker capability is not an administrator browser cookie.
+    client.cookies.set('swimtech_token', token)
+    assert client.get(PREFIX+'/session').status_code == 403
+
+
+def test_pairing_expiry_rate_limit_and_approval_not_replaceable(lab):
+    client, store = lab
+    pair = client.post(PREFIX+'/worker/pair').json()
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}).status_code == 200
+    client.cookies.set('swimtech_token', 'admin-b')
+    assert client.post(PREFIX+'/worker/pair/approve', json={'code':pair['code']}).status_code == 400
+    store.pairings[pair['code']]['expires_at'] = time.time()-1
+    assert client.post(PREFIX+'/worker/pair/poll', json={'code':pair['code'],'secret':pair['secret']}).status_code == 400
+    for _ in range(4): assert client.post(PREFIX+'/worker/pair').status_code == 200
+    assert client.post(PREFIX+'/worker/pair').status_code == 400
+    assert len(store.pairings) == 4
+
+
+def test_css_dependencies_and_offline_actions_are_shipped():
+    root = Path(__file__).resolve().parents[1]
+    css = (root/'frontend/static/video-lab/style.css').read_text(encoding='utf-8')
+    js = (root/'frontend/static/video-lab/app.js').read_text(encoding='utf-8')
+    html = (root/'frontend/admin_video_lab.html').read_text(encoding='utf-8')
+    assert '/static/type.css' not in css
+    assert '.mobile-markers' in css and '.preview-note' in css
+    assert 'connectionPanel' in html and '분석 PC 연결 승인' in html
+    assert '이 페이지에서 기다려 주세요' not in js
+    assert '||!workerOnline' in js and "'/source'" in js
+
+
+def test_browser_worker_login_does_not_use_admin_password(monkeypatch, capsys):
+    from analysis_v2.workbench import remote_worker
+    from unittest.mock import Mock
+    monkeypatch.setattr(remote_worker.time, 'sleep', lambda _: None)
+    responses = [Mock(json=lambda:{'code':'1234ABCD','secret':'private-device-only','expires_in':300}),
+                 Mock(json=lambda:{'status':'pending'}), Mock(json=lambda:{'status':'approved','token':'private-worker-only'})]
+    session = Mock()
+    session.post.side_effect = responses
+    session.__enter__ = Mock(return_value=session)
+    session.__exit__ = Mock(return_value=False)
+    monkeypatch.setattr(remote_worker.requests, 'Session', lambda:session)
+    assert remote_worker.browser_ticket('http://127.0.0.1:8791') == 'private-worker-only'
+    out = capsys.readouterr().out
+    assert 'connect=1234ABCD' in out
+    assert 'private-device-only' not in out and 'private-worker-only' not in out
+    assert all('/auth/login' not in call.args[0] for call in session.post.call_args_list)
