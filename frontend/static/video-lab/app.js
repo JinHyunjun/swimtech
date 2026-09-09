@@ -186,4 +186,4 @@ $('file').disabled=true;
 (async()=>{try{await workerStatus();$('file').disabled=false;await refreshProjects();}catch(error){message(error.message);$('uploadPanel').hidden=true;}})();
 setInterval(()=>{if(labActive&&!document.hidden)workerStatus().catch(error=>message(error.message));},15000);
 window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='video-lab-active'){labActive=!!event.data.active;if(!labActive)video.pause();}});
-new ResizeObserver(()=>{if(parent!==window)parent.postMessage({type:'video-lab-height',height:document.documentElement.scrollHeight},location.origin);}).observe(document.body);
+new ResizeObserver(()=>{if(parent!==window)parent.postMessage({type:'video-lab-height',height:Math.ceil(document.body.getBoundingClientRect().height)},location.origin);}).observe(document.body);
