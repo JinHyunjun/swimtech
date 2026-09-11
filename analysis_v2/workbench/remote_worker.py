@@ -78,6 +78,7 @@ class RemoteWorker:
         self.base = validate_base(base)+'/api/admin/video-lab'
         self.session = requests.Session()
         self.session.headers['Authorization'] = 'Bearer '+(ticket or '')
+        self.session.headers['X-Video-Lab-Worker-Version'] = 'race-target-v1'
         self.device = device
         self.auth_lock = threading.RLock()
         self.refresh_at = time.monotonic()+2700 if ticket else 0

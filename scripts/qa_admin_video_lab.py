@@ -26,6 +26,10 @@ def main():
     parser.add_argument('--start-sec', type=float, default=0)
     parser.add_argument('--end-sec', type=float, required=True)
     parser.add_argument('--distance-m', type=float)
+    parser.add_argument('--lane', type=int, default=1)
+    parser.add_argument('--target-x', type=float, default=.5)
+    parser.add_argument('--target-y', type=float, default=.5)
+    parser.add_argument('--service-worker-check',action='store_true',help='Check public-only caching and old private-cache cleanup in a fresh browser context')
     parser.add_argument('--timeout-sec', type=int, default=900)
     parser.add_argument('--offline-check', action='store_true', help='Without a processor: native H.264 playback, blocked analysis, offline guidance, and administrator device approval')
     parser.add_argument('--expect-unsupported-native', action='store_true', help='Offline HEVC test: verify explicit conversion guidance instead of native playback')
@@ -62,6 +66,12 @@ def main():
             status = context.request.get(PREFIX+'/session', timeout=90000)
             assert status.ok and status.json()['worker_online'] == (not args.offline_check), 'Processor state does not match requested QA mode'
             page.goto('/admin', wait_until='domcontentloaded', timeout=90000)
+            if args.service_worker_check:
+                page.evaluate('''async()=>{const old=await caches.open('swimmate-v2');
+                  await old.put('/api/admin/video-lab/synthetic-cache-only',new Response('QA'));
+                  await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;}''')
+                page.reload(wait_until='domcontentloaded')
+                assert page.evaluate('!!navigator.serviceWorker.controller')
             page.locator('#admin-tab-video-lab').click()
             frame = page.frame_locator('#admin-video-lab')
             expect(frame.locator('#file')).to_be_enabled(timeout=90000)
@@ -142,7 +152,8 @@ def main():
                               unsupported_codec_guidance=args.expect_unsupported_native, reload_verified=True,
                               explicit_approval=True, layouts=checks, page_errors=errors, resource_errors=resource_errors)
                 return
-            expect(frame.locator('#analyzeButton')).to_be_enabled(timeout=360000)
+            expect(frame.locator('#targetButton')).to_be_enabled(timeout=360000)
+            expect(frame.locator('#analyzeButton')).to_be_disabled()
             video = frame.locator('#video')
             deadline = time.monotonic()+45
             while time.monotonic() < deadline:
@@ -152,16 +163,22 @@ def main():
             frame.locator('#start').fill(str(args.start_sec))
             frame.locator('#end').fill(str(args.end_sec))
             if args.distance_m: frame.locator('#distance').fill(str(args.distance_m))
-            frame.locator('#roiButton').click()
+            frame.locator('#targetLane').select_option(str(args.lane))
+            frame.locator('#targetButton').click()
             canvas = frame.locator('#overlay')
             canvas.scroll_into_view_if_needed()
             box = canvas.bounding_box()
-            page.mouse.move(box['x']+box['width']*.4, box['y']+box['height']*.2)
-            page.mouse.down()
-            page.mouse.move(box['x']+box['width']*.6, box['y']+box['height']*.8)
-            page.mouse.up()
-            expect(frame.locator('#roiLabel')).to_contain_text('선택 영역')
-            frame.locator('#resetRoi').click()
+            # Respect letterboxing and wait for the requested start frame.
+            expect(video).to_have_js_property('seeking',False)
+            dimensions=video.evaluate('v=>({w:v.videoWidth,h:v.videoHeight})')
+            scale=min(box['width']/dimensions['w'],box['height']/dimensions['h'])
+            width,height=dimensions['w']*scale,dimensions['h']*scale
+            page.mouse.click(box['x']+(box['width']-width)/2+width*args.target_x,
+                             box['y']+(box['height']-height)/2+height*args.target_y)
+            expect(frame.locator('#targetLabel')).to_contain_text('선수 확인점 1개')
+            expect(frame.locator('#analyzeButton')).to_be_disabled()
+            frame.locator('#targetConfirmed').check()
+            expect(frame.locator('#analyzeButton')).to_be_enabled()
             frame.locator('#analyzeButton').click()
             expect(frame.locator('#armButton')).to_be_enabled(timeout=30000)
             frame.locator('#annotator').fill('QA UI smoke - NOT an event reference')
@@ -208,10 +225,17 @@ def main():
             with page.expect_download() as download: frame.locator('#exportButton').click()
             download.value.save_as(str(args.output_dir/'qa-export.json'))
             exported = json.loads((args.output_dir/'qa-export.json').read_text(encoding='utf-8'))
+            assert exported['project']['settings']['target']['lane_id']==args.lane
+            assert exported['label']['lane_id']==args.lane
             assert exported['label']['verified'] is False
             assert exported['comparison']['arm']['manual_count'] is None
             assert not errors and not resource_errors, (errors,resource_errors)
-            report.update(status='passed', layouts=checks, decoded_pixel_range=pixels, page_errors=errors,
+            if args.service_worker_check:
+                cached=page.evaluate('''async()=>{const out=[];for(const key of await caches.keys()){
+                    const cache=await caches.open(key);for(const request of await cache.keys())out.push({key,url:request.url});}return out;}''')
+                assert cached and all(row['key']!='swimmate-v2' and '/api/' not in row['url'] for row in cached),cached
+                report['private_media_not_cached']=True
+            report.update(status='passed', layouts=checks, decoded_pixel_range=pixels, page_errors=errors, target_confirmed=True,
                           comparison=frame.locator('#resultCards').inner_text(), resource_errors=resource_errors)
         finally:
             if ident:

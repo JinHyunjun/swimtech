@@ -18,6 +18,7 @@ from .rtmpose_provider import RTMPoseProvider, RTMPoseTopDownProvider
 from .runtime import select_pose_runtime
 from .tracking import TrackerConfig
 from .types import StrokeKind, StrokeSource
+from .target import SelectedSwimmerProvider, apply_target_safety
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -59,10 +60,12 @@ def build_parser() -> argparse.ArgumentParser:
             "lane-rtmpose",
             "lane-mosaic-rtmpose",
             "lane-rtmpose-topdown",
+            "selected-rtmpose",
         ),
         default="tiled",
     )
     parser.add_argument("--lane-layout", type=Path, help="JSON file containing perspective lane polygons")
+    parser.add_argument("--target-selection", type=Path, help="Confirmed race lane and timed athlete clicks")
     parser.add_argument(
         "--lane-rotation",
         choices=("none", "clockwise", "counterclockwise"),
@@ -120,6 +123,11 @@ def _parse_roi(value: str) -> tuple[float, float, float, float]:
 
 def main() -> int:
     args = build_parser().parse_args()
+    target = json.loads(args.target_selection.read_text(encoding='utf-8')) if args.target_selection else None
+    if args.provider == 'selected-rtmpose' and not target:
+        raise SystemExit('--target-selection is required')
+    if target and (args.provider != 'selected-rtmpose' or args.pose_cache_in):
+        raise SystemExit('Target selection requires a fresh selected-rtmpose run')
     if not args.video.is_file():
         raise SystemExit(f"Video not found: {args.video}")
     if args.frame_step < 1:
@@ -149,6 +157,8 @@ def main() -> int:
             if frame["frame_index"] % args.frame_step == 0:
                 analyzer.process_frame(deserialize_detections(frame), frame["frame_index"], timestamp)
         result = analyzer.finalize(distance_segments, arm_exclusions=arm_exclusions).to_dict()
+        if cache['inference'].get('target_tracking'):
+            apply_target_safety(result, cache['inference']['target_tracking'])
         result["source_video_sha256"] = source_hash
         result["run"] = {"provider": "pose-cache-replay", "inference": cache["inference"],
                          "elapsed_sec": round(time.perf_counter() - started, 3),
@@ -210,9 +220,12 @@ def main() -> int:
             mode=runtime.mode,
             backend=runtime.backend,
             device=runtime.device,
-            max_swimmers=args.max_swimmers,
+            max_swimmers=16 if target else args.max_swimmers,
         )
-    if args.provider == "lane-mosaic-rtmpose":
+    if args.provider == 'selected-rtmpose':
+        inner_factory = provider_factory
+        provider_factory = lambda: SelectedSwimmerProvider(inner_factory(), target, args.lane_rotation)
+    elif args.provider == "lane-mosaic-rtmpose":
         inner_factory = provider_factory
         provider_factory = lambda: LaneMosaicPoseProvider(  # type: ignore[arg-type]
             inner_factory(),
@@ -264,6 +277,10 @@ def main() -> int:
         capture.release()
 
     result = analyzer.finalize(distance_segments, arm_exclusions=arm_exclusions).to_dict()
+    target_summary = provider.associator.summary() if target else None
+    if target_summary:
+        target_summary.update(race_distance_m=50, interval_sec=[args.start_sec,args.end_sec])
+        apply_target_safety(result, target_summary)
     result["source_video_sha256"] = source_hash
     elapsed = time.perf_counter() - started
     result["run"] = {
@@ -275,6 +292,7 @@ def main() -> int:
         "frames_per_sec": round(analyzed_frames / elapsed, 3) if elapsed > 0 else None,
         "lane_layout": str(args.lane_layout) if args.lane_layout else None,
         "runtime": runtime.to_dict() if runtime is not None else None,
+        "target_tracking": target_summary,
     }
     if args.pose_cache_out:
         write_pose_cache(args.pose_cache_out, source_hash, fps, cached_frames, result["run"])

@@ -13,7 +13,52 @@ from analysis_v2.workbench.remote_worker import validate_base, RemoteWorker
 
 PREFIX = '/api/admin/video-lab'
 BODY = b'private fake video - not a model accuracy fixture'
-SETTINGS = dict(stroke='freestyle', start_sec=0, end_sec=12, distance_m=25, roi=[0, 0, 1, 1])
+TARGET = dict(lane_id=1, race_distance_m=50, confirmed=True, checkpoints=[dict(time_sec=0,x=.47,y=.5)])
+SETTINGS = dict(stroke='freestyle', start_sec=0, end_sec=12, distance_m=25, roi=[0, 0, 1, 1], target=TARGET)
+
+
+@pytest.mark.parametrize('target', [None, {**TARGET,'confirmed':False}, {**TARGET,'lane_id':-1},
+    {**TARGET,'lane_id':11}, {**TARGET,'lane_id':1.2}, {**TARGET,'checkpoints':[]},
+    {**TARGET,'checkpoints':[dict(time_sec=2,x=.5,y=.5)]},
+    {**TARGET,'checkpoints':[dict(time_sec=0,x=1.1,y=.5)]},
+    {**TARGET,'checkpoints':[dict(time_sec=0,x=.5,y=.5),dict(time_sec=0,x=.6,y=.5)]},
+    {**TARGET,'checkpoints':[dict(time_sec=0,x=.5,y=.5),dict(time_sec=12,x=.5,y=.5)]}])
+def test_race_target_must_be_explicit_valid_and_confirmed(lab, target):
+    client,_=lab
+    ident=upload(client)
+    prepare(client,ident,ticket(client))
+    assert client.post(PREFIX+f'/videos/{ident}/analyze',json={**SETTINGS,'target':target}).status_code in {400,422}
+
+
+def test_actual_lane_identity_is_preserved_in_job_and_labels(lab):
+    client,_=lab
+    ident=upload(client)
+    headers=prepare(client,ident,ticket(client))
+    target={**TARGET,'lane_id':7}
+    assert client.post(PREFIX+f'/videos/{ident}/analyze',json={**SETTINGS,'target':target}).status_code==200
+    job=client.post(PREFIX+'/worker/claim',headers=headers).json()
+    assert job['project']['settings']['target']==target
+    label=client.post(PREFIX+f'/videos/{ident}/labels',json=dict(annotator='QA',arm_events=[],kick_events=[])).json()
+    assert label['lane_id']==7 and label['review_context']['target']==target
+    from services.video_lab import event_comparison
+    result={'tracks':[{'lane_id':1,'arm_strokes':{'available':True,'count':99,'event_times_sec':[1]}},
+                      {'lane_id':7,'arm_strokes':{'available':True,'count':0,'event_times_sec':[]}}]}
+    assert event_comparison(label,result,None)['arm']['model_count']==0
+
+
+def test_retarget_preserves_seen_result_and_refuses_saved_label_or_active_job(lab):
+    client,s=lab
+    ident=upload(client);prepare(client,ident,ticket(client))
+    client.post(PREFIX+f'/videos/{ident}/analyze',json=SETTINGS)
+    assert client.post(PREFIX+f'/videos/{ident}/retarget').status_code==400
+    s.update(ident,state='complete',revealed=True)
+    value=client.post(PREFIX+f'/videos/{ident}/retarget').json()
+    assert value['settings'] is None and value['revealed'] and value['state']=='uploaded'
+    assert client.post(PREFIX+f'/videos/{ident}/analyze',json=SETTINGS).status_code==200
+    saved=client.post(PREFIX+f'/videos/{ident}/labels',json=dict(annotator='QA',arm_events=[],kick_events=[],never_seen_predictions=True)).json()
+    assert saved['label_mode']=='prediction_assisted'
+    s.update(ident,state='complete')
+    assert client.post(PREFIX+f'/videos/{ident}/retarget').status_code==400
 
 
 @pytest.fixture
@@ -26,6 +71,7 @@ def lab(tmp_path, monkeypatch):
         return token
     monkeypatch.setattr(api, '_require_admin', require)
     monkeypatch.setattr(api, '_revoked_devices', set())
+    monkeypatch.setattr(api, '_target_workers', set())
     app = FastAPI()
     app.include_router(api.router, prefix=PREFIX)
     with TestClient(app) as client:
@@ -45,7 +91,18 @@ def upload(client):
 
 def ticket(client):
     token = client.post(PREFIX+'/worker-ticket').json()['token']
-    return {'Authorization':'Bearer '+token}
+    return {'Authorization':'Bearer '+token,'X-Video-Lab-Worker-Version':'race-target-v1'}
+
+
+def test_old_processor_cannot_silently_run_new_target_job_as_fixed_roi(lab):
+    client,_=lab
+    ident=upload(client);new=ticket(client);prepare(client,ident,new)
+    client.post(PREFIX+f'/videos/{ident}/analyze',json=SETTINGS)
+    old={'Authorization':new['Authorization']}
+    assert client.post(PREFIX+'/worker/claim',headers=old).json() is None
+    assert not client.get(PREFIX+'/session').json()['target_worker_online']
+    assert client.post(PREFIX+'/worker/claim',headers=new).json()['project']['settings']['target']==TARGET
+    assert client.get(PREFIX+'/session').json()['target_worker_online']
 
 
 def prepare(client, ident, headers):

@@ -89,8 +89,11 @@ def review_diagnostics(cache: dict, stroke: str) -> dict:
         detections = deserialize_detections(frame)
         analyzer.process_frame(detections, frame["frame_index"], frame["timestamp_sec"])
         # One selected lane per review project. Full source coordinates retained.
-        overlays.append({"time": frame["timestamp_sec"], "poses": [
-            {"lane": pose.lane_hint, "points": pose.keypoints.round(4).tolist()} for pose in detections]})
+        # Counting uses ALL source frames. Only the UI overlay is sampled at
+        # <= 10 Hz to keep 60/120-fps videos below the broker result-size limit.
+        if not overlays or frame['timestamp_sec'] - overlays[-1]['time'] >= .099:
+            overlays.append({"time": frame["timestamp_sec"], "poses": [
+                {"lane": pose.lane_hint, "points": pose.keypoints.round(4).tolist()} for pose in detections]})
     windows = []
     cfg = CounterConfig()
     for rows in analyzer.tracker.all_tracks():
@@ -232,17 +235,24 @@ class Workbench:
         data = self.read(ident)
         directory = self.directory(ident)
         settings = data["settings"]
-        x1, y1, x2, y2 = settings["roi"]
-        save_json(directory / "lane.json", {"source": "user_selected_review_region", "lanes": [
-            {"lane_id": 1, "polygon": [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]}]})
+        target = settings.get('target')
+        lane_id = target['lane_id'] if target else 1
+        if target:
+            save_json(directory / 'target.json', target)
+            provider_args = ['--provider', 'selected-rtmpose', '--target-selection', str(directory/'target.json')]
+        else:
+            x1, y1, x2, y2 = settings["roi"]
+            save_json(directory / "lane.json", {"source": "user_selected_review_region", "lanes": [
+                {"lane_id": 1, "polygon": [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]}]})
+            provider_args = ['--provider', 'lane-rtmpose', '--lane-layout', str(directory/'lane.json')]
         command = [sys.executable, "-m", "analysis_v2.cli", str(directory / "source.mp4"),
                    "--stroke", settings["stroke"], "--start-sec", str(settings["start_sec"]),
                    "--end-sec", str(settings["end_sec"]), "--output", str(directory / "result.json"),
-                   "--provider", "lane-rtmpose", "--lane-layout", str(directory / "lane.json"),
+                   *provider_args,
                    "--lane-rotation", settings["rotation"], "--max-swimmers", "1",
                    "--runtime-profile", "quality", "--pose-cache-out", str(directory / "poses.json.gz")]
         if settings.get("distance_m"):
-            command += ["--distance-m", str(settings["distance_m"]), "--distance-track-id", "L01",
+            command += ["--distance-m", str(settings["distance_m"]), "--distance-track-id", f"L{lane_id:02d}",
                         "--distance-source", "user_reported"]
         with (directory / "analysis.log").open("w", encoding="utf-8") as log:
             with self.lock:
@@ -263,7 +273,11 @@ class Workbench:
                 with self.lock:
                     self.processes.pop(ident, None)
         cache = read_pose_cache(directory / "poses.json.gz", data["sha256"])
-        save_json(directory / "review.json", review_diagnostics(cache, settings["stroke"]))
+        review = review_diagnostics(cache, settings["stroke"])
+        if cache['inference'].get('target_tracking'):
+            review['target_tracking'] = cache['inference']['target_tracking']
+            review['windows'].extend(review['target_tracking']['windows'])
+        save_json(directory / "review.json", review)
 
     def cancel(self, ident: str) -> None:
         with self.lock:

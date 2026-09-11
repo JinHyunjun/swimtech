@@ -2,7 +2,7 @@
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SwimMate Lab · 영상 교차 검증</title><link rel="icon" href="/static/video-lab/wave.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/video-lab/style.css?v=20260909c"><script src="/static/video-lab/app.js?v=20260909c" defer></script></head>
+<link rel="stylesheet" href="/static/video-lab/style.css?v=20260910a"><script src="/static/video-lab/app.js?v=20260910a" defer></script></head>
 <body>
 <header><a class="brand" href="/admin#video-lab" target="_top"><img src="/static/video-lab/wave.svg" alt=""><span>SwimMate <b>LAB</b></span></a>
 <span class="local" id="workerStatus" role="status">처리기 연결 확인 중</span><button id="helpButton" class="quiet">사용 방법</button></header>
@@ -10,8 +10,8 @@
 <div id="projects"></div><p class="privacy">관리자 전용 TEST. 영상은 임시 서버와 분석 PC로 전송됩니다. Neon·일반 훈련 일지에는 저장하지 않습니다.</p></aside>
 <main>
 <div class="page-heading"><div><p class="eyebrow">WATCH · COUNT · COMPARE</p><h1>같이 세어보는 수영</h1>
-<p class="muted">직접 기록한 동작과 모델의 후보를 나란히 확인하세요.</p></div><span class="badge">관리자 TEST · 정확도 미검증</span></div>
-<ol class="steps"><li class="active" id="step1"><span>1</span> 영상 선택</li><li id="step2"><span>2</span> 직접 기록</li><li id="step3"><span>3</span> 결과 비교</li></ol>
+<p class="muted">50m 경기에서 레인·선수를 확인한 뒤, 움직이는 화면 속 선수를 추적하고 스트로크·킥을 집계합니다.</p></div><span class="badge">관리자 TEST · 정확도 미검증</span></div>
+<ol class="steps"><li class="active" id="step1"><span>1</span> 레인·선수 선택</li><li id="step2"><span>2</span> 선수 확인 · 분석</li><li id="step3"><span>3</span> 횟수 · 추적 검수</li></ol>
 <section id="pairPanel" class="panel connection" hidden aria-labelledby="pairTitle"><h2 id="pairTitle">분석 PC 연결 승인</h2>
 <p>직접 실행한 PC의 코드와 아래 코드가 같은지 확인하세요. 승인하면 이 PC가 내 TEST 영상 다운로드·재생 변환·모델 분석을 처리할 수 있습니다. 비밀번호나 일반 관리자 권한은 전달되지 않습니다.</p>
 <div id="rememberOptions" hidden><label><input id="rememberDevice" type="checkbox"> 이 PC 기억 · 연결 자동 유지</label><label>PC 이름<input id="deviceName" value="내 분석 PC" maxlength="80"></label><p class="small">Windows 사용자 계정으로 암호화해 연결 정보를 보관합니다. 처리기를 켜 둔 동안 시간 제한 없이 자동 갱신하며, 재실행할 때도 승인을 재사용합니다. 90일간 미사용·비밀번호 변경·관리자 해제 시에는 다시 승인해야 합니다.</p></div>
@@ -35,15 +35,19 @@
 <div class="actions"><output id="currentTime">0.000초</output><label>속도 <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option></select></label></div></div>
 <div class="mobile-markers" aria-label="영상 옆 빠른 기록"><button id="mobileArm" disabled>팔 ＋ <span id="mobileArmCount">0</span></button><button id="mobileKick" disabled>킥 ＋ <span id="mobileKickCount">0</span></button><button id="mobileUndo">취소</button></div>
 <p id="playbackError" class="error" hidden>영상을 재생할 수 없습니다. 새로고침하거나 영상을 다시 올려주세요.</p>
+<button id="reloadMedia" class="quiet">재생 상태 다시 확인</button>
 <p id="previewNote" class="small muted preview-note">원본 미리보기 · 정확한 프레임 이동과 분석 조건은 재생 변환 후 활성화됩니다.</p>
-<div class="player-footer"><button id="roiButton">선수·레인 영역 지정</button><button id="resetRoi" class="quiet">영역 초기화</button><label id="poseToggleWrap" hidden><input type="checkbox" id="poseToggle"> 관절 추정 표시</label><span id="roiLabel" class="small muted">전체 화면 · 다른 인물이 포함되지 않게 선택하세요</span></div></section>
-<section class="panel settings"><h3>분석 조건</h3><p class="small muted">한 프로젝트에서 한 선수/레인을 검증합니다. 구간을 확정하면 같은 조건으로 수기 기록과 비교합니다.</p>
+<div class="player-footer"><button id="targetButton">시작 장면의 선수 선택</button><button id="resetTarget" class="quiet">선택 초기화</button><label id="poseToggleWrap" hidden><input type="checkbox" id="poseToggle"> 선택 선수 추적 표시</label><span id="targetLabel" class="small muted">레인 번호를 고르고 선수의 몸통을 클릭하세요. 고정 영역은 사용하지 않습니다.</span></div><div id="targetCheckpoints" class="events" aria-label="선수 확인 시점"></div></section>
+<section class="panel settings"><h3>50m 경기 · 분석할 선수 확인</h3><p class="small muted">레인 번호는 화면 위아래 순서가 아닌 실제 경기 레인입니다. 번호만으로 선수를 찾지 않습니다. 시작 장면에서 해당 선수를 직접 클릭해 연결하세요.</p>
 <fieldset id="settingsFields"><div class="field-grid"><label>영법<select id="stroke"><option value="freestyle">자유형</option><option value="backstroke">배영</option><option value="breaststroke">평영</option><option value="butterfly">접영</option></select></label>
+<label>분석할 경기 레인<select id="targetLane"><option value="">레인 선택</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
 <label>시작 (초)<input id="start" type="number" min="0" step="0.001" value="0"></label><label>종료 (초)<input id="end" type="number" min="0" step="0.001"></label>
-<label>구간 이동 거리 (m, 선택)<input id="distance" type="number" min="0.1" step="0.1" placeholder="예: 편도 전체라면 25"></label>
+<label>이 분석 구간의 이동 거리 (m, 선택)<input id="distance" type="number" min="0.1" step="0.1" placeholder="출발~도착 전체가 있을 때만 50"></label>
 <label>영상 속 진행 방향<select id="rotation"><option value="clockwise">주로 가로 방향</option><option value="none">주로 세로 방향</option><option value="counterclockwise">가로 방향 · 반대 회전</option></select></label></div></fieldset>
-<p class="small muted">수영장 길이와 부분 구간 이동 거리는 다릅니다. 모르면 거리는 비워두세요. 카메라 이동·재생 속도 변경·장면 전환이 있는 영상은 결과가 불안정할 수 있습니다.</p>
-<div class="actions"><button id="analyzeButton" class="primary">조건 확정 · 분석 시작</button><button id="cancelButton" hidden>분석 중지</button><span id="jobStatus" role="status"></span></div></section>
+<p class="small muted">카메라와 선수의 움직임에 따라 탐색 위치·크기를 바꾸며 여러 검출 후보 중 선택 선수를 추적합니다. 장면 전환·겹침 이후에는 해당 시점으로 이동해 같은 선수를 다시 클릭하여 확인점을 추가할 수 있습니다. 구분이 불확실한 구간은 집계를 보류하며 다른 선수로 자동 교체하지 않습니다.</p>
+<label class="check-text"><input type="checkbox" id="targetConfirmed"> 선택한 레인과 모든 확인점이 같은 선수임을 확인했습니다.</label>
+<p class="small muted">50m 경기라도 일부 구간만 선택하면 해당 구간만 집계합니다. 가려진 킥을 추측하거나 전체 경기 횟수로 환산하지 않습니다. 거리도 자동으로 50m를 입력하지 않습니다.</p>
+<div class="actions"><button id="analyzeButton" class="primary">선수 확정 · 스트로크/킥 분석</button><button id="cancelButton" hidden>분석 중지</button><button id="retargetButton" hidden>선수 확인점 수정 · 재분석</button><span id="jobStatus" role="status"></span></div><p class="small muted">추적 확인점은 분석 완료 후 수정할 수 있습니다. 단, 수기 기록을 저장한 조건은 검수 일관성을 위해 변경할 수 없습니다.</p></section>
 </div><div class="review-column">
 <section class="panel manual"><div class="section-heading"><h3>내가 직접 센 동작</h3><span id="labelMode" class="badge">모델 답안 숨김</span></div>
 <label>검수자 이름<input id="annotator" maxlength="80" placeholder="검수자를 구분할 이름"></label>
@@ -59,6 +63,7 @@
 </div></div>
 <section id="results" class="panel results" hidden><div class="section-heading"><div><p class="eyebrow">CROSS CHECK</p><h2>어디에서 차이가 났을까요?</h2></div><span class="badge">1인 비교 · 검증된 정확도 아님</span></div>
 <div id="resultCards" class="result-grid"></div><div id="dpsResult" class="notice"></div>
+<p id="trackingSummary" class="notice" role="status"></p>
 <div class="results-grid"><div><h3>모델이 찾은 동작 후보</h3><p class="small muted">버튼을 누르면 해당 장면으로 이동합니다. 후보가 실제 동작인지 확인해 주세요.</p><div id="candidates" class="events"></div></div>
 <div><h3>다시 볼 구간</h3><p class="small muted">관절 관측 공백·급격한 위치 변화입니다. 실제 가림인지 추적 오류인지는 영상으로 판단합니다.</p><div id="reviewWindows" class="events"></div></div></div></section>
 </section>

@@ -124,8 +124,8 @@ class LaneRegion:
     polygon: np.ndarray
 
     def __post_init__(self) -> None:
-        if self.lane_id < 1:
-            raise ValueError("lane_id must be positive")
+        if self.lane_id < 0:
+            raise ValueError("lane_id must be nonnegative")
         object.__setattr__(self, "polygon", _validate_polygon(self.polygon))
 
     @property

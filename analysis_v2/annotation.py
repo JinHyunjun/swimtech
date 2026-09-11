@@ -28,7 +28,7 @@ def build_annotation(
     valid_strokes = {item.value for item in StrokeKind if item != StrokeKind.UNKNOWN}
     if stroke_kind not in valid_strokes:
         raise ValueError(f"stroke_kind must be one of {sorted(valid_strokes)}")
-    if lane_id < 1 or start_sec < 0 or end_sec <= start_sec:
+    if lane_id < 0 or start_sec < 0 or end_sec <= start_sec:
         raise ValueError("lane/interval is invalid")
 
     def clean(values: list[float]) -> list[float]:

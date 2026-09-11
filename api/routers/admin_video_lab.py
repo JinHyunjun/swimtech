@@ -50,6 +50,7 @@ _devices = DeviceRegistry()
 _boot_id = uuid4().hex
 _revoked_devices = set()
 _persistent_workers = set()
+_target_workers = set()
 
 
 def store():
@@ -95,12 +96,26 @@ class Upload(StrictModel):
     sha256: str = Field(pattern='^[a-f0-9]{64}$')
 
 
+class TargetCheckpoint(StrictModel):
+    time_sec: float = Field(ge=0, le=60)
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+
+
+class RaceTarget(StrictModel):
+    lane_id: int = Field(ge=0, le=10, strict=True)
+    race_distance_m: Literal[50] = 50
+    confirmed: Literal[True]
+    checkpoints: list[TargetCheckpoint] = Field(min_length=1, max_length=30)
+
+
 class Settings(StrictModel):
     stroke: Literal['freestyle', 'backstroke', 'breaststroke', 'butterfly']
     start_sec: float = Field(ge=0)
     end_sec: float = Field(gt=0)
     distance_m: float | None = Field(default=None, gt=0, le=5000)
-    roi: list[float] = Field(min_length=4, max_length=4)
+    roi: list[float] = Field(default_factory=lambda: [0,0,1,1], min_length=4, max_length=4)
+    target: RaceTarget
     rotation: Literal['none', 'clockwise', 'counterclockwise'] = 'clockwise'
 
 
@@ -165,8 +180,10 @@ def session(owner=Depends(admin)):
         s.workers = {key: value for key, value in s.workers.items() if value > time.time()-180}
         online = any(key[0] == owner and value > time.time()-45 for key, value in s.workers.items())
         persistent = any(key[0] == owner and key in _persistent_workers and value > time.time()-45 for key, value in s.workers.items())
+        target_online = any(key[0] == owner and key in _target_workers and value > time.time()-45 for key, value in s.workers.items())
     return {'max_bytes': MAX_VIDEO, 'ttl_seconds': TTL, 'worker_online': online,
             'persistent_worker_online':persistent,
+            'target_worker_online':target_online,
             'experimental': True, 'storage': 'ephemeral', 'token': '1'}
 
 
@@ -299,6 +316,12 @@ def analyze(ident: str, settings: Settings, owner=Depends(admin)):
             raise ValueError('재생 준비가 끝난 새 영상에서 분석 조건을 확정하세요.')
         if not settings.start_sec < settings.end_sec <= data['duration']+.001 or settings.end_sec-settings.start_sec > 60:
             raise ValueError('영상 안의 60초 이하 분석 구간을 지정하세요.')
+        checkpoints = settings.target.checkpoints
+        times = [point.time_sec for point in checkpoints]
+        if (abs(times[0]-settings.start_sec) > 1/data['fps']+.001
+                or any(not settings.start_sec <= t < settings.end_sec for t in times)
+                or any(b-a < 1/data['fps'] for a,b in zip(times,times[1:]))):
+            raise ValueError('시작 프레임에서 선수를 선택하고, 추가 확인점을 시간 순서대로 지정하세요.')
         x1, y1, x2, y2 = settings.roi
         if not (0 <= x1 < x2 <= 1 and 0 <= y1 < y2 <= 1) or min(x2-x1, y2-y1) < .03:
             raise ValueError('선수 영역을 충분한 크기로 지정하세요.')
@@ -313,6 +336,19 @@ def cancel(ident: str, owner=Depends(admin)):
         if data['state'] not in {'queued', 'running', 'prepare_queued', 'preparing'}:
             raise ValueError('진행 중인 작업이 없습니다.')
         return s.public(s.update(ident, state='cancelled', lease=None))
+
+
+@router.post('/videos/{ident}/retarget')
+def retarget(ident: str, owner=Depends(admin)):
+    s = store()
+    with s.lock:
+        data = s.owned(ident, owner)
+        if data['state'] not in {'complete','failed','cancelled'} or not data.get('preview'):
+            raise ValueError('진행 중인 분석이 끝난 뒤 선수 확인점을 수정하세요.')
+        if (s.directory(ident)/'label.json').exists():
+            raise ValueError('수기 기록의 분석 조건은 보존합니다. 다른 조건은 영상을 새로 올려 검수하세요.')
+        # Preserve revealed=True: a rerun must never regain blinded status.
+        return s.public(s.update(ident, state='uploaded', settings=None, error=None, lease=None))
 
 
 def read_label(ident, filename='label.json'):
@@ -340,13 +376,13 @@ def save_label(ident: str, label: Label, owner=Depends(admin)):
             raise ValueError('판독 불가 기록에는 동작 시점을 넣을 수 없습니다.')
         assisted = data['revealed'] or not label.never_seen_predictions
         payload = dict(schema_version='swimmate-event-label-v2', video=data['sha256'], video_sha256=data['sha256'],
-            display_filename=data['name'], stroke_kind=settings['stroke'], lane_id=1,
+            display_filename=data['name'], stroke_kind=settings['stroke'], lane_id=(settings.get('target') or {}).get('lane_id',1),
             interval_sec=[settings['start_sec'], settings['end_sec']], annotator=label.annotator.strip(),
             arm_event_times_sec=sorted(set(label.arm_events)), kick_event_times_sec=sorted(set(label.kick_events)),
             arm_label_status=label.arm_status, kick_label_status=label.kick_status,
             label_mode='prediction_assisted' if assisted else 'blinded_manual', prediction_visible=assisted,
             verified=False, created_at=datetime.now(timezone.utc).isoformat(),
-            review_context={'roi': settings['roi'], 'timeline': 'source_frame_index_divided_by_fps'})
+            review_context={'roi': settings['roi'], 'target':settings.get('target'), 'timeline': 'source_frame_index_divided_by_fps'})
         directory = s.directory(ident)
         if not assisted:
             write_json(directory/'blind-label.json', payload)
@@ -438,8 +474,11 @@ def original_media(ident: str, request: Request, owner=Depends(admin)):
 
 
 @router.post('/worker/claim')
-def claim(identity=Depends(worker)):
-    return store().claim(*identity)
+def claim(request: Request, identity=Depends(worker)):
+    capable = request.headers.get('x-video-lab-worker-version') == 'race-target-v1'
+    if capable: _target_workers.add(identity)
+    else: _target_workers.discard(identity)
+    return store().claim(*identity, supports_target=capable)
 
 
 @router.post('/worker/{ident}/heartbeat')

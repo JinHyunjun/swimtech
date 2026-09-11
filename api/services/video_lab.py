@@ -28,7 +28,7 @@ def write_json(path, value):
 
 def event_comparison(label, result, distance):
     """Candidate agreement is not independent accuracy or a completed count."""
-    track=next((t for t in result.get('tracks',[]) if t.get('lane_id')==1),None)
+    track=next((t for t in result.get('tracks',[]) if t.get('lane_id')==label['lane_id']),None)
     comparison={'status':'single_reviewer_comparison_not_validated_accuracy','manual_dps':None,
                 'label_mode':label['label_mode']}
     for kind,field,candidates in [('arm','arm_strokes','merged_arm_candidate_times_sec'),('kick','kicks','kick_candidate_times_sec')]:
@@ -156,11 +156,12 @@ class VideoLab:
             if digest.hexdigest()!=data['sha256']:raise ValueError('원본 파일 해시가 다릅니다.')
             return self.public(self.update(ident,state='prepare_queued',phase='prepare'))
 
-    def claim(self,owner,worker):
+    def claim(self,owner,worker, supports_target=False):
         with self.lock:
             self.cleanup();self.workers[(owner,worker)]=time.time()
             for data in self.list(owner):
                 if data['state'] not in {'prepare_queued','queued'}:continue
+                if data['state']=='queued' and (data.get('settings') or {}).get('target') and not supports_target:continue
                 phase='prepare' if data['state']=='prepare_queued' else 'analyze'
                 lease=secrets.token_urlsafe(32)
                 job=self.update(data['id'],state='preparing' if phase=='prepare' else 'running',phase=phase,

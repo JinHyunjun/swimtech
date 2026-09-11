@@ -77,8 +77,8 @@ class PoseDetection:
             raise ValueError("bbox coordinates are reversed")
         object.__setattr__(self, "keypoints", points)
         object.__setattr__(self, "confidence", float(np.clip(self.confidence, 0.0, 1.0)))
-        if self.lane_hint is not None and self.lane_hint < 1:
-            raise ValueError("lane_hint must be a positive integer")
+        if self.lane_hint is not None and self.lane_hint < 0:
+            raise ValueError("lane_hint must be a nonnegative integer")
         if self.frame_aspect_ratio is not None and (not np.isfinite(self.frame_aspect_ratio) or self.frame_aspect_ratio <= 0):
             raise ValueError("frame_aspect_ratio must be positive and finite")
 
