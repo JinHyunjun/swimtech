@@ -73,6 +73,10 @@ def browser_ticket(base, remember=False):
         raise RuntimeError('PC approval expired. Run again and approve the new code.')
 
 
+class DeviceAuthorizationError(requests.HTTPError):
+    """A rejected device refresh, distinct from a transient job-token 401."""
+
+
 class RemoteWorker:
     def __init__(self, base, ticket, device=None):
         self.base = validate_base(base)+'/api/admin/video-lab'
@@ -88,6 +92,13 @@ class RemoteWorker:
             if self.device and (force or time.monotonic() >= self.refresh_at):
                 with requests.Session() as renewal:
                     reply = renewal.post(self.base+'/worker/device/refresh', json=self.device, timeout=90, allow_redirects=False)
+                    if reply.status_code in {401,403}:
+                        reason = 'saved_device_rejected'
+                        try:
+                            reason = {'올바르지 않은 PC 연결 정보입니다.':'device_proof_rejected',
+                                'PC 연결이 해제되었거나 만료되었습니다. 다시 승인하세요.':'device_revoked_expired_or_account_changed'}.get(reply.json().get('detail'),reason)
+                        except (ValueError,TypeError,AttributeError): pass
+                        raise DeviceAuthorizationError(reason,response=reply)
                     reply.raise_for_status()
                     self.session.headers['Authorization'] = 'Bearer '+reply.json()['token']
                     self.refresh_at = time.monotonic()+2700
@@ -237,25 +248,37 @@ def run_connected(worker, idle_timeout=0, max_minutes=0):
         time.sleep(5)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-url', default='https://swimtech.vercel.app')
     parser.add_argument('--browser-login', action='store_true', help='Approve this PC using the existing administrator browser login; no .env password required')
     parser.add_argument('--env-login', action='store_true', help='Legacy temporary login using local ADMIN_ID/PW')
     parser.add_argument('--memory-only', action='store_true', help='Renew until stopped, without saving the device grant to disk')
     parser.add_argument('--forget-device', action='store_true', help='Delete only this service saved grant; revoke it separately in the administrator screen')
+    parser.add_argument('--saved-only', action='store_true', help='Unattended mode: use an existing approval only; never request new pairing or a password')
+    parser.add_argument('--enroll-only', action='store_true', help='Explicitly approve and save this PC, then exit so the Windows task can start')
     parser.add_argument('--idle-timeout', type=int, default=0, help='Optional idle limit in seconds; 0 keeps waiting')
     parser.add_argument('--max-minutes', type=int, default=0, help='Optional runtime limit; 0 keeps connected')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.saved_only and (args.browser_login or args.env_login or args.memory_only or args.forget_device or args.enroll_only):
+        parser.error('--saved-only cannot be combined with enrollment or credential changes')
+    if args.enroll_only and (args.env_login or args.memory_only or args.forget_device):
+        parser.error('--enroll-only requires a remembered browser approval')
     base = validate_base(args.base_url)
     if args.idle_timeout < 0 or args.max_minutes < 0: parser.error('Limits must be zero or positive')
     credentials = DeviceCredentials(base)
     with credentials.single_instance():
         if args.forget_device:
             credentials.forget(); print('Saved PC connection removed locally.'); return
-        device = None if args.memory_only or args.browser_login or args.env_login else credentials.load()
+        if args.saved_only and credentials.is_paused():
+            print('Automatic connection is paused after a rejected approval. No authentication request was sent.',flush=True)
+            return
+        device = None if args.memory_only or args.browser_login or args.env_login or args.enroll_only else credentials.load()
         ticket = None
         if not device:
+            if args.saved_only:
+                print('No saved PC approval. Automatic startup is paused; no pairing request was created.', flush=True)
+                return
             if args.env_login:
                 ticket = issue_ticket(base)
             else:
@@ -264,16 +287,23 @@ def main():
                 grant = browser_ticket(base, remember=True)
                 ticket, device = grant['token'], grant.get('device')
                 if device and not args.memory_only: credentials.save(device)
+        if args.enroll_only:
+            if not device: raise RuntimeError('Remember this PC must be selected for automatic startup.')
+            print('PC approval saved. The Windows background task can now connect.',flush=True)
+            return
         worker = RemoteWorker(base, ticket, device)
         limit = args.max_minutes if device else min(args.max_minutes or 55, 55)
         print('Continuous PC connection enabled.' if device else 'Temporary approval: session remains limited to 55 minutes.', flush=True)
         try:
             run_connected(worker, args.idle_timeout, limit)
-        except requests.HTTPError as exc:
-            if exc.response is not None and exc.response.status_code in {401,403}:
-                if device and not args.memory_only: credentials.forget()
-                raise RuntimeError('PC authorization was revoked or expired. Restart and approve again.') from None
-            raise
+        except DeviceAuthorizationError as exc:
+            # Keep the encrypted record for recovery/diagnostics. A generic
+            # access-token 401 must never erase a valid remembered approval.
+            if args.saved_only:
+                credentials.pause()
+                print(f'PC approval rejected ({exc.args[0]}). Automatic connection stopped; no new approval was requested.', flush=True)
+                return
+            raise RuntimeError('Saved PC approval was rejected. Check the registered PC before explicitly approving again.') from None
         except KeyboardInterrupt:
             print('Processor stopped. Saved approval is retained for the next run.', flush=True)
         finally:

@@ -233,12 +233,12 @@ async function workerStatus(){
   let status;
   try{status=await api(BASE+'/session');}catch(error){workerOnline=false;$('connectionTitle').textContent='연결 상태를 확인할 수 없습니다';$('connectionMessage').textContent=error.message;$('connectionPanel').dataset.online='false';$('workerStatus').textContent='연결 상태 확인 실패';updateState();throw error;}
   workerOnline=!!status.target_worker_online;
-  $('workerStatus').textContent=status.worker_online?'● 분석 처리기 연결됨':'○ 처리기 연결 대기 · 분석 PC 실행 필요';
+  $('workerStatus').textContent=status.worker_online?'● 분석 처리기 연결됨':'○ PC 자동 연결 대기';
   if(status.persistent_worker_online)$('workerStatus').textContent+=' · 자동 유지';
   $('workerStatus').dataset.online=String(status.worker_online);
   $('connectionPanel').dataset.online=String(workerOnline);
   $('connectionTitle').textContent=workerOnline?'분석 PC가 연결되어 있습니다':status.worker_online?'분석 PC 처리기 업데이트가 필요합니다':'분석 PC가 연결되어 있지 않습니다';
-  $('connectionMessage').textContent=workerOnline?'재생 준비 중인 영상은 자동 변환됩니다. 준비가 끝나면 레인·선수를 선택하고 확인한 뒤 「선수 확정 · 스트로크/킥 분석」을 누르세요.':status.worker_online?'기존 처리기는 영상 변환만 지원합니다. PC의 최신 코드를 받은 뒤 처리기를 재실행하세요. 저장된 승인은 재사용됩니다.':'업로드만으로 모델 분석이 실행되지는 않습니다. 지원되는 원본은 지금 재생할 수 있지만, 재생 변환·프레임 검수·모델 분석에는 아래 방법으로 PC를 연결해야 합니다.';
+  $('connectionMessage').textContent=workerOnline?'재생 준비 중인 영상은 자동 변환됩니다. 준비가 끝나면 레인·선수를 선택하고 확인한 뒤 「선수 확정 · 스트로크/킥 분석」을 누르세요.':status.worker_online?'기존 처리기는 영상 변환만 지원합니다. PC의 최신 코드를 받은 뒤 처리기를 재실행하세요. 저장된 승인은 재사용됩니다.':'PC가 응답하지 않고 있습니다. 자동 시작을 등록한 PC를 켜고 Windows에 로그인하면 연결됩니다. 단순 재부팅에는 재승인이 필요하지 않습니다. 계속 연결되지 않으면 아래 자동 시작 상태와 등록된 PC를 확인하세요. 승인 해제·만료는 별도 확인이 필요합니다.';
   updateState();
 }
 act('refreshWorker',workerStatus);

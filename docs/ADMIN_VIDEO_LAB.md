@@ -64,6 +64,26 @@ python -m analysis_v2.workbench.remote_worker
 
 Windows 연결 정보는 `%LOCALAPPDATA%/SwimMate/video-worker/`에 현재 Windows 사용자용 DPAPI 암호문으로 저장한다. 임시 저장 파일에도 평문을 쓰지 않는다. [Microsoft DPAPI 문서](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata)의 현재 사용자 범위를 사용하며 컴퓨터 전체 계정 공유 옵션은 사용하지 않는다. 계정/기기 교체 시에는 다시 승인한다. Linux/macOS는 `--memory-only`로 실행 중에만 유지할 수 있으며 평문 저장으로 대체하지 않는다.
 
+### Windows 자동 시작 (2026-09-15)
+
+기존 지속 연결은 실행 중 인증 갱신만 담당하여 재부팅 후에는 처리기를 수동으로 켜야 했다.
+현재는 최초 설정 시 `powershell -File scripts/video_worker_autostart.ps1 -Action Connect`로 브라우저 승인과 현재 사용자용 자동 시작 등록을 한 번에 진행한다. 이미 저장된 승인이 있다면 아래 명령으로 재승인 없이 로그온 작업만 등록한다. 기존 전경 처리기가 실행 중이면 먼저 Ctrl+C로 중지한다(승인은 유지됨).
+
+```powershell
+powershell -File scripts/video_worker_autostart.ps1 -Action Install
+powershell -File scripts/video_worker_autostart.ps1 -Action Status
+```
+
+- 현재 Windows 계정으로 로그인하면 15초 지연 후 `pythonw` 백그라운드 처리기가 시작된다. 설치 직후에도 실행한다. 사용자 암호·관리자 승격·PC 절전 정책 변경은 필요하지 않다.
+- 배터리 사용 중 시작/실행을 허용하고 작업 실행 시간 제한은 없으며 중복 실행을 막는다. 실패 재시작 설정(1분·999회) 외에 1분 간격 상태 점검 트리거를 둔다. 일부 Windows에서 수동 시작 작업의 실패 재시도가 실행되지 않은 점을 실제 테스트로 확인해 보완했으며, 별도 테스트 작업의 비정상 종료→정기 트리거 재실행을 확인했다. 정상 처리기가 실행 중이면 중복 시작은 무시한다. 네트워크 일시 장애는 기존 처리기 자체가 계속 재시도한다. PC 종료·절전·로그아웃 상태에서는 분석하지 못한다.
+- 로그는 `%LOCALAPPDATA%/SwimMate/video-worker/background.log`에 최대 1MB×4개 순환 보관한다. 토큰·응답 본문을 기록하지 않는다.
+- 자동 시작은 `--saved-only`로만 실행한다. 승인 정보가 없거나 서버가 기기 갱신을 거부하면 새 승인 링크를 몰래 만들지 않고 멈춘다. 거부 시 로컬 일시중지 표시를 남겨 정기 시작에서도 서버 인증을 반복하지 않으며, 사용자가 새 승인을 저장하면 표시를 해제한다. 단순 작업 토큰 401은 저장된 PC 승인을 삭제하지 않으며, 기기 갱신 거부 때도 암호화된 기록을 진단/복구용으로 유지한다.
+- 서버에서 이미 거부한 승인은 자동 시작 등록만으로 되살릴 수 없다. 등록 상태를 확인한 뒤 사용자가 명시적으로 `-Action Connect`를 실행하면 브라우저 승인 1회를 받은 후 자동 시작 작업으로 연결한다. 평소 로그인 자동 실행은 Connect를 호출하지 않는다.
+- 자동 시작 해제: `powershell -File scripts/video_worker_autostart.ps1 -Action Remove`. 해당 작업만 중지/삭제하며 PC 승인 파일·영상 원본은 삭제하지 않는다.
+- Windows 작업 이름은 `SwimMate Video Worker - <현재 사용자 SID>`다. 같은 이름의 다른 사용자/다른 실행 명령은 덮어쓰지 않는다. Windows가 사용자명을 짧게 반환하는 경우에도 SID로 소유권을 검증한다.
+
+참고: [Microsoft 작업 설정](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/new-scheduledtasksettingsset), [작업 등록](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/register-scheduledtask).
+
 `/admin` → 영법 분석 TEST → **등록된 PC 관리 · 연결 해제**에서 해당 PC의 권한을 해제한다. `Ctrl+C`는 처리기만 중지하고 승인은 보존한다. 로컬 승인만 지우려면 처리기를 중지한 뒤 `--forget-device`를 사용한다. 강제로 새 승인을 받으려면 `--browser-login`을 지정한다.
 
 기존 자동화의 임시 로그인은 `--env-login`으로 로컬 `.env`의 `ADMIN_ID` / `ADMIN_PW`를 사용할 수 있다. 값은 화면·로그·명령줄에 출력하지 않는다.
@@ -72,11 +92,11 @@ Windows 연결 정보는 `%LOCALAPPDATA%/SwimMate/video-worker/`에 현재 Windo
 python -m analysis_v2.workbench.remote_worker --env-login
 ```
 
-기억한 PC는 기본적으로 유휴/전체 실행 시간 제한이 없다. 필요할 때만 `--idle-timeout 초`·`--max-minutes 분`으로 제한한다. PC 종료·절전·처리기 종료 중에는 분석하지 못한다. PC 재부팅 후 처리기를 다시 실행하면 재승인은 필요 없지만, Windows 로그인 자동 실행 등록은 이번 변경에 포함하지 않았다. 기억하지 않는 승인과 `--env-login`은 기존 55분 임시 모드다. 운영 SwimMate HTTPS 주소와 로컬 QA 주소만 허용한다.
+기억한 PC는 기본적으로 유휴/전체 실행 시간 제한이 없다. 수동 실행에서는 필요할 때만 `--idle-timeout 초`·`--max-minutes 분`으로 제한한다. PC 종료·절전·로그아웃 중에는 분석하지 못한다. Windows 자동 시작을 등록하면 로그인 후 저장된 승인으로 연결한다. 기억하지 않는 승인과 `--env-login`은 기존 55분 임시 모드다. 운영 SwimMate HTTPS 주소와 로컬 QA 주소만 허용한다.
 
 ## QA
 
-- `tests/test_admin_video_lab.py`: 인증·CSRF·관리자 간 소유권·청크 순서/해시/용량·작업 임대/취소·만료·범위 재생·블라인드 기록 보존·결과/DPS 의미·정적 경로 연결·비밀번호 없는 승인/만료/재사용 방지·지속 연결 등 40개. 합성 데이터만 사용하므로 실제 영상 정확도 검증은 아니다.
+- `tests/test_admin_video_lab.py`: 인증·CSRF·관리자 간 소유권·청크 순서/해시/용량·작업 임대/취소·만료·범위 재생·블라인드 기록 보존·결과/DPS 의미·정적 경로 연결·비밀번호 없는 승인/만료/재사용 방지·지속 연결·자동 시작 등 66개. 합성 데이터만 사용하므로 실제 영상 정확도 검증은 아니다.
 - `scripts/qa_ui_crawler.py`: 정기 운영 QA에서 9개 관리자 메뉴의 모바일 비겹침과 새 검수실의 인증·화면 연결을 확인한다. 이 검사만으로 GPU 추론 통과를 주장하지 않는다.
 - `scripts/qa_admin_video_lab.py`: 별도 opt-in 실제 영상 검사. 관리자 로그인, 실제 업로드/재생/추론/비교/내보내기, 1920·1440·1024·768·390·320px 레이아웃, 자기 테스트 프로젝트 삭제를 검사한다. PC 처리기를 먼저 실행해야 한다.
 

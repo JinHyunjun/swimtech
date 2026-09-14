@@ -17,6 +17,125 @@ TARGET = dict(lane_id=1, race_distance_m=50, confirmed=True, checkpoints=[dict(t
 SETTINGS = dict(stroke='freestyle', start_sec=0, end_sec=12, distance_m=25, roi=[0, 0, 1, 1], target=TARGET)
 
 
+@pytest.mark.parametrize('option',['--browser-login','--env-login','--memory-only','--forget-device','--enroll-only'])
+def test_unattended_worker_cannot_enroll_or_change_credentials(option):
+    from analysis_v2.workbench.remote_worker import main
+    with pytest.raises(SystemExit) as exc:
+        main(['--saved-only',option])
+    assert exc.value.code==2
+
+
+def test_unattended_missing_approval_does_not_create_pairing(monkeypatch,capsys):
+    from contextlib import nullcontext
+    from unittest.mock import Mock
+    from analysis_v2.workbench import remote_worker as remote
+    credentials=Mock(load=lambda:None,single_instance=lambda:nullcontext(),is_paused=lambda:False)
+    pairing=Mock(side_effect=AssertionError('Automatic enrollment is forbidden'))
+    monkeypatch.setattr(remote,'DeviceCredentials',lambda base:credentials)
+    monkeypatch.setattr(remote,'browser_ticket',pairing)
+    monkeypatch.setattr(remote,'issue_ticket',pairing)
+    remote.main(['--saved-only'])
+    assert 'no pairing request' in capsys.readouterr().out
+    pairing.assert_not_called()
+
+
+def test_unattended_restores_saved_approval_and_stops_on_revocation(monkeypatch,capsys):
+    from contextlib import nullcontext
+    from unittest.mock import Mock
+    import requests
+    from analysis_v2.workbench import remote_worker as remote
+    grant={'synthetic':'never-print-this-secret'}
+    credentials=Mock(load=lambda:grant,single_instance=lambda:nullcontext(),is_paused=lambda:False)
+    worker=Mock()
+    factory=Mock(return_value=worker)
+    reply=requests.Response();reply.status_code=401
+    connected=Mock(side_effect=remote.DeviceAuthorizationError('saved_device_rejected',response=reply))
+    monkeypatch.setattr(remote,'DeviceCredentials',lambda base:credentials)
+    monkeypatch.setattr(remote,'RemoteWorker',factory)
+    monkeypatch.setattr(remote,'run_connected',connected)
+    remote.main(['--saved-only'])
+    assert factory.call_args.args[1:] == (None,grant)
+    connected.assert_called_once_with(worker,0,0)
+    credentials.forget.assert_not_called()
+    credentials.pause.assert_called_once()
+    worker.session.close.assert_called_once()
+    output=capsys.readouterr().out
+    assert 'approval rejected' in output and 'never-print-this-secret' not in output
+
+
+def test_job_token_401_never_erases_saved_device(monkeypatch):
+    from contextlib import nullcontext
+    from unittest.mock import Mock
+    import requests
+    from analysis_v2.workbench import remote_worker as remote
+    credentials=Mock(load=lambda:{'synthetic':'grant'},single_instance=lambda:nullcontext(),is_paused=lambda:False)
+    reply=requests.Response();reply.status_code=401
+    monkeypatch.setattr(remote,'DeviceCredentials',lambda base:credentials)
+    monkeypatch.setattr(remote,'RemoteWorker',Mock())
+    monkeypatch.setattr(remote,'run_connected',Mock(side_effect=requests.HTTPError(response=reply)))
+    with pytest.raises(requests.HTTPError): remote.main(['--saved-only'])
+    credentials.forget.assert_not_called()
+
+
+def test_periodic_start_does_not_retry_a_rejected_device(monkeypatch):
+    from contextlib import nullcontext
+    from unittest.mock import Mock
+    from analysis_v2.workbench import remote_worker as remote
+    credentials=Mock(single_instance=lambda:nullcontext(),is_paused=lambda:True)
+    factory=Mock(side_effect=AssertionError('Paused grant must not contact the server'))
+    monkeypatch.setattr(remote,'DeviceCredentials',lambda base:credentials)
+    monkeypatch.setattr(remote,'RemoteWorker',factory)
+    remote.main(['--saved-only'])
+    credentials.load.assert_not_called()
+    factory.assert_not_called()
+
+
+def test_explicit_enrollment_saves_then_exits_for_windows_task(monkeypatch):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from analysis_v2.workbench import remote_worker as remote
+    credentials=Mock(single_instance=lambda:nullcontext())
+    factory=Mock(side_effect=AssertionError('Only the scheduled task should run the queue'))
+    grant={'synthetic':'approved-device'}
+    monkeypatch.setattr(remote,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(remote,'DeviceCredentials',lambda base:credentials)
+    monkeypatch.setattr(remote,'browser_ticket',Mock(return_value={'token':'synthetic','device':grant}))
+    monkeypatch.setattr(remote,'RemoteWorker',factory)
+    remote.main(['--enroll-only'])
+    credentials.save.assert_called_once_with(grant)
+    credentials.load.assert_not_called()
+    factory.assert_not_called()
+
+
+def test_background_launcher_uses_saved_only_and_redacts_unexpected_failures(capsys):
+    from unittest.mock import Mock
+    from analysis_v2.workbench.background_worker import run_saved_worker
+    run=Mock()
+    assert run_saved_worker(run)==0
+    run.assert_called_once_with(['--saved-only'])
+    assert run_saved_worker(Mock(side_effect=ValueError('sensitive-response-body')))==1
+    output=capsys.readouterr().out
+    assert 'ValueError' in output and 'sensitive-response-body' not in output
+
+
+def test_background_log_stream_preserves_split_lines_and_flushes():
+    from unittest.mock import Mock
+    from analysis_v2.workbench.background_worker import LogStream
+    logger=Mock();stream=LogStream(logger)
+    stream.write('connected');stream.write(' safely\nwaiting');stream.flush()
+    assert [call.args[0] for call in logger.info.call_args_list]==['connected safely','waiting']
+
+
+def test_logon_installer_is_current_user_windowless_and_battery_safe():
+    text=(Path(__file__).resolve().parents[1]/'scripts/video_worker_autostart.ps1').read_text(encoding='utf-8')
+    for required in ['-AtLogOn','-LogonType Interactive','-RunLevel Limited','pythonw.exe',
+        '-AllowStartIfOnBatteries','-DontStopIfGoingOnBatteries','([TimeSpan]::Zero)',
+        '-MultipleInstances IgnoreNew','-RestartCount 999','Unregister-ScheduledTask']:
+        assert required in text
+    assert '-Password' not in text and 'ExecutionPolicy Bypass' not in text
+
+
 @pytest.mark.parametrize('target', [None, {**TARGET,'confirmed':False}, {**TARGET,'lane_id':-1},
     {**TARGET,'lane_id':11}, {**TARGET,'lane_id':1.2}, {**TARGET,'checkpoints':[]},
     {**TARGET,'checkpoints':[dict(time_sec=2,x=.5,y=.5)]},
@@ -474,7 +593,10 @@ def test_device_credentials_roundtrip_and_no_plaintext(tmp_path):
     if os.name != 'nt': pytest.skip('Windows DPAPI only; Linux has no plaintext fallback')
     store = DeviceCredentials('https://swimtech.vercel.app', root=tmp_path)
     device = {'device_id':'test-device','secret':'synthetic-private-grant'}
+    store.pause()
+    assert store.is_paused()
     store.save(device)
+    assert not store.is_paused()
     assert b'synthetic-private-grant' not in store.path.read_bytes()
     assert store.load() == device
     with store.single_instance():

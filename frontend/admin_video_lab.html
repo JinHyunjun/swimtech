@@ -2,7 +2,7 @@
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SwimMate Lab · 영상 교차 검증</title><link rel="icon" href="/static/video-lab/wave.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/video-lab/style.css?v=20260910a"><script src="/static/video-lab/app.js?v=20260910a" defer></script></head>
+<link rel="stylesheet" href="/static/video-lab/style.css?v=20260915a"><script src="/static/video-lab/app.js?v=20260915a" defer></script></head>
 <body>
 <header><a class="brand" href="/admin#video-lab" target="_top"><img src="/static/video-lab/wave.svg" alt=""><span>SwimMate <b>LAB</b></span></a>
 <span class="local" id="workerStatus" role="status">처리기 연결 확인 중</span><button id="helpButton" class="quiet">사용 방법</button></header>
@@ -20,7 +20,7 @@
 <section id="connectionPanel" class="panel connection" aria-labelledby="connectionTitle"><h3 id="connectionTitle">분석 PC 연결 확인 중</h3>
 <p id="connectionMessage" role="status">영상 처리기 상태를 확인하고 있습니다.</p>
 <details id="connectionHelp"><summary>분석 PC 연결 방법</summary><p>모델 실행 환경이 있는 PC의 프로젝트 폴더에서 아래 명령을 실행한 뒤, 표시되는 링크를 관리자 계정으로 열고 같은 코드를 승인하세요. 이 창에서 비밀번호를 입력할 필요가 없습니다.</p>
-<code>python -m analysis_v2.workbench.remote_worker</code><p class="small">처음에만 「이 PC 기억」으로 승인하세요. 이후에는 승인 없이 다시 연결됩니다. 처리기를 켜 두면 연결을 자동 유지하지만 PC 종료·절전 중에는 분석할 수 없습니다. Windows 자동 시작 등록은 별도입니다.</p></details>
+<code>powershell -File scripts/video_worker_autostart.ps1 -Action Connect</code><p class="small">Windows 최초 설정용 명령입니다. 「이 PC 기억」으로 승인하면 자동 시작 등록까지 이어집니다. 이미 등록했다면 매번 연결 승인이나 명령 실행을 할 필요가 없습니다. PC 종료·절전·로그아웃 중에는 분석할 수 없습니다.</p><p class="small">기존 승인을 유지하고 자동 시작만 등록하려면:</p><code>powershell -File scripts/video_worker_autostart.ps1 -Action Install</code><p class="small">상태 확인은 -Action Status, 자동 시작 해제는 -Action Remove입니다. 서버에서 승인을 해제했거나 만료된 경우에만 등록 상태를 확인한 뒤 Connect로 다시 승인하세요.</p></details>
 <button id="refreshWorker" class="quiet">연결 상태 다시 확인</button></section>
 <section class="panel connection"><details id="devicesPanel"><summary>등록된 PC 관리 · 연결 해제</summary><div id="deviceList"></div><button id="reloadDevices">목록 새로고침</button></details></section>
 <section id="uploadPanel" class="upload panel"><img src="/static/video-lab/wave.svg" alt=""><h2>검증할 수영 영상을 올려주세요</h2>

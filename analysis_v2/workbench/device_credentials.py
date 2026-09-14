@@ -50,6 +50,13 @@ class DeviceCredentials:
         except Exception as exc:
             raise RuntimeError('Saved PC connection cannot be opened. Use --forget-device and approve again.') from exc
 
+    def is_paused(self):
+        return self.path.with_suffix('.paused').exists()
+
+    def pause(self):
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.path.with_suffix('.paused').write_text('device authorization rejected', encoding='ascii')
+
     def save(self, device):
         encrypted = crypt(json.dumps({'base':self.base,'device':device}).encode())
         self.root.mkdir(parents=True, exist_ok=True)
@@ -57,11 +64,13 @@ class DeviceCredentials:
         try:
             with os.fdopen(fd, 'wb') as out: out.write(encrypted)
             os.replace(temp, self.path)
+            self.path.with_suffix('.paused').unlink(missing_ok=True)
         finally:
             if os.path.exists(temp): os.unlink(temp)
 
     def forget(self):
         self.path.unlink(missing_ok=True)
+        self.path.with_suffix('.paused').unlink(missing_ok=True)
 
     @contextmanager
     def single_instance(self):
