@@ -973,16 +973,6 @@ def get_crew_dashboard(request: Request):
             "sync_status": row[6], "jira_issue_key": row[7], "jira_issue_url": row[8],
             "created_at": str(row[9]),
         } for row in cur.fetchall()]
-        cur.execute(
-            """
-            SELECT jira_issue_key
-            FROM coach_action_items
-            WHERE coach_id = %s AND jira_issue_key IS NOT NULL
-            ORDER BY created_at DESC LIMIT 100
-            """,
-            (coach_id,),
-        )
-        jira_issue_keys = [row[0] for row in cur.fetchall()]
 
         return {
             "summary": {
@@ -993,7 +983,7 @@ def get_crew_dashboard(request: Request):
             },
             "members": members,
             "action_items": action_items,
-            "jira_analytics": _get_jira_analytics(jira_issue_keys),
+            "task_management": "local",
         }
     except HTTPException:
         raise
@@ -1006,7 +996,7 @@ def get_crew_dashboard(request: Request):
 
 @router.post("/action-items", status_code=201)
 def create_coach_action_item(body: CoachActionItemRequest, request: Request):
-    """Persist a coach task first, then mirror it to Jira when configured."""
+    """Persist coaching tasks locally; legacy Jira references remain untouched."""
     _ensure_tables()
     username = _require_user(request)
     conn = _get_db()
@@ -1029,55 +1019,13 @@ def create_coach_action_item(body: CoachActionItemRequest, request: Request):
         cur.execute(
             """INSERT INTO coach_action_items
                    (coach_id, student_id, category, title, description, sync_status)
-               VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id""",
+               VALUES (%s, %s, %s, %s, %s, 'local_only') RETURNING id""",
             (coach_id, body.student_id, body.category, title, description or None),
         )
         action_id = int(cur.fetchone()[0])
         conn.commit()
 
-        category_names = {
-            "technique": "영법 교정",
-            "recovery": "회복 확인",
-            "attendance": "출석 확인",
-            "training-plan": "훈련 계획",
-        }
-        jira_description = (
-            "SwimMate 크루 코칭 과제\n"
-            f"회원: {student[0]}\n"
-            f"분류: {category_names[body.category]}\n\n"
-            f"{description or '코치가 SwimMate에서 생성한 확인 과제입니다.'}"
-        )
-        try:
-            issue = JiraClient().create_issue(
-                summary=title,
-                description=jira_description,
-                labels=["swimmate", body.category],
-            )
-            cur.execute(
-                """UPDATE coach_action_items
-                   SET sync_status = 'synced', jira_issue_key = %s, jira_issue_url = %s,
-                       sync_error = NULL, updated_at = NOW()
-                   WHERE id = %s""",
-                (issue["key"], issue["url"], action_id),
-            )
-            conn.commit()
-            _invalidate_jira_analytics_cache()
-            return {
-                "id": action_id, "sync_status": "synced",
-                "jira_issue_key": issue["key"], "jira_issue_url": issue["url"],
-            }
-        except (JiraApiError, JiraConfigurationError) as exc:
-            cur.execute(
-                """UPDATE coach_action_items
-                   SET sync_status = 'failed', sync_error = %s, updated_at = NOW()
-                   WHERE id = %s""",
-                (str(exc)[:500], action_id),
-            )
-            conn.commit()
-            return {
-                "id": action_id, "sync_status": "failed",
-                "message": "SwimMate에는 저장했지만 Jira 동기화에 실패했습니다.",
-            }
+        return {"id": action_id, "status": "open", "sync_status": "local_only"}
     except HTTPException:
         conn.rollback()
         raise
@@ -1091,7 +1039,7 @@ def create_coach_action_item(body: CoachActionItemRequest, request: Request):
 
 @router.post("/action-items/{action_item_id}/complete")
 def complete_coach_action_item(action_item_id: int, request: Request):
-    """Mark a coach action item complete and mirror the completion to Jira."""
+    """Complete locally, including tasks that historically had a Jira issue."""
     _ensure_tables()
     username = _require_user(request)
     conn = _get_db()
@@ -1119,30 +1067,12 @@ def complete_coach_action_item(action_item_id: int, request: Request):
                 "already_done": True,
             }
 
-        jira_result: dict[str, Any] | None = None
-        if item[2]:
-            try:
-                jira_result = JiraClient().transition_issue_to_done(str(item[2]))
-            except (JiraApiError, JiraConfigurationError) as exc:
-                cur.execute(
-                    """UPDATE coach_action_items
-                       SET sync_status = 'failed', sync_error = %s, updated_at = NOW()
-                       WHERE id = %s""",
-                    (str(exc)[:500], action_item_id),
-                )
-                conn.commit()
-                raise HTTPException(
-                    getattr(exc, "status_code", 502),
-                    "Jira 완료 처리에 실패했습니다. Jira 화면에서 상태를 확인해주세요.",
-                ) from exc
-
         cur.execute(
             """UPDATE coach_action_items
-               SET status = 'done', sync_status = CASE WHEN jira_issue_key IS NULL THEN sync_status ELSE 'synced' END,
-                   sync_error = NULL, updated_at = NOW()
-               WHERE id = %s
+               SET status = 'done', updated_at = NOW()
+               WHERE id = %s AND coach_id = %s
                RETURNING id, jira_issue_key, jira_issue_url""",
-            (action_item_id,),
+            (action_item_id, coach_id),
         )
         updated = cur.fetchone()
         conn.commit()
@@ -1152,7 +1082,7 @@ def complete_coach_action_item(action_item_id: int, request: Request):
             "status": "done",
             "jira_issue_key": updated[1],
             "jira_issue_url": updated[2],
-            "jira": jira_result or {"transitioned": False, "local_only": True},
+            "local_only": True,
         }
     except HTTPException:
         conn.rollback()

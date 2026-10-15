@@ -7,7 +7,6 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
 <link rel="stylesheet" href="/static/style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
 .coach-page { width:100%; max-width:var(--global-content-max-width,1280px); margin:0 auto; padding:24px 16px 80px; }
 
@@ -485,17 +484,15 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
           <summary>
             <div class="coach-panel-heading">
               <div class="c-card-title" style="margin-bottom:4px;">📊 크루 훈련 운영판</div>
-              <div class="coach-panel-desc">최근 30일 훈련 흐름, 확인 필요 회원, Jira 코칭 과제를 한눈에 봅니다.</div>
+              <div class="coach-panel-desc">최근 30일 훈련 흐름, 확인 필요 회원, 코칭 과제를 SwimMate 안에서 관리합니다.</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-              <span class="jira-state" id="jira-state">Jira 확인 중</span>
+              <span class="jira-state connected">SwimMate 내부 관리</span>
               <span class="coach-panel-toggle"></span>
             </div>
           </summary>
           <div class="coach-panel-body">
-            <div class="jira-shortcuts is-hidden" id="jira-shortcuts"></div>
             <div class="crew-summary" id="crew-summary"></div>
-            <div class="crew-analytics" id="crew-jira-analytics"></div>
             <div id="crew-members"><div class="c-loading">크루 현황을 불러오는 중...</div></div>
             <div id="crew-action-items"></div>
           </div>
@@ -686,7 +683,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
   </div>
 </div>
 
-<!-- Jira 코칭 과제 모달 -->
+<!-- SwimMate 코칭 과제 모달 -->
 <div id="modal-action-item" class="modal-overlay" style="display:none" onclick="closeModalIf(event,'modal-action-item')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal('modal-action-item')">✕</button>
@@ -710,7 +707,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
       <div class="c-label">코치 메모</div>
       <textarea id="action-description" class="c-textarea" maxlength="3000" placeholder="확인할 내용과 다음 훈련에서 적용할 방법을 적어주세요."></textarea>
     </div>
-    <div style="font-size:var(--fs-caption);color:var(--muted);">저장하면 SwimMate 과제와 Jira 업무가 함께 생성됩니다.</div>
+    <div style="font-size:var(--fs-caption);color:var(--muted);">과제는 SwimMate 안에 저장됩니다. 기존 코칭 과제도 그대로 유지됩니다.</div>
     <div class="modal-actions">
       <button class="c-btn c-btn-ghost" onclick="closeModal('modal-action-item')">취소</button>
       <button class="c-btn c-btn-primary" id="action-submit-btn" onclick="submitActionItem()">과제 만들기</button>
@@ -810,7 +807,6 @@ let _selectedLogId = null;
 let _coachStudents = [];
 let _currentAiDocumentId = null;
 let _aiDocuments = {};
-let _crewCharts = {};
 
 function logout() {
   document.cookie = "swimtech_token=; Max-Age=0; path=/";
@@ -923,200 +919,6 @@ function formatCrewDistance(metres) {
   return value >= 1000 ? `${(value / 1000).toFixed(1)}km` : `${value}m`;
 }
 
-function cssVar(name, fallback) {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
-}
-
-function destroyCrewChart(id) {
-  if (_crewCharts[id]) {
-    _crewCharts[id].destroy();
-    delete _crewCharts[id];
-  }
-}
-
-function renderCrewChartFallback(targetId, rows) {
-  const target = document.getElementById(targetId);
-  if (!target) return;
-  const max = Math.max(1, ...rows.map(row => Number(row.value || 0)));
-  target.innerHTML = rows.map(row => {
-    const width = Math.round((Number(row.value || 0) / max) * 100);
-    return `<div class="crew-pipeline-row"><span>${esc(row.label)}</span><div class="crew-pipeline-bar"><div class="crew-pipeline-fill" style="width:${width}%"></div></div><strong>${Number(row.value || 0)}</strong></div>`;
-  }).join('') || '<div class="crew-analytics-note">표시할 Jira 과제가 아직 없습니다.</div>';
-}
-
-function renderCrewCategoryChart(analytics) {
-  destroyCrewChart('jira-category-chart');
-  const canvas = document.getElementById('jira-category-chart');
-  if (!canvas) return;
-  const counts = (analytics.category_counts || []).filter(item => Number(item.count || 0) > 0);
-  if (!window.Chart) {
-    renderCrewChartFallback('jira-category-fallback', (analytics.category_counts || []).map(item => ({label:item.label, value:item.count})));
-    canvas.style.display = 'none';
-    return;
-  }
-  const labels = counts.length ? counts.map(item => item.label) : ['과제 없음'];
-  const values = counts.length ? counts.map(item => Number(item.count || 0)) : [1];
-  const colors = counts.length
-    ? ['#00b4d8', '#4ade80', '#facc15', '#a78bfa', '#94a3b8']
-    : ['rgba(148,163,184,.22)'];
-  _crewCharts['jira-category-chart'] = new Chart(canvas, {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '62%',
-      plugins: {
-        legend: { position: 'bottom', labels: { color: cssVar('--muted', '#94a3b8'), boxWidth: 10, font: { size: 11 } } },
-        tooltip: { enabled: counts.length > 0 },
-      },
-    },
-  });
-}
-
-function renderCrewWeeklyChart(analytics) {
-  destroyCrewChart('jira-weekly-chart');
-  const canvas = document.getElementById('jira-weekly-chart');
-  const flow = analytics.weekly_flow || [];
-  if (!canvas) return;
-  if (!window.Chart) {
-    renderCrewChartFallback('jira-weekly-fallback', flow.map(item => ({label:item.week, value:Number(item.created || 0) + Number(item.done || 0)})));
-    canvas.style.display = 'none';
-    return;
-  }
-  _crewCharts['jira-weekly-chart'] = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: flow.map(item => item.week),
-      datasets: [
-        { label: '생성', data: flow.map(item => Number(item.created || 0)), backgroundColor: 'rgba(0,180,216,.75)', borderRadius: 6 },
-        { label: '완료', data: flow.map(item => Number(item.done || 0)), backgroundColor: 'rgba(74,222,128,.75)', borderRadius: 6 },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { ticks: { color: cssVar('--muted', '#94a3b8') }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { color: cssVar('--muted', '#94a3b8'), precision: 0 }, grid: { color: 'rgba(148,163,184,.12)' } },
-      },
-      plugins: { legend: { position: 'bottom', labels: { color: cssVar('--muted', '#94a3b8'), boxWidth: 10, font: { size: 11 } } } },
-    },
-  });
-}
-
-function renderCrewPipeline(analytics) {
-  const el = document.getElementById('jira-status-pipeline');
-  if (!el) return;
-  const statuses = analytics.status_counts || [];
-  const max = Math.max(1, ...statuses.map(item => Number(item.count || 0)));
-  el.innerHTML = statuses.length ? statuses.map(item => {
-    const width = Math.max(5, Math.round((Number(item.count || 0) / max) * 100));
-    return `<div class="crew-pipeline-row"><span>${esc(item.name)}</span><div class="crew-pipeline-bar"><div class="crew-pipeline-fill" style="width:${width}%"></div></div><strong>${Number(item.count || 0)}</strong></div>`;
-  }).join('') : '<div class="crew-analytics-note">아직 상태를 분석할 Jira 과제가 없습니다.</div>';
-}
-
-function renderCrewStaleItems(analytics) {
-  const el = document.getElementById('jira-stale-items');
-  if (!el) return;
-  const items = analytics.stale_items || [];
-  if (!items.length) {
-    el.innerHTML = '<div class="crew-analytics-note" style="margin-top:10px;">7일 이상 멈춘 열린 Jira 과제가 없습니다. 물살 좋다.</div>';
-    return;
-  }
-  el.innerHTML = '<div class="crew-stale-list">' + items.map(item => {
-    const title = item.url
-      ? `<a class="jira-link" href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.key)} ↗</a>`
-      : `<span>${esc(item.key)}</span>`;
-    return `<div class="crew-stale-item"><div><strong style="color:var(--text);">${esc(item.title)}</strong><div>${esc(item.status)} · ${esc(item.updated)} 이후 멈춤</div></div>${title}</div>`;
-  }).join('') + '</div>';
-}
-
-function renderCrewAnalytics(analytics) {
-  const el = document.getElementById('crew-jira-analytics');
-  if (!el) return;
-  destroyCrewChart('jira-category-chart');
-  destroyCrewChart('jira-weekly-chart');
-  if (!analytics || !analytics.available) {
-    const reason = analytics && analytics.error ? ` (${esc(analytics.error)})` : '';
-    el.innerHTML = `<div class="crew-analytics-note">Jira 분석 그래프는 연결된 코칭 과제가 생기면 표시됩니다.${reason}</div>`;
-    return;
-  }
-  const avg = analytics.average_resolution_days == null ? '—' : `${analytics.average_resolution_days}일`;
-  const cacheText = analytics.cache && analytics.cache.hit ? '캐시 사용 중' : '방금 갱신';
-  el.innerHTML = `
-    <div class="crew-analytics-kpis">
-      <div class="crew-analytics-kpi"><strong>${analytics.open_count || 0}개</strong><span>열린 Jira 과제</span></div>
-      <div class="crew-analytics-kpi"><strong>${analytics.done_this_week || 0}개</strong><span>이번 주 완료</span></div>
-      <div class="crew-analytics-kpi"><strong>${avg}</strong><span>평균 처리 시간</span></div>
-    </div>
-    <div class="crew-chart-grid">
-      <div class="crew-chart-card">
-        <div class="crew-chart-title">과제 유형 분포 <span>${esc(cacheText)}</span></div>
-        <div class="crew-chart-canvas"><canvas id="jira-category-chart"></canvas><div id="jira-category-fallback"></div></div>
-      </div>
-      <div class="crew-chart-card">
-        <div class="crew-chart-title">주간 생성·완료 흐름 <span>최근 6주</span></div>
-        <div class="crew-chart-canvas"><canvas id="jira-weekly-chart"></canvas><div id="jira-weekly-fallback"></div></div>
-      </div>
-      <div class="crew-chart-card" style="grid-column:1/-1;min-height:auto;">
-        <div class="crew-chart-title">상태 흐름과 멈춘 과제 <span>최대 ${analytics.cache?.ttl_seconds || 60}초 캐시</span></div>
-        <div class="crew-pipeline" id="jira-status-pipeline"></div>
-        <div id="jira-stale-items"></div>
-      </div>
-    </div>`;
-  renderCrewCategoryChart(analytics);
-  renderCrewWeeklyChart(analytics);
-  renderCrewPipeline(analytics);
-  renderCrewStaleItems(analytics);
-}
-
-function renderJiraShortcuts(status) {
-  const el = document.getElementById('jira-shortcuts');
-  if (!el) return;
-  if (!status || !status.connected) {
-    el.className = 'jira-shortcuts is-hidden';
-    el.innerHTML = '';
-    return;
-  }
-  const links = [
-    ['Jira 목록', status.list_url || status.project_url, 'primary'],
-    ['보드', status.board_url, ''],
-    ['캘린더', status.calendar_url, ''],
-    ['타임라인', status.timeline_url, '']
-  ].filter(([, url]) => /^https:\/\//.test(String(url || '')));
-  if (!links.length) {
-    el.className = 'jira-shortcuts is-hidden';
-    el.innerHTML = '';
-    return;
-  }
-  const projectName = status.project_name || status.project_key || 'Jira 프로젝트';
-  el.className = 'jira-shortcuts';
-  el.innerHTML = links.map(([label, url, tone]) =>
-    `<a class="jira-shortcut-link ${tone}" href="${esc(url)}" target="_blank" rel="noopener">${esc(label)} ↗</a>`
-  ).join('') + `<div class="jira-shortcut-hint">${esc(projectName)}에서 코치 과제, 프로젝트 일정, 운영 타임라인을 바로 열어 공유할 수 있습니다.</div>`;
-}
-
-async function loadJiraStatus() {
-  const badge = document.getElementById('jira-state');
-  if (!badge) return;
-  badge.className = 'jira-state';
-  badge.textContent = 'Jira 확인 중';
-  renderJiraShortcuts(null);
-  try {
-    const response = await fetch('/api/jira/status', {credentials:'include'});
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.connected) throw new Error(data.detail || '연결 실패');
-    badge.className = 'jira-state connected';
-    badge.textContent = `Jira ${data.project_key} 연결됨`;
-    renderJiraShortcuts(data);
-  } catch (error) {
-    badge.className = 'jira-state failed';
-    badge.textContent = 'Jira 연결 확인 필요';
-    renderJiraShortcuts(null);
-  }
-}
 
 async function loadCrewDashboard() {
   const memberEl = document.getElementById('crew-members');
@@ -1133,7 +935,6 @@ async function loadCrewDashboard() {
       <div class="crew-metric"><strong>${summary.sessions_30d || 0}회</strong><span>30일 훈련</span></div>
       <div class="crew-metric"><strong>${formatCrewDistance(summary.distance_30d)}</strong><span>30일 거리</span></div>
       <div class="crew-metric"><strong>${summary.attention_count || 0}명</strong><span>확인 필요</span></div>`;
-    renderCrewAnalytics(data.jira_analytics);
 
     const members = data.members || [];
     if (!members.length) {
@@ -1159,20 +960,14 @@ async function loadCrewDashboard() {
       actionEl.innerHTML = '<div class="action-list-title">아직 생성한 코칭 과제가 없습니다.</div>';
     } else {
       actionEl.innerHTML = '<div class="action-list-title">최근 코칭 과제</div>' + actionItems.map(item => {
-        const link = item.jira_issue_url
-          ? `<a class="jira-link" href="${esc(item.jira_issue_url)}" target="_blank" rel="noopener">${esc(item.jira_issue_key)} ↗</a>`
-          : `<span class="jira-state failed">동기화 실패</span>`;
-        const stateLabel = item.status === 'done' ? 'Jira 완료' : item.status === 'deleted' ? 'Jira 삭제됨' : '진행 중';
-        const stateClass = item.status === 'done' ? 'connected' : item.status === 'deleted' ? 'failed' : '';
-        const completeButton = item.status === 'done' || item.status === 'deleted'
-          ? ''
-          : `<button class="crew-action-btn action-complete-btn" onclick="completeActionItem(event, ${Number(item.id)})">완료</button>`;
-        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)} · <span class="jira-state ${stateClass}">${stateLabel}</span></div></div><div class="action-item-actions">${completeButton}${link}</div></div>`;
+        const stateLabel = item.status === 'done' ? '완료' : item.status === 'deleted' ? '보관된 과제' : '진행 중';
+        const stateClass = item.status === 'done' ? 'connected' : '';
+        const completeButton = item.status === 'done' ? '' : `<button class="crew-action-btn action-complete-btn" onclick="completeActionItem(event, ${Number(item.id)})">완료</button>`;
+        return `<div class="action-item"><div><div class="action-item-title">${esc(item.title)}</div><div class="action-item-meta">${esc(item.student_name)} · ${String(item.created_at || '').slice(0,10)} · <span class="jira-state ${stateClass}">${stateLabel}</span></div></div><div class="action-item-actions">${completeButton}</div></div>`;
       }).join('');
     }
   } catch (error) {
     summaryEl.innerHTML = '';
-    renderCrewAnalytics(null);
     memberEl.innerHTML = `<div class="c-empty"><div class="c-empty-text">${esc(error.message)}</div></div>`;
     actionEl.innerHTML = '';
   }
@@ -1208,8 +1003,7 @@ async function submitActionItem() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || '과제를 만들지 못했습니다.');
     closeModal('modal-action-item');
-    if (data.sync_status === 'synced') toast(`${data.jira_issue_key} Jira 과제가 생성되었습니다.`);
-    else toast(data.message || 'SwimMate에 저장했지만 Jira 연결을 확인해주세요.', false);
+    toast('SwimMate에 코칭 과제를 저장했습니다.');
     loadCrewDashboard();
   } catch (error) {
     toast(error.message || '네트워크 오류', false);
@@ -1233,8 +1027,7 @@ async function completeActionItem(event, actionItemId) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || '완료 처리에 실패했습니다.');
-    if (data.jira_issue_key) toast(`${data.jira_issue_key} Jira까지 완료 처리했습니다.`);
-    else toast('SwimMate 코칭 과제를 완료 처리했습니다.');
+    toast('SwimMate 코칭 과제를 완료 처리했습니다.');
     loadCrewDashboard();
   } catch (error) {
     toast(error.message || '네트워크 오류', false);
@@ -1267,7 +1060,6 @@ async function loadCoachTab() {
       loadSwimShares();
       loadClassDocuments();
       loadCrewDashboard();
-      loadJiraStatus();
     } else {
       document.getElementById("coach-unregistered").style.display = "";
     }

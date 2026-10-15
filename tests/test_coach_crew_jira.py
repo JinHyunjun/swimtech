@@ -34,8 +34,9 @@ def test_coach_router_exposes_crew_dashboard_and_local_first_action_items():
     assert '@router.post("/action-items", status_code=201)' in source
     assert '@router.post("/action-items/{action_item_id}/complete")' in source
     assert "CREATE TABLE IF NOT EXISTS coach_action_items" in source
-    assert source.index("INSERT INTO coach_action_items") < source.index("JiraClient().create_issue")
-    assert "transition_issue_to_done" in source
+    assert "'local_only') RETURNING id" in source
+    assert "JiraClient().create_issue" not in source
+    assert "transition_issue_to_done" not in source
     assert "cs.status = 'active'" in source
 
 
@@ -88,25 +89,21 @@ def test_coach_page_connects_dashboard_and_jira_action_modal():
     page = (ROOT / "frontend" / "coach.html").read_text(encoding="utf-8")
 
     assert 'id="crew-operations-card"' in page
-    assert 'id="crew-jira-analytics"' in page
-    assert 'id="jira-shortcuts"' in page
+    assert 'id="crew-jira-analytics"' not in page
+    assert 'id="jira-shortcuts"' not in page
     assert "coach-quick-nav" in page
     assert "coach-panel" in page
     assert "openCoachPanel" in page
-    assert "jira-category-chart" in page
-    assert "jira-weekly-chart" in page
     assert 'id="modal-action-item"' in page
     assert "/api/coach/crew-dashboard" in page
     assert "/api/coach/action-items" in page
     assert "/api/coach/action-items/${actionItemId}/complete" in page
-    assert "/api/jira/status" in page
+    assert "/api/jira/status" not in page
     assert "openActionItemFromButton" in page
     assert "submitActionItem" in page
     assert "completeActionItem" in page
-    assert "renderCrewAnalytics" in page
-    assert "renderJiraShortcuts" in page
-    assert "timeline_url" in page
-    assert "Jira 완료" in page
+    assert "Jira 완료" not in page
+    assert "SwimMate 내부 관리" in page
 
 
 def test_landing_pwa_banner_stays_hidden_until_install_prompt():
@@ -117,3 +114,60 @@ def test_landing_pwa_banner_stays_hidden_until_install_prompt():
     assert "display:none" in banner_opening_tag
     assert "display:flex" not in banner_opening_tag
     assert "beforeinstallprompt" in page
+
+"""Local coaching task regressions; no real DB or external Jira requests."""
+from unittest.mock import Mock
+
+import pytest
+from fastapi import HTTPException
+from routers import coach
+
+
+@pytest.fixture
+def local_db(monkeypatch):
+    conn=Mock();cur=conn.cursor.return_value
+    monkeypatch.setattr(coach,'_ensure_tables',lambda:None)
+    monkeypatch.setattr(coach,'_require_user',lambda request:'coach')
+    monkeypatch.setattr(coach,'_get_db',lambda:conn)
+    monkeypatch.setattr(coach,'_get_customer_id',lambda *args:11)
+    monkeypatch.setattr(coach,'_require_coach',lambda *args:22)
+    monkeypatch.setattr(coach,'JiraClient',Mock(side_effect=AssertionError('External Jira must not be called')))
+    return conn,cur
+
+
+def test_create_is_local_even_with_broken_jira(local_db):
+    conn,cur=local_db
+    cur.fetchone.side_effect=[('Student',),(42,)]
+    body=coach.CoachActionItemRequest(student_id=3,category='technique',title='호흡 확인',description='기존 설명')
+    result=coach.create_coach_action_item(body,None)
+    assert result==dict(id=42,status='open',sync_status='local_only')
+    assert conn.commit.call_count==1
+
+
+@pytest.mark.parametrize('legacy_key',[None,'KAN-42'])
+def test_complete_preserves_legacy_references_and_sync_history(local_db,legacy_key):
+    conn,cur=local_db
+    cur.fetchone.side_effect=[(42,'open',legacy_key,'old-url'),(42,legacy_key,'old-url')]
+    result=coach.complete_coach_action_item(42,None)
+    assert result['status']=='done' and result['local_only']
+    assert result['jira_issue_key']==legacy_key
+    update=[c for c in cur.execute.call_args_list if 'UPDATE coach_action_items' in c.args[0]][0]
+    assert update.args[1]==(42,22)
+    sql=update.args[0].split('RETURNING')[0]
+    assert 'sync_status =' not in sql and 'jira_issue_key =' not in sql
+    assert conn.commit.call_count==1
+
+
+def test_other_coach_cannot_complete_missing_task(local_db):
+    conn,cur=local_db;cur.fetchone.return_value=None
+    with pytest.raises(HTTPException) as error:
+        coach.complete_coach_action_item(42,None)
+    assert error.value.status_code==404
+    conn.commit.assert_not_called()
+
+
+def test_completed_task_is_idempotent(local_db):
+    conn,cur=local_db;cur.fetchone.return_value=(42,'done','KAN-42','old-url')
+    result=coach.complete_coach_action_item(42,None)
+    assert result['already_done']
+    assert not any('UPDATE' in c.args[0] for c in cur.execute.call_args_list)

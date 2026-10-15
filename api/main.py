@@ -320,7 +320,8 @@ app.include_router(club_operations.router, prefix="/api/clubs",          tags=["
 app.include_router(promotion.router,      prefix="/api/promotion",       tags=["결과 공유·클럽 홍보"])
 app.include_router(pool.router,           prefix="/api/pool",            tags=["수영장"])
 app.include_router(chat.router,           prefix="/api/chat",            tags=["챗봇"])
-app.include_router(jira.router,           prefix="/api/jira",            tags=["Jira 연동"])
+# Historical Jira fields are retained in the DB, but external sync/webhooks
+# are intentionally no longer exposed. Coaching tasks are managed locally.
 
 @app.get("/api/ping")
 def ping():
