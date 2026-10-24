@@ -771,22 +771,31 @@ body {
   <!-- 4) 메뉴 사용 분석 -->
   <section class="admin-section" id="tab-activity">
     <div class="panel">
+      <label for="activity-days">집계 기간</label>
+      <select id="activity-days" onchange="loadActivity()" style="margin-left:12px;padding:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;">
+        <option value="7">최근 7일</option><option value="30">최근 30일</option>
+        <option value="180">최근 180일</option><option value="365">최근 1년 (365일)</option>
+      </select>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px;">보관 중인 사용 기록을 기준으로 집계합니다. 이미 삭제된 기록은 포함되지 않습니다. ‘오늘’ 인기 메뉴는 기간 선택과 관계없이 오늘 기준입니다.</p>
+      <p id="activity-status" role="status" style="margin-top:8px;"></p>
+    </div>
+    <div class="panel">
       <div class="panel-title">오늘 가장 많이 사용한 메뉴</div>
       <div id="a-today-menus"><div class="loading-state">불러오는 중...</div></div>
     </div>
 
     <div class="panel">
-      <div class="panel-title">최근 7일 메뉴별 클릭 수</div>
+      <div class="panel-title" id="activity-menu-title">최근 7일 메뉴별 클릭 수</div>
       <div id="a-week-menus"><div class="loading-state">불러오는 중...</div></div>
     </div>
 
     <div class="summary-cards" style="grid-template-columns: repeat(2, 1fr);">
       <div class="summary-card">
-        <div class="label">최근 7일 훈련 일지 작성</div>
+        <div class="label" id="activity-log-title">최근 7일 훈련 일지 작성</div>
         <div class="value" id="a-log-writes">—</div>
       </div>
       <div class="summary-card">
-        <div class="label">최근 7일 플랜 공유</div>
+        <div class="label" id="activity-share-title">최근 7일 플랜 공유</div>
         <div class="value" id="a-plan-shares">—</div>
       </div>
     </div>
@@ -1469,14 +1478,32 @@ function renderMenuBars(containerId, items) {
     </div>
   `).join('');
 }
+let activityRequest = 0;
 async function loadActivity() {
+  const request = ++activityRequest;
+  const days = Number(document.getElementById('activity-days').value);
+  const label = days === 365 ? '최근 1년' : `최근 ${days}일`;
+  document.getElementById('activity-status').textContent = `${label} 집계 중…`;
+  document.getElementById('a-log-writes').textContent = '—';
+  document.getElementById('a-plan-shares').textContent = '—';
+  document.getElementById('a-week-menus').textContent = '불러오는 중…';
+  document.getElementById('activity-menu-title').textContent = `${label} 메뉴별 클릭 수`;
+  document.getElementById('activity-log-title').textContent = `${label} 훈련 일지 작성`;
+  document.getElementById('activity-share-title').textContent = `${label} 플랜 공유`;
   try {
-    const data = await authedFetch('/api/admin/activity');
+    const data = await authedFetch(`/api/admin/activity?days=${days}`);
+    if (request !== activityRequest) return;
+    if (data.days !== days) throw new Error('기간별 집계 API가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
     renderMenuBars('a-today-menus', data.today_top_menus);
-    renderMenuBars('a-week-menus', data.week_menu_clicks);
-    document.getElementById('a-log-writes').textContent = data.training_log_writes_7d;
-    document.getElementById('a-plan-shares').textContent = data.plan_shares_7d;
-  } catch (e) { console.error(e); }
+    renderMenuBars('a-week-menus', data.menu_clicks);
+    document.getElementById('a-log-writes').textContent = data.training_log_writes;
+    document.getElementById('a-plan-shares').textContent = data.plan_shares;
+    document.getElementById('activity-status').textContent = `${label} 집계 완료`;
+  } catch (e) {
+    if (request !== activityRequest) return;
+    document.getElementById('activity-status').textContent = e.message || '집계를 불러오지 못했습니다.';
+    document.getElementById('a-week-menus').textContent = '집계를 불러오지 못했습니다.';
+  }
 }
 
 // 4) 훈련 운영

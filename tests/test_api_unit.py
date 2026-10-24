@@ -837,3 +837,56 @@ class TestPromotionSharing:
             pass
         else:
             raise AssertionError("campaign target below 1km must be rejected")
+
+
+@pytest.mark.parametrize('days', [7, 30, 180, 365])
+def test_admin_activity_period_query_and_regular_scope(monkeypatch, days):
+    from unittest.mock import Mock
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from routers import admin
+    conn=Mock();cur=conn.cursor.return_value
+    cur.fetchall.side_effect=[[('home',2)],[('coach',days)],[('plan_share',3)]]
+    monkeypatch.setattr(admin,'_require_admin',lambda token:None)
+    monkeypatch.setattr(admin,'_ensure_table',lambda:None)
+    monkeypatch.setattr(admin,'_get_db',lambda:conn)
+    app=FastAPI();app.include_router(admin.router,prefix='/admin')
+    with TestClient(app) as client:
+        response=client.get(f'/admin/activity?days={days}')
+    assert response.status_code==200
+    data=response.json()
+    assert data['days']==days and data['menu_clicks']==[dict(menu='coach',count=days)]
+    assert data['training_log_writes']==0 and data['plan_shares']==3
+    queries=cur.execute.call_args_list
+    assert 'CURRENT_DATE' in queries[0].args[0]
+    for query in queries[1:]:
+        assert query.args[1]==(days,)
+        assert "INTERVAL '1 day'" in query.args[0]
+        assert 'is_qa_account' in query.args[0]
+    assert ('training_log_writes_7d' in data)==(days==7)
+    conn.close.assert_called_once()
+
+
+def test_admin_activity_rejects_unsupported_period_before_db(monkeypatch):
+    from unittest.mock import Mock
+    from routers import admin
+    db=Mock()
+    monkeypatch.setattr(admin,'_require_admin',lambda token:None)
+    monkeypatch.setattr(admin,'_get_db',db)
+    with pytest.raises(HTTPException) as caught:
+        admin.get_activity('admin',days=9999)
+    assert caught.value.status_code==422
+    db.assert_not_called()
+
+
+def test_admin_activity_requires_admin_before_db(monkeypatch):
+    from unittest.mock import Mock
+    from routers import admin
+    db=Mock()
+    def denied(token):raise HTTPException(403)
+    monkeypatch.setattr(admin,'_require_admin',denied)
+    monkeypatch.setattr(admin,'_get_db',db)
+    with pytest.raises(HTTPException) as caught:
+        admin.get_activity('not-admin',days=365)
+    assert caught.value.status_code==403
+    db.assert_not_called()

@@ -867,9 +867,11 @@ def list_users(
 
 
 @router.get("/activity")
-def get_activity(swimtech_token: str = Cookie(default=None)):
-    """메뉴 사용 분석: 오늘 인기 메뉴, 최근 7일 메뉴별 클릭, 사용자별 자주 쓰는 메뉴."""
+def get_activity(swimtech_token: str = Cookie(default=None), days: int = 7):
+    """Regular-account activity over a selected rolling window; today stays fixed."""
     _require_admin(swimtech_token)
+    if days not in (7, 30, 180, 365):
+        raise HTTPException(422, "집계 기간은 7일, 30일, 180일, 365일 중 선택해주세요.")
     _ensure_table()
     conn = _get_db()
     cur = conn.cursor()
@@ -888,29 +890,33 @@ def get_activity(swimtech_token: str = Cookie(default=None)):
         SELECT menu_name, COUNT(*) AS cnt
         FROM user_activity_logs l
         WHERE l.event_type = 'page_view' AND l.menu_name IS NOT NULL
-              AND l.created_at >= NOW() - INTERVAL '7 days'
+              AND l.created_at >= NOW() - (%s * INTERVAL '1 day')
               AND {_log_scope_filter("regular", "l")}
         GROUP BY menu_name ORDER BY cnt DESC LIMIT 20
-    """)
+    """, (days,))
     week_menu_clicks = [{"menu": r[0], "count": r[1]} for r in cur.fetchall()]
 
     cur.execute(f"""
         SELECT event_type, COUNT(*) AS cnt
         FROM user_activity_logs l
-        WHERE l.created_at >= NOW() - INTERVAL '7 days'
+        WHERE l.created_at >= NOW() - (%s * INTERVAL '1 day')
               AND l.event_type IN ('training_log_create','plan_share')
               AND {_log_scope_filter("regular", "l")}
         GROUP BY event_type
-    """)
+    """, (days,))
     counts = {r[0]: r[1] for r in cur.fetchall()}
 
     cur.close()
     conn.close()
     return {
         "today_top_menus": today_top_menus,
-        "week_menu_clicks": week_menu_clicks,
-        "training_log_writes_7d": counts.get("training_log_create", 0),
-        "plan_shares_7d": counts.get("plan_share", 0),
+        "days": days,
+        "menu_clicks": week_menu_clicks,
+        "training_log_writes": counts.get("training_log_create", 0),
+        "plan_shares": counts.get("plan_share", 0),
+        **({"week_menu_clicks": week_menu_clicks,
+            "training_log_writes_7d": counts.get("training_log_create", 0),
+            "plan_shares_7d": counts.get("plan_share", 0)} if days == 7 else {}),
     }
 
 
