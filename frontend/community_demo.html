@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>SwimMate — 데모 게시판</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+main{max-width:960px;margin:auto;padding:28px 18px 60px}a{color:var(--blue,#00b4d8)}h1{font-size:28px;margin:20px 0 12px}.notice{padding:18px;border:2px solid var(--blue,#00b4d8);border-radius:14px;line-height:1.8;background:var(--surface,#10283e)}.tools{display:flex;gap:12px;margin:24px 0;flex-wrap:wrap}input,select{padding:12px;border:1px solid var(--border,#456);border-radius:8px;background:var(--surface,#10283e);color:var(--text,#fff)}input{flex:1;min-width:160px}article{margin:18px 0;border:1px solid var(--border,#456);border-radius:14px;background:var(--surface,#10283e);overflow:hidden}summary{padding:20px;cursor:pointer}h2{font-size:20px;margin:8px 0;overflow-wrap:anywhere}.badge{display:inline-block;font-size:12px;border:1px solid currentColor;padding:2px 7px;border-radius:5px;color:var(--blue,#00b4d8)}.meta{font-size:13px;color:var(--muted,#aabccc);line-height:1.8}.body{padding:0 20px 20px;line-height:1.9;white-space:pre-wrap}.comments{padding:0 20px 20px}.comment{padding:14px 0;border-top:1px solid var(--border,#456);line-height:1.8}.reply{margin-left:18px;padding-left:14px;border-left:3px solid var(--blue,#00b4d8)}.comment p{margin:7px 0}footer{margin-top:24px;font-size:13px;line-height:1.8;color:var(--muted,#aabccc)}
+</style>
+<script src="/static/community-demo.js" defer></script>
+</head>
+<body><main>
+<a href="/community">← 실제 커뮤니티로 돌아가기</a>
+<h1>수영 정보 나눔 · 데모 게시판</h1>
+<div class="notice" role="note"><strong>운영팀이 제작한 가상 QA 프로필·샘플 대화입니다.</strong><br>실제 이용 후기나 회원 간 활동 이력이 아닙니다. 모든 과거 날짜는 시나리오용 <strong>예시 날짜</strong>이며 실제 작성일이 아닙니다. 실제 게시물·댓글·인기 순위·회원 통계와 분리되어 있습니다.<br>샘플 제작일: <time datetime="2026-10-24">2026년 10월 24일</time>. 입력·좋아요·댓글 등록 기능이 없는 읽기 전용 예시입니다.</div>
+<div class="tools"><input id="search" type="search" aria-label="샘플 글 검색" placeholder="제목·본문 검색"><select id="category" aria-label="샘플 분류"><option value="">전체 분류</option><option>영법 연습</option><option>훈련 기록</option><option>대회 준비</option><option>수영 생활</option></select></div>
+<p id="count" class="meta" aria-live="polite"></p><section id="posts" aria-label="데모 게시물"></section>
+<footer>닉네임은 데모 전용 가명이며 실제 QA 계정의 이름이나 개인정보를 변경하지 않습니다. 내용은 대화 예시로서 개인별 코칭·의학적 조언을 대신하지 않습니다.</footer>
+</main></body></html>
