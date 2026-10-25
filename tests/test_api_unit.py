@@ -890,3 +890,34 @@ def test_admin_activity_requires_admin_before_db(monkeypatch):
         admin.get_activity('not-admin',days=365)
     assert caught.value.status_code==403
     db.assert_not_called()
+
+
+@pytest.mark.parametrize('role,qa,expected', [('user',False,True),('coach',False,True),
+    ('admin',False,False),(None,True,False),(None,None,False),('unknown',False,False)])
+def test_product_analytics_eligibility_is_fail_closed(monkeypatch,role,qa,expected):
+    from unittest.mock import Mock
+    from fastapi import Response
+    from routers import analytics
+    monkeypatch.setenv('PRODUCT_ANALYTICS_ENABLED','true')
+    monkeypatch.setenv('ANALYTICS_PRIVACY_REVIEWED','true')
+    monkeypatch.setenv('GTM_CONTAINER_ID','GTM-TEST123')
+    monkeypatch.setenv('GA4_MEASUREMENT_ID','G-TEST123')
+    monkeypatch.setattr(analytics,'decode_token',lambda token:{'sub':'example'})
+    conn=Mock();conn.cursor.return_value.fetchone.return_value=(role,qa)
+    monkeypatch.setattr(analytics,'get_db',lambda:conn)
+    response=Response()
+    data=analytics.analytics_config(response,'token')
+    assert data['enabled'] is expected
+    assert 'username' not in data and 'customer_id' not in data
+    assert response.headers['cache-control']=='private, no-store'
+    conn.close.assert_called_once()
+
+
+def test_product_analytics_disabled_without_activation(monkeypatch):
+    from unittest.mock import Mock
+    from fastapi import Response
+    from routers import analytics
+    monkeypatch.delenv('PRODUCT_ANALYTICS_ENABLED',raising=False)
+    db=Mock();monkeypatch.setattr(analytics,'get_db',db)
+    assert analytics.analytics_config(Response(),'token')=={'enabled':False}
+    db.assert_not_called()

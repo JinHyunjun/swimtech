@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SwimMate — 훈련 일지</title>
+<script src="/static/product-analytics.js" defer></script>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00b4d8">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1816,7 +1817,19 @@ document.getElementById('btn-import-confirm').onclick = async () => {
   }
 };
 
+let analyticsDraftStarted = false;
+let savingLog = false;
+function trackManualLog(event, errorCode) {
+  if (document.getElementById('edit-id').value) return false;
+  return window.SwimMateAnalytics?.track(event, {input_method:'manual', ...(errorCode ? {error_code:errorCode} : {})}) || false;
+}
+document.getElementById('modal-backdrop').addEventListener('input', event => {
+  if (!analyticsDraftStarted && event.target.id.startsWith('f-')) {
+    analyticsDraftStarted = trackManualLog('training_log_start');
+  }
+});
 function openAddModal(prefill) {
+  analyticsDraftStarted = false;
   document.getElementById('modal-title').textContent = '훈련 기록 추가';
   document.getElementById('edit-id').value = '';
   pendingPlanCompletion = prefill?.plan_completion || null;
@@ -1876,6 +1889,7 @@ function showModalError(msg) {
 document.getElementById('btn-modal-submit').onclick = saveLog;
 
 async function saveLog() {
+  if (savingLog) return;
   clearModalError();
   const editId = document.getElementById('edit-id').value;
   const body = {
@@ -1892,13 +1906,15 @@ async function saveLog() {
   if (!editId && pendingPlanCompletion) body.plan_completion = pendingPlanCompletion;
   if (pendingTrainingSets.length) body.sets = pendingTrainingSets;
 
-  if (!body.log_date) { showModalError('날짜를 입력해주세요.'); return; }
-  if (!body.total_distance || body.total_distance < 1) { showModalError('거리를 입력해주세요.'); return; }
-  if (!body.duration_minutes || body.duration_minutes < 1) { showModalError('훈련 시간을 입력해주세요.'); return; }
+  if (!body.log_date) { trackManualLog('training_log_error','validation'); showModalError('날짜를 입력해주세요.'); return; }
+  if (!body.total_distance || body.total_distance < 1) { trackManualLog('training_log_error','validation'); showModalError('거리를 입력해주세요.'); return; }
+  if (!body.duration_minutes || body.duration_minutes < 1) { trackManualLog('training_log_error','validation'); showModalError('훈련 시간을 입력해주세요.'); return; }
 
   const url    = editId ? `/api/training-log/${editId}` : '/api/training-log';
   const method = editId ? 'PUT' : 'POST';
 
+  savingLog = true;
+  document.getElementById('btn-modal-submit').disabled = true;
   try {
     const r = await fetch(url, {
       method,
@@ -1907,13 +1923,15 @@ async function saveLog() {
       body: JSON.stringify(body),
     });
     const d = await r.json();
-    if (!r.ok) { showModalError(d.detail || '저장 실패'); return; }
+    if (!r.ok) { trackManualLog('training_log_error','server'); showModalError(d.detail || '저장 실패'); return; }
+    trackManualLog('training_log_create');
     const planCompleted = Boolean(d.plan_completed);
     const hasTrainingSets = pendingTrainingSets.length > 0;
     closeModal();
     refresh();
     showReportToast(body.log_date, planCompleted, hasTrainingSets ? Number(d.id || editId) : null);
-  } catch { showModalError('네트워크 오류가 발생했습니다.'); }
+  } catch { trackManualLog('training_log_error','network'); showModalError('네트워크 오류가 발생했습니다.'); }
+  finally { savingLog = false; document.getElementById('btn-modal-submit').disabled = false; }
 }
 
 function showReportToast(logDate, planCompleted = false, workoutLogId = null, customMessage = '') {

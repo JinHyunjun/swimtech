@@ -7,6 +7,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from routers import analytics
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -309,6 +310,7 @@ app.include_router(notifications.router,  prefix="/api/notifications",  tags=["�
 app.include_router(training_log.router,   prefix="/api/training-log",   tags=["훈련 일지"])
 app.include_router(benchmarks.router,     prefix="/api/benchmarks",     tags=["테스트 세트·PB"])
 app.include_router(health_import.router,  prefix="/api/training-log/import", tags=["운동 데이터 가져오기"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["선택 분석 설정"])
 app.include_router(workout_screenshot.router, prefix="/api/training-log/screenshot", tags=["운동 스크린샷 AI 등록"])
 app.include_router(report.router,         prefix="/api/report",          tags=["월간 리포트"])
 app.include_router(challenge.router,      prefix="/api/challenge",       tags=["챌린지"])
