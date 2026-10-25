@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>SwimMate 분석 검증실</title>
+<style>body{font:16px system-ui;max-width:850px;margin:40px auto;padding:20px;background:#eef7f8;color:#12303b}button{padding:12px;margin:6px;border:1px solid #087f8c;border-radius:8px;background:white;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#102833;color:#d8f7f7;padding:20px}section{background:white;padding:20px;border-radius:12px;margin:20px 0}</style>
+<script src="/static/analytics-test.js" defer></script>
+</head><body>
+<h1>분석 검증실 — 가상 이벤트 전용</h1>
+<p>로그인이나 실제 일지·게시글 등록 없이 검증합니다. 운영 분석 설정과 동의는 변경하지 않습니다.</p>
+<section><h2>연결 상태</h2><p id="status" role="status">테스트 설정 확인 중…</p>
+<p>별도 테스트 GTM 컨테이너의 모든 태그가 별도 테스트 GA4 속성을 향하는지 먼저 확인해야 합니다.</p>
+<button id="connect" disabled>테스트 태그 로드에 동의</button>
+<button id="stop">연결 중단 및 테스트 동의 초기화</button></section>
+<section><h2>가상 시나리오</h2><p>연결 전에는 로컬 로그만 표시됩니다. 아래 버튼은 실제 서비스 데이터를 저장하지 않습니다.</p>
+<button data-event="page_view">화면 조회</button><button data-event="training_log_view">일지 진입</button>
+<button data-event="training_log_start">작성 시작</button><button data-event="training_log_create">저장 성공</button>
+<button data-event="training_log_error">저장 오류</button><button data-event="report_view">리포트 진입</button>
+<button data-event="menu_navigate">메뉴 이동</button></section>
+<pre id="log" aria-live="polite">Google 요청 없음 · 운영 수집과 독립\n</pre>
+</body></html>

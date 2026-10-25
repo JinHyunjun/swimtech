@@ -12,6 +12,24 @@ DEFAULT_GTM_CONTAINER_ID='GTM-5TQRKVQ5'
 DEFAULT_GA4_MEASUREMENT_ID='G-B43M43WPM9'
 
 
+@router.get('/test-config')
+def analytics_test_config(response: Response):
+    """Synthetic sandbox only; never fall back to production identifiers."""
+    response.headers['Cache-Control']='private, no-store'
+    disabled={'enabled':False}
+    container=os.getenv('ANALYTICS_TEST_GTM_CONTAINER_ID','').strip()
+    measurement=os.getenv('ANALYTICS_TEST_GA4_MEASUREMENT_ID','').strip()
+    production_container=os.getenv('GTM_CONTAINER_ID',DEFAULT_GTM_CONTAINER_ID).strip()
+    production_measurement=os.getenv('GA4_MEASUREMENT_ID',DEFAULT_GA4_MEASUREMENT_ID).strip()
+    if (os.getenv('ANALYTICS_TEST_ENABLED')!='true'
+            or not re.fullmatch(r'GTM-[A-Z0-9]+',container)
+            or not re.fullmatch(r'G-[A-Z0-9]+',measurement)
+            or container in (production_container,DEFAULT_GTM_CONTAINER_ID)
+            or measurement in (production_measurement,DEFAULT_GA4_MEASUREMENT_ID)):
+        return disabled
+    return dict(enabled=True,container_id=container,measurement_id=measurement)
+
+
 @router.get('/config')
 def analytics_config(response: Response, swimtech_token: str = Cookie(default=None)):
     response.headers['Cache-Control']='private, no-store'

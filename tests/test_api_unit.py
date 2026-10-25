@@ -935,3 +935,28 @@ def test_expanded_analytics_requires_new_policy_review(monkeypatch,version):
     db=Mock();monkeypatch.setattr(analytics,'get_db',db)
     assert analytics.analytics_config(Response(),'token')=={'enabled':False}
     db.assert_not_called()
+
+
+@pytest.mark.parametrize('enabled,container,measurement,expected',[
+    ('', 'GTM-SANDBOX', 'G-SANDBOX', False),
+    ('true', '', '', False),
+    ('true', 'GTM-5TQRKVQ5', 'G-SANDBOX', False),
+    ('true', 'GTM-SANDBOX', 'G-B43M43WPM9', False),
+    ('true', 'GTM-CUSTOMPROD', 'G-SANDBOX', False),
+    ('true', 'GTM-SANDBOX', 'G-CUSTOMPROD', False),
+    ('true', 'GTM-SANDBOX', 'G-SANDBOX', True),
+])
+def test_analytics_sandbox_never_uses_production(monkeypatch,enabled,container,measurement,expected):
+    from unittest.mock import Mock
+    from fastapi import Response
+    from routers import analytics
+    monkeypatch.setenv('ANALYTICS_TEST_ENABLED',enabled)
+    monkeypatch.setenv('ANALYTICS_TEST_GTM_CONTAINER_ID',container)
+    monkeypatch.setenv('ANALYTICS_TEST_GA4_MEASUREMENT_ID',measurement)
+    monkeypatch.setenv('GTM_CONTAINER_ID','GTM-CUSTOMPROD')
+    monkeypatch.setenv('GA4_MEASUREMENT_ID','G-CUSTOMPROD')
+    db=Mock();monkeypatch.setattr(analytics,'get_db',db)
+    response=Response()
+    assert analytics.analytics_test_config(response)['enabled'] is expected
+    assert response.headers['cache-control']=='private, no-store'
+    db.assert_not_called()
