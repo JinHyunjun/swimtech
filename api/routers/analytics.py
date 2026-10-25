@@ -6,14 +6,18 @@ from db import get_db
 from routers.auth import decode_token
 
 router=APIRouter()
+# Public identifiers supplied by the owner. These never enable collection;
+# both explicit activation/review flags below are still required.
+DEFAULT_GTM_CONTAINER_ID='GTM-5TQRKVQ5'
+DEFAULT_GA4_MEASUREMENT_ID='G-B43M43WPM9'
 
 
 @router.get('/config')
 def analytics_config(response: Response, swimtech_token: str = Cookie(default=None)):
     response.headers['Cache-Control']='private, no-store'
     disabled={'enabled':False}
-    container=os.getenv('GTM_CONTAINER_ID','').strip()
-    measurement=os.getenv('GA4_MEASUREMENT_ID','').strip()
+    container=os.getenv('GTM_CONTAINER_ID',DEFAULT_GTM_CONTAINER_ID).strip()
+    measurement=os.getenv('GA4_MEASUREMENT_ID',DEFAULT_GA4_MEASUREMENT_ID).strip()
     if (os.getenv('PRODUCT_ANALYTICS_ENABLED')!='true'
             or os.getenv('ANALYTICS_PRIVACY_REVIEWED')!='true'
             or not re.fullmatch(r'GTM-[A-Z0-9]+',container)
