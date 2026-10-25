@@ -900,6 +900,7 @@ def test_product_analytics_eligibility_is_fail_closed(monkeypatch,role,qa,expect
     from routers import analytics
     monkeypatch.setenv('PRODUCT_ANALYTICS_ENABLED','true')
     monkeypatch.setenv('ANALYTICS_PRIVACY_REVIEWED','true')
+    monkeypatch.setenv('ANALYTICS_POLICY_VERSION','2026-10-v2')
     monkeypatch.setenv('GTM_CONTAINER_ID','GTM-TEST123')
     monkeypatch.setenv('GA4_MEASUREMENT_ID','G-TEST123')
     monkeypatch.setattr(analytics,'decode_token',lambda token:{'sub':'example'})
@@ -918,6 +919,19 @@ def test_product_analytics_disabled_without_activation(monkeypatch):
     from fastapi import Response
     from routers import analytics
     monkeypatch.delenv('PRODUCT_ANALYTICS_ENABLED',raising=False)
+    db=Mock();monkeypatch.setattr(analytics,'get_db',db)
+    assert analytics.analytics_config(Response(),'token')=={'enabled':False}
+    db.assert_not_called()
+
+
+@pytest.mark.parametrize('version',['','2026-10-v1'])
+def test_expanded_analytics_requires_new_policy_review(monkeypatch,version):
+    from unittest.mock import Mock
+    from fastapi import Response
+    from routers import analytics
+    monkeypatch.setenv('PRODUCT_ANALYTICS_ENABLED','true')
+    monkeypatch.setenv('ANALYTICS_PRIVACY_REVIEWED','true')
+    monkeypatch.setenv('ANALYTICS_POLICY_VERSION',version)
     db=Mock();monkeypatch.setattr(analytics,'get_db',db)
     assert analytics.analytics_config(Response(),'token')=={'enabled':False}
     db.assert_not_called()

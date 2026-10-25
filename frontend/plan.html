@@ -373,6 +373,7 @@
 .plan-context-details .cycle-guide { margin:0 13px 13px; }
 @media(max-width:760px){.plan-choice-shell{grid-template-columns:1fr}.plan-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
+<script src="/static/product-analytics.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -2250,6 +2251,7 @@ async function saveP2Plan(kind) {
       throw new Error(res.status);
     } else {
       alert('내 플랜에 저장했습니다.');
+      window.SwimMateAnalytics?.track('plan_create');
     }
     switchTab('myplan');
   } catch (_) {
@@ -2730,6 +2732,7 @@ document.getElementById('btn-save-random').addEventListener('click', async () =>
     } else {
       msgBox.className = 'gen-msg success';
       msgBox.textContent = '플랜이 저장됐습니다! "내 플랜" 탭에서 확인하세요.';
+      window.SwimMateAnalytics?.track('plan_create');
     }
     saveBtn.textContent = '✅ 저장 완료';
     setTimeout(() => switchTab('myplan'), 1800);
@@ -3334,7 +3337,7 @@ document.getElementById('btn-save-builder').addEventListener('click', async () =
     });
     if (res.status === 401 || res.status === 403) { saveToLocalStorage(body); alert('로컬에 저장됐습니다.'); }
     else if (!res.ok) throw new Error(res.status);
-    else alert('저장됐습니다!');
+    else { window.SwimMateAnalytics?.track('plan_create'); alert('저장됐습니다!'); }
     switchTab('myplan');
   } catch {
     saveToLocalStorage(body);
@@ -3652,6 +3655,7 @@ async function shareCustomPlan(planId) {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     const url = window.location.origin + data.share_url;
+    window.SwimMateAnalytics?.track('plan_share_link_ready');
     await navigator.clipboard.writeText(url).catch(() => {});
     alert(`공유 링크가 클립보드에 복사됐습니다!\n${url}`);
   } catch {

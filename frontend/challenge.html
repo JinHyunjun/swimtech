@@ -149,6 +149,7 @@
 .cm-btn-submit { background: var(--energy); color: #2a0f06; }
 .cm-btn-submit:hover { filter: brightness(1.08); }
 </style>
+<script src="/static/product-analytics.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -419,6 +420,8 @@ async function joinChallenge(id) {
       alert(err.detail || '참여 처리에 실패했습니다');
       return;
     }
+    const result = await res.json();
+    if (result.status === 'joined') window.SwimMateAnalytics?.track('challenge_join');
     await loadAll();
   } catch { alert('오류가 발생했습니다'); }
 }

@@ -20,6 +20,7 @@ def analytics_config(response: Response, swimtech_token: str = Cookie(default=No
     measurement=os.getenv('GA4_MEASUREMENT_ID',DEFAULT_GA4_MEASUREMENT_ID).strip()
     if (os.getenv('PRODUCT_ANALYTICS_ENABLED')!='true'
             or os.getenv('ANALYTICS_PRIVACY_REVIEWED')!='true'
+            or os.getenv('ANALYTICS_POLICY_VERSION')!='2026-10-v2'
             or not re.fullmatch(r'GTM-[A-Z0-9]+',container)
             or not re.fullmatch(r'G-[A-Z0-9]+',measurement)
             or not swimtech_token):
@@ -33,7 +34,7 @@ def analytics_config(response: Response, swimtech_token: str = Cookie(default=No
         row=cur.fetchone()
         # Unknown classification is excluded, not assumed regular.
         if not row or row[0] not in (None,'user','coach') or row[1] is not False:return disabled
-        return dict(enabled=True,container_id=container,measurement_id=measurement,policy_version='2026-10-v1')
+        return dict(enabled=True,container_id=container,measurement_id=measurement,policy_version='2026-10-v2')
     except Exception:
         return disabled
     finally:

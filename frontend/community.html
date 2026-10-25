@@ -332,6 +332,7 @@
 .detail-content-md a { color: var(--blue); }
 .detail-content-md ul,.detail-content-md ol { padding-left: 20px; }
 </style>
+<script src="/static/product-analytics.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -1037,6 +1038,7 @@ async function submitComment(postId) {
       body: JSON.stringify({ content, parent_id: window._replyParentId || null }),
     });
     if (!res.ok) { const err = await res.json(); alert(err.detail || '댓글 작성 실패'); return; }
+    window.SwimMateAnalytics?.track('community_comment_create');
     textarea.value = '';
     cancelReply();
     await openPost(postId);
@@ -1157,6 +1159,7 @@ async function submitPost() {
       });
     }
     if (!res.ok) { const err = await res.json(); alert(err.detail || '작성 실패'); return; }
+    if (!editingPostId) window.SwimMateAnalytics?.track('community_post_create');
     closeWriteModal();
     if (editingPostId) {
       await openPost(editingPostId);

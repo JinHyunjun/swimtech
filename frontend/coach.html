@@ -366,6 +366,7 @@ textarea.ss-input { min-height: 60px; resize: vertical; }
     <script src="/static/theme.js"></script>
     <script src="/static/utils.js"></script>
     <script src="/static/api.js"></script>
+<script src="/static/product-analytics.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -1002,6 +1003,7 @@ async function submitActionItem() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || '과제를 만들지 못했습니다.');
+    window.SwimMateAnalytics?.track('coach_task_create');
     closeModal('modal-action-item');
     toast('SwimMate에 코칭 과제를 저장했습니다.');
     loadCrewDashboard();
@@ -1027,6 +1029,7 @@ async function completeActionItem(event, actionItemId) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || '완료 처리에 실패했습니다.');
+    if (!data.already_done) window.SwimMateAnalytics?.track('coach_task_complete');
     toast('SwimMate 코칭 과제를 완료 처리했습니다.');
     loadCrewDashboard();
   } catch (error) {
@@ -1515,7 +1518,7 @@ async function joinCoach() {
       body: JSON.stringify({ invite_code: code }),
     });
     const data = await r.json();
-    if (r.ok) { toast("코치 연동 완료!"); loadStudentTab(); }
+    if (r.ok) { if (!data.already_exists) window.SwimMateAnalytics?.track('coach_join'); toast("코치 연동 완료!"); loadStudentTab(); }
     else { toast(data.detail || "연동 실패", false); }
   } catch { toast("네트워크 오류", false); }
 }
